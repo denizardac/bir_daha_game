@@ -91,6 +91,57 @@ describe('bench-aware replacement', () => {
     expect(ramosSlot?.slot.label).toBe('STP');
   });
 
+  it('promotes stronger OS over weaker starter when only incompatible slots are empty', () => {
+    const gk = fieldPlayer({ id: 'gk', name: 'KL', position: 'KL', currentRating: 70, rating: 70 });
+    const defs = (['slb', 'stp1', 'stp2', 'sgb'] as const).map((id, i) =>
+      fieldPlayer({
+        id,
+        name: id,
+        position: (['SLB', 'STP', 'STP', 'SÖB'] as const)[i]!,
+        currentRating: 65 + i,
+        rating: 65 + i,
+      }),
+    );
+    const mids = [
+      fieldPlayer({ id: 'dos', name: 'DOS', position: 'DOS', currentRating: 68, rating: 68 }),
+      fieldPlayer({ id: 'weak', name: 'Zayıf OS', position: 'OS', currentRating: 58, rating: 58 }),
+      fieldPlayer({ id: 'oos', name: 'OOS', position: 'OOS', currentRating: 67, rating: 67 }),
+    ];
+    const wings = [
+      fieldPlayer({ id: 'slk', name: 'SLK', position: 'SLK', currentRating: 66, rating: 66 }),
+      fieldPlayer({ id: 'sf', name: 'SF', position: 'SF', currentRating: 70, rating: 70 }),
+      fieldPlayer({ id: 'sgk', name: 'SÖK', position: 'SÖK', currentRating: 69, rating: 69 }),
+    ];
+    const squad = [gk, ...defs, ...mids, ...wings];
+    const umut = fieldPlayer({ id: 'umut', name: 'Umut Sarı', position: 'OS', currentRating: 64, rating: 64, tags: ['YERLİ'] });
+
+    const lineup = assignSquadToFormation([...squad, umut], '433');
+    expect(lineup.find((s) => s.player?.id === 'umut')?.slot.label).toBe('OS');
+    expect(lineup.some((s) => s.player?.id === 'weak')).toBe(false);
+  });
+
+  it('promotes stronger DOS over weaker OS on midfield slot', () => {
+    const gk = fieldPlayer({ id: 'gk', name: 'KL', position: 'KL', currentRating: 70, rating: 70 });
+    const squad = [
+      gk,
+      fieldPlayer({ id: 'slb', name: 'SLB', position: 'SLB', currentRating: 65, rating: 65 }),
+      fieldPlayer({ id: 'stp1', name: 'STP1', position: 'STP', currentRating: 66, rating: 66 }),
+      fieldPlayer({ id: 'stp2', name: 'STP2', position: 'STP', currentRating: 64, rating: 64 }),
+      fieldPlayer({ id: 'sgb', name: 'SGB', position: 'SÖB', currentRating: 65, rating: 65 }),
+      fieldPlayer({ id: 'dos', name: 'DOS', position: 'DOS', currentRating: 70, rating: 70 }),
+      fieldPlayer({ id: 'weak', name: 'Zayıf OS', position: 'OS', currentRating: 59, rating: 59 }),
+      fieldPlayer({ id: 'oos', name: 'OOS', position: 'OOS', currentRating: 67, rating: 67 }),
+      fieldPlayer({ id: 'slk', name: 'SLK', position: 'SLK', currentRating: 66, rating: 66 }),
+      fieldPlayer({ id: 'sf', name: 'SF', position: 'SF', currentRating: 68, rating: 68 }),
+    ];
+    const nikolai = fieldPlayer({ id: 'nik', name: 'Nikolai Kane', position: 'DOS', currentRating: 66, rating: 66 });
+
+    const lineup = assignSquadToFormation([...squad, nikolai], '442');
+    const nikSlot = lineup.find((s) => s.player?.id === 'nik');
+    expect(nikSlot?.slot.zone).toBe('orta');
+    expect(lineup.some((s) => s.player?.id === 'weak')).toBe(false);
+  });
+
   it('adds player when squad not full', () => {
     const squad = getStartingSquad().slice(0, 5);
     const incoming = {

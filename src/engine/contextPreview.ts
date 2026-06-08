@@ -5,11 +5,15 @@ import { resolveEvent, type EventOutcome } from '@/engine/events';
 import { getSlotFitTier } from '@/data/positionFlexibility';
 import {
   assignSquadToFormation,
+  canDisplaceStarter,
   getActiveFormationKey,
   getLineupPlayerIds,
   getReplacementPreview,
   getStartingEleven,
+  isIllegalCentralMidWingSlot,
+  isMidfieldPlayer,
   simulateSquadAfterPick,
+  type LineupSlot,
 } from '@/engine/lineupPreview';
 import { formationSlotLabel, POSITION_BADGE } from '@/utils/positionStyle';
 import { getDepartureScore } from '@/engine/squadLogic';
@@ -39,6 +43,77 @@ export type PlayerPickSummary = {
   replacedPlayer: PlayerCard | null;
 };
 
+function findDisplacedStarter(card: PlayerCard, lineup: LineupSlot[]): PlayerCard | null {
+  const targets = lineup
+    .filter((s) => s.player && canDisplaceStarter(card, s.player, s.slot))
+    .sort((a, b) => a.player!.currentRating - b.player!.currentRating);
+  return targets[0]?.player ?? null;
+}
+
+function findBenchedByIncoming(
+  squad: PlayerCard[],
+  after: PlayerCard[],
+  card: PlayerCard,
+  formationKey: string,
+): PlayerCard | null {
+  const beforeLineup = assignSquadToFormation(squad, formationKey);
+  const afterLineup = assignSquadToFormation(after, formationKey);
+  const afterPitchIds = new Set(afterLineup.filter((s) => s.player).map((s) => s.player!.id));
+  const dropped = beforeLineup
+    .filter((s) => s.player && s.player.id !== card.id && !afterPitchIds.has(s.player.id))
+    .map((s) => s.player!);
+  return dropped.sort((a, b) => a.currentRating - b.currentRating)[0] ?? null;
+}
+
+function describeEnterSlot(
+  card: PlayerCard,
+  targetSlot: LineupSlot,
+  fitNote: string,
+  squadAfterSize: number,
+  maxSquad: number,
+  avgPart: string,
+  lineupAfter: LineupSlot[],
+): string {
+  if (isIllegalCentralMidWingSlot(card, targetSlot.slot.label)) {
+    return describeBenchPick(card, lineupAfter, squadAfterSize, maxSquad, avgPart);
+  }
+
+  const code = targetSlot.slot.label;
+  const badge = POSITION_BADGE[card.position];
+
+  if (code === badge || (card.position === 'SÖB' && code === 'SĞB') || (card.position === 'SÖK' && code === 'SĞK')) {
+    return `İlk 11'de ${code} slotuna girer${fitNote} · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`;
+  }
+  if (targetSlot.slot.zone === 'orta' && isMidfieldPlayer(card)) {
+    return `İlk 11'de ${code} slotuna girer (${badge} oynar)${fitNote} · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`;
+  }
+  return `İlk 11'de ${code} (${badge}) slotuna girer${fitNote} · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`;
+}
+
+function describeBenchPick(
+  card: PlayerCard,
+  lineup: LineupSlot[],
+  squadAfterSize: number,
+  maxSquad: number,
+  avgPart: string,
+): string {
+  const displaced = findDisplacedStarter(card, lineup);
+  if (displaced) {
+    const slot = lineup.find((s) => s.player?.id === displaced.id);
+    const slotCode = slot?.slot.label ?? POSITION_BADGE[card.position];
+    if (slotCode === POSITION_BADGE[card.position]) {
+      return `İlk 11'de ${slotCode} slotuna girer · ${displaced.name} (${displaced.currentRating}) yedeğe iner · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`;
+    }
+    return `İlk 11'de ${slotCode} slotuna girer (${POSITION_BADGE[card.position]} oynar) · ${displaced.name} (${displaced.currentRating}) yedeğe iner · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`;
+  }
+
+  const emptyLabels = lineup.filter((s) => !s.player).map((s) => s.slot.label);
+  const emptyPart = emptyLabels.length
+    ? `Boş slotlar (${emptyLabels.join(', ')}) bu mevkiyle uyuşmuyor`
+    : 'Orta saha dolu veya mevki uyumu yok';
+  return `Yedek olarak kalır · ${emptyPart} · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`;
+}
+
 function formatAvgDelta(card: PlayerCard, squad: PlayerCard[]): string {
   const avg = squad.length ? squad.reduce((s, p) => s + p.currentRating, 0) / squad.length : card.currentRating;
   const delta = Math.round(card.currentRating - avg);
@@ -66,7 +141,8 @@ export function getPlayerPickSummary(
   const lineupIdsBefore = getLineupPlayerIds(squad, activeTactics);
   const after = simulateSquadAfterPick(squad, card, maxSquad, morale, activeTactics);
   const lineupAfter = assignSquadToFormation(after, formationKey);
-  const targetSlot = lineupAfter.find((s) => s.player?.id === card.id);
+  const rawSlot = lineupAfter.find((s) => s.player?.id === card.id);
+  const targetSlot = rawSlot && !isIllegalCentralMidWingSlot(card, rawSlot.slot.label) ? rawSlot : undefined;
   const onPitch = !!targetSlot;
   const avgPart = formatAvgDelta(card, squad);
   const squadAfterSize = after.length;
@@ -81,13 +157,13 @@ export function getPlayerPickSummary(
   if (squad.length < maxSquad) {
     if (onPitch && targetSlot) {
       return {
-        text: `İlk 11'de ${targetSlot.slot.label} (${POSITION_BADGE[card.position]}) slotuna girer${fitNote(targetSlot)} · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`,
-        replacedPlayer: null,
+        text: describeEnterSlot(card, targetSlot, fitNote(targetSlot), squadAfterSize, maxSquad, avgPart, lineupAfter),
+        replacedPlayer: findBenchedByIncoming(squad, after, card, formationKey),
       };
     }
     return {
-      text: `Yedek olarak kalır · uygun saha slotu yok · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`,
-      replacedPlayer: null,
+      text: describeBenchPick(card, lineupAfter, squadAfterSize, maxSquad, avgPart),
+      replacedPlayer: findDisplacedStarter(card, lineupAfter),
     };
   }
 

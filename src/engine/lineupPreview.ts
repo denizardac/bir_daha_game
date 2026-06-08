@@ -61,6 +61,57 @@ export const POSITION_ZONE: Record<Position, PositionZone> = {
   SF: 'hucum',
 };
 
+const MIDFIELD_POSITIONS = new Set<Position>(['DOS', 'OS', 'OOS']);
+
+/** Kanat slotları — OS/DOS buraya asla yazılmaz */
+export const WING_SLOT_LABELS = new Set(['SĞK', 'SLK']);
+
+/** Merkez orta — yalnızca orta saha slotlarına */
+const CENTRAL_ONLY_MIDS = new Set<Position>(['DOS', 'OS']);
+
+export function isMidfieldPlayer(player: PlayerCard): boolean {
+  return MIDFIELD_POSITIONS.has(player.position);
+}
+
+/** OS/DOS kanada, KL sahada, uyumsuz mevki — slot reddi */
+export function slotAcceptsPlayer(player: PlayerCard, slot: FormationSlotDef): boolean {
+  if (player.position === 'KL') return slot.zone === 'kaleci';
+  if (slot.zone === 'kaleci') return false;
+  if (slotFitIndex(player, slot.preferred) >= 99) return false;
+  if (CENTRAL_ONLY_MIDS.has(player.position) && WING_SLOT_LABELS.has(slot.label)) return false;
+  return true;
+}
+
+export function isIllegalCentralMidWingSlot(player: PlayerCard, slotLabel: string): boolean {
+  return CENTRAL_ONLY_MIDS.has(player.position) && WING_SLOT_LABELS.has(slotLabel);
+}
+
+/** Güçlü yedek / yeni oyuncu zayıf starter'ın yerine geçebilir mi? */
+export function canDisplaceStarter(
+  challenger: PlayerCard,
+  occupant: PlayerCard,
+  slot: FormationSlotDef,
+): boolean {
+  const chFit = slotFitIndex(challenger, slot.preferred);
+  const occFit = slotFitIndex(occupant, slot.preferred);
+  if (!slotAcceptsPlayer(challenger, slot)) return false;
+
+  const ratingGap = challenger.currentRating - occupant.currentRating;
+  if (ratingGap <= 0) return false;
+  if (chFit > occFit) return false;
+
+  const idealCh = getSlotFitTier(challenger, slot.preferred) === 'ideal';
+  const samePos = challenger.position === occupant.position;
+  const midClash = isMidfieldPlayer(challenger) && isMidfieldPlayer(occupant) && slot.zone === 'orta';
+
+  if (idealCh && ratingGap >= 1) return true;
+  if (samePos && ratingGap >= 2) return true;
+  if (midClash && chFit <= occFit && ratingGap >= 2) return true;
+  if (chFit < occFit && ratingGap >= 3) return true;
+  if (chFit === occFit && ratingGap >= 5) return true;
+  return false;
+}
+
 const FORMATION_SLOTS: Record<string, FormationSlotDef[]> = {
   '442': [
     { label: 'KL', preferred: ['KL'], zone: 'kaleci' },
@@ -174,8 +225,8 @@ function optimizeSlotAssignments(
         const after = slotFitIndex(pi, slots[j]!.preferred) + slotFitIndex(pj, slots[i]!.preferred);
         if (
           after < before
-          && slotFitIndex(pi, slots[j]!.preferred) < 99
-          && slotFitIndex(pj, slots[i]!.preferred) < 99
+          && slotAcceptsPlayer(pi, slots[j]!)
+          && slotAcceptsPlayer(pj, slots[i]!)
         ) {
           assigned[i] = pj;
           assigned[j] = pi;
@@ -232,6 +283,7 @@ function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (
       const slot = slots[slotIdx]!;
       for (const p of available()) {
         if (p.position === 'KL') continue;
+        if (!slotAcceptsPlayer(p, slot)) continue;
         const fit = slotFitIndex(p, slot.preferred);
         if (fit < bestFit) {
           bestFit = fit;
@@ -246,7 +298,10 @@ function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (
   }
 
   displaceWeakerStarters(slots, assigned, squad);
+  promoteUnassignedByDisplacingWeakest(slots, assigned, squad);
   optimizeSlotAssignments(slots, assigned);
+  displaceWeakerStarters(slots, assigned, squad);
+  evictIllegalSlotAssignments(slots, assigned, squad);
 
   for (let i = 0; i < assigned.length; i++) {
     const p = assigned[i];
@@ -269,13 +324,35 @@ function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (
     const slot = slots[i]!;
     const pick = squad
       .filter((p) => !usedIds().has(p.id) && p.position !== 'KL')
+      .filter((p) => slotAcceptsPlayer(p, slot))
       .map((p) => ({ p, fit: slotFitIndex(p, slot.preferred) }))
-      .filter((x) => x.fit < 99)
       .sort((a, b) => a.fit - b.fit || b.p.currentRating - a.p.currentRating)[0];
     if (pick) assigned[i] = pick.p;
   }
 
+  evictIllegalSlotAssignments(slots, assigned, squad);
   return assigned;
+}
+
+/** OS/DOS kanat slotundan çıkar; güçlü oyuncuyu orta sahaya yerleştir */
+function evictIllegalSlotAssignments(
+  slots: FormationSlotDef[],
+  assigned: (PlayerCard | null)[],
+  squad: PlayerCard[],
+): void {
+  let evicted = false;
+  for (let i = 0; i < slots.length; i++) {
+    const p = assigned[i];
+    if (!p) continue;
+    if (!slotAcceptsPlayer(p, slots[i]!)) {
+      assigned[i] = null;
+      evicted = true;
+    }
+  }
+  if (evicted) {
+    promoteUnassignedByDisplacingWeakest(slots, assigned, squad);
+    displaceWeakerStarters(slots, assigned, squad);
+  }
 }
 
 /** Yüksek ratingli yedek, düşük ratingli starter'ın yerine geçer */
@@ -286,38 +363,66 @@ function displaceWeakerStarters(
 ): void {
   const onPitch = new Set(assigned.filter(Boolean).map((p) => p!.id));
 
-  for (let pass = 0; pass < 3; pass++) {
+  for (let pass = 0; pass < 5; pass++) {
     let changed = false;
     const bench = squad
       .filter((p) => !onPitch.has(p.id) && p.position !== 'KL')
       .sort((a, b) => b.currentRating - a.currentRating);
 
     for (const challenger of bench) {
+      let bestIdx = -1;
+      let bestOccRating = Infinity;
+
       for (let i = 0; i < slots.length; i++) {
         if (isGkSlot(slots, i)) continue;
         const occupant = assigned[i];
         if (!occupant || occupant.position === 'KL') continue;
+        if (!canDisplaceStarter(challenger, occupant, slots[i]!)) continue;
+        if (occupant.currentRating < bestOccRating) {
+          bestOccRating = occupant.currentRating;
+          bestIdx = i;
+        }
+      }
 
-        const chFit = slotFitIndex(challenger, slots[i]!.preferred);
-        const occFit = slotFitIndex(occupant, slots[i]!.preferred);
-        if (chFit >= 99) continue;
-        const ratingGap = challenger.currentRating - occupant.currentRating;
-        if (ratingGap <= 0) continue;
-        if (chFit > occFit) continue;
-        const idealChallenger = getSlotFitTier(challenger, slots[i]!.preferred) === 'ideal';
-        const samePosition = challenger.position === occupant.position;
-        if (!idealChallenger && !samePosition && ratingGap < 6) continue;
-        if (!idealChallenger && samePosition && ratingGap < 4) continue;
-        if (!idealChallenger && chFit === occFit && ratingGap < 8) continue;
-
-        assigned[i] = challenger;
-        onPitch.delete(occupant.id);
+      if (bestIdx >= 0) {
+        const displaced = assigned[bestIdx]!;
+        assigned[bestIdx] = challenger;
+        onPitch.delete(displaced.id);
         onPitch.add(challenger.id);
         changed = true;
-        break;
       }
     }
     if (!changed) break;
+  }
+}
+
+/** Boş slota sığmayan güçlü oyuncu, en zayıf uyumlu starter'ı düşürür */
+function promoteUnassignedByDisplacingWeakest(
+  slots: FormationSlotDef[],
+  assigned: (PlayerCard | null)[],
+  squad: PlayerCard[],
+): void {
+  const usedIds = () => new Set(assigned.filter(Boolean).map((p) => p!.id));
+  const unassigned = squad
+    .filter((p) => p.position !== 'KL' && !usedIds().has(p.id))
+    .sort((a, b) => b.currentRating - a.currentRating);
+
+  for (const challenger of unassigned) {
+    let bestIdx = -1;
+    let bestOccRating = Infinity;
+
+    for (let i = 0; i < slots.length; i++) {
+      if (isGkSlot(slots, i)) continue;
+      const occupant = assigned[i];
+      if (!occupant) continue;
+      if (!canDisplaceStarter(challenger, occupant, slots[i]!)) continue;
+      if (occupant.currentRating < bestOccRating) {
+        bestOccRating = occupant.currentRating;
+        bestIdx = i;
+      }
+    }
+
+    if (bestIdx >= 0) assigned[bestIdx] = challenger;
   }
 }
 
@@ -598,21 +703,42 @@ export function getPositionHints(
   }
 
   const lineupAfter = assignSquadToFormation(after, formationKey);
-  const targetSlot = lineupAfter.find((s) => s.player?.id === card.id);
+  const assignedSlot = lineupAfter.find((s) => s.player?.id === card.id);
+  const targetSlot = assignedSlot && !isIllegalCentralMidWingSlot(card, assignedSlot.slot.label)
+    ? assignedSlot
+    : undefined;
 
   if (!targetSlot) {
     const emptyLabels = lineupAfter
       .filter((s) => !s.player)
       .map((s) => s.slot.label);
     const playable = getPlayablePositions(card).map((p) => POSITION_BADGE[p]).join(', ');
-    const weakestStarter = lineupAfter
+    const weakestSamePos = lineupAfter
       .filter((s) => s.player && s.player.position === card.position)
-      .map((s) => s.player!)
-      .sort((a, b) => a.currentRating - b.currentRating)[0];
-    if (weakestStarter && card.currentRating > weakestStarter.currentRating + 2) {
+      .map((s) => ({ player: s.player!, slot: s.slot }))
+      .sort((a, b) => a.player.currentRating - b.player.currentRating)[0];
+
+    const weakestMid = isMidfieldPlayer(card)
+      ? lineupAfter
+          .filter((s) => s.player && s.slot.zone === 'orta')
+          .map((s) => ({ player: s.player!, slot: s.slot }))
+          .filter((x) => canDisplaceStarter(card, x.player, x.slot))
+          .sort((a, b) => a.player.currentRating - b.player.currentRating)[0]
+      : undefined;
+
+    const swapTarget = weakestMid ?? (weakestSamePos && canDisplaceStarter(card, weakestSamePos.player, weakestSamePos.slot)
+      ? weakestSamePos
+      : undefined);
+
+    if (swapTarget && card.currentRating > swapTarget.player.currentRating) {
       hints.push({
-        text: `İlk 11'de ${POSITION_BADGE[card.position]} dolu — ${weakestStarter.name} (${weakestStarter.currentRating}) yerine geçer, o yedeğe iner`,
+        text: `İlk 11'de ${slotLabel(swapTarget.slot.label)} slotuna girer — ${swapTarget.player.name} (${swapTarget.player.currentRating}) yedeğe iner`,
         tone: 'good',
+      });
+    } else if (weakestSamePos && card.currentRating > weakestSamePos.player.currentRating) {
+      hints.push({
+        text: `${weakestSamePos.player.name} (${weakestSamePos.player.currentRating}) senden zayıf ama mevki uyumu ilk 11'e almıyor`,
+        tone: 'warn',
       });
     } else {
       hints.push({
