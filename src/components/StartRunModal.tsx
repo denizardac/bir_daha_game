@@ -1,0 +1,74 @@
+import { useEffect, useRef, type FormEvent } from 'react';
+
+interface Props {
+  open: boolean;
+  daily: boolean;
+  defaultName?: string;
+  onConfirm: (name: string) => void;
+  onCancel: () => void;
+}
+
+const MAX_NAME_LEN = 18;
+
+export function StartRunModal({ open, daily, defaultName = '', onConfirm, onCancel }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const t = window.setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [open]);
+
+  if (!open) return null;
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const raw = inputRef.current?.value ?? defaultName;
+    const name = raw.trim().slice(0, MAX_NAME_LEN) || 'Anonim';
+    onConfirm(name);
+  };
+
+  return (
+    <div className="start-run-overlay" role="presentation" onClick={onCancel}>
+      <div
+        className="start-run-modal panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="start-run-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="start-run-badge">{daily ? 'Günlük Seed' : 'Serbest Mod'}</p>
+        <h2 id="start-run-title" className="start-run-title">Run&apos;a başlamadan önce</h2>
+        <p className="start-run-sub">
+          Leaderboard ve paylaşım kartında görünecek isim. Her run için seçebilirsin.
+        </p>
+
+        <form onSubmit={submit} className="start-run-form">
+          <label className="start-run-label">
+            Teknik direktör adı
+            <input
+              ref={inputRef}
+              className="start-run-input"
+              type="text"
+              defaultValue={defaultName}
+              maxLength={MAX_NAME_LEN}
+              placeholder="Örn: Deniz"
+              autoComplete="nickname"
+            />
+          </label>
+          <div className="start-run-actions">
+            <button type="button" className="btn-secondary" onClick={onCancel}>
+              Vazgeç
+            </button>
+            <button type="submit" className="btn-primary">
+              Başla
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
