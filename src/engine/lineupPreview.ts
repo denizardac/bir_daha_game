@@ -185,10 +185,6 @@ function isOutOfPosition(player: PlayerCard, slot: FormationSlotDef): boolean {
   return tier === 'flex' || tier === 'forced';
 }
 
-function isGkSlot(slots: FormationSlotDef[], idx: number): boolean {
-  return slots[idx]?.zone === 'kaleci';
-}
-
 function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (PlayerCard | null)[] {
   return assignPlayersByRules(slots, squad);
 }

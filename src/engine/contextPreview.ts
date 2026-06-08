@@ -14,7 +14,7 @@ import {
   simulateSquadAfterPick,
   type LineupSlot,
 } from '@/engine/lineupPreview';
-import { formationSlotLabel, POSITION_BADGE } from '@/utils/positionStyle';
+import { POSITION_BADGE } from '@/utils/positionStyle';
 import { getDepartureScore } from '@/engine/squadLogic';
 
 export function getMoraleEffect(morale: number): { label: string; detail: string; multiplier: string } {

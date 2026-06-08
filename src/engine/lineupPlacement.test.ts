@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { assignPlayersByRules } from '@/engine/lineupPlacement';
-import type { PlayerCard, Position } from '@/types';
+import { assignPlayersByRules, type PlacementSlotDef } from '@/engine/lineupPlacement';
+import type { PlayerCard } from '@/types';
 
-const SLOTS_442 = [
-  { label: 'KL', preferred: ['KL' as Position], zone: 'kaleci' as const },
-  { label: 'SLB', preferred: ['SLB' as Position, 'STP'], zone: 'savunma' as const },
-  { label: 'STP', preferred: ['STP' as Position], zone: 'savunma' as const },
-  { label: 'STP', preferred: ['STP' as Position], zone: 'savunma' as const },
-  { label: 'SĞB', preferred: ['SÖB' as Position, 'STP'], zone: 'savunma' as const },
-  { label: 'SLK', preferred: ['SLK' as Position, 'OOS'], zone: 'hucum' as const },
-  { label: 'DOS', preferred: ['DOS' as Position, 'OS'], zone: 'orta' as const },
-  { label: 'OS', preferred: ['OS' as Position, 'OOS', 'DOS'], zone: 'orta' as const },
-  { label: 'SĞK', preferred: ['SÖK' as Position, 'OOS'], zone: 'hucum' as const },
-  { label: 'SF', preferred: ['SF' as Position], zone: 'hucum' as const },
-  { label: 'SF', preferred: ['SF' as Position], zone: 'hucum' as const },
+const SLOTS_442: PlacementSlotDef[] = [
+  { label: 'KL', preferred: ['KL'], zone: 'kaleci' },
+  { label: 'SLB', preferred: ['SLB', 'STP'], zone: 'savunma' },
+  { label: 'STP', preferred: ['STP'], zone: 'savunma' },
+  { label: 'STP', preferred: ['STP'], zone: 'savunma' },
+  { label: 'SĞB', preferred: ['SÖB', 'STP'], zone: 'savunma' },
+  { label: 'SLK', preferred: ['SLK', 'OOS'], zone: 'hucum' },
+  { label: 'DOS', preferred: ['DOS', 'OS'], zone: 'orta' },
+  { label: 'OS', preferred: ['OS', 'OOS', 'DOS'], zone: 'orta' },
+  { label: 'SĞK', preferred: ['SÖK', 'OOS'], zone: 'hucum' },
+  { label: 'SF', preferred: ['SF'], zone: 'hucum' },
+  { label: 'SF', preferred: ['SF'], zone: 'hucum' },
 ];
 
 function p(
