@@ -1,15 +1,16 @@
 import { getSynergyProgressForCard, SYNERGIES } from '@/data/synergies';
-import { getTacticEffect } from '@/data/tactics';
+import { getTacticCategory, getTacticEffect } from '@/data/tactics';
 import type { ActiveTactic, EventCard, PlayerCard, TacticCard } from '@/types';
 import { resolveEvent, type EventOutcome } from '@/engine/events';
+import { getSlotFitTier } from '@/data/positionFlexibility';
 import {
   assignSquadToFormation,
   getActiveFormationKey,
-  getFilledSlotAfterPick,
   getLineupPlayerIds,
   getReplacementPreview,
   simulateSquadAfterPick,
 } from '@/engine/lineupPreview';
+import { formationSlotLabel, POSITION_BADGE } from '@/utils/positionStyle';
 import { getDepartureScore } from '@/engine/squadLogic';
 
 export function getMoraleEffect(morale: number): { label: string; detail: string; multiplier: string } {
@@ -69,10 +70,17 @@ export function getPlayerPickSummary(
   const avgPart = formatAvgDelta(card, squad);
   const squadAfterSize = after.length;
 
+  const fitNote = (slot: NonNullable<typeof targetSlot>) => {
+    const tier = getSlotFitTier(card, slot.slot.preferred);
+    if (tier === 'forced') return ' · Uyumsuz mevki — performans riski';
+    if (tier === 'flex') return ` · ${formationSlotLabel(slot.slot.label)} rolü — alışık değil`;
+    return '';
+  };
+
   if (squad.length < maxSquad) {
     if (onPitch && targetSlot) {
       return {
-        text: `İlk 11'de ${targetSlot.slot.label} slotuna girer · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`,
+        text: `İlk 11'de ${targetSlot.slot.label} (${POSITION_BADGE[card.position]}) slotuna girer${fitNote(targetSlot)} · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`,
         replacedPlayer: null,
       };
     }
@@ -83,20 +91,16 @@ export function getPlayerPickSummary(
   }
 
   const replaced = getReplacementPreview(squad, card, maxSquad, morale, activeTactics);
-  const filledSlot = getFilledSlotAfterPick(squad, card, maxSquad, activeTactics, morale);
   const replacedOnPitch = replaced ? lineupIdsBefore.has(replaced.id) : false;
   const outgoing = replaced ? describeOutgoing(replaced, replacedOnPitch) : '';
 
   if (onPitch && targetSlot && replaced) {
     const slotCode = targetSlot.slot.label;
-    if (filledSlot) {
-      return {
-        text: `İlk 11'de ${slotCode} slotuna girer · ${outgoing} kadrodan çıkar`,
-        replacedPlayer: replaced,
-      };
-    }
+    const displaced = !replacedOnPitch
+      ? `${outgoing} yedeğe iner`
+      : `${outgoing} kadrodan çıkar`;
     return {
-      text: `İlk 11'de ${slotCode} slotuna girer · ${outgoing} kadrodan çıkar`,
+      text: `İlk 11'de ${slotCode} slotuna girer${fitNote(targetSlot)} · ${displaced}`,
       replacedPlayer: replaced,
     };
   }
@@ -116,7 +120,22 @@ export function getPlayerPickSummary(
   };
 }
 
-export function getTacticPreview(card: TacticCard, squad: PlayerCard[]): { headline: string; lines: string[]; recommend: 'good' | 'ok' | 'weak' } {
+export function getTacticPreview(
+  card: TacticCard,
+  squad: PlayerCard[],
+  activeTactics: ActiveTactic[] = [],
+): { headline: string; lines: string[]; recommend: 'good' | 'ok' | 'weak' } {
+  const hasFormation = activeTactics.some((t) => getTacticCategory(t.id) === 'formasyon');
+  if (card.id === 'tactic_442' && !hasFormation) {
+    return {
+      headline: 'Zaten varsayılan 4-4-2',
+      lines: [
+        'Şu an zaten 4-4-2 ile oynuyorsun — bu kart oyunu değiştirmez',
+        'Farklı formasyon istiyorsan 4-3-3 veya 3-5-2 seç',
+      ],
+      recommend: 'weak',
+    };
+  }
   const fx = getTacticEffect(card.id);
   const fast = squad.filter((p) => p.tags.includes('HIZLI')).length;
   const tech = squad.filter((p) => p.tags.includes('TEKNİK')).length;
@@ -175,10 +194,11 @@ export function getEventPreviews(
   squad: PlayerCard[],
   morale: number,
   score: number,
+  activeTactics: ActiveTactic[] = [],
 ): { a: EventOutcome; b: EventOutcome } {
   return {
-    a: resolveEvent(event, 'A', { squad, morale, score }),
-    b: resolveEvent(event, 'B', { squad, morale, score }),
+    a: resolveEvent(event, 'A', { squad, morale, score, activeTactics }),
+    b: resolveEvent(event, 'B', { squad, morale, score, activeTactics }),
   };
 }
 

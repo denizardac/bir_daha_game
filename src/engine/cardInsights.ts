@@ -191,8 +191,8 @@ function getTacticWhyPick(card: TacticCard): string[] {
   return map[card.id] ?? [card.effectSummary];
 }
 
-export function getTacticCardInsight(card: TacticCard, squad: PlayerCard[]): TacticCardInsight {
-  const preview = getTacticPreview(card, squad);
+export function getTacticCardInsight(card: TacticCard, squad: PlayerCard[], activeTactics: ActiveTactic[] = []): TacticCardInsight {
+  const preview = getTacticPreview(card, squad, activeTactics);
 
   const pitch = card.description;
   const onSelect = card.category === 'formasyon'

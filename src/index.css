@@ -1943,9 +1943,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .card-position-hint--warn {
-  color: #fcd34d;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.22);
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.38);
+  border: 1px solid rgba(248, 113, 113, 0.5);
 }
 
 .card-position-hint--info {
@@ -9347,6 +9347,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   flex: 1;
   min-height: 0;
   overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(251, 191, 36, 0.45) rgba(255, 255, 255, 0.06);
+}
+
+.loss-screen-lineup::-webkit-scrollbar {
+  width: 6px;
+}
+
+.loss-screen-lineup::-webkit-scrollbar-thumb {
+  background: rgba(251, 191, 36, 0.4);
+  border-radius: 999px;
 }
 
 .loss-screen-actions {
@@ -9463,6 +9474,22 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   overflow-x: hidden;
   max-height: min(72vh, 640px);
   padding-right: 0.15rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(251, 191, 36, 0.45) rgba(255, 255, 255, 0.06);
+}
+
+.match-left-stack::-webkit-scrollbar {
+  width: 6px;
+}
+
+.match-left-stack::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+}
+
+.match-left-stack::-webkit-scrollbar-thumb {
+  background: rgba(251, 191, 36, 0.4);
+  border-radius: 999px;
 }
 
 .match-side-block--synergies .match-synergy-live-list {
@@ -9774,12 +9801,18 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   opacity: 0.85;
 }
 
-.lineup-dot--v3.lineup-dot--gk,
 .lineup-dot--v3.lineup-dot--gk.lineup-dot--filled {
   border-color: #fde047;
   background: linear-gradient(165deg, #fbbf24 0%, #d97706 100%);
   color: #1c1917;
   box-shadow: 0 4px 16px rgba(251, 191, 36, 0.45);
+}
+
+.lineup-dot--v3.lineup-dot--gk.lineup-dot--empty {
+  border-color: #fde047;
+  background: rgba(251, 191, 36, 0.14);
+  color: #fde68a;
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.2);
 }
 
 .lineup-dot--v3.lineup-dot--gk .lineup-dot-rating,

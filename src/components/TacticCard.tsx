@@ -3,16 +3,17 @@ import { TacticBoardVisual } from '@/components/TacticBoardVisual';
 import { TacticSquadStrip } from '@/components/TacticSquadStrip';
 import { getTacticCardInsight, getTacticEffectLines } from '@/engine/cardInsights';
 import { getTacticBeneficiaryPlayers } from '@/engine/tacticVisual';
-import type { PlayerCard, TacticCard as TacticCardType } from '@/types';
+import type { ActiveTactic, PlayerCard, TacticCard as TacticCardType } from '@/types';
 
 interface Props {
   card: TacticCardType;
   squad: PlayerCard[];
+  activeTactics?: ActiveTactic[];
   onSelect?: () => void;
 }
 
-export function TacticCard({ card, squad, onSelect }: Props) {
-  const insight = getTacticCardInsight(card, squad);
+export function TacticCard({ card, squad, activeTactics = [], onSelect }: Props) {
+  const insight = getTacticCardInsight(card, squad, activeTactics);
   const baseEffects = getTacticEffectLines(card);
   const beneficiary = getTacticBeneficiaryPlayers(card, squad);
   const passiveWarning = beneficiary.label.includes('pasif') ? beneficiary.label : null;

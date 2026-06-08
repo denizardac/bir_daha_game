@@ -37,12 +37,21 @@ import { getEventChoiceTones, eventChoiceClass, formatMatchRiskDelta, MATCH_RISK
 import { sortSquadByRating } from '@/engine/squadLogic';
 import type { EventOutcome } from '@/engine/events';
 
-function formatEventOutcome(o: EventOutcome) {
+function formatEventOutcome(o: EventOutcome, eventId?: string) {
   const parts: string[] = [];
   if (o.moraleDelta) parts.push(`Moral ${o.moraleDelta > 0 ? '+' : ''}${o.moraleDelta}`);
   if (o.scoreDelta) parts.push(`Anlık skor ${o.scoreDelta > 0 ? '+' : ''}${o.scoreDelta}`);
   if (o.addYouth) parts.push('Kadroya genç oyuncu eklenir');
-  if (o.removeWeakest) parts.push('En zayıf oyuncu kadrodan çıkar');
+  if (o.removeWeakest) {
+    parts.push(
+      o.sellPlayerName
+        ? `${o.sellPlayerName} kadrodan çıkar`
+        : eventId === 'evt_transfer_teklif'
+          ? 'En yüksek ratingli saha oyuncusu satılır'
+          : 'Oyuncu kadrodan çıkar',
+    );
+  }
+  if (o.grantRerolls) parts.push(`+${o.grantRerolls} çek hakkı`);
   if (o.nextMatchBonus) parts.push(`Bir sonraki maçta +${o.nextMatchBonus} güç bonusu`);
   if (o.nextMatchRisk) parts.push(formatMatchRiskDelta(o.nextMatchRisk));
   return parts.length ? parts.join(' · ') : '';
@@ -196,7 +205,7 @@ export function CardSelectScreen() {
                     onSelect={() => { playSound('tick', sound); selectOffer(offer); }}
                   />
                 ) : (
-                  <TacticCard key={`${offer.id}-r${offersRerollIndex}`} card={offer} squad={squad} onSelect={() => selectOffer(offer)} />
+                  <TacticCard key={`${offer.id}-r${offersRerollIndex}`} card={offer} squad={squad} activeTactics={activeTactics} onSelect={() => selectOffer(offer)} />
                 );
                 const label = isTrainingCard(offer)
                   ? 'Antrenman kartı'
@@ -275,7 +284,7 @@ export function EventScreen() {
 
   if (!currentEvent) return null;
 
-  const previews = getEventPreviews(currentEvent, squad, morale, score);
+  const previews = getEventPreviews(currentEvent, squad, morale, score, activeTactics);
   const offerPlayer = (currentEvent.id === 'evt_kiralik' || currentEvent.id === 'evt_genc_yetenek' || currentEvent.id === 'evt_scout')
     ? previewEventPlayer(seed, round, currentEvent.id)
     : null;
@@ -302,7 +311,7 @@ export function EventScreen() {
   ) => {
     const selected = picked === choice;
     const dimmed = picked !== null && picked !== choice;
-    const outcomeText = formatEventOutcome(preview);
+    const outcomeText = formatEventOutcome(preview, currentEvent.id);
     return (
       <button
         type="button"
@@ -468,13 +477,21 @@ export function MatchScreen() {
 
   const outcome = currentMatch.outcome === 'win' ? 'GALİBİYET' : currentMatch.outcome === 'draw' ? 'BERABERLİK' : 'MAĞLUBİYET';
   const outcomeColor = currentMatch.outcome === 'win' ? 'text-green-400' : currentMatch.outcome === 'draw' ? 'text-amber-400' : 'text-red-400';
-  const squadAvg = Math.round(squad.reduce((s, p) => s + p.currentRating, 0) / Math.max(squad.length, 1));
+  const lineupSummary = getSquadLineupSummary(squad, activeTactics);
+  const pitchDots = lineupSummary.lineup
+    .filter((slot) => slot.player)
+    .map((slot) => ({ x: slot.x, y: slot.y, gk: slot.role === 'gk' }));
+  const squadAvg = Math.round(
+    lineupSummary.lineup
+      .filter((s) => s.player)
+      .reduce((sum, s) => sum + s.player!.currentRating, 0) / Math.max(lineupSummary.filled, 1),
+  );
   const streakMult = streak >= 4 ? 1.35 : streak === 3 ? 1.2 : streak === 2 ? 1.1 : 1;
 
   const selectionSubtitle = isPlayerCard(pendingSelected)
     ? `${formatPosition(pendingSelected.position)} · Kadroya eklendi · ${pendingSelected.currentRating} rating`
     : isTacticCard(pendingSelected)
-      ? `${getTacticPreview(pendingSelected, squad).headline} — sonraki maçlarda bonus`
+      ? `${getTacticPreview(pendingSelected, squad, activeTactics).headline} — sonraki maçlarda bonus`
       : 'Antrenman uygulandı';
 
   const resultExplain = explainMatchResult(
@@ -550,7 +567,8 @@ export function MatchScreen() {
               playing={anim.playing}
               halftime={anim.halftime}
               outcome={anim.showResult ? currentMatch.outcome : undefined}
-              squadCount={squad.length}
+              pitchDots={pitchDots}
+              filledCount={lineupSummary.filled}
             />
           </div>
 

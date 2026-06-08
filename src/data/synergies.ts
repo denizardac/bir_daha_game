@@ -1,4 +1,11 @@
-import type { PlayerCard, SynergyDefinition } from '@/types';
+import { getStartingEleven } from '@/engine/lineupPreview';
+import type { ActiveTactic, MatchContext, PlayerCard, SynergyDefinition } from '@/types';
+
+function effectiveSquad(squad: PlayerCard[], activeTactics?: ActiveTactic[]): PlayerCard[] {
+  if (!activeTactics?.length) return squad;
+  const starters = getStartingEleven(squad, activeTactics);
+  return starters.length ? starters : squad;
+}
 
 function countTag(squad: PlayerCard[], tag: string): number {
   return squad.reduce((n, p) => n + (p.tags.includes(tag as never) ? 1 : 0), 0);
@@ -193,9 +200,10 @@ export const SYNERGIES: SynergyDefinition[] = [
 export function getActiveSynergies(
   squad: PlayerCard[],
   morale: number,
-  ctx?: Parameters<SynergyDefinition['check']>[2] extends infer C ? C : never,
+  ctx?: MatchContext,
 ) {
-  return SYNERGIES.filter((s) => s.check(squad, morale, ctx));
+  const lineup = effectiveSquad(squad, ctx?.activeTactics);
+  return SYNERGIES.filter((s) => s.check(lineup, morale, ctx));
 }
 
 export function getSynergyProgressForCard(synergy: SynergyDefinition, squad: PlayerCard[], candidate?: PlayerCard) {

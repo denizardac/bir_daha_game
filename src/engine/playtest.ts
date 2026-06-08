@@ -54,7 +54,7 @@ export function simulateFullRun(seed: string, maxRounds = 15): PlaytestRunResult
       continue;
     }
 
-    const offers = drawOffers(seed, round, lossesCount, squad.map((p) => p.id), [], false, 0);
+    const offers = drawOffers(seed, round, lossesCount, squad, [], false, 0);
     const pick = autoPick(offers);
     if (isPlayerCard(pick)) {
       squad = applyPlayerToSquad(squad, pick, 11, morale, activeTactics);

@@ -34,6 +34,18 @@ export function slotFitIndex(player: Pick<PlayerCard, 'position'>, preferred: Po
   return best;
 }
 
+export type SlotFitTier = 'ideal' | 'flex' | 'forced';
+
+/** ideal = ana mevki; flex = ikincil mevki; forced = uyumsuz */
+export function getSlotFitTier(player: Pick<PlayerCard, 'position'>, preferred: Position[]): SlotFitTier {
+  const fit = slotFitIndex(player, preferred);
+  if (fit >= 99) return 'forced';
+  const ideal = preferred[0];
+  if (ideal && player.position === ideal) return 'ideal';
+  if (fit === 0) return 'ideal';
+  return 'flex';
+}
+
 export function formatAltPositionsBadge(primary: Position): string | null {
   const alt = SECONDARY_POSITIONS[primary];
   if (!alt?.length) return null;

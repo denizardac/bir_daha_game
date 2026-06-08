@@ -3,7 +3,10 @@ import { filterPoolByRound } from '@/data/playerPoolMeta';
 import { cloneTactic, TACTIC_CARDS } from '@/data/tactics';
 import { createTrainingCard } from '@/data/training';
 import { createRng, getRarityWeights, pickOne, weightedPick } from '@/engine/seed';
+import { getTacticCategory } from '@/data/tactics';
 import type { GameCard, PlayerCard, Rarity, TacticCard } from '@/types';
+
+export type SquadRef = Pick<PlayerCard, 'id' | 'name' | 'position'>;
 
 export type OfferDrawVariant = 'normal' | 'extradraw';
 export type OfferDrawMode = 'players' | 'tacticBonus';
@@ -71,29 +74,46 @@ function drawSinglePlayer(rng: () => number, round: number, pool: PlayerCard[], 
   return clonePlayer(candidates[Math.floor(rng() * candidates.length)]!);
 }
 
+function squadNameSet(squad: SquadRef[]): Set<string> {
+  return new Set(squad.map((p) => p.name.trim().toLowerCase()));
+}
+
+function filterDrawPool(pool: PlayerCard[], squad: SquadRef[], usedNames: Set<string>): PlayerCard[] {
+  const squadNames = squadNameSet(squad);
+  const squadIds = new Set(squad.map((p) => p.id));
+  const twoGks = squad.filter((p) => p.position === 'KL').length >= 2;
+  return pool.filter((p) => {
+    const nameKey = p.name.trim().toLowerCase();
+    if (squadIds.has(p.id) || squadNames.has(nameKey) || usedNames.has(nameKey)) return false;
+    if (twoGks && p.position === 'KL') return false;
+    return true;
+  });
+}
+
 function drawPlayers(
   seed: string,
   round: number,
   lossesCount: number,
-  squadIds: string[],
+  squad: SquadRef[],
   count: number,
   recoveryGuaranteed: boolean,
   rerollIndex = 0,
   variant: OfferDrawVariant = 'normal',
 ): PlayerCard[] {
   const rng = createRng(seed, variant === 'extradraw' ? 'extradraw-cards' : 'cards', round, rerollIndex);
-  const pool = getPoolForRound(round, seed, lossesCount, recoveryGuaranteed).filter((p) => !squadIds.includes(p.id));
+  const rawPool = getPoolForRound(round, seed, lossesCount, recoveryGuaranteed);
   const cards: PlayerCard[] = [];
-  const used = new Set<string>();
+  const usedNames = new Set<string>();
 
   if (round === 1) {
+    const pool = filterDrawPool(rawPool, squad, usedNames);
     const safe = pool.filter((p) => p.rating >= 65 && p.rating <= 78 && !p.tags.includes('GERİLEYEN') && !p.tags.includes('SAKATLIK RİSKİ') && !p.tags.includes('PERFORMANS DÜŞÜŞÜ') && !p.tags.includes('TARTIŞMALI'));
     const usePool = safe.length >= 3 ? safe : pool;
     for (let i = 0; i < 3; i++) {
-      let p = usePool[Math.floor(rng() * usePool.length)]!;
-      let guard = 0;
-      while (used.has(p.id) && guard++ < 20) p = usePool[Math.floor(rng() * usePool.length)]!;
-      used.add(p.id);
+      const available = usePool.filter((p) => !usedNames.has(p.name.trim().toLowerCase()));
+      if (!available.length) break;
+      const p = available[Math.floor(rng() * available.length)]!;
+      usedNames.add(p.name.trim().toLowerCase());
       cards.push(clonePlayer(p));
     }
     const upgraded = silentCardUpgrade(cards, pool, round, rng);
@@ -102,18 +122,21 @@ function drawPlayers(
   }
 
   for (let i = 0; i < count; i++) {
-    const available = pool.filter((p) => !used.has(p.id));
-    const card = drawSinglePlayer(rng, round, available.length ? available : pool, rerollIndex);
-    used.add(card.id);
+    const pool = filterDrawPool(rawPool, squad, usedNames);
+    const available = pool;
+    const card = drawSinglePlayer(rng, round, available.length ? available : rawPool, rerollIndex);
+    usedNames.add(card.name.trim().toLowerCase());
     cards.push(card);
   }
 
   if (round <= 3) {
+    const pool = filterDrawPool(rawPool, squad, new Set());
     const upgraded = silentCardUpgrade(cards, pool, round, rng);
     if (rerollIndex > 0) return upgradeWeakestCard(upgraded, pool, rng, 68 + rerollIndex * 2);
     return upgraded;
   }
   if (rerollIndex > 0 && cards.length > 0) {
+    const pool = filterDrawPool(rawPool, squad, new Set());
     return upgradeWeakestCard(cards, pool, rng, 66 + rerollIndex * 2);
   }
   return cards;
@@ -136,7 +159,12 @@ function drawTacticBonusOffers(
     picked.push(cloneTactic(pickOne(rng, open)));
   };
 
-  take(pool.filter((t) => t.category === 'formasyon'));
+  const hasFormation = activeTacticIds.some((id) => getTacticCategory(id) === 'formasyon');
+  take(pool.filter((t) => {
+    if (t.category !== 'formasyon') return false;
+    if (t.id === 'tactic_442' && !hasFormation) return false;
+    return true;
+  }));
   take(pool.filter((t) => t.category === 'sistem'));
   while (picked.length < 2) {
     const open = pool.filter((c) => !picked.some((p) => p.id === c.id));
@@ -152,7 +180,7 @@ export function drawOffers(
   seed: string,
   round: number,
   lossesCount: number,
-  squadIds: string[],
+  squad: SquadRef[],
   activeTacticIds: string[],
   recoveryGuaranteed: boolean,
   rerollIndex = 0,
@@ -167,7 +195,7 @@ export function drawOffers(
     seed,
     round,
     lossesCount,
-    squadIds,
+    squad,
     3,
     recoveryGuaranteed,
     rerollIndex,
@@ -181,23 +209,26 @@ export function rerollSinglePlayerOffer(
   seed: string,
   round: number,
   lossesCount: number,
-  squadIds: string[],
-  excludeOfferIds: string[],
+  squad: SquadRef[],
+  excludeOffers: SquadRef[],
   slotIndex: number,
   rerollIndex: number,
   recoveryGuaranteed: boolean,
 ): PlayerCard {
   const rng = createRng(seed, 'slot-reroll', round, slotIndex, rerollIndex);
-  const exclude = new Set([...squadIds, ...excludeOfferIds]);
-  let pool = getPoolForRound(round, seed, lossesCount, recoveryGuaranteed).filter((p) => !exclude.has(p.id));
+  const excludeNames = new Set([
+    ...squadNameSet(squad),
+    ...excludeOffers.map((p) => p.name.trim().toLowerCase()),
+  ]);
+  let pool = filterDrawPool(getPoolForRound(round, seed, lossesCount, recoveryGuaranteed), squad, excludeNames);
   if (!pool.length) {
-    pool = getPoolForRound(round, seed, lossesCount, recoveryGuaranteed).filter((p) => !squadIds.includes(p.id));
+    pool = filterDrawPool(PLAYER_POOL, squad, excludeNames);
   }
 
   let card = drawSinglePlayer(rng, round, pool, rerollIndex);
   let guard = 0;
-  while (exclude.has(card.id) && guard++ < 40) {
-    card = drawSinglePlayer(rng, round, pool.length ? pool : PLAYER_POOL.filter((p) => !exclude.has(p.id)), rerollIndex);
+  while (excludeNames.has(card.name.trim().toLowerCase()) && guard++ < 40) {
+    card = drawSinglePlayer(rng, round, pool.length ? pool : PLAYER_POOL, rerollIndex);
   }
 
   if (rerollIndex > 0) {
@@ -228,6 +259,6 @@ export function pickAutoOffer(offers: GameCard[], squadSize: number, maxSquadSiz
 }
 
 /** @deprecated use drawOffers */
-export function drawCards(seed: string, round: number, lossesCount: number, squadIds: string[]): PlayerCard[] {
-  return drawOffers(seed, round, lossesCount, squadIds, [], false).filter((c): c is PlayerCard => c.kind === 'player');
+export function drawCards(seed: string, round: number, lossesCount: number, squad: SquadRef[]): PlayerCard[] {
+  return drawOffers(seed, round, lossesCount, squad, [], false).filter((c): c is PlayerCard => c.kind === 'player');
 }

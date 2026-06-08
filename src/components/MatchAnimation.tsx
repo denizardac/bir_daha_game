@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { MatchEvent, MatchOutcome } from '@/types';
 
+export type PitchDot = { x: number; y: number; gk?: boolean };
+
 interface Props {
   minute: number;
   goalsFor: number;
@@ -12,7 +14,10 @@ interface Props {
   halftime?: boolean;
   outcome?: MatchOutcome;
   wide?: boolean;
+  /** @deprecated use pitchDots */
   squadCount?: number;
+  pitchDots?: PitchDot[];
+  filledCount?: number;
 }
 
 /** 4-4-2 diziliş — ev sahibi soldan sağa hücum (GK dahil 11 slot) */
@@ -103,6 +108,8 @@ export function MatchAnimation({
   outcome,
   wide,
   squadCount = 11,
+  pitchDots,
+  filledCount,
 }: Props) {
   const flashClass =
     latestEvent?.type === 'goal_for'
@@ -119,9 +126,10 @@ export function MatchAnimation({
   const awayPress = ballPhase.startsWith('away');
 
   const homePlayers = useMemo(() => {
+    if (pitchDots?.length) return pitchDots;
     const count = Math.max(1, Math.min(squadCount, HOME_FORMATION.length));
     return HOME_FORMATION.slice(0, count);
-  }, [squadCount]);
+  }, [pitchDots, squadCount]);
 
   const highlightHomeIdx = useMemo(() => {
     if (latestEvent?.type === 'goal_for') return Math.min(homePlayers.length - 1, 9);
@@ -200,8 +208,8 @@ export function MatchAnimation({
             style={{ left: `${p.x}%`, top: `${p.y}%` }}
           />
         ))}
-        {squadCount < 11 && (
-          <span className="match-pitch-squad-count">{squadCount}/11</span>
+        {(filledCount ?? squadCount) < 11 && (
+          <span className="match-pitch-squad-count">{filledCount ?? squadCount}/11</span>
         )}
       </div>
       <div className="match-pitch-team match-pitch-team--away" aria-hidden>

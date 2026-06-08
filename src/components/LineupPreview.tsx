@@ -105,7 +105,7 @@ function LineupPitchContent({
               <div
                 className={`lineup-dot lineup-dot--v3 ${slot.player ? 'lineup-dot--filled' : 'lineup-dot--empty'} ${
                   slot.outOfPosition ? 'lineup-dot--mismatch' : ''
-                } ${slot.role === 'gk' ? 'lineup-dot--gk' : ''}`}
+                } ${slot.role === 'gk' || slot.player?.position === 'KL' ? 'lineup-dot--gk' : ''}`}
               >
                 {slot.player ? (
                   <>

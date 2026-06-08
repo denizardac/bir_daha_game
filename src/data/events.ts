@@ -3,9 +3,9 @@ import type { EventCard } from '@/types';
 export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_transfer_teklif', category: 'transfer', icon: '💰', title: 'Transfer Teklifi',
-    description: 'Rakip kulüp yıldız oyuncunu istiyor.',
-    optionA: { label: 'SAT', description: '3 çek hakkı · Kadro -1 oyuncu' },
-    optionB: { label: 'REDDET', description: 'Moral +15 · Takım bütünlüğü' },
+    description: 'Rakip kulüp kadrodaki en yüksek ratingli saha oyuncunu transfer listesine koymanı istiyor.',
+    optionA: { label: 'SAT', description: 'Yıldız oyuncu gider · 3 ekstra çek hakkı' },
+    optionB: { label: 'REDDET', description: 'Oyuncu kalır · Moral +15' },
   },
   {
     id: 'evt_genc_yetenek', category: 'transfer', icon: '🌱', title: 'Genç Yetenek',
@@ -69,9 +69,9 @@ export const EVENT_CARDS: EventCard[] = [
   },
   {
     id: 'evt_efsane_konusma', category: 'ozel', icon: '🏆', title: 'Efsane Konuşması',
-    description: 'Efsane eski oyuncu soyunma odasına geldi.',
-    optionA: { label: 'DİNLE', description: 'Moral +30 (bir seferlik)' },
-    optionB: { label: 'GEÇ', description: '+50 puan' },
+    description: 'Kulüp efsanesi soyunma odasına girdi. Gençlerin gözleri parlıyor, tecrübesini paylaşmak istiyor.',
+    optionA: { label: 'DİNLE', description: 'Takım toplantısı · Moral +30' },
+    optionB: { label: 'ANTRENMANA GEÇ', description: 'Kısa teşekkür · +50 puan' },
   },
   {
     id: 'evt_var', category: 'ozel', icon: '📺', title: 'VAR Arızası',

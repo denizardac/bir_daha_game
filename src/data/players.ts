@@ -1,3 +1,4 @@
+import { createRng } from '@/engine/seed';
 import type { PlayerCard, Position, Rarity, Tag } from '@/types';
 
 type PlayerTemplate = {
@@ -204,16 +205,56 @@ export const PLAYER_POOL: PlayerCard[] = [
   ...generateExtraPlayers(),
 ];
 
-export function getStartingSquad(): PlayerCard[] {
-  return [
-    makePlayer({ name: 'Can Arslan', rating: 62, position: 'KL', rarity: 'normal', tags: [] }, 'start_kl', true),
-    makePlayer({ name: 'Burak Koç', rating: 61, position: 'STP', rarity: 'normal', tags: ['GÜÇLÜ'] }, 'start_stp1', true),
-    makePlayer({ name: 'Kerem Aydın', rating: 60, position: 'STP', rarity: 'normal', tags: [] }, 'start_stp2', true),
-    makePlayer({ name: 'Mert Çelik', rating: 63, position: 'STP', rarity: 'normal', tags: [] }, 'start_stp3', true),
-    makePlayer({ name: 'Deniz Acar', rating: 62, position: 'OS', rarity: 'normal', tags: [] }, 'start_os', true),
-    makePlayer({ name: 'Hakan Yılmaz', rating: 61, position: 'DOS', rarity: 'normal', tags: [] }, 'start_dos', true),
-    makePlayer({ name: 'Ali Rıza', rating: 60, position: 'SLK', rarity: 'normal', tags: [] }, 'start_slk', true),
-  ];
+const DAILY_START_SQUAD: PlayerTemplate[] = [
+  { name: 'Can Arslan', rating: 62, position: 'KL', rarity: 'normal', tags: [] },
+  { name: 'Burak Koç', rating: 61, position: 'STP', rarity: 'normal', tags: ['GÜÇLÜ'] },
+  { name: 'Kerem Aydın', rating: 60, position: 'STP', rarity: 'normal', tags: [] },
+  { name: 'Mert Çelik', rating: 63, position: 'STP', rarity: 'normal', tags: [] },
+  { name: 'Deniz Acar', rating: 62, position: 'OS', rarity: 'normal', tags: [] },
+  { name: 'Hakan Yılmaz', rating: 61, position: 'DOS', rarity: 'normal', tags: [] },
+  { name: 'Ali Rıza', rating: 60, position: 'SLK', rarity: 'normal', tags: [] },
+];
+
+const FREE_START_POSITIONS: Position[] = ['KL', 'STP', 'STP', 'SLB', 'OS', 'DOS', 'SLK'];
+
+const BAD_START_TAGS: Tag[] = ['GERİLEYEN', 'SAKATLIK RİSKİ', 'PERFORMANS DÜŞÜŞÜ', 'TARTIŞMALI'];
+
+function pickStartTrait(rng: () => number, position: Position): Tag[] {
+  const pool: Tag[] = position === 'KL'
+    ? ['DAYANIKLI', 'SOĞUKKANLI']
+    : position === 'STP'
+      ? ['GÜÇLÜ', 'DAYANIKLI', 'YERLİ']
+      : position === 'OS' || position === 'DOS'
+        ? ['TEKNİK', 'YERLİ', 'ASİSTÇİ']
+        : ['HIZLI', 'YERLİ', 'TEKNİK'];
+  if (rng() > 0.42) return [];
+  return [pool[Math.floor(rng() * pool.length)]!];
+}
+
+export function getStartingSquad(seed?: string, isDaily = true): PlayerCard[] {
+  if (isDaily) {
+    return DAILY_START_SQUAD.map((p, i) => makePlayer(p, `start_${i}`, true));
+  }
+
+  const rng = createRng(seed ?? 'free', 'start-squad');
+  const usedNames = new Set<string>();
+  const pool = PLAYER_POOL.filter((p) => !p.tags.some((t) => BAD_START_TAGS.includes(t)));
+
+  return FREE_START_POSITIONS.map((pos, i) => {
+    let candidates = pool.filter((p) => p.position === pos && !usedNames.has(p.name));
+    if (!candidates.length) candidates = pool.filter((p) => p.position === pos);
+    const template = candidates[Math.floor(rng() * candidates.length)]!;
+    usedNames.add(template.name);
+    const rating = Math.max(56, Math.min(74, template.rating + Math.floor(rng() * 5) - 2));
+    const tags = pickStartTrait(rng, pos);
+    return makePlayer({
+      name: template.name,
+      rating,
+      position: pos,
+      rarity: rarityFromRating(rating),
+      tags: tags.length ? tags : template.tags.slice(0, 1),
+    }, `start_${pos}_${i}`, true);
+  });
 }
 
 export function clonePlayer(player: PlayerCard): PlayerCard {

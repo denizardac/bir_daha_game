@@ -10,8 +10,9 @@ describe('drawOffers', () => {
   });
 
   it('is deterministic for same seed and round', () => {
-    const a = drawOffers('stable-seed', 5, 1, ['p1'], [], false, 0);
-    const b = drawOffers('stable-seed', 5, 1, ['p1'], [], false, 0);
+    const squad = [{ id: 'p1', name: 'Deniz Acar', position: 'OS' as const }];
+    const a = drawOffers('stable-seed', 5, 1, squad, [], false, 0);
+    const b = drawOffers('stable-seed', 5, 1, squad, [], false, 0);
     expect(a.map((c) => c.id)).toEqual(b.map((c) => c.id));
   });
 

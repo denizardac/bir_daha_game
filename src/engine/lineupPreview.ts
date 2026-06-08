@@ -1,5 +1,5 @@
 import { clonePlayer } from '@/data/players';
-import { getPlayablePositions, slotFitIndex } from '@/data/positionFlexibility';
+import { getPlayablePositions, getSlotFitTier, slotFitIndex } from '@/data/positionFlexibility';
 import { getTacticCategory } from '@/data/tactics';
 import { getFormationDotsByKey, getFormationKey } from '@/engine/tacticVisual';
 import { getDepartureScore, selectDepartingPlayer } from '@/engine/squadLogic';
@@ -68,10 +68,10 @@ const FORMATION_SLOTS: Record<string, FormationSlotDef[]> = {
     { label: 'STP', preferred: ['STP'], zone: 'savunma' },
     { label: 'STP', preferred: ['STP'], zone: 'savunma' },
     { label: 'SĞB', preferred: ['SÖB', 'STP'], zone: 'savunma' },
-    { label: 'SLK', preferred: ['SLK', 'OOS', 'OS'], zone: 'hucum' },
+    { label: 'SLK', preferred: ['SLK', 'OOS'], zone: 'hucum' },
     { label: 'DOS', preferred: ['DOS', 'OS'], zone: 'orta' },
     { label: 'OS', preferred: ['OS', 'OOS', 'DOS'], zone: 'orta' },
-    { label: 'SĞK', preferred: ['SÖK', 'OOS', 'OS'], zone: 'hucum' },
+    { label: 'SĞK', preferred: ['SÖK'], zone: 'hucum' },
     { label: 'SF', preferred: ['SF'], zone: 'hucum' },
     { label: 'SF', preferred: ['SF'], zone: 'hucum' },
   ],
@@ -150,7 +150,12 @@ export function getActiveFormationLabel(activeTactics: ActiveTactic[]): string {
 }
 
 function isOutOfPosition(player: PlayerCard, slot: FormationSlotDef): boolean {
-  return slotFitIndex(player, slot.preferred) === 99;
+  const tier = getSlotFitTier(player, slot.preferred);
+  return tier === 'flex' || tier === 'forced';
+}
+
+function isGkSlot(slots: FormationSlotDef[], idx: number): boolean {
+  return slots[idx]?.zone === 'kaleci';
 }
 
 function optimizeSlotAssignments(
@@ -164,6 +169,7 @@ function optimizeSlotAssignments(
         const pi = assigned[i];
         const pj = assigned[j];
         if (!pi || !pj) continue;
+        if (isGkSlot(slots, i) || isGkSlot(slots, j) || pi.position === 'KL' || pj.position === 'KL') continue;
         const before = slotFitIndex(pi, slots[i]!.preferred) + slotFitIndex(pj, slots[j]!.preferred);
         const after = slotFitIndex(pi, slots[j]!.preferred) + slotFitIndex(pj, slots[i]!.preferred);
         if (
@@ -239,8 +245,53 @@ function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (
     take(bestPlayer, bestSlot);
   }
 
+  displaceWeakerStarters(slots, assigned, squad);
   optimizeSlotAssignments(slots, assigned);
   return assigned;
+}
+
+/** Yüksek ratingli yedek, düşük ratingli starter'ın yerine geçer */
+function displaceWeakerStarters(
+  slots: FormationSlotDef[],
+  assigned: (PlayerCard | null)[],
+  squad: PlayerCard[],
+): void {
+  const onPitch = new Set(assigned.filter(Boolean).map((p) => p!.id));
+
+  for (let pass = 0; pass < 3; pass++) {
+    let changed = false;
+    const bench = squad
+      .filter((p) => !onPitch.has(p.id) && p.position !== 'KL')
+      .sort((a, b) => b.currentRating - a.currentRating);
+
+    for (const challenger of bench) {
+      for (let i = 0; i < slots.length; i++) {
+        if (isGkSlot(slots, i)) continue;
+        const occupant = assigned[i];
+        if (!occupant || occupant.position === 'KL') continue;
+
+        const chFit = slotFitIndex(challenger, slots[i]!.preferred);
+        const occFit = slotFitIndex(occupant, slots[i]!.preferred);
+        if (chFit >= 99) continue;
+        if (challenger.currentRating <= occupant.currentRating) continue;
+        if (chFit > occFit) continue;
+        if (chFit === occFit && getSlotFitTier(challenger, slots[i]!.preferred) !== 'ideal') continue;
+
+        assigned[i] = challenger;
+        onPitch.delete(occupant.id);
+        onPitch.add(challenger.id);
+        changed = true;
+        break;
+      }
+    }
+    if (!changed) break;
+  }
+}
+
+export function getStartingEleven(squad: PlayerCard[], activeTactics: ActiveTactic[]): PlayerCard[] {
+  const formationKey = getActiveFormationKey(activeTactics);
+  const lineup = assignSquadToFormation(squad, formationKey);
+  return lineup.filter((s) => s.player).map((s) => s.player!);
 }
 
 export function assignSquadToFormation(squad: PlayerCard[], formationKey: string): LineupSlot[] {
@@ -482,10 +533,21 @@ export function getPositionHints(
       .filter((s) => !s.player)
       .map((s) => s.slot.label);
     const playable = getPlayablePositions(card).map((p) => POSITION_BADGE[p]).join(', ');
-    hints.push({
-      text: 'İlk 11\'de uygun slot yok — seçersen yedek kalır',
-      tone: 'warn',
-    });
+    const weakestStarter = lineupAfter
+      .filter((s) => s.player && s.player.position === card.position)
+      .map((s) => s.player!)
+      .sort((a, b) => a.currentRating - b.currentRating)[0];
+    if (weakestStarter && card.currentRating > weakestStarter.currentRating + 2) {
+      hints.push({
+        text: `İlk 11'de ${POSITION_BADGE[card.position]} dolu — ${weakestStarter.name} (${weakestStarter.currentRating}) yerine geçer, o yedeğe iner`,
+        tone: 'good',
+      });
+    } else {
+      hints.push({
+        text: 'İlk 11\'de uygun slot yok — seçersen yedek kalır',
+        tone: 'warn',
+      });
+    }
     if (emptyLabels.length) {
       hints.push({
         text: `Boş slotlar (${emptyLabels.join(', ')}) bu oyuncunun mevkileriyle uyuşmuyor`,
@@ -505,12 +567,18 @@ export function getPositionHints(
     const idealPos = targetSlot.slot.preferred[0];
     const cardBadge = POSITION_BADGE[card.position];
 
-    if (targetSlot.outOfPosition) {
+    const fitTier = getSlotFitTier(card, targetSlot.slot.preferred);
+    if (fitTier === 'forced') {
       hints.push({
-        text: `${formationLabel} · ${slotName} · dizilişe uyumsuz`,
+        text: `${formationLabel} · ${slotName} · bu mevkiye uygun değil — performans riski`,
         tone: 'warn',
       });
-    } else if (idealPos && card.position === idealPos && !targetSlot.outOfPosition) {
+    } else if (fitTier === 'flex') {
+      hints.push({
+        text: `${formationLabel} · ${slotName} · alışık olmadığı rol — düşük performans riski`,
+        tone: 'warn',
+      });
+    } else if (idealPos && card.position === idealPos) {
       hints.push({
         text: `${formationLabel} · ${slotName} · ideal pozisyon`,
         tone: 'good',

@@ -12,8 +12,8 @@ const e = (
 
 export const EVENT_EFFECTS: Record<string, Pair> = {
   evt_transfer_teklif: e(
-    { removeWeakest: true, description: 'Oyuncu satıldı, takım küçüldü.' },
-    { moraleDelta: 15, description: 'Teklif reddedildi, moral yükseldi.' },
+    { removeWeakest: true, grantRerolls: 3, description: 'Yıldız oyuncu satıldı — ekstra çek hakkı.' },
+    { moraleDelta: 15, description: 'Teklif reddedildi — takım birlikte kaldı, moral yükseldi.' },
   ),
   evt_genc_yetenek: e(
     { addYouth: true, description: 'Genç yetenek kadroya katıldı.' },
@@ -56,8 +56,8 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { moraleDelta: 5, description: 'Yedeklerle devam.' },
   ),
   evt_efsane_konusma: e(
-    { moraleDelta: 30, description: 'Efsane konuşması moral patlattı!' },
-    { scoreDelta: 50, description: 'Antrenmana geçildi.' },
+    { moraleDelta: 30, description: 'Efsane dinlendi — soyunma odası ayağa kalktı, moral patladı.' },
+    { scoreDelta: 50, description: 'Kısa teşekkür edildi, antrenmana dönüldü.' },
   ),
   evt_var: e(
     { scoreDelta: -100, description: 'Gol iptal edildi.' },

@@ -1,7 +1,13 @@
 import { getActiveSynergies } from '@/data/synergies';
+import { getStartingEleven } from '@/engine/lineupPreview';
 import { generateMatchEvents } from '@/engine/matchEvents';
 import { createRng, generateOpponent, seedVariation } from '@/engine/seed';
 import type { ActiveTactic, MatchHighlight, MatchResult, PlayerCard } from '@/types';
+
+function matchSquad(squad: PlayerCard[], activeTactics: ActiveTactic[]): PlayerCard[] {
+  const starters = getStartingEleven(squad, activeTactics);
+  return starters.length ? starters : squad;
+}
 
 const GOAL_WEIGHTS = [
   { goals: 0, weight: 15 },
@@ -92,7 +98,7 @@ export function simulateMatch(
   round: number,
   squad: PlayerCard[],
   morale: number,
-  maxSquadSize: number,
+  _maxSquadSize: number,
   discoveredSynergies: string[],
   activeTactics: ActiveTactic[] = [],
   matchRisk = 0,
@@ -103,14 +109,15 @@ export function simulateMatch(
   const opponent = generateOpponent(rng, round === 15 ? round + 2 : round);
   const variation = seedVariation(rng);
 
-  const ourStrength = squadStrength(squad, morale, maxSquadSize, activeTactics) * variation;
+  const starters = matchSquad(squad, activeTactics);
+  const ourStrength = squadStrength(starters, morale, 11, activeTactics) * variation;
   const theirStrength = opponent.rating * (0.9 + rng() * 0.2) * (1 + matchRisk);
 
-  let goalsFor = rollGoals(rng, attackPower(squad, activeTactics, ourStrength));
+  let goalsFor = rollGoals(rng, attackPower(starters, activeTactics, ourStrength));
   let goalsAgainst = rollGoals(rng, theirStrength / Math.max(ourStrength * 0.95, 1));
 
   const behind = goalsAgainst > goalsFor;
-  const synergies = getActiveSynergies(squad, morale, { activeTactics, behindInMatch: behind });
+  const synergies = getActiveSynergies(starters, morale, { activeTactics, behindInMatch: behind });
   const synergyBoost = 1 + synergies.length * 0.04;
   const goalMult = synergies.find((s) => s.goalMultiplier)?.goalMultiplier ?? 1;
 
@@ -159,7 +166,7 @@ export function simulateMatch(
   if (opponent.rating >= 90 && outcome === 'win') wowMoment = 'ŞOKCU GALİBİYET — dev rakibi yendin!';
   if (cleanSheet && outcome === 'win') wowMoment = wowMoment ?? 'TEMİZ SAYFA — kale kapalı!';
 
-  const events = generateMatchEvents(rng, squad, goalsFor, goalsAgainst);
+  const events = generateMatchEvents(rng, starters, goalsFor, goalsAgainst);
 
   return {
     outcome,

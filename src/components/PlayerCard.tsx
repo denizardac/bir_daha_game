@@ -6,7 +6,7 @@ import { HoverTip } from '@/components/HoverTip';
 import { PlayerPortrait } from '@/components/PlayerPortrait';
 import { TagTraitBadges } from '@/components/TagTraitBadges';
 import { TAG_ICONS } from '@/data/tags';
-import type { ActiveTactic, PlayerCard as PlayerCardType, Rarity } from '@/types';
+import type { ActiveTactic, PlayerCard as PlayerCardType } from '@/types';
 import { RARITY_LABELS } from '@/types';
 import { POSITION_LABELS, POSITION_BADGE, formatPosition } from '@/utils/positionStyle';
 import { getPlayerCardThemeClass, getPlayerCardThemeVars } from '@/utils/playerCardTheme';
@@ -23,13 +23,6 @@ interface Props {
   showTagHint?: boolean;
   tipPlacement?: 'left' | 'right' | 'auto';
 }
-
-const RARITY_PICK_HINT: Record<Rarity, string> = {
-  normal: 'Temel kart — kadroyu doldurmak için güvenli seçim',
-  iyi: 'Sağlam tercih — rating ortalamasını dengeler',
-  güçlü: 'Güçlü kart — ortalamayı belirgin yükseltir',
-  efsane: 'Efsanevi nadirlik — en yüksek tavan, runu taşıyabilir',
-};
 
 function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergies'][number] }) {
   const pctBefore = Math.min(100, (s.before / s.required) * 100);
@@ -138,7 +131,6 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
               ) : (
                 <p className="card-insight-line card-insight-line--lead">{insight.summary}</p>
               )}
-              <p className="card-insight-line card-insight-line--rarity">{RARITY_PICK_HINT[card.rarity]}</p>
               {insight.tagBites.length > 0 && (
                 <ul className="card-tag-bites card-tag-bites--compact">
                   {insight.tagBites.map(({ tag, desc }) => (

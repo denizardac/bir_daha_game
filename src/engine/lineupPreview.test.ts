@@ -51,6 +51,46 @@ describe('bench-aware replacement', () => {
     expect(yilmazSlot?.slot.label).toBe('DOS');
   });
 
+  it('does not put OS midfielder on SĞK wing slot', () => {
+    const gk = fieldPlayer({ id: 'gk', name: 'Kaleci', position: 'KL', currentRating: 70, rating: 70 });
+    const polat = fieldPlayer({ id: 'efe', name: 'Efe Polat', position: 'OS', currentRating: 76, rating: 76 });
+    const wing = fieldPlayer({ id: 'wing', name: 'Kanatçı', position: 'SÖK', currentRating: 67, rating: 67 });
+    const fillers = ['stp1', 'stp2', 'slb', 'sgb', 'dos', 'slk', 'sf1', 'sf2'].map((id, i) =>
+      fieldPlayer({
+        id,
+        name: `Oyuncu ${i}`,
+        position: (['STP', 'STP', 'SLB', 'SÖB', 'DOS', 'SLK', 'SF', 'SF'] as const)[i]!,
+        currentRating: 60 + i,
+        rating: 60 + i,
+      }),
+    );
+    const squad = [gk, ...fillers, polat, wing];
+    const lineup = assignSquadToFormation(squad, '442');
+    const polatSlot = lineup.find((s) => s.player?.id === 'efe');
+    expect(polatSlot?.slot.label).not.toBe('SĞK');
+  });
+
+  it('promotes higher-rated STP over weaker starter', () => {
+    const gk = fieldPlayer({ id: 'gk', name: 'KL', position: 'KL', currentRating: 70, rating: 70 });
+    const weak = fieldPlayer({ id: 'weak', name: 'Zayıf', position: 'STP', currentRating: 60, rating: 60 });
+    const mid = fieldPlayer({ id: 'mid', name: 'Orta', position: 'STP', currentRating: 63, rating: 63 });
+    const ramos = fieldPlayer({ id: 'ramos', name: 'Diego Ramos', position: 'STP', currentRating: 79, rating: 79 });
+    const fillers = ['slb', 'sgb', 'dos', 'os', 'slk', 'sgk', 'sf1', 'sf2'].map((id, i) =>
+      fieldPlayer({
+        id,
+        name: `F ${i}`,
+        position: (['SLB', 'SÖB', 'DOS', 'OS', 'SLK', 'SÖK', 'SF', 'SF'] as const)[i]!,
+        currentRating: 65 + i,
+        rating: 65 + i,
+      }),
+    );
+    const squad = [gk, weak, mid, ...fillers, ramos];
+    const lineup = assignSquadToFormation(squad, '442');
+    const ramosSlot = lineup.find((s) => s.player?.id === 'ramos');
+    expect(ramosSlot).toBeTruthy();
+    expect(ramosSlot?.slot.label).toBe('STP');
+  });
+
   it('adds player when squad not full', () => {
     const squad = getStartingSquad().slice(0, 5);
     const incoming = {

@@ -14,19 +14,39 @@ export interface EventOutcome {
   moraleDelta: number;
   scoreDelta: number;
   removeWeakest?: boolean;
+  sellPlayerId?: string;
+  sellPlayerName?: string;
   addYouth?: boolean;
+  grantRerolls?: number;
   nextMatchRisk?: number;
   nextMatchBonus?: number;
   description: string;
 }
 
+function getStarFieldPlayer(squad: PlayerCard[]): PlayerCard | null {
+  const field = squad.filter((p) => p.position !== 'KL');
+  if (!field.length) return squad[0] ?? null;
+  return [...field].sort((a, b) => b.currentRating - a.currentRating)[0]!;
+}
+
 export function resolveEvent(
   event: EventCard,
   choice: 'A' | 'B',
-  _state: Pick<GameState, 'squad' | 'morale' | 'score'>,
+  state: Pick<GameState, 'squad' | 'morale' | 'score' | 'activeTactics'>,
 ): EventOutcome {
   const pair = EVENT_EFFECTS[event.id];
-  if (pair) return choice === 'A' ? pair[0] : pair[1];
+  if (pair) {
+    const outcome = choice === 'A' ? { ...pair[0] } : { ...pair[1] };
+    if (event.id === 'evt_transfer_teklif' && choice === 'A') {
+      const star = getStarFieldPlayer(state.squad);
+      if (star) {
+        outcome.sellPlayerId = star.id;
+        outcome.sellPlayerName = star.name;
+        outcome.description = `${star.name} (${star.currentRating}) satıldı — 3 ekstra çek hakkı kazandın.`;
+      }
+    }
+    return outcome;
+  }
   return {
     moraleDelta: choice === 'B' ? 5 : 0,
     scoreDelta: 0,

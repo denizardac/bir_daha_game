@@ -29,7 +29,7 @@ import {
   getRank,
   getRankPercent,
 } from '@/engine/leaderboard';
-import { applyPlayerToSquad } from '@/engine/lineupPreview';
+import { applyPlayerToSquad, getReplacementPlayer } from '@/engine/lineupPreview';
 import {
   applyGerileyen,
   applyMentorGrowth,
@@ -119,7 +119,7 @@ function initialRun(
   displayName: string,
   streakBonus = getDailyStreakBonus(0),
 ): GameState {
-  const squad = getStartingSquad();
+  const squad = getStartingSquad(seed, isDailySeed);
   return {
     seed,
     isDailySeed,
@@ -133,7 +133,7 @@ function initialRun(
     streak: 0,
     phase: 'cardSelect',
     roundHistory: [],
-    currentOffers: drawOffers(seed, 1, 0, squad.map((p) => p.id), [], false),
+    currentOffers: drawOffers(seed, 1, 0, squad, [], false),
     currentMatch: null,
     currentEvent: null,
     activeTactics: [],
@@ -194,7 +194,7 @@ function drawRoundOffers(state: Pick<GameState, 'seed' | 'round' | 'lossesCount'
     state.seed,
     state.round,
     state.lossesCount,
-    state.squad.map((p) => p.id),
+    state.squad,
     state.activeTactics.map((t) => t.id),
     state.recoveryGuaranteed,
     state.offersRerollIndex ?? 0,
@@ -384,7 +384,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const saved = loadPersisted().currentRun as Partial<RunSnapshot> | null;
     if (!isResumableRun(saved) || !saved?.seed) return;
 
-    const squad = saved.squad ?? getStartingSquad();
+    const squad = saved.squad ?? getStartingSquad(saved.seed, saved.isDailySeed ?? true);
     const phase = saved.phase ?? 'cardSelect';
     let currentOffers = saved.currentOffers ?? [];
     if (phase === 'cardSelect' && currentOffers.length === 0) {
@@ -392,7 +392,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         saved.seed,
         saved.round ?? 1,
         saved.lossesCount ?? 0,
-        squad.map((x) => x.id),
+        squad,
         saved.activeTactics?.map((t) => t.id) ?? [],
         saved.recoveryGuaranteed ?? false,
         saved.offersRerollIndex ?? 0,
@@ -457,13 +457,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     playSound('tick', loadPersisted().soundEnabled);
     const newIndex = state.offersRerollIndex + 1;
-    const otherIds = offers.filter((_, i) => i !== slotIndex).map((o) => o.id);
+    const otherOffers = offers.filter((_, i) => i !== slotIndex).filter(isPlayerCard);
     const replacement = rerollSinglePlayerOffer(
       state.seed,
       state.round,
       state.lossesCount,
-      state.squad.map((p) => p.id),
-      otherIds,
+      state.squad,
+      otherOffers,
       slotIndex,
       newIndex,
       state.recoveryGuaranteed,
@@ -492,7 +492,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.seed,
       state.round,
       state.lossesCount,
-      state.squad.map((p) => p.id),
+      state.squad,
       state.activeTactics.map((t) => t.id),
       state.recoveryGuaranteed,
       newIndex,
@@ -647,9 +647,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let score = state.score + outcome.scoreDelta;
     let morale = Math.min(100, Math.max(0, state.morale + outcome.moraleDelta));
     if (state.squad.length <= 5) morale = Math.max(DANGER_MORALE_FLOOR, morale);
+    let rerollsRemaining = state.rerollsRemaining;
     if (outcome.removeWeakest && squad.length > 4) {
-      const w = getWeakestPlayer(squad);
-      squad = squad.filter((p) => p.id !== w.id);
+      const sellTarget = outcome.sellPlayerId
+        ? squad.find((p) => p.id === outcome.sellPlayerId) ?? getWeakestPlayer(squad)
+        : getReplacementPlayer(squad, squad[0]!, state.morale, state.activeTactics);
+      squad = squad.filter((p) => p.id !== sellTarget.id);
+    }
+    if (outcome.grantRerolls) {
+      rerollsRemaining = Math.min(REROLLS_PER_RUN + 2, rerollsRemaining + outcome.grantRerolls);
     }
     if (outcome.addYouth && squad.length < state.maxSquadSize) {
       const player = state.currentEvent?.id === 'evt_kiralik'
@@ -662,6 +668,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       squad,
       score,
       morale,
+      rerollsRemaining,
       currentEvent: null,
       eventResolvedThisRound: true,
       usedEventIds: [...state.usedEventIds, state.currentEvent.id],
@@ -683,7 +690,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     squad = applyGerileyen(squad);
 
     let morale = Math.min(100, state.morale + passiveMoraleFromSquad(squad));
-    const synergyMin = getActiveSynergies(squad, morale).find((s) => s.minMorale)?.minMorale;
+    const synergyMin = getActiveSynergies(squad, morale, { activeTactics: state.activeTactics }).find((s) => s.minMorale)?.minMorale;
     if (synergyMin) morale = Math.max(morale, synergyMin);
 
     let { streak, lossesCount, score, flawless } = state;
