@@ -84,10 +84,10 @@ const OPPONENT_STYLES = ['saldırgan', 'dengeli', 'savunmacı'] as const;
 const OPPONENT_PREFIX = ['FC', 'SK', 'FK', 'Gençlik', 'Birliği', 'Spor', 'United', 'Athletic'];
 const OPPONENT_CITIES = ['Demir', 'Kuzey', 'Vadi', 'Ege', 'Karadeniz', 'Boğaziçi', 'Anadolu', 'Rüzgar', 'Altın', 'Şehir'];
 
-export function generateOpponent(rng: () => number, round: number) {
+export function generateOpponent(rng: () => number, round: number, preferProcedural = false) {
   const [min, max] = getOpponentRatingRange(round);
   const rating = Math.floor(min + rng() * (max - min + 1));
-  const procedural = rng() < 0.55;
+  const procedural = preferProcedural || rng() < 0.72;
   const name = procedural
     ? `${pickOne(rng, OPPONENT_CITIES)} ${pickOne(rng, OPPONENT_PREFIX)}`
     : pickOne(rng, OPPONENT_NAMES);

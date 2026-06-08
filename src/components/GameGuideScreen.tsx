@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { EVENT_CARDS, EVENT_ROUNDS } from '@/data/events';
+import { getEventPresentation } from '@/data/eventVisuals';
 import {
   GUIDE_EVENT_INFO,
   GUIDE_OVERVIEW,
@@ -274,19 +275,23 @@ function EventsSection() {
 
       <GuideCard title="Örnek olaylar">
         <div className="guide-event-list">
-          {samples.map((e) => (
-            <div key={e.id} className="guide-event-row">
-              <span className="guide-event-icon" aria-hidden>{e.icon}</span>
-              <div className="guide-event-body">
-                <p className="guide-event-title">{e.title}</p>
-                <p className="guide-text">{e.description}</p>
-                <p className="guide-event-options">
-                  <span>A: {e.optionA.description}</span>
-                  <span>B: {e.optionB.description}</span>
-                </p>
+          {samples.map((e) => {
+            const p = getEventPresentation(e.id);
+            return (
+              <div key={e.id} className="guide-event-row">
+                <span className="guide-event-icon" aria-hidden>{e.icon}</span>
+                <div className="guide-event-body">
+                  <p className="guide-event-title">{e.title}</p>
+                  <p className="guide-text guide-text--muted">{p.atmosphere}</p>
+                  <p className="guide-text">{p.narrative}</p>
+                  <p className="guide-event-options">
+                    <span>A {p.choiceA.icon}: {e.optionA.label} — {p.choiceA.flavor}</span>
+                    <span>B {p.choiceB.icon}: {e.optionB.label} — {p.choiceB.flavor}</span>
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <p className="guide-footnote">+ {EVENT_CARDS.length - samples.length} farklı olay daha run sırasında çıkabilir.</p>
       </GuideCard>

@@ -48,7 +48,12 @@ function upgradeWeakestCard(cards: PlayerCard[], pool: PlayerCard[], rng: () => 
     (minI, c, i, arr) => (c.currentRating < arr[minI]!.currentRating ? i : minI),
     0,
   );
-  const backup = pool.filter((p) => p.currentRating >= minRating && !result.some((c) => c.id === p.id));
+  const takenNames = new Set(result.map((c) => c.name.trim().toLowerCase()));
+  const backup = pool.filter(
+    (p) => p.currentRating >= minRating
+      && !result.some((c) => c.id === p.id)
+      && !takenNames.has(p.name.trim().toLowerCase()),
+  );
   if (backup.length) {
     const upgraded = clonePlayer(backup[Math.floor(rng() * Math.min(backup.length, 6))]!);
     if (markBoost) upgraded.offerBoosted = true;
@@ -87,13 +92,25 @@ function squadNameSet(squad: SquadRef[]): Set<string> {
 function filterDrawPool(pool: PlayerCard[], squad: SquadRef[], usedNames: Set<string>): PlayerCard[] {
   const squadNames = squadNameSet(squad);
   const squadIds = new Set(squad.map((p) => p.id));
-  const twoGks = squad.filter((p) => p.position === 'KL').length >= 2;
+  const hasGk = squad.some((p) => p.position === 'KL');
   return pool.filter((p) => {
     const nameKey = p.name.trim().toLowerCase();
     if (squadIds.has(p.id) || squadNames.has(nameKey) || usedNames.has(nameKey)) return false;
-    if (twoGks && p.position === 'KL') return false;
+    if (hasGk && p.position === 'KL') return false;
     return true;
   });
+}
+
+function dedupeOfferNames(cards: PlayerCard[]): PlayerCard[] {
+  const seen = new Set<string>();
+  const out: PlayerCard[] = [];
+  for (const card of cards) {
+    const key = card.name.trim().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(card);
+  }
+  return out;
 }
 
 function drawPlayers(
@@ -123,8 +140,8 @@ function drawPlayers(
       cards.push(clonePlayer(p));
     }
     const upgraded = silentCardUpgrade(cards, pool, round, rng);
-    if (rerollIndex > 0) return upgradeWeakestCard(upgraded, pool, rng, 68 + rerollIndex * 2);
-    return upgraded;
+    if (rerollIndex > 0) return dedupeOfferNames(upgradeWeakestCard(upgraded, pool, rng, 68 + rerollIndex * 2));
+    return dedupeOfferNames(upgraded);
   }
 
   for (let i = 0; i < count; i++) {
@@ -138,14 +155,14 @@ function drawPlayers(
   if (round <= 3) {
     const pool = filterDrawPool(rawPool, squad, new Set());
     const upgraded = silentCardUpgrade(cards, pool, round, rng);
-    if (rerollIndex > 0) return upgradeWeakestCard(upgraded, pool, rng, 68 + rerollIndex * 2);
-    return upgraded;
+    if (rerollIndex > 0) return dedupeOfferNames(upgradeWeakestCard(upgraded, pool, rng, 68 + rerollIndex * 2));
+    return dedupeOfferNames(upgraded);
   }
   if (rerollIndex > 0 && cards.length > 0) {
     const pool = filterDrawPool(rawPool, squad, new Set());
-    return upgradeWeakestCard(cards, pool, rng, 66 + rerollIndex * 2);
+    return dedupeOfferNames(upgradeWeakestCard(cards, pool, rng, 66 + rerollIndex * 2));
   }
-  return cards;
+  return dedupeOfferNames(cards);
 }
 
 function drawTacticBonusOffers(

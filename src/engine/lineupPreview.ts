@@ -247,6 +247,34 @@ function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (
 
   displaceWeakerStarters(slots, assigned, squad);
   optimizeSlotAssignments(slots, assigned);
+
+  for (let i = 0; i < assigned.length; i++) {
+    const p = assigned[i];
+    if (!p) continue;
+    if (p.position === 'KL' && !isGkSlot(slots, i)) assigned[i] = null;
+    if (p.position !== 'KL' && isGkSlot(slots, i)) assigned[i] = null;
+  }
+
+  const usedIds = () => new Set(assigned.filter(Boolean).map((p) => p!.id));
+  const gkSlotIdx = slots.findIndex((s) => s.zone === 'kaleci');
+  if (gkSlotIdx >= 0 && !assigned[gkSlotIdx]) {
+    const gk = squad
+      .filter((p) => p.position === 'KL' && !usedIds().has(p.id))
+      .sort((a, b) => b.currentRating - a.currentRating)[0];
+    if (gk) assigned[gkSlotIdx] = gk;
+  }
+
+  for (let i = 0; i < assigned.length; i++) {
+    if (assigned[i] || isGkSlot(slots, i)) continue;
+    const slot = slots[i]!;
+    const pick = squad
+      .filter((p) => !usedIds().has(p.id) && p.position !== 'KL')
+      .map((p) => ({ p, fit: slotFitIndex(p, slot.preferred) }))
+      .filter((x) => x.fit < 99)
+      .sort((a, b) => a.fit - b.fit || b.p.currentRating - a.p.currentRating)[0];
+    if (pick) assigned[i] = pick.p;
+  }
+
   return assigned;
 }
 
@@ -273,9 +301,14 @@ function displaceWeakerStarters(
         const chFit = slotFitIndex(challenger, slots[i]!.preferred);
         const occFit = slotFitIndex(occupant, slots[i]!.preferred);
         if (chFit >= 99) continue;
-        if (challenger.currentRating <= occupant.currentRating) continue;
+        const ratingGap = challenger.currentRating - occupant.currentRating;
+        if (ratingGap <= 0) continue;
         if (chFit > occFit) continue;
-        if (chFit === occFit && getSlotFitTier(challenger, slots[i]!.preferred) !== 'ideal') continue;
+        const idealChallenger = getSlotFitTier(challenger, slots[i]!.preferred) === 'ideal';
+        const samePosition = challenger.position === occupant.position;
+        if (!idealChallenger && !samePosition && ratingGap < 6) continue;
+        if (!idealChallenger && samePosition && ratingGap < 4) continue;
+        if (!idealChallenger && chFit === occFit && ratingGap < 8) continue;
 
         assigned[i] = challenger;
         onPitch.delete(occupant.id);
@@ -335,7 +368,21 @@ export function simulateSquadAfterPick(
   return applyPlayerToSquad(squad, card, maxSquadSize, morale, activeTactics);
 }
 
-/** Kadro doluyken kimi çıkaracağını belirler — önce yedek, özellikle yedek kaleci */
+const INCOMING_PREVIEW_ID = '__incoming_preview__';
+
+function squadWithIncomingPreview(squad: PlayerCard[], incoming: PlayerCard): PlayerCard[] {
+  return [...squad, { ...clonePlayer(incoming), id: INCOMING_PREVIEW_ID }];
+}
+
+/** 12 kişilik kadroda ilk 11'e girmeyenler (gelen oyuncu dahil) */
+function playersOutsideLineup(squad: PlayerCard[], activeTactics: ActiveTactic[]): PlayerCard[] {
+  const formationKey = getActiveFormationKey(activeTactics);
+  const lineup = assignSquadToFormation(squad, formationKey);
+  const xiIds = new Set(lineup.filter((s) => s.player).map((s) => s.player!.id));
+  return squad.filter((p) => !xiIds.has(p.id));
+}
+
+/** Kadro doluyken kimi çıkaracağını belirler — önce ilk 11'den düşen, aynı mevkide en zayıf */
 export function getReplacementPlayer(
   squad: PlayerCard[],
   incoming: PlayerCard,
@@ -349,6 +396,24 @@ export function getReplacementPlayer(
     }
   }
 
+  const hypothetical = squadWithIncomingPreview(squad, incoming);
+  const previewInXi = assignSquadToFormation(hypothetical, getActiveFormationKey(activeTactics))
+    .some((s) => s.player?.id === INCOMING_PREVIEW_ID);
+
+  if (previewInXi) {
+    const dropped = playersOutsideLineup(hypothetical, activeTactics)
+      .filter((p) => p.id !== INCOMING_PREVIEW_ID);
+    if (dropped.length) {
+      const samePos = dropped.filter((p) => p.position === incoming.position);
+      const pool = samePos.length ? samePos : dropped;
+      return [...pool].sort((a, b) => {
+        const ratingDiff = a.currentRating - b.currentRating;
+        if (ratingDiff !== 0) return ratingDiff;
+        return getDepartureScore(a, morale) - getDepartureScore(b, morale);
+      })[0]!;
+    }
+  }
+
   const lineupIds = getLineupPlayerIds(squad, activeTactics);
   const bench = squad.filter((p) => !lineupIds.has(p.id));
 
@@ -358,6 +423,13 @@ export function getReplacementPlayer(
       if (benchGk) return benchGk;
     }
     return [...bench].sort((a, b) => getDepartureScore(a, morale) - getDepartureScore(b, morale))[0]!;
+  }
+
+  const samePosStarters = getStartingEleven(squad, activeTactics)
+    .filter((p) => p.position === incoming.position)
+    .sort((a, b) => a.currentRating - b.currentRating);
+  if (samePosStarters.length && incoming.currentRating > samePosStarters[0]!.currentRating) {
+    return samePosStarters[0]!;
   }
 
   return selectDepartingPlayer(squad, morale);
@@ -569,13 +641,13 @@ export function getPositionHints(
 
     const fitTier = getSlotFitTier(card, targetSlot.slot.preferred);
     if (fitTier === 'forced') {
-      hints.push({
-        text: `${formationLabel} · ${slotName} · bu mevkiye uygun değil — performans riski`,
+      hints.unshift({
+        text: `⚠ ${slotName} slotu — ana mevki ${cardBadge} değil, ciddi performans riski`,
         tone: 'warn',
       });
     } else if (fitTier === 'flex') {
-      hints.push({
-        text: `${formationLabel} · ${slotName} · alışık olmadığı rol — düşük performans riski`,
+      hints.unshift({
+        text: `⚠ ${slotName} — ${POSITION_LABELS[card.position]} bu role alışık değil, düşük performans riski`,
         tone: 'warn',
       });
     } else if (idealPos && card.position === idealPos) {
@@ -609,7 +681,25 @@ export function getPositionHints(
     });
   }
 
-  return hints.slice(0, 3);
+  return hints
+    .sort((a, b) => {
+      const rank = (t: PositionHintTone) => (t === 'warn' ? 0 : t === 'good' ? 1 : 2);
+      return rank(a.tone) - rank(b.tone);
+    })
+    .slice(0, 3);
+}
+
+/** Diziliş tahtası (dikey) → maç sahası (yatay) koordinat dönüşümü */
+export function lineupSlotToMatchPitch(slot: LineupSlot): { x: number; y: number; gk?: boolean } {
+  const depth = slot.y;
+  const width = slot.x;
+  const x = Math.round(8 + (100 - depth) * 0.36);
+  const y = Math.round(Math.max(14, Math.min(86, width)));
+  return {
+    x,
+    y,
+    gk: slot.role === 'gk' || slot.player?.position === 'KL',
+  };
 }
 
 export function getSquadLineupSummary(squad: PlayerCard[], activeTactics: ActiveTactic[]) {

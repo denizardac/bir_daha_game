@@ -130,9 +130,10 @@ export function simulateMatch(
   matchRisk = 0,
   matchBonus = 0,
   lossesCount = 0,
+  isDailySeed = true,
 ): MatchResult {
   const rng = createRng(seed, 'match', round);
-  const opponent = generateOpponent(rng, round === 15 ? round + 2 : round);
+  const opponent = generateOpponent(rng, round === 15 ? round + 2 : round, !isDailySeed);
   const variation = seedVariation(rng);
 
   const starters = matchSquad(squad, activeTactics);

@@ -1,0 +1,445 @@
+/* ── Olay sahnesi — taktik tahtası tarzı katmanlı görsel ── */
+
+@keyframes eventSceneFloat {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-10px) rotate(4deg); }
+}
+
+@keyframes eventScenePulse {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.06); }
+}
+
+@keyframes eventSceneScan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.event-scene {
+  position: relative;
+  margin: 1rem 0 0.75rem;
+  min-height: 240px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.event-scene-sky,
+.event-scene-ground,
+.event-scene-vignette,
+.event-scene-scanlines,
+.event-scene-pitch-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.event-scene-sky {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.55) 55%, transparent 100%);
+}
+
+.event-scene-ground {
+  top: 42%;
+  background: linear-gradient(180deg, transparent, rgba(6, 78, 59, 0.35) 30%, rgba(17, 24, 39, 0.95) 100%);
+}
+
+.event-scene--cat-transfer .event-scene-ground {
+  background: linear-gradient(180deg, transparent, rgba(6, 78, 59, 0.4) 25%, rgba(4, 47, 46, 0.95) 100%);
+}
+
+.event-scene--cat-taktik .event-scene-ground {
+  background: linear-gradient(180deg, transparent, rgba(30, 58, 138, 0.35) 25%, rgba(15, 23, 42, 0.95) 100%);
+}
+
+.event-scene--cat-moral .event-scene-ground {
+  background: linear-gradient(180deg, transparent, rgba(120, 53, 15, 0.35) 25%, rgba(28, 25, 23, 0.95) 100%);
+}
+
+.event-scene--cat-fiziksel .event-scene-ground {
+  background: linear-gradient(180deg, transparent, rgba(127, 29, 29, 0.35) 25%, rgba(24, 24, 27, 0.95) 100%);
+}
+
+.event-scene--cat-ozel .event-scene-ground {
+  background: linear-gradient(180deg, transparent, rgba(88, 28, 135, 0.35) 25%, rgba(24, 24, 27, 0.95) 100%);
+}
+
+.event-scene-pitch-lines {
+  opacity: 0.22;
+}
+
+.event-scene-pitch-center {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+
+.event-scene-pitch-box {
+  position: absolute;
+  left: 50%;
+  width: 120px;
+  height: 52px;
+  transform: translateX(-50%);
+  border: 2px solid rgba(255, 255, 255, 0.45);
+}
+
+.event-scene-pitch-box--top { top: 44%; }
+.event-scene-pitch-box--bottom { bottom: 8%; }
+
+.event-scene-vignette {
+  background: radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(0, 0, 0, 0.65) 100%);
+}
+
+.event-scene-scanlines {
+  opacity: 0.04;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 255, 255, 0.15) 2px, rgba(255, 255, 255, 0.15) 4px);
+}
+
+.event-scene-prop {
+  position: absolute;
+  font-size: 2.4rem;
+  line-height: 1;
+  z-index: 2;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.55));
+  animation: eventSceneFloat 4.5s ease-in-out infinite;
+}
+
+.event-scene-prop--0 { left: 10%; top: 18%; animation-delay: 0s; }
+.event-scene-prop--1 { right: 12%; top: 28%; animation-delay: 0.7s; font-size: 2.1rem; }
+.event-scene-prop--2 { left: 38%; bottom: 22%; animation-delay: 1.4s; font-size: 2rem; }
+
+.event-scene-hero-wrap {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-scene-hero-ring {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  animation: eventScenePulse 3s ease-in-out infinite;
+}
+
+.event-scene-hero-ring--inner {
+  width: 84px;
+  height: 84px;
+  opacity: 0.5;
+  animation-delay: 0.5s;
+}
+
+.event-scene-hero-icon {
+  font-size: 4.25rem;
+  line-height: 1;
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.6));
+}
+
+.event-scene-atmosphere {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  margin: 0;
+  padding: 0.55rem 1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: rgba(253, 230, 138, 0.92);
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.72), transparent);
+}
+
+/* Sahne özel gökyüzü tonları */
+.event-scene--phone-deal .event-scene-sky { background: linear-gradient(160deg, #0f172a 0%, #064e3b 50%, #1e1b4b 100%); }
+.event-scene--youth-pipeline .event-scene-sky { background: linear-gradient(160deg, #14532d 0%, #166534 45%, #0f172a 100%); }
+.event-scene--locker-fight .event-scene-sky { background: linear-gradient(160deg, #450a0a 0%, #1c1917 55%, #0f172a 100%); }
+.event-scene--tactics-chalk .event-scene-sky { background: linear-gradient(160deg, #1e3a8a 0%, #172554 50%, #0f172a 100%); }
+.event-scene--rain-pitch .event-scene-sky { background: linear-gradient(160deg, #334155 0%, #1e293b 50%, #0f172a 100%); }
+.event-scene--captain-speech .event-scene-sky { background: linear-gradient(160deg, #78350f 0%, #451a03 50%, #1c1917 100%); }
+.event-scene--press-flash .event-scene-sky { background: linear-gradient(160deg, #fef3c7 0%, #92400e 35%, #1c1917 100%); }
+.event-scene--fan-wave .event-scene-sky { background: linear-gradient(160deg, #b91c1c 0%, #7f1d1d 45%, #1c1917 100%); }
+.event-scene--injury-tape .event-scene-sky { background: linear-gradient(160deg, #7f1d1d 0%, #450a0a 50%, #18181b 100%); }
+.event-scene--tired-bench .event-scene-sky { background: linear-gradient(160deg, #475569 0%, #334155 50%, #1e293b 100%); }
+.event-scene--food-poison .event-scene-sky { background: linear-gradient(160deg, #365314 0%, #3f6212 40%, #1c1917 100%); }
+.event-scene--legend-speech .event-scene-sky { background: linear-gradient(160deg, #854d0e 0%, #713f12 45%, #292524 100%); }
+.event-scene--var-screen .event-scene-sky { background: linear-gradient(160deg, #312e81 0%, #1e1b4b 50%, #0f172a 100%); }
+.event-scene--team-huddle .event-scene-sky { background: linear-gradient(160deg, #9a3412 0%, #7c2d12 50%, #1c1917 100%); }
+.event-scene--scout-binocular .event-scene-sky { background: linear-gradient(160deg, #065f46 0%, #064e3b 50%, #0f172a 100%); }
+.event-scene--contract-sign .event-scene-sky { background: linear-gradient(160deg, #1e40af 0%, #1e3a8a 50%, #0f172a 100%); }
+.event-scene--spy-glass .event-scene-sky { background: linear-gradient(160deg, #3f3f46 0%, #27272a 50%, #18181b 100%); }
+.event-scene--rookie-slip .event-scene-sky { background: linear-gradient(160deg, #ca8a04 0%, #a16207 45%, #292524 100%); }
+.event-scene--loan-arrow .event-scene-sky { background: linear-gradient(160deg, #0e7490 0%, #155e75 50%, #0f172a 100%); }
+.event-scene--retirement-medal .event-scene-sky { background: linear-gradient(160deg, #a16207 0%, #854d0e 50%, #292524 100%); }
+.event-scene--sponsor-brand .event-scene-sky { background: linear-gradient(160deg, #be185d 0%, #9d174d 45%, #1e1b4b 100%); }
+.event-scene--agent-suit .event-scene-sky { background: linear-gradient(160deg, #1f2937 0%, #111827 50%, #030712 100%); }
+.event-scene--camp-tent .event-scene-sky { background: linear-gradient(160deg, #365314 0%, #3f6212 50%, #1c1917 100%); }
+.event-scene--gk-dive .event-scene-sky { background: linear-gradient(160deg, #0369a1 0%, #0c4a6e 50%, #0f172a 100%); }
+.event-scene--penalty-spot .event-scene-sky { background: linear-gradient(160deg, #15803d 0%, #166534 50%, #14532d 100%); }
+.event-scene--corner-flag .event-scene-sky { background: linear-gradient(160deg, #1d4ed8 0%, #1e40af 50%, #172554 100%); }
+.event-scene--rain-storm .event-scene-sky { background: linear-gradient(160deg, #475569 0%, #334155 60%, #1e293b 100%); }
+.event-scene--offside-line .event-scene-sky { background: linear-gradient(160deg, #dc2626 0%, #991b1b 40%, #1c1917 100%); }
+.event-scene--counter-sprint .event-scene-sky { background: linear-gradient(160deg, #ea580c 0%, #c2410c 50%, #292524 100%); }
+.event-scene--red-card .event-scene-sky { background: linear-gradient(160deg, #dc2626 0%, #7f1d1d 55%, #18181b 100%); }
+.event-scene--sun-blaze .event-scene-sky { background: linear-gradient(160deg, #fbbf24 0%, #d97706 40%, #78350f 100%); }
+.event-scene--snow-flake .event-scene-sky { background: linear-gradient(160deg, #e0f2fe 0%, #7dd3fc 35%, #0c4a6e 100%); }
+.event-scene--bus-travel .event-scene-sky { background: linear-gradient(160deg, #57534e 0%, #44403c 50%, #1c1917 100%); }
+.event-scene--clinic .event-scene-sky { background: linear-gradient(160deg, #ecfdf5 0%, #6ee7b7 30%, #064e3b 100%); }
+.event-scene--massage .event-scene-sky { background: linear-gradient(160deg, #a5f3fc 0%, #22d3ee 35%, #0e7490 100%); }
+.event-scene--gk-sub .event-scene-sky { background: linear-gradient(160deg, #0284c7 0%, #0369a1 50%, #0f172a 100%); }
+.event-scene--plane-delay .event-scene-sky { background: linear-gradient(160deg, #94a3b8 0%, #64748b 45%, #1e293b 100%); }
+.event-scene--derby-flares .event-scene-sky { background: linear-gradient(160deg, #ef4444 0%, #b91c1c 45%, #450a0a 100%); }
+.event-scene--phone-social .event-scene-sky { background: linear-gradient(160deg, #8b5cf6 0%, #6d28d9 50%, #1e1b4b 100%); }
+.event-scene--tv-lights .event-scene-sky { background: linear-gradient(160deg, #fde68a 0%, #f59e0b 35%, #1c1917 100%); }
+.event-scene--brain-calm .event-scene-sky { background: linear-gradient(160deg, #c4b5fd 0%, #7c3aed 45%, #312e81 100%); }
+.event-scene--family-door .event-scene-sky { background: linear-gradient(160deg, #fda4af 0%, #e11d48 40%, #4c0519 100%); }
+.event-scene--cake-party .event-scene-sky { background: linear-gradient(160deg, #fbcfe8 0%, #ec4899 40%, #831843 100%); }
+.event-scene--fan-banner .event-scene-sky { background: linear-gradient(160deg, #f87171 0%, #dc2626 50%, #7f1d1d 100%); }
+.event-scene--empty-stands .event-scene-sky { background: linear-gradient(160deg, #71717a 0%, #52525b 50%, #27272a 100%); }
+.event-scene--gavel-fine .event-scene-sky { background: linear-gradient(160deg, #78716c 0%, #57534e 50%, #292524 100%); }
+.event-scene--money-bonus .event-scene-sky { background: linear-gradient(160deg, #fde047 0%, #ca8a04 45%, #422006 100%); }
+.event-scene--cup-draw .event-scene-sky { background: linear-gradient(160deg, #fcd34d 0%, #b45309 45%, #292524 100%); }
+.event-scene--file-spy .event-scene-sky { background: linear-gradient(160deg, #374151 0%, #1f2937 50%, #111827 100%); }
+.event-scene--ref-whistle .event-scene-sky { background: linear-gradient(160deg, #facc15 0%, #ca8a04 40%, #292524 100%); }
+.event-scene--empty-roster .event-scene-sky { background: linear-gradient(160deg, #f97316 0%, #c2410c 45%, #292524 100%); }
+.event-scene--overtime-clock .event-scene-sky { background: linear-gradient(160deg, #38bdf8 0%, #0284c7 50%, #0c4a6e 100%); }
+.event-scene--box-defense .event-scene-sky { background: linear-gradient(160deg, #4ade80 0%, #16a34a 45%, #14532d 100%); }
+.event-scene--crown-pressure .event-scene-sky { background: linear-gradient(160deg, #fbbf24 0%, #b45309 50%, #451a03 100%); }
+.event-scene--stadium-new .event-scene-sky { background: linear-gradient(160deg, #34d399 0%, #059669 45%, #064e3b 100%); }
+.event-scene--star-visit .event-scene-sky { background: linear-gradient(160deg, #fde68a 0%, #d97706 40%, #1e1b4b 100%); }
+
+/* Yağmur / VAR / basın özel efekt */
+.event-scene--rain-pitch::after,
+.event-scene--rain-storm::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(105deg, transparent, transparent 8px, rgba(148, 163, 184, 0.08) 8px, rgba(148, 163, 184, 0.08) 9px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.event-scene--var-screen .event-scene-scanlines {
+  opacity: 0.12;
+  animation: eventSceneScan 6s linear infinite;
+}
+
+.event-scene--press-flash .event-scene-vignette {
+  background: radial-gradient(circle at 50% 20%, rgba(254, 243, 199, 0.35), transparent 45%), radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(0, 0, 0, 0.65) 100%);
+}
+
+/* ── Seçenek kartı mini sahne ── */
+
+.event-choice-visual {
+  position: relative;
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.65));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.event-choice-visual-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background: repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255, 255, 255, 0.2) 3px, rgba(255, 255, 255, 0.2) 4px);
+  pointer-events: none;
+}
+
+.event-choice-deco {
+  position: absolute;
+  font-size: 0.85rem;
+  opacity: 0.35;
+  z-index: 1;
+}
+
+.event-choice-deco--left { left: 12%; top: 38%; }
+.event-choice-deco--right { right: 12%; bottom: 38%; }
+
+.event-choice-visual-icon {
+  font-size: 2.35rem;
+  z-index: 2;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
+}
+
+.event-choice-visual-caption {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  padding: 0 0.75rem 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.3;
+  color: rgba(253, 230, 138, 0.88);
+  max-width: 100%;
+}
+
+.event-choice-visual-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 25%, rgba(251, 191, 36, 0.22), transparent 68%);
+}
+
+.event-choice-visual--pick-a { border-left: 3px solid rgba(52, 211, 153, 0.45); }
+.event-choice-visual--pick-b { border-left: 3px solid rgba(96, 165, 250, 0.45); }
+
+/* Seçenek tonları — para / birlik / aksiyon / dinlenme / risk / taktik / sosyal */
+.event-choice-visual--choice-cash,
+.event-choice-visual--choice-pay,
+.event-choice-visual--choice-gift,
+.event-choice-visual--choice-save,
+.event-choice-visual--choice-vip {
+  background: linear-gradient(145deg, rgba(6, 78, 59, 0.75), rgba(4, 120, 87, 0.45));
+}
+
+.event-choice-visual--choice-unity,
+.event-choice-visual--choice-hold,
+.event-choice-visual--choice-keep,
+.event-choice-visual--choice-support,
+.event-choice-visual--choice-balance,
+.event-choice-visual--choice-lock {
+  background: linear-gradient(145deg, rgba(30, 58, 138, 0.7), rgba(37, 99, 235, 0.35));
+}
+
+.event-choice-visual--choice-fire,
+.event-choice-visual--choice-attack,
+.event-choice-visual--choice-blitz,
+.event-choice-visual--choice-derby,
+.event-choice-visual--choice-pressure,
+.event-choice-visual--choice-hard,
+.event-choice-visual--choice-heat {
+  background: linear-gradient(145deg, rgba(127, 29, 29, 0.75), rgba(220, 38, 38, 0.35));
+}
+
+.event-choice-visual--choice-rest,
+.event-choice-visual--choice-rotate,
+.event-choice-visual--choice-heal,
+.event-choice-visual--choice-warm,
+.event-choice-visual--choice-home,
+.event-choice-visual--choice-light,
+.event-choice-visual--choice-easy {
+  background: linear-gradient(145deg, rgba(21, 94, 117, 0.7), rgba(14, 116, 144, 0.35));
+}
+
+.event-choice-visual--choice-risk,
+.event-choice-visual--choice-gamble,
+.event-choice-visual--choice-sick,
+.event-choice-visual--choice-fear,
+.event-choice-visual--choice-push,
+.event-choice-visual--choice-limp {
+  background: linear-gradient(145deg, rgba(120, 53, 15, 0.75), rgba(217, 119, 6, 0.35));
+}
+
+.event-choice-visual--choice-plan,
+.event-choice-visual--choice-trap,
+.event-choice-visual--choice-shift,
+.event-choice-visual--choice-wall,
+.event-choice-visual--choice-extra,
+.event-choice-visual--choice-standard,
+.event-choice-visual--choice-study {
+  background: linear-gradient(145deg, rgba(49, 46, 129, 0.75), rgba(79, 70, 229, 0.35));
+}
+
+.event-choice-visual--choice-speak,
+.event-choice-visual--choice-chat,
+.event-choice-visual--choice-tv,
+.event-choice-visual--choice-fans,
+.event-choice-visual--choice-party,
+.event-choice-visual--choice-celebrate,
+.event-choice-visual--choice-photo {
+  background: linear-gradient(145deg, rgba(136, 19, 55, 0.7), rgba(190, 24, 93, 0.35));
+}
+
+.event-choice-visual--choice-calm,
+.event-choice-visual--choice-silent,
+.event-choice-visual--choice-mute,
+.event-choice-visual--choice-honor,
+.event-choice-visual--choice-focus,
+.event-choice-visual--choice-normal,
+.event-choice-visual--choice-neutral,
+.event-choice-visual--choice-slow,
+.event-choice-visual--choice-wait,
+.event-choice-visual--choice-skip,
+.event-choice-visual--choice-no,
+.event-choice-visual--choice-leave,
+.event-choice-visual--choice-door,
+.event-choice-visual--choice-run,
+.event-choice-visual--choice-field,
+.event-choice-visual--choice-ball,
+.event-choice-visual--choice-quick {
+  background: linear-gradient(145deg, rgba(55, 65, 81, 0.8), rgba(75, 85, 99, 0.4));
+}
+
+.event-choice-visual--choice-sign,
+.event-choice-visual--choice-in,
+.event-choice-visual--choice-check,
+.event-choice-visual--choice-accept,
+.event-choice-visual--choice-deal {
+  background: linear-gradient(145deg, rgba(5, 150, 105, 0.75), rgba(16, 185, 129, 0.35));
+}
+
+.event-choice-visual--choice-exit,
+.event-choice-visual--choice-release,
+.event-choice-visual--choice-protest,
+.event-choice-visual--choice-appeal,
+.event-choice-visual--choice-punish,
+.event-choice-visual--choice-critique {
+  background: linear-gradient(145deg, rgba(153, 27, 27, 0.75), rgba(239, 68, 68, 0.3));
+}
+
+.event-choice-visual--choice-shift,
+.event-choice-visual--choice-power,
+.event-choice-visual--choice-touch,
+.event-choice-visual--choice-practice,
+.event-choice-visual--choice-camp,
+.event-choice-visual--choice-cold,
+.event-choice-visual--choice-rush,
+.event-choice-visual--choice-defend,
+.event-choice-visual--choice-swap,
+.event-choice-visual--choice-fresh,
+.event-choice-visual--choice-gk {
+  background: linear-gradient(145deg, rgba(29, 78, 216, 0.7), rgba(59, 130, 246, 0.35));
+}
+
+.event-choice-visual--choice-listen,
+.event-choice-visual--choice-talk,
+.event-choice-visual--choice-star,
+.event-choice-visual--choice-spy {
+  background: linear-gradient(145deg, rgba(109, 40, 217, 0.7), rgba(139, 92, 246, 0.35));
+}
+
+.event-choice-visual--choice-empty,
+.event-choice-visual--choice-closed,
+.event-choice-visual--choice-push {
+  background: linear-gradient(145deg, rgba(68, 64, 60, 0.8), rgba(41, 37, 36, 0.55));
+}
+
+.event-atmosphere-line {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(251, 191, 36, 0.75);
+}

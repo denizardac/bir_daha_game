@@ -16,9 +16,11 @@ import { PlayerHeroMini } from '@/components/PlayerHero';
 import { MatchTeamCard } from '@/components/MatchPickPanel';
 import { getSynergyById, SYNERGIES } from '@/data/synergies';
 import { BITE, EVENT_CATEGORY_BITE } from '@/data/biteTips';
+import { getEventPresentation } from '@/data/eventVisuals';
+import { EventChoiceVisual, EventSceneVisual } from '@/components/EventSceneVisual';
 import { explainMatchResult, getDepartureScore, getEventPreviews, getTacticPreview } from '@/engine/contextPreview';
 import { calculateRoundPoints, formatScore } from '@/engine/scoring';
-import { getSquadLineupSummary } from '@/engine/lineupPreview';
+import { getSquadLineupSummary, lineupSlotToMatchPitch } from '@/engine/lineupPreview';
 import { getPersistedStats, TOTAL_SYNERGIES, useGameStore } from '@/store/gameStore';
 import { isPlayerCard, isTacticCard, isTrainingCard } from '@/types';
 import { MatchAnimation } from '@/components/MatchAnimation';
@@ -297,6 +299,7 @@ export function EventScreen() {
     : null;
   const tones = getEventChoiceTones(previews);
   const categoryBite = EVENT_CATEGORY_BITE[currentEvent.category];
+  const presentation = getEventPresentation(currentEvent.id);
   const avg = squad.length ? Math.round(squad.reduce((s, p) => s + p.currentRating, 0) / squad.length) : 0;
   const lineupSummary = getSquadLineupSummary(squad, activeTactics);
   const topPlayers = sortSquadByRating(squad);
@@ -315,6 +318,7 @@ export function EventScreen() {
     description: string,
     preview: EventOutcome,
     tone: typeof tones.a,
+    choiceVisual: { icon: string; flavor: string; scene: string },
   ) => {
     const selected = picked === choice;
     const dimmed = picked !== null && picked !== choice;
@@ -326,12 +330,14 @@ export function EventScreen() {
         className={`${eventChoiceClass(tone, selected, dimmed)} event-choice-card`}
         onClick={() => handlePick(choice)}
       >
-        <div className="event-choice-visual" aria-hidden>
-          <span className="event-choice-visual-icon">{choice === 'A' ? '◆' : '◇'}</span>
-          <span className="event-choice-visual-glow" />
-        </div>
+        <EventChoiceVisual
+          scene={choiceVisual.scene}
+          icon={choiceVisual.icon}
+          flavor={choiceVisual.flavor}
+          choice={choice}
+        />
         <div className="event-choice-body">
-          <span className="event-choice-kicker">Seçenek {choice}</span>
+          <span className="event-choice-kicker">{choiceVisual.flavor}</span>
           <span className="event-choice-label">{label}</span>
           <p className={`event-choice-desc ${dimmed ? 'opacity-50' : ''}`}>{description}</p>
           {outcomeText && (
@@ -378,20 +384,24 @@ export function EventScreen() {
               <p className="event-risk-explainer">{MATCH_RISK_EXPLAINER}</p>
             )}
 
-            <div className={`event-hero event-hero--${currentEvent.category}`}>
-              <div className="event-hero-scene" aria-hidden>
-                <span className="event-hero-scene-ring" />
-                <span className="event-hero-scene-ring event-hero-scene-ring--2" />
-              </div>
-              <span className="event-hero-icon" aria-hidden>{currentEvent.icon}</span>
-              <div className="event-hero-glow" aria-hidden />
-            </div>
+            <EventSceneVisual event={currentEvent} />
 
             <h2 className="event-title">{currentEvent.title}</h2>
-            <p className="event-description">{currentEvent.description}</p>
+            <p className="event-atmosphere-line">{presentation.atmosphere}</p>
+            <p className="event-description">{presentation.narrative}</p>
             <p className="event-story-bite">
               {categoryBite.desc} Maç yok — kararın doğrudan moral, kadro veya sonraki maç gücüne yansır.
             </p>
+
+            {currentEvent.id === 'evt_transfer_teklif' && previews.a.sellPlayerName && (
+              <div className="event-player-offer event-player-offer--sell">
+                <p className="event-player-offer-label">Satılacak oyuncu</p>
+                <p className="event-sell-target">
+                  {previews.a.sellPlayerName}
+                  {previews.a.description.includes('(') ? '' : ` · kadrodaki en güçlü saha oyuncusu`}
+                </p>
+              </div>
+            )}
 
             {offerPlayer && previews.a.addYouth && squad.length < maxSquadSize && (
               <div className="event-player-offer">
@@ -412,8 +422,8 @@ export function EventScreen() {
             )}
 
             <div className="event-choices">
-              {renderChoice('A', currentEvent.optionA.label, currentEvent.optionA.description, previews.a, tones.a)}
-              {renderChoice('B', currentEvent.optionB.label, currentEvent.optionB.description, previews.b, tones.b)}
+              {renderChoice('A', currentEvent.optionA.label, currentEvent.optionA.description, previews.a, tones.a, presentation.choiceA)}
+              {renderChoice('B', currentEvent.optionB.label, currentEvent.optionB.description, previews.b, tones.b, presentation.choiceB)}
             </div>
           </motion.div>
         </div>
@@ -487,7 +497,7 @@ export function MatchScreen() {
   const lineupSummary = getSquadLineupSummary(squad, activeTactics);
   const pitchDots = lineupSummary.lineup
     .filter((slot) => slot.player)
-    .map((slot) => ({ x: slot.x, y: slot.y, gk: slot.role === 'gk' }));
+    .map((slot) => lineupSlotToMatchPitch(slot));
   const squadAvg = Math.round(
     lineupSummary.lineup
       .filter((s) => s.player)

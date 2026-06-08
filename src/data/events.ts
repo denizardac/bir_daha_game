@@ -3,9 +3,9 @@ import type { EventCard } from '@/types';
 export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_transfer_teklif', category: 'transfer', icon: '💰', title: 'Transfer Teklifi',
-    description: 'Rakip kulüp kadrodaki en yüksek ratingli saha oyuncunu transfer listesine koymanı istiyor.',
-    optionA: { label: 'SAT', description: 'Yıldız oyuncu gider · 3 ekstra çek hakkı' },
-    optionB: { label: 'REDDET', description: 'Oyuncu kalır · Moral +15' },
+    description: 'Menajerin telefonu çalıyor: rakip kulüp, kadrodaki yıldızına yüksek teklif yapmış. Satış parası kasaya girecek ama sahada boşluk kalacak.',
+    optionA: { label: 'SAT', description: 'Yıldız gider · 3 ekstra çek hakkı kazanırsın' },
+    optionB: { label: 'REDDET', description: 'Takım birlikte kalır · Moral +15' },
   },
   {
     id: 'evt_genc_yetenek', category: 'transfer', icon: '🌱', title: 'Genç Yetenek',
@@ -15,9 +15,9 @@ export const EVENT_CARDS: EventCard[] = [
   },
   {
     id: 'evt_kavga', category: 'transfer', icon: '💥', title: 'Soyunma Odası Kavgası',
-    description: 'İki oyuncu arasında gerginlik var.',
-    optionA: { label: 'BİRİNİ SAT', description: 'En zayıf oyuncu gider · Moral +5' },
-    optionB: { label: 'İKİSİNİ DE OYNAT', description: '2 maç moral -10 riski' },
+    description: 'Antrenman sonrası soyunma odasında sesler yükseldi. İki oyuncu birbirine girdi; takım ikiye bölünmüş durumda.',
+    optionA: { label: 'BİRİNİ UZAKLAŞTIR', description: 'Kavga eden ayrılır · Moral +5' },
+    optionB: { label: 'İKİSİNİ DE TUT', description: 'Gerginlik sürer · Moral -10' },
   },
   {
     id: 'evt_formasyon', category: 'taktik', icon: '📋', title: 'Rakip Formasyonu',
@@ -33,7 +33,7 @@ export const EVENT_CARDS: EventCard[] = [
   },
   {
     id: 'evt_kaptan', category: 'moral', icon: '👑', title: 'Kaptan Liderliği',
-    description: 'Kaptan liderliği sorgulanıyor.',
+    description: 'Maç öncesi toplantıda kaptanın sesi titriyor. Takım ona güveniyor mu, yoksa yorgun düşmüş mü — karar senin.',
     optionA: { label: 'OYNAT', description: 'Risk yüksek · Sonraki maç gücü +%27' },
     optionB: { label: 'DİNLENDİR', description: 'Moral +10 · Güvenli' },
   },
@@ -51,7 +51,7 @@ export const EVENT_CARDS: EventCard[] = [
   },
   {
     id: 'evt_sakatlik', category: 'fiziksel', icon: '🤕', title: 'Sakatlık',
-    description: 'Yıldız oyuncu sakatlandı.',
+    description: 'Son antrenmanda yıldız oyuncun yere kapandı. Doktor “oynatabilirim ama risk var” diyor; yedek hazır bekliyor.',
     optionA: { label: 'YEDEKLE OYNA', description: 'Rating -5 geçici' },
     optionB: { label: 'ZORUNLU DEĞİŞİKLİK', description: 'Slot açılır · Yeni kart çek' },
   },

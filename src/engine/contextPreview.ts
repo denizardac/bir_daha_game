@@ -8,6 +8,7 @@ import {
   getActiveFormationKey,
   getLineupPlayerIds,
   getReplacementPreview,
+  getStartingEleven,
   simulateSquadAfterPick,
 } from '@/engine/lineupPreview';
 import { formationSlotLabel, POSITION_BADGE } from '@/utils/positionStyle';
@@ -154,7 +155,7 @@ export function getTacticPreview(
   }
   if (fx.defenseMod && fx.defenseMod > 0) lines.push('Savunma güçlenir — zayıf kadrolarda ideal');
   if (card.id === 'tactic_tekli_forvet') {
-    const sf = squad.filter((p) => p.position === 'SF');
+    const sf = getStartingEleven(squad, activeTactics).filter((p) => p.position === 'SF');
     const finisher = sf.filter((p) => p.tags.includes('FİNİŞÖR'));
     if (sf.length === 1 && finisher.length === 1) {
       lines.push('Tek forvet FİNİŞÖR — hücum +30%');

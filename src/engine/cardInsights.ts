@@ -2,9 +2,8 @@ import { getTagBite } from '@/data/biteTips';
 import { SYNERGIES } from '@/data/synergies';
 import { getTacticEffect } from '@/data/tactics';
 import { getPlayerPickSummary, getTacticPreview } from '@/engine/contextPreview';
-import { applyPlayerToSquad } from '@/engine/lineupPreview';
+import { applyPlayerToSquad, getPositionHints, getStartingEleven, type PositionHint } from '@/engine/lineupPreview';
 import { explainActiveTactic } from '@/engine/squadInsights';
-import { getPositionHints, type PositionHint } from '@/engine/lineupPreview';
 import { getSynergyBenefitText } from '@/engine/squadInsights';
 import type { ActiveTactic, PlayerCard, Tag, TacticCard } from '@/types';
 import { formatPosition } from '@/utils/positionStyle';
@@ -125,7 +124,7 @@ function getPlayerTacticContributions(
       lines.push(`TEKNİK bonusu: +${tactic.technicalBonus} puan/maç`);
     }
     if (tactic.id === 'tactic_tekli_forvet') {
-      const sfCount = simSquad.filter((p) => p.position === 'SF').length;
+      const sfCount = getStartingEleven(simSquad, activeTactics).filter((p) => p.position === 'SF').length;
       if (card.position === 'SF' && card.tags.includes('FİNİŞÖR') && sfCount <= 2) {
         lines.push(sfCount === 1 ? 'Tek forvet FİNİŞÖR — hücum +30%' : 'Forvet FİNİŞÖR — tek forvet şartına yakın');
       }

@@ -1959,6 +1959,19 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: #fecaca;
   background: rgba(127, 29, 29, 0.38);
   border: 1px solid rgba(248, 113, 113, 0.5);
+  font-weight: 700;
+}
+
+.card-position-alert {
+  margin: 0 0 0.5rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #fecaca;
+  background: linear-gradient(90deg, rgba(127, 29, 29, 0.55), rgba(69, 10, 10, 0.35));
+  border: 1px solid rgba(248, 113, 113, 0.55);
 }
 
 .card-position-hint--info {
@@ -9058,6 +9071,21 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   max-height: 420px;
 }
 
+.event-player-offer--sell .event-player-offer-label {
+  color: rgba(248, 113, 113, 0.95);
+}
+
+.event-sell-target {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.55rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.35);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+}
+
 /* Lineup center trigger & hero modal */
 .lineup-preview-sidebar {
   margin: 0.35rem 0 0.5rem;
@@ -9472,16 +9500,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* Match left panel overlap fix */
 .match-col--pick {
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .match-left-stack {
-  overflow-y: auto;
-  overflow-x: hidden;
-  max-height: min(72vh, 640px);
-  padding-right: 0.15rem;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(251, 191, 36, 0.45) rgba(255, 255, 255, 0.06);
+  overflow: visible;
+  max-height: none;
+  padding-right: 0;
 }
 
 .match-left-stack::-webkit-scrollbar {

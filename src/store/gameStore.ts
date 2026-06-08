@@ -591,6 +591,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.nextMatchRisk,
       state.nextMatchBonus,
       state.lossesCount,
+      state.isDailySeed,
     );
 
     set({

@@ -224,20 +224,37 @@ const DAILY_START_SQUAD: PlayerTemplate[] = [
   { name: 'Ali Rıza', rating: 60, position: 'SLK', rarity: 'normal', tags: [] },
 ];
 
-const FREE_START_POSITIONS: Position[] = ['KL', 'STP', 'STP', 'SLB', 'OS', 'DOS', 'SLK'];
-
 const BAD_START_TAGS: Tag[] = ['GERİLEYEN', 'SAKATLIK RİSKİ', 'PERFORMANS DÜŞÜŞÜ', 'TARTIŞMALI'];
 
-function pickStartTrait(rng: () => number, position: Position): Tag[] {
-  const pool: Tag[] = position === 'KL'
+const FREE_START_SIZE = 7;
+
+function pickFreeStartTrait(rng: () => number, template: PlayerTemplate): Tag[] {
+  if (rng() > 0.38) return [];
+  if (template.tags.length) return [template.tags[Math.floor(rng() * template.tags.length)]!];
+  const pool: Tag[] = template.position === 'KL'
     ? ['DAYANIKLI', 'SOĞUKKANLI']
-    : position === 'STP'
+    : template.position === 'STP'
       ? ['GÜÇLÜ', 'DAYANIKLI', 'YERLİ']
-      : position === 'OS' || position === 'DOS'
-        ? ['TEKNİK', 'YERLİ', 'ASİSTÇİ']
-        : ['HIZLI', 'YERLİ', 'TEKNİK'];
-  if (rng() > 0.42) return [];
+      : ['HIZLI', 'YERLİ', 'TEKNİK', 'ASİSTÇİ'];
   return [pool[Math.floor(rng() * pool.length)]!];
+}
+
+function cloneFreeStarter(template: PlayerCard, rng: () => number, id: string): PlayerCard {
+  const rating = Math.max(56, Math.min(74, template.rating + Math.floor(rng() * 7) - 3));
+  const tags = pickFreeStartTrait(rng, {
+    name: template.name,
+    rating: template.rating,
+    position: template.position,
+    rarity: template.rarity,
+    tags: template.tags,
+  });
+  return makePlayer({
+    name: template.name,
+    rating,
+    position: template.position,
+    rarity: rarityFromRating(rating),
+    tags: tags.length ? tags : template.tags.slice(0, 1),
+  }, id, true);
 }
 
 export function getStartingSquad(seed?: string, isDaily = true): PlayerCard[] {
@@ -248,22 +265,24 @@ export function getStartingSquad(seed?: string, isDaily = true): PlayerCard[] {
   const rng = createRng(seed ?? 'free', 'start-squad');
   const usedNames = new Set<string>();
   const pool = PLAYER_POOL.filter((p) => !p.tags.some((t) => BAD_START_TAGS.includes(t)));
+  const squad: PlayerCard[] = [];
 
-  return FREE_START_POSITIONS.map((pos, i) => {
-    let candidates = pool.filter((p) => p.position === pos && !usedNames.has(p.name));
-    if (!candidates.length) candidates = pool.filter((p) => p.position === pos);
-    const template = candidates[Math.floor(rng() * candidates.length)]!;
-    usedNames.add(template.name);
-    const rating = Math.max(56, Math.min(74, template.rating + Math.floor(rng() * 5) - 2));
-    const tags = pickStartTrait(rng, pos);
-    return makePlayer({
-      name: template.name,
-      rating,
-      position: pos,
-      rarity: rarityFromRating(rating),
-      tags: tags.length ? tags : template.tags.slice(0, 1),
-    }, `start_${pos}_${i}`, true);
-  });
+  const gks = pool.filter((p) => p.position === 'KL');
+  if (gks.length) {
+    const gk = gks[Math.floor(rng() * gks.length)]!;
+    usedNames.add(gk.name);
+    squad.push(cloneFreeStarter(gk, rng, 'start_kl_0'));
+  }
+
+  while (squad.length < FREE_START_SIZE) {
+    const available = pool.filter((p) => !usedNames.has(p.name));
+    if (!available.length) break;
+    const pick = available[Math.floor(rng() * available.length)]!;
+    usedNames.add(pick.name);
+    squad.push(cloneFreeStarter(pick, rng, `start_${squad.length}`));
+  }
+
+  return squad;
 }
 
 export function clonePlayer(player: PlayerCard): PlayerCard {
