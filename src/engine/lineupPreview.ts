@@ -333,9 +333,11 @@ export function getBenchExplanations(squad: PlayerCard[], activeTactics: ActiveT
       };
     }
 
+    const playableEmpty = emptySlots.filter((s) => slotAcceptsPlayer(player, s.slot));
+
     let bestFit = 99;
     let bestSlotLabel = '';
-    for (const slot of emptySlots) {
+    for (const slot of playableEmpty) {
       const fit = slotFitIndex(player, slot.slot.preferred);
       if (fit < bestFit) {
         bestFit = fit;
@@ -343,17 +345,46 @@ export function getBenchExplanations(squad: PlayerCard[], activeTactics: ActiveT
       }
     }
 
-    if (emptySlots.length > 0 && bestFit < 99) {
+    if (playableEmpty.length > 0 && bestFit < 99) {
       return {
         player,
         reason: `Boş ${bestSlotLabel} slotuna uygun — kadro küçük olduğu için şimdilik yedek`,
       };
     }
+
+    const strongerStarters = summary.lineup
+      .filter(
+        (s) =>
+          s.player
+          && slotAcceptsPlayer(player, s.slot)
+          && !canDisplaceStarter(player, s.player, s.slot),
+      )
+      .map((s) => `${s.slot.label} (${s.player!.name} ${s.player!.currentRating})`);
+
+    const emptyLabels = [...new Set(emptySlots.map((s) => s.slot.label))].join(', ');
+    const playable = getPlayablePositions(player).map((p) => POSITION_BADGE[p]).join(', ');
+
+    if (strongerStarters.length > 0) {
+      const midBlockers = strongerStarters.filter((line) => {
+        const slotLabel = line.split(' ')[0]!;
+        const slot = summary.lineup.find((s) => s.slot.label === slotLabel);
+        return slot?.slot.zone === 'orta';
+      });
+      if (midBlockers.length > 0 && isMidfieldPlayer(player)) {
+        return {
+          player,
+          reason: `Orta saha dolu (${midBlockers.join(', ')})${emptyLabels ? ` — boş slotlar (${emptyLabels}) uyumsuz` : ''}`,
+        };
+      }
+      return {
+        player,
+        reason: `Rating yetersiz — ${strongerStarters.join(', ')}${emptyLabels ? ` · boş slotlar (${emptyLabels}) uyumsuz` : ''}`,
+      };
+    }
+
     if (emptySlots.length > 0) {
-      const emptyLabels = [...new Set(emptySlots.map((s) => s.slot.label))].join(', ');
-      const playable = getPlayablePositions(player).map((p) => POSITION_BADGE[p]).join(', ');
       const filledMids = summary.lineup
-        .filter((s) => s.player && s.slot.zone === 'orta' && slotFitIndex(player, s.slot.preferred) < 99)
+        .filter((s) => s.player && s.slot.zone === 'orta' && slotAcceptsPlayer(player, s.slot))
         .map((s) => `${s.slot.label} (${s.player!.name} ${s.player!.currentRating})`);
       if (filledMids.length > 0 && isMidfieldPlayer(player)) {
         return {

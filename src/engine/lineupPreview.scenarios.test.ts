@@ -422,6 +422,29 @@ describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
     expect(hakan?.reason).toMatch(/Orta saha dolu|yedek/i);
   });
 
+  it('31b — DOS yedek: SLK uygun sanılmaz, orta saha dolu / rating yetersiz', () => {
+    const squad = [
+      gk(74),
+      p({ id: 'slb', name: 'Sol', position: 'SLB', currentRating: 65, rating: 65 }),
+      p({ id: 'stp1', name: 'M.', position: 'STP', currentRating: 74, rating: 74 }),
+      p({ id: 'stp2', name: 'Stp2', position: 'STP', currentRating: 64, rating: 64 }),
+      p({ id: 'sgb', name: 'Dias', position: 'SÖB', currentRating: 66, rating: 66 }),
+      p({ id: 'slk', name: 'Kanat', position: 'SLK', currentRating: 67, rating: 67 }),
+      p({ id: 'sgk', name: 'Sağ', position: 'SÖK', currentRating: 66, rating: 66 }),
+      p({ id: 'dos', name: 'Yılmaz', position: 'DOS', currentRating: 62, rating: 62 }),
+      p({ id: 'oos', name: 'Öztürk', position: 'OOS', currentRating: 68, rating: 68 }),
+      p({ id: 'sf', name: 'Forvet', position: 'SF', currentRating: 70, rating: 70 }),
+      p({ id: 'nik', name: 'Nikolai Adeyemi', position: 'DOS', currentRating: 61, rating: 61 }),
+      p({ id: 'kl2', name: 'Can Arslan', position: 'KL', currentRating: 71, rating: 71 }),
+    ];
+    expect(slotOf(squad, 'nik', '442')).toBeUndefined();
+    const bench = getBenchExplanations(squad, []);
+    const nik = bench.find((b) => b.player.id === 'nik');
+    expect(nik?.reason).toBeDefined();
+    expect(nik!.reason).not.toMatch(/SLK slotuna uygun/);
+    expect(nik!.reason).toMatch(/Orta saha dolu|Rating yetersiz/);
+  });
+
   it('32 — OS asla kanatta kalmaz (100 seed)', () => {
     for (let i = 0; i < 100; i++) {
       const squad = [
