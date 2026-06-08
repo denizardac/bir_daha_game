@@ -1,13 +1,21 @@
 import { EVENT_EFFECTS } from '@/data/eventEffects';
-import { PLAYER_POOL, clonePlayer } from '@/data/players';
-import { createRng, pickOne } from '@/engine/seed';
 import { EVENT_CARDS } from '@/data/events';
+import { PLAYER_POOL, clonePlayer } from '@/data/players';
+import { drawEvent as pickContextEvent, type EventDrawContext } from '@/engine/eventDraw';
+import { getStarFieldPlayer } from '@/engine/eventSubjects';
+import { createRng } from '@/engine/seed';
 import type { EventCard, GameState, PlayerCard, Position } from '@/types';
 
-export function drawEvent(seed: string, round: number, usedIds: string[]): EventCard {
-  const rng = createRng(seed, 'event', round);
-  const pool = EVENT_CARDS.filter((e) => !usedIds.includes(e.id));
-  return pickOne(rng, pool.length > 0 ? pool : EVENT_CARDS);
+export type { EventDrawContext } from '@/engine/eventDraw';
+export { getEventDrawWeight, isEventEligible, filterEventsForDraw } from '@/engine/eventDraw';
+
+export function drawEvent(
+  seed: string,
+  round: number,
+  usedIds: string[],
+  ctx: EventDrawContext,
+): EventCard {
+  return pickContextEvent(seed, round, usedIds, ctx);
 }
 
 export interface EventOutcome {
@@ -23,12 +31,6 @@ export interface EventOutcome {
   /** Bir sonraki maç için geçici rating değişimi (ör. −5) */
   tempRatingDelta?: number;
   description: string;
-}
-
-function getStarFieldPlayer(squad: PlayerCard[]): PlayerCard | null {
-  const field = squad.filter((p) => p.position !== 'KL');
-  if (!field.length) return squad[0] ?? null;
-  return [...field].sort((a, b) => b.currentRating - a.currentRating)[0]!;
 }
 
 export function resolveEvent(

@@ -127,7 +127,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
             <div className="card-insight card-insight--player card-pick-core">
               <p className="card-insight-title">Seçersen</p>
               {insight.replacedPlayer ? (
-                <ReplacementPlayerTip player={insight.replacedPlayer}>
+                <ReplacementPlayerTip player={insight.replacedPlayer} kind={insight.replacementKind ?? 'squad'}>
                   <p className="card-insight-line card-insight-line--lead card-insight-line--hoverable">
                     {insight.summary}
                   </p>

@@ -12,11 +12,13 @@ import { validateRunSubmission } from '@/engine/runValidation';
 import { getEventRatingTarget, resolveEventRemoval } from '@/engine/eventRemoval';
 import { isEventRound } from '@/data/events';
 import { getTacticCategory, getTacticEffect } from '@/data/tactics';
+import { canAddTag } from '@/data/tagConflicts';
 import { MAX_PLAYER_TAGS } from '@/data/training';
 import { getActiveSynergies, SYNERGIES, TOTAL_SYNERGIES } from '@/data/synergies';
 import { getStartingSquad } from '@/data/players';
 import { drawEvent, createLoanPlayer, createYouthPlayer, resolveEvent } from '@/engine/events';
 import { drawOffers, getOfferDrawModeForRound, pickAutoOffer, rerollSinglePlayerOffer } from '@/engine/cardDraw';
+import { canPassCardPick, createSkipCard } from '@/engine/cardPass';
 import { isTacticBonusRound, TACTIC_BONUS_MORALE, TACTIC_BONUS_SCORE } from '@/engine/roundFlow';
 import { simulateMatch } from '@/engine/matchSimulation';
 import { calculateRoundPoints } from '@/engine/scoring';
@@ -51,7 +53,7 @@ import type {
   Tag,
   TrainingCard,
 } from '@/types';
-import { isPlayerCard, isTacticCard, isTrainingCard } from '@/types';
+import { isPlayerCard, isTacticCard, isTrainingCard, isSkipCard } from '@/types';
 import { isResumableRun, mergeRunSnapshot, type RunSnapshot, toRunSnapshot } from '@/engine/runPersistence';
 import { getAnonymousId, loadPersisted, savePersisted } from '@/utils/storage';
 import { playSound } from '@/utils/sound';
@@ -93,6 +95,7 @@ interface GameStore extends GameState {
   continueRun: () => void;
   abandonRun: () => void;
   selectOffer: (card: GameCard) => void;
+  passCardPick: () => void;
   pickTrainingPlayer: (playerId: string) => void;
   completeTraining: (tag: Tag) => void;
   cancelTraining: () => void;
@@ -217,7 +220,14 @@ function drawRoundOffers(state: Pick<GameState, 'seed' | 'round' | 'lossesCount'
 
 function startRound(state: GameStore): Partial<GameStore> {
   if (isEventRound(state.round) && !state.eventResolvedThisRound) {
-    const event = drawEvent(state.seed, state.round, state.usedEventIds);
+    const event = drawEvent(state.seed, state.round, state.usedEventIds, {
+      streak: state.streak,
+      morale: state.morale,
+      lossesCount: state.lossesCount,
+      squadSize: state.squad.length,
+      maxSquadSize: state.maxSquadSize,
+      round: state.round,
+    });
     return { phase: 'event' as GamePhase, currentEvent: event, timerSeconds: cardTimerSeconds() };
   }
   return {
@@ -577,6 +587,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (isPlayerCard(card)) {
       squad = applyPlayerToSquad(squad, card, state.maxSquadSize, state.morale, state.activeTactics);
+    } else if (isSkipCard(card)) {
+      if (!canPassCardPick({
+        phase: state.phase,
+        round: state.round,
+        maxRounds: state.maxRounds,
+        squadLength: state.squad.length,
+        maxSquadSize: state.maxSquadSize,
+        currentOffers: state.currentOffers,
+      })) return;
     } else if (isTacticCard(card)) {
       return;
     }
@@ -636,7 +655,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const playerId = state.trainingFlow.selectedPlayerId;
     const player = state.squad.find((p) => p.id === playerId);
-    if (!player || player.tags.includes(tag) || player.tags.length >= MAX_PLAYER_TAGS) return;
+    if (!player || !canAddTag(tag, player.tags) || player.tags.length >= MAX_PLAYER_TAGS) return;
 
     const squad = state.squad.map((p) =>
       p.id === playerId ? { ...p, tags: [...p.tags, tag] } : p,
@@ -665,9 +684,33 @@ export const useGameStore = create<GameStore>((set, get) => ({
     persistRun(get());
   },
 
+  passCardPick: () => {
+    const state = get();
+    if (!canPassCardPick({
+      phase: state.phase,
+      round: state.round,
+      maxRounds: state.maxRounds,
+      squadLength: state.squad.length,
+      maxSquadSize: state.maxSquadSize,
+      currentOffers: state.currentOffers,
+    })) return;
+    get().selectOffer(createSkipCard(state.round));
+  },
+
   autoSelectOffer: () => {
     const s = get();
     if (s.phase !== 'cardSelect' || !s.currentOffers.length) return;
+    if (canPassCardPick({
+      phase: s.phase,
+      round: s.round,
+      maxRounds: s.maxRounds,
+      squadLength: s.squad.length,
+      maxSquadSize: s.maxSquadSize,
+      currentOffers: s.currentOffers,
+    })) {
+      get().passCardPick();
+      return;
+    }
     get().selectOffer(pickAutoOffer(s.currentOffers, s.squad.length, s.maxSquadSize));
   },
 

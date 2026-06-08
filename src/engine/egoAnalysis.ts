@@ -1,6 +1,6 @@
 import { getStartingSquad } from '@/data/players';
 import { getTacticCategory, getTacticEffect } from '@/data/tactics';
-import { isPlayerCard, isTacticCard, type PlayerCard, type RoundResult, type TacticCard } from '@/types';
+import { isPlayerCard, isSkipCard, isTacticCard, type PlayerCard, type RoundResult, type TacticCard } from '@/types';
 import { applyPlayerToSquad } from '@/engine/lineupPreview';
 import { simulateMatch } from '@/engine/matchSimulation';
 import { calculateRoundPoints } from '@/engine/scoring';
@@ -109,6 +109,8 @@ export function analyzeEgoReplay(
 
     if (isPlayerCard(r.cardSelected)) {
       squad = applyPlayerToSquad(squad, r.cardSelected, 11, morale, activeTactics);
+    } else if (isSkipCard(r.cardSelected)) {
+      // kadro değişmez
     } else if (isTacticCard(r.cardSelected)) {
       const updated = applyTacticPick(activeTactics, r.cardSelected);
       activeTactics.length = 0;

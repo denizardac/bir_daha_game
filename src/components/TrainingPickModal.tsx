@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlayerCardMini } from '@/components/PlayerCard';
 import { TagTraitBadges } from '@/components/TagTraitBadges';
+import { canAddTag } from '@/data/tagConflicts';
 import { MAX_PLAYER_TAGS } from '@/data/training';
 import { TAG_DESCRIPTIONS } from '@/data/tags';
 import type { PlayerCard, Tag } from '@/types';
@@ -79,17 +80,20 @@ export function TrainingPickModal({
               <div className="training-tag-pick-grid">
                 {offeredTags.map((tag) => {
                   const hasTag = selected?.tags.includes(tag);
+                  const conflicts = selected ? !canAddTag(tag, selected.tags) : false;
+                  const disabled = hasTag || conflicts;
                   return (
                     <button
                       key={tag}
                       type="button"
-                      className={`training-tag-pick ${hasTag ? 'training-tag-pick--owned' : ''}`}
-                      disabled={hasTag}
+                      className={`training-tag-pick ${disabled ? 'training-tag-pick--owned' : ''}`}
+                      disabled={disabled}
                       onClick={() => onPickTag(tag)}
                     >
                       <TagTraitBadges tags={[tag]} />
                       <p className="training-tag-pick-desc">{TAG_DESCRIPTIONS[tag]}</p>
                       {hasTag && <span className="training-tag-owned">Zaten var</span>}
+                      {!hasTag && conflicts && <span className="training-tag-owned">Çelişiyor</span>}
                     </button>
                   );
                 })}

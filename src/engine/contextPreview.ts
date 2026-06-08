@@ -4,7 +4,6 @@ import type { ActiveTactic, EventCard, PlayerCard, TacticCard } from '@/types';
 import { resolveEvent, type EventOutcome } from '@/engine/events';
 import {
   assignSquadToFormation,
-  canDisplaceStarter,
   getActiveFormationKey,
   getLineupPlayerIds,
   getReplacementPreview,
@@ -12,6 +11,7 @@ import {
   isIllegalCentralMidWingSlot,
   isMidfieldPlayer,
   simulateSquadAfterPick,
+  slotAcceptsPlayer,
   type LineupSlot,
 } from '@/engine/lineupPreview';
 import { POSITION_BADGE } from '@/utils/positionStyle';
@@ -40,13 +40,22 @@ export function getMoraleEffect(morale: number): { label: string; detail: string
 export type PlayerPickSummary = {
   text: string;
   replacedPlayer: PlayerCard | null;
+  /** squad = kadrodan tamamen çıkar; lineup = yalnızca ilk 11'den düşer */
+  replacementKind?: 'squad' | 'lineup';
 };
 
-function findDisplacedStarter(card: PlayerCard, lineup: LineupSlot[]): PlayerCard | null {
-  const targets = lineup
-    .filter((s) => s.player && canDisplaceStarter(card, s.player, s.slot))
-    .sort((a, b) => a.player!.currentRating - b.player!.currentRating);
-  return targets[0]?.player ?? null;
+function describeLineupDrop(player: PlayerCard): string {
+  return `${player.name} (${player.currentRating}) yedeğe iner`;
+}
+
+function describeSquadRemoval(player: PlayerCard, wasOnPitch: boolean): string {
+  if (!wasOnPitch && player.position === 'KL') {
+    return `Yedek kaleci ${player.name} (${player.currentRating}) kadrodan çıkar — yer açılır`;
+  }
+  if (!wasOnPitch) {
+    return `${player.name} (${player.currentRating}) kadrodan çıkar — yer açılır`;
+  }
+  return `${player.name} (${player.currentRating}) kadrodan çıkar`;
 }
 
 function findBenchedByIncoming(
@@ -96,17 +105,9 @@ function describeBenchPick(
   maxSquad: number,
   avgPart: string,
 ): string {
-  const displaced = findDisplacedStarter(card, lineup);
-  if (displaced) {
-    const slot = lineup.find((s) => s.player?.id === displaced.id);
-    const slotCode = slot?.slot.label ?? POSITION_BADGE[card.position];
-    if (slotCode === POSITION_BADGE[card.position]) {
-      return `İlk 11'de ${slotCode} slotuna girer · ${displaced.name} (${displaced.currentRating}) yedeğe iner · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`;
-    }
-    return `İlk 11'de ${slotCode} slotuna girer (${POSITION_BADGE[card.position]} oynar) · ${displaced.name} (${displaced.currentRating}) yedeğe iner · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`;
-  }
-
-  const emptyLabels = lineup.filter((s) => !s.player).map((s) => s.slot.label);
+  const emptyLabels = lineup
+    .filter((s) => !s.player && !slotAcceptsPlayer(card, s.slot))
+    .map((s) => s.slot.label);
   const emptyPart = emptyLabels.length
     ? `Boş slotlar (${emptyLabels.join(', ')}) bu mevkiyle uyuşmuyor`
     : 'Orta saha dolu veya mevki uyumu yok';
@@ -117,16 +118,6 @@ function formatAvgDelta(card: PlayerCard, squad: PlayerCard[]): string {
   const avg = squad.length ? squad.reduce((s, p) => s + p.currentRating, 0) / squad.length : card.currentRating;
   const delta = Math.round(card.currentRating - avg);
   return `${delta >= 0 ? `+${delta}` : delta} ortalama`;
-}
-
-function describeOutgoing(player: PlayerCard, onPitchBefore: boolean): string {
-  if (player.position === 'KL' && !onPitchBefore) {
-    return `Yedek kaleci ${player.name} (${player.currentRating})`;
-  }
-  if (!onPitchBefore) {
-    return `Yedek ${player.name} (${player.currentRating})`;
-  }
-  return `${player.name} (${player.currentRating})`;
 }
 
 export function getPlayerPickSummary(
@@ -150,44 +141,49 @@ export function getPlayerPickSummary(
 
   if (squad.length < maxSquad) {
     if (onPitch && targetSlot) {
+      const benched = findBenchedByIncoming(squad, after, card, formationKey);
+      let text = describeEnterSlot(card, targetSlot, fitNote(targetSlot), squadAfterSize, maxSquad, avgPart, lineupAfter);
+      if (benched) {
+        text += ` · ${describeLineupDrop(benched)}`;
+      }
       return {
-        text: describeEnterSlot(card, targetSlot, fitNote(targetSlot), squadAfterSize, maxSquad, avgPart, lineupAfter),
-        replacedPlayer: findBenchedByIncoming(squad, after, card, formationKey),
+        text,
+        replacedPlayer: benched,
+        replacementKind: benched ? 'lineup' : undefined,
       };
     }
     return {
       text: describeBenchPick(card, lineupAfter, squadAfterSize, maxSquad, avgPart),
-      replacedPlayer: findDisplacedStarter(card, lineupAfter),
+      replacedPlayer: null,
     };
   }
 
   const replaced = getReplacementPreview(squad, card, maxSquad, morale, activeTactics);
   const replacedOnPitch = replaced ? lineupIdsBefore.has(replaced.id) : false;
-  const outgoing = replaced ? describeOutgoing(replaced, replacedOnPitch) : '';
 
   if (onPitch && targetSlot && replaced) {
     const slotCode = targetSlot.slot.label;
-    const displaced = !replacedOnPitch
-      ? `${outgoing} yedeğe iner`
-      : `${outgoing} kadrodan çıkar`;
     return {
-      text: `İlk 11'de ${slotCode} slotuna girer${fitNote(targetSlot)} · ${displaced}`,
+      text: `İlk 11'de ${slotCode} slotuna girer${fitNote(targetSlot)} · ${describeSquadRemoval(replaced, replacedOnPitch)}`,
       replacedPlayer: replaced,
+      replacementKind: 'squad',
     };
   }
 
   if (!onPitch && replaced) {
     return {
-      text: `Yedek olarak kalır · mevkiler dolu · ${outgoing} kadrodan çıkar`,
+      text: `Yedek olarak kalır · mevkiler dolu · ${describeSquadRemoval(replaced, replacedOnPitch)}`,
       replacedPlayer: replaced,
+      replacementKind: 'squad',
     };
   }
 
   return {
     text: replaced
-      ? `${outgoing} kadrodan çıkar`
+      ? describeSquadRemoval(replaced, replacedOnPitch)
       : 'En zayıf oyuncunun yerine geçer',
     replacedPlayer: replaced,
+    replacementKind: replaced ? 'squad' : undefined,
   };
 }
 

@@ -115,6 +115,57 @@ describe('lineupPlacement — genel kurallar', () => {
     expect(SLOTS_442[weakIdx]!.label).toBe('SĞK');
   });
 
+  it('SÖK kanatlar doluyken boş SF slotuna oturur (Gökhan senaryosu)', () => {
+    const squad = [
+      p({ id: 'kl', name: 'Kane', position: 'KL', currentRating: 64, rating: 64 }),
+      p({ id: 'stp', name: 'Kaya', position: 'STP', currentRating: 74, rating: 74 }),
+      p({ id: 'sgb', name: 'Petrov', position: 'SÖB', currentRating: 63, rating: 63 }),
+      p({ id: 'slk', name: 'Çakır', position: 'SLK', currentRating: 73, rating: 73 }),
+      p({ id: 'os', name: 'Kaya2', position: 'OS', currentRating: 63, rating: 63 }),
+      p({ id: 'oos', name: 'Öztürk', position: 'OOS', currentRating: 68, rating: 68 }),
+      p({ id: 'sgk', name: 'Özdemir', position: 'SÖK', currentRating: 74, rating: 74 }),
+      p({ id: 'gokhan', name: 'Gökhan Silva', position: 'SÖK', currentRating: 72, rating: 72 }),
+    ];
+    expect(slotOf(squad, 'gokhan')).toBe('SF');
+    expect(slotOf(squad, 'sgk')).toBe('SĞK');
+  });
+
+  it('OS 433 — boş DOS varken OS oyuncusu DOS’a oturur (Gökhan Taş)', () => {
+    const slots433: PlacementSlotDef[] = [
+      { label: 'KL', preferred: ['KL'], zone: 'kaleci' },
+      { label: 'SLB', preferred: ['SLB', 'STP'], zone: 'savunma' },
+      { label: 'STP', preferred: ['STP'], zone: 'savunma' },
+      { label: 'STP', preferred: ['STP'], zone: 'savunma' },
+      { label: 'SĞB', preferred: ['SÖB', 'STP'], zone: 'savunma' },
+      { label: 'DOS', preferred: ['DOS', 'OS'], zone: 'orta' },
+      { label: 'OS', preferred: ['OS', 'OOS', 'DOS'], zone: 'orta' },
+      { label: 'OOS', preferred: ['OOS', 'OS'], zone: 'orta' },
+      { label: 'SLK', preferred: ['SLK'], zone: 'hucum' },
+      { label: 'SF', preferred: ['SF'], zone: 'hucum' },
+      { label: 'SĞK', preferred: ['SÖK'], zone: 'hucum' },
+    ];
+    function slot433(squad: PlayerCard[], id: string) {
+      const assigned = assignPlayersByRules(slots433, squad);
+      const idx = assigned.findIndex((x) => x?.id === id);
+      return idx >= 0 ? slots433[idx]!.label : null;
+    }
+    const squad = [
+      p({ id: 'kl', name: 'Arslan', position: 'KL', currentRating: 71, rating: 71 }),
+      ...['slb', 'stp1', 'stp2', 'sgb', 'oos', 'slk', 'sf', 'sgk'].map((id, i) =>
+        p({
+          id,
+          name: id,
+          position: (['SLB', 'STP', 'STP', 'SÖB', 'OOS', 'SLK', 'SF', 'SÖK'] as const)[i]!,
+          currentRating: 63 + i,
+          rating: 63 + i,
+        }),
+      ),
+      p({ id: 'gokhan', name: 'Gökhan Taş', position: 'OS', currentRating: 75, rating: 75 }),
+    ];
+    expect(slot433(squad, 'gokhan')).toBe('DOS');
+    expect(slot433(squad, 'oos')).toBe('OOS');
+  });
+
   it('flexPositions boş = yalnızca ana mevki', () => {
     const squad = [
       p({ id: 'kl', name: 'KL', position: 'KL', currentRating: 70, rating: 70 }),

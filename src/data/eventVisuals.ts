@@ -338,7 +338,7 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
   evt_psikolog: {
     scene: 'brain-calm',
     atmosphere: 'Sakin oda · spor psikoloğu',
-    narrative: 'Spor psikoloğu bekleme odasında. Maç baskısı, seri kayıplar, beklenti — konuşursan omuzlar hafifler.',
+    narrative: 'Spor psikoloğu bekleme odasında. Maç baskısı, gerginlik, beklenti — konuşursan omuzlar hafifler.',
     props: ['🧠', '🛋️', '☕'],
     choiceA: { icon: '💭', flavor: 'Seans al', scene: 'choice-talk' },
     choiceB: { icon: '🏃', flavor: 'Sahaya dön', scene: 'choice-field' },

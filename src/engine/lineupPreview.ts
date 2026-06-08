@@ -346,10 +346,13 @@ export function getBenchExplanations(squad: PlayerCard[], activeTactics: ActiveT
     }
 
     if (playableEmpty.length > 0 && bestFit < 99) {
-      return {
-        player,
-        reason: `Boş ${bestSlotLabel} slotuna uygun — kadro küçük olduğu için şimdilik yedek`,
-      };
+      const filled = summary.filled;
+      const totalSlots = summary.lineup.length;
+      const squadFull = summary.squadSize >= totalSlots;
+      const reason = squadFull && filled < totalSlots
+        ? `Boş ${bestSlotLabel} slotuna uygun — saha ${filled}/${totalSlots}, yerleşim sırası bekliyor`
+        : `Boş ${bestSlotLabel} slotuna uygun — kadro küçük olduğu için şimdilik yedek`;
+      return { player, reason };
     }
 
     const strongerStarters = summary.lineup
@@ -550,10 +553,15 @@ export function getPositionHints(
       });
     }
     if (emptyLabels.length) {
-      hints.push({
-        text: `Boş slotlar (${emptyLabels.join(', ')}) bu oyuncunun mevkileriyle uyuşmuyor`,
-        tone: 'info',
-      });
+      const unmatchedEmpty = lineupAfter
+        .filter((s) => !s.player && !slotAcceptsPlayer(card, s.slot))
+        .map((s) => s.slot.label);
+      if (unmatchedEmpty.length) {
+        hints.push({
+          text: `Boş slotlar (${unmatchedEmpty.join(', ')}) bu oyuncunun mevkileriyle uyuşmuyor`,
+          tone: 'info',
+        });
+      }
     } else {
       hints.push({
         text: `Saha dolu — oynayabildiği: ${playable}`,

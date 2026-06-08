@@ -3593,6 +3593,52 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-family: 'Barlow', sans-serif;
 }
 
+.card-pick-pass-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.65rem;
+}
+
+.btn-pass-pick {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.55rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(163, 163, 163, 0.35);
+  background: linear-gradient(135deg, rgba(38, 38, 38, 0.95) 0%, rgba(23, 23, 23, 0.98) 100%);
+  color: #e5e5e5;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.12s, box-shadow 0.15s;
+}
+
+.btn-pass-pick:hover {
+  border-color: rgba(212, 212, 212, 0.55);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+.btn-pass-pick-hint {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-dim);
+}
+
+.match-pick-panel--skip {
+  text-align: center;
+}
+
+.match-pick-skip-icon {
+  font-size: 2rem;
+  line-height: 1;
+  margin: 0.25rem 0 0.5rem;
+}
+
 .card-select-inner .card-pick-bonus-banner {
   margin-bottom: 0.35rem;
   padding: 0.55rem 0.75rem;
@@ -6603,7 +6649,41 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .event-main-panel {
   display: flex;
   flex-direction: column;
-  min-height: min(720px, calc(100dvh - 140px));
+  gap: 0;
+}
+
+.event-subjects {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0.75rem 0 0;
+}
+
+.event-subjects--multi {
+  display: grid;
+  gap: 0.65rem;
+}
+
+@media (min-width: 520px) {
+  .event-subjects--multi {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+.event-player-offer--pair .event-player-offer-label {
+  color: rgba(251, 191, 36, 0.85);
+}
+
+.event-player-offer--join .event-player-offer-label {
+  color: rgba(74, 222, 128, 0.9);
+}
+
+.event-player-offer--leave .event-player-offer-label {
+  color: rgba(248, 113, 113, 0.95);
+}
+
+.event-player-offer--focus .event-player-offer-label {
+  color: rgba(147, 197, 253, 0.95);
 }
 
 .event-story-bite {
@@ -6702,13 +6782,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .event-choices {
-  margin-top: auto;
-  padding-top: 1.25rem;
+  margin-top: 1rem;
   display: grid;
   gap: 0.85rem;
-  flex: 1 1 auto;
-  align-content: end;
-  min-height: 280px;
 }
 
 @media (min-width: 640px) {
@@ -9055,7 +9131,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .event-player-offer {
-  margin: 0.75rem 0 1rem;
+  margin: 0;
 }
 
 .event-player-offer-label {

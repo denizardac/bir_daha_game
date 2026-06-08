@@ -1,7 +1,7 @@
 import { getTagBite } from '@/data/biteTips';
 import { PlayerPortrait } from '@/components/PlayerPortrait';
 import type { GameCard } from '@/types';
-import { isPlayerCard, isTacticCard } from '@/types';
+import { isPlayerCard, isSkipCard, isTacticCard } from '@/types';
 import type { OpponentStyle } from '@/types';
 import { formatPosition } from '@/utils/positionStyle';
 
@@ -84,6 +84,18 @@ export function MatchPickPanel({ selection, subtitle }: Props) {
         <h3 className="match-pick-name">{selection.name}</h3>
         <p className="match-pick-meta">{selection.effectSummary}</p>
         <p className="match-pick-tactic-desc">{selection.description}</p>
+        <p className="match-pick-sub">{subtitle}</p>
+      </div>
+    );
+  }
+
+  if (isSkipCard(selection)) {
+    return (
+      <div className="match-pick-panel match-pick-panel--skip">
+        <p className="match-panel-label">Seçimin</p>
+        <div className="match-pick-skip-icon" aria-hidden>⏭</div>
+        <h3 className="match-pick-name">{selection.name}</h3>
+        <p className="match-pick-meta">{selection.description}</p>
         <p className="match-pick-sub">{subtitle}</p>
       </div>
     );

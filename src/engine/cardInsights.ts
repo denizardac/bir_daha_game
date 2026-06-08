@@ -30,6 +30,7 @@ export type TacticContributionLine = {
 export type PlayerCardInsight = {
   summary: string;
   replacedPlayer: PlayerCard | null;
+  replacementKind?: 'squad' | 'lineup';
   tagBites: TagBite[];
   positionHints: PositionHint[];
   synergies: PlayerSynergyHint[];
@@ -168,6 +169,7 @@ export function getPlayerCardInsight(
   return {
     summary: pick.text,
     replacedPlayer: pick.replacedPlayer,
+    replacementKind: pick.replacementKind,
     tagBites,
     positionHints,
     synergies,

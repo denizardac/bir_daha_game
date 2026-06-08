@@ -78,7 +78,14 @@ export interface TrainingCard {
   offeredTags: Tag[];
 }
 
-export type GameCard = PlayerCard | TacticCard | TrainingCard;
+export interface SkipCard {
+  kind: 'skip';
+  id: string;
+  name: string;
+  description: string;
+}
+
+export type GameCard = PlayerCard | TacticCard | TrainingCard | SkipCard;
 
 export type MatchEventType =
   | 'goal_for'
@@ -319,4 +326,8 @@ export function isTacticCard(card: GameCard): card is TacticCard {
 
 export function isTrainingCard(card: GameCard): card is TrainingCard {
   return card.kind === 'training';
+}
+
+export function isSkipCard(card: GameCard): card is SkipCard {
+  return card.kind === 'skip';
 }

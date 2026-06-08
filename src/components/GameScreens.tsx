@@ -8,7 +8,8 @@ import { SquadPanel } from '@/components/SquadPanel';
 import { getCardPickHeaderSubtitle } from '@/data/biteTips';
 import { LineupPreviewCenterTrigger, LineupPreviewExpanded, LineupPreviewModal } from '@/components/LineupPreview';
 import { isFinaleRound, isTacticBonusRound } from '@/engine/roundFlow';
-import { previewEventPlayer } from '@/engine/events';
+import { canPassCardPick } from '@/engine/cardPass';
+import { getEventSubjects } from '@/engine/eventSubjects';
 import { SynergyRevealOverlay } from '@/components/SynergyRevealOverlay';
 import { SidePanel } from '@/components/SidePanel';
 import { MoralePanel } from '@/components/MoralePanel';
@@ -22,7 +23,7 @@ import { explainMatchResult, getDepartureScore, getEventPreviews, getTacticPrevi
 import { calculateRoundPoints, formatScore } from '@/engine/scoring';
 import { getSquadLineupSummary, lineupSlotToMatchPitch } from '@/engine/lineupPreview';
 import { getPersistedStats, TOTAL_SYNERGIES, useGameStore } from '@/store/gameStore';
-import { isPlayerCard, isTacticCard, isTrainingCard } from '@/types';
+import { isPlayerCard, isSkipCard, isTacticCard, isTrainingCard } from '@/types';
 import { MatchAnimation } from '@/components/MatchAnimation';
 import { MatchMoraleBanner } from '@/components/MatchMoraleBanner';
 import { MatchLeftPanel, MatchRightPanel } from '@/components/MatchLivePanels';
@@ -66,7 +67,7 @@ export function CardSelectScreen() {
   const state = useGameStore();
   const {
     round, maxRounds, squad, maxSquadSize, morale, score, streak,
-    currentOffers, selectOffer,
+    currentOffers, selectOffer, passCardPick,
     dangerMode, isFirstRun, discoveredSynergies, activeTactics, usedEventIds,
     extraDrawAvailable, extraDrawUsed, redrawOffers,
     rerollsRemaining, rerollSingleOffer, rerollAllOffers, offersRerollIndex,
@@ -79,6 +80,14 @@ export function CardSelectScreen() {
   const emptyField = 11 - lineupSummary.filled;
   const tacticBonus = isTacticBonusRound(round, maxRounds);
   const finaleMatch = isFinaleRound(round, maxRounds);
+  const canPass = canPassCardPick({
+    phase: 'cardSelect',
+    round,
+    maxRounds,
+    squadLength: squad.length,
+    maxSquadSize,
+    currentOffers,
+  });
   const pickSubtitle = finaleMatch
     ? 'Şampiyonluk maçı — son kartını seç, büyük puan için kazan'
     : tacticBonus
@@ -87,7 +96,9 @@ export function CardSelectScreen() {
         ? `3 oyuncu teklifi · Kadroya eklenir (${empty} boş slot)`
         : emptyField > 0
           ? `3 oyuncu teklifi · Sahada ${emptyField} boş slot — yedek çıkar, slota yerleşir`
-          : '3 oyuncu teklifi · Kadro dolu — en riskli oyuncunun yerine geçer';
+          : canPass
+            ? '3 oyuncu teklifi · Kadro dolu — istersen pas geç, mevcut kadroyla maça çık'
+            : '3 oyuncu teklifi · Kadro dolu — en riskli oyuncunun yerine geçer';
 
   return (
     <div className={`game-shell pitch-bg card-select-screen ${dangerMode ? 'danger-pulse' : ''}`}>
@@ -257,6 +268,19 @@ export function CardSelectScreen() {
                 );
               })}
             </div>
+
+            {canPass && (
+              <div className="card-pick-pass-row">
+                <button
+                  type="button"
+                  className="btn-pass-pick"
+                  onClick={() => { playSound('tick', sound); passCardPick(); }}
+                >
+                  Pas geç
+                  <span className="btn-pass-pick-hint">Kadro aynı kalır · doğrudan maça</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {trainingFlow && (
@@ -294,9 +318,11 @@ export function EventScreen() {
   if (!currentEvent) return null;
 
   const previews = getEventPreviews(currentEvent, squad, morale, score, activeTactics);
-  const offerPlayer = (currentEvent.id === 'evt_kiralik' || currentEvent.id === 'evt_genc_yetenek' || currentEvent.id === 'evt_scout')
-    ? previewEventPlayer(seed, round, currentEvent.id)
-    : null;
+  const eventSubjects = getEventSubjects(currentEvent.id, squad, activeTactics, {
+    seed,
+    round,
+    sellPlayerId: previews.a.sellPlayerId,
+  });
   const tones = getEventChoiceTones(previews);
   const categoryBite = EVENT_CATEGORY_BITE[currentEvent.category];
   const presentation = getEventPresentation(currentEvent.id);
@@ -393,27 +419,28 @@ export function EventScreen() {
               {categoryBite.desc} Maç yok — kararın doğrudan moral, kadro veya sonraki maç gücüne yansır.
             </p>
 
-            {currentEvent.id === 'evt_transfer_teklif' && previews.a.sellPlayerName && (
-              <div className="event-player-offer event-player-offer--sell">
-                <p className="event-player-offer-label">Satılacak oyuncu</p>
-                <p className="event-sell-target">
-                  {previews.a.sellPlayerName}
-                  {previews.a.description.includes('(') ? '' : ` · kadrodaki en güçlü saha oyuncusu`}
-                </p>
-              </div>
-            )}
-
-            {offerPlayer && previews.a.addYouth && squad.length < maxSquadSize && (
-              <div className="event-player-offer">
-                <p className="event-player-offer-label">Teklif edilen oyuncu</p>
-                <PlayerCard
-                  card={offerPlayer}
-                  squad={squad}
-                  discovered={discoveredSynergies}
-                  maxSquadSize={maxSquadSize}
-                  activeTactics={activeTactics}
-                  morale={morale}
-                />
+            {eventSubjects.length > 0 && (
+              <div className={`event-subjects ${eventSubjects.length > 1 ? 'event-subjects--multi' : ''}`}>
+                {eventSubjects.map((subject) => (
+                  <div
+                    key={`${subject.player.id}-${subject.label}`}
+                    className={`event-player-offer event-player-offer--${subject.variant ?? 'focus'}`}
+                  >
+                    <p className="event-player-offer-label">{subject.label}</p>
+                    {subject.incoming ? (
+                      <PlayerCard
+                        card={subject.player}
+                        squad={squad}
+                        discovered={discoveredSynergies}
+                        maxSquadSize={maxSquadSize}
+                        activeTactics={activeTactics}
+                        morale={morale}
+                      />
+                    ) : (
+                      <PlayerCardMini card={subject.player} />
+                    )}
+                  </div>
+                ))}
               </div>
             )}
 
@@ -507,9 +534,11 @@ export function MatchScreen() {
 
   const selectionSubtitle = isPlayerCard(pendingSelected)
     ? `${formatPosition(pendingSelected.position)} · Kadroya eklendi · ${pendingSelected.currentRating} rating`
-    : isTacticCard(pendingSelected)
-      ? `${getTacticPreview(pendingSelected, squad, activeTactics).headline} — sonraki maçlarda bonus`
-      : 'Antrenman uygulandı';
+    : isSkipCard(pendingSelected)
+      ? 'Kadro değişmedi · mevcut 11 ile maça çıkıyorsun'
+      : isTacticCard(pendingSelected)
+        ? `${getTacticPreview(pendingSelected, squad, activeTactics).headline} — sonraki maçlarda bonus`
+        : 'Antrenman uygulandı';
 
   const resultExplain = explainMatchResult(
     squadAvg,
@@ -961,9 +990,11 @@ export function RunEndScreen() {
                           ? isTrainingCard(r.cardSelected)
                             ? `Antrenman · ${r.cardSelected.description}`
                             : `Taktik · ${isTacticCard(r.cardSelected) ? r.cardSelected.name : 'Bonus'}`
-                          : isPlayerCard(r.cardSelected)
-                            ? r.cardSelected.name
-                            : `📋 ${r.cardSelected.name}`}
+                          : isSkipCard(r.cardSelected)
+                            ? 'Pas geç'
+                            : isPlayerCard(r.cardSelected)
+                              ? r.cardSelected.name
+                              : `📋 ${r.cardSelected.name}`}
                       </span>
                       <span className={r.pointsEarned > 0 ? 'text-amber-400' : 'text-neutral-600'}>
                         {r.pointsEarned > 0 ? `+${r.pointsEarned}` : '0'}
