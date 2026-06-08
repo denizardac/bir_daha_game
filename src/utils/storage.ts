@@ -2,6 +2,7 @@ import type { PersistedData } from '@/types';
 import { ensureLeaderboardPopulation } from '@/engine/leaderboard';
 import { getSeasonKey } from '@/engine/hallOfFame';
 import { getDailySeed } from '@/engine/seed';
+import { getTodayKey } from '@/engine/leaderboard';
 
 const STORAGE_KEY = 'bir-daha-save';
 
@@ -23,7 +24,13 @@ export function loadPersisted(): PersistedData {
       merged.lastPlayerName = merged.displayName;
     }
     delete merged.displayName;
-    if (!merged.todaySeed) merged.todaySeed = getDailySeed();
+    const currentDailySeed = getDailySeed();
+    if (!merged.todaySeed || merged.todaySeed !== currentDailySeed) {
+      merged.todaySeed = currentDailySeed;
+    }
+    if (merged.lastPlayedDate && merged.lastPlayedDate !== getTodayKey()) {
+      merged.todayScore = 0;
+    }
     if (!merged.seasonKey) merged.seasonKey = getSeasonKey();
     if (!merged.hallOfFame) merged.hallOfFame = [];
     if (!merged.seasonArchive) merged.seasonArchive = {};

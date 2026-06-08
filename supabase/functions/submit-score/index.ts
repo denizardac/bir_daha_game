@@ -6,8 +6,13 @@ const MAX_SCORE = 500_000;
 type RoundPick = {
   round: number;
   cardId: string;
+  cardKind: string;
   points: number;
   outcome: string | null;
+  goalsFor: number | null;
+  goalsAgainst: number | null;
+  isTacticBonus: boolean;
+  eventChoice: string | null;
 };
 
 type SubmitBody = {
@@ -23,7 +28,14 @@ type SubmitBody = {
   };
   digest: string;
   clientVersion?: string;
-  roundHistory: Array<{ round: number; pointsEarned: number; cardSelected: { id: string }; matchResult?: { roundPoints: number; outcome: string } | null; isTacticBonus?: boolean }>;
+  roundHistory: Array<{
+    round: number;
+    pointsEarned: number;
+    cardSelected: { id: string; kind?: string };
+    matchResult?: { roundPoints: number; outcome: string; goalsFor?: number; goalsAgainst?: number } | null;
+    isTacticBonus?: boolean;
+    eventChoice?: 'A' | 'B';
+  }>;
   isDaily: boolean;
   dayKey: string;
   weekKey: string;
@@ -38,8 +50,13 @@ async function computeDigest(
   const picks: RoundPick[] = roundHistory.map((r) => ({
     round: r.round,
     cardId: r.cardSelected?.id ?? '',
+    cardKind: r.cardSelected?.kind ?? 'player',
     points: r.pointsEarned ?? 0,
     outcome: r.matchResult?.outcome ?? null,
+    goalsFor: r.matchResult?.goalsFor ?? null,
+    goalsAgainst: r.matchResult?.goalsAgainst ?? null,
+    isTacticBonus: r.isTacticBonus ?? false,
+    eventChoice: r.eventChoice ?? null,
   }));
 
   const payload = JSON.stringify({ seed, totalScore, roundsCompleted, picks });

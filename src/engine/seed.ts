@@ -1,16 +1,55 @@
 import seedrandom from 'seedrandom';
 import type { Rarity } from '@/types';
 
-export function getDailySeed(): string {
-  const now = new Date();
-  const date = now.toISOString().slice(0, 10);
-  return `${date}-bir-daha-v1`;
+const ISTANBUL_TZ = 'Europe/Istanbul';
+
+/** null = İstanbul takvimi; manuel günlük rotasyon için YYYY-MM-DD */
+export const DAILY_DAY_OVERRIDE: string | null = '2026-06-09';
+
+const DAILY_SLUG_WORDS = [
+  'ruzgar', 'yildiz', 'simsek', 'kanat', 'kale', 'pas', 'gol', 'altin', 'demir', 'volkan', 'deniz', 'kuzgun',
+];
+
+function istanbulDayKey(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ISTANBUL_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+  const y = parts.find((p) => p.type === 'year')!.value;
+  const m = parts.find((p) => p.type === 'month')!.value;
+  const d = parts.find((p) => p.type === 'day')!.value;
+  return `${y}-${m}-${d}`;
+}
+
+/** Günlük challenge takvim günü (YYYY-MM-DD, İstanbul) */
+export function getDailyDateKey(now = new Date()): string {
+  return DAILY_DAY_OVERRIDE ?? istanbulDayKey(now);
+}
+
+function slugForDay(dayKey: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < dayKey.length; i++) {
+    h ^= dayKey.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  const word = DAILY_SLUG_WORDS[Math.abs(h) % DAILY_SLUG_WORDS.length]!;
+  const num = (Math.abs(h) >>> 0) % 900 + 100;
+  return `${word}-${num}`;
+}
+
+export function getDailySeed(now = new Date()): string {
+  const day = getDailyDateKey(now);
+  return `${day}-${slugForDay(day)}-bir-daha-v1`;
 }
 
 const TR_MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 
-export function formatDailyDate(date = new Date()): string {
-  return `${date.getDate()} ${TR_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+export function formatDailyDate(now = new Date()): string {
+  const dateKey = getDailyDateKey(now);
+  const [y, m, d] = dateKey.split('-').map(Number);
+  return `${d} ${TR_MONTHS[m! - 1]} ${y}`;
 }
 
 export function getRandomSeed(): string {

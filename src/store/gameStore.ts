@@ -6,7 +6,7 @@ import {
   REROLLS_PER_RUN,
 } from '@/constants/game';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
-import { submitRunToLeaderboard } from '@/api/leaderboardRemote';
+import { isRemoteLeaderboardEnabled, submitRunToLeaderboard } from '@/api/leaderboardRemote';
 import { buildSignedRunPayload } from '@/engine/runIntegrity';
 import { validateRunSubmission } from '@/engine/runValidation';
 import { getEventRatingTarget, resolveEventRemoval } from '@/engine/eventRemoval';
@@ -181,8 +181,10 @@ async function persistRunEndScore(state: GameStore, score: number, roundsComplet
   }
   const hallEntry = { ...signed.entry, flawless: signed.entry.flawless ?? false };
   savePersisted(addToHallOfFame(addScoreToLeaderboards(p, signed.entry), hallEntry));
-  if (state.isDailySeed) {
-    void submitRunToLeaderboard(signed, state.roundHistory, true);
+  if (isRemoteLeaderboardEnabled()) {
+    void submitRunToLeaderboard(signed, state.roundHistory, state.isDailySeed).then((result) => {
+      if (!result.ok) console.warn('[leaderboard] Uzak skor gönderilemedi:', result.error);
+    });
   }
 }
 

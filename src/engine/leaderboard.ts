@@ -1,6 +1,6 @@
 import { analyzeEgoReplay } from '@/engine/egoAnalysis';
 import type { LeaderboardEntry, PersistedData, RoundResult } from '@/types';
-import { getDailySeed } from '@/engine/seed';
+import { getDailyDateKey, getDailySeed } from '@/engine/seed';
 
 export function getWeekKey(date = new Date()): string {
   const d = new Date(date);
@@ -12,7 +12,7 @@ export function getWeekKey(date = new Date()): string {
 }
 
 export function getTodayKey(): string {
-  return new Date().toISOString().slice(0, 10);
+  return getDailyDateKey();
 }
 
 export function addScoreToLeaderboards(
