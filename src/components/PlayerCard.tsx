@@ -21,6 +21,7 @@ interface Props {
   onSelect?: () => void;
   selected?: boolean;
   showTagHint?: boolean;
+  tipPlacement?: 'left' | 'right' | 'auto';
 }
 
 const RARITY_PICK_HINT: Record<Rarity, string> = {
@@ -58,7 +59,7 @@ function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergi
   );
 }
 
-export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeTactics = [], morale = 50, onSelect, selected, showTagHint }: Props) {
+export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeTactics = [], morale = 50, onSelect, selected, showTagHint, tipPlacement = 'auto' }: Props) {
   const insight = getPlayerCardInsight(card, squad, discovered, maxSquadSize, activeTactics, morale);
   const themeVars = getPlayerCardThemeVars(card.rarity, card.position);
   const themeClass = getPlayerCardThemeClass(card.rarity, card.position);
@@ -99,7 +100,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
                 <h3 className="player-name">{card.name}</h3>
                 {card.tags.length > 0 && (
                   <div className="card-pick-hero-traits card-pick-hero-traits--inline">
-                    <TagTraitBadges tags={card.tags} />
+                    <TagTraitBadges tags={card.tags} tipPlacement={tipPlacement} />
                   </div>
                 )}
               </div>
@@ -142,7 +143,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
                 <ul className="card-tag-bites card-tag-bites--compact">
                   {insight.tagBites.map(({ tag, desc }) => (
                     <li key={tag} className="card-tag-bite">
-                      <HoverTip tip={desc} className="tag-trait-badge-wrap">
+                      <HoverTip tip={desc} className="tag-trait-badge-wrap" placement={tipPlacement}>
                         <span className={`tag-trait-badge tag-trait-badge--${tag.replace(/\s+/g, '-')}`}>
                           <span className="tag-trait-icon" aria-hidden>{TAG_ICONS[tag]}</span>
                           <span className="tag-trait-name">{tag}</span>

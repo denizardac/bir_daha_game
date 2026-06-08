@@ -19,7 +19,7 @@ interface Props {
 
 function SquadTagChip({ tag }: { tag: Tag }) {
   return (
-    <HoverTip tip={TAG_DESCRIPTIONS[tag]} className="syn-tag-chip-wrap" placement="left">
+    <HoverTip tip={TAG_DESCRIPTIONS[tag]} className="syn-tag-chip-wrap" placement="right">
       <span className={`syn-tag-chip syn-tag-chip--squad syn-tag-chip--${tag.replace(/\s+/g, '-')}`}>
         <span className="syn-tag-icon" aria-hidden>{TAG_ICONS[tag]}</span>
         <span className="syn-tag-label">{tag}</span>
@@ -85,7 +85,7 @@ export function SquadPanel({ squad, maxSquadSize, round, maxRounds, activeTactic
                     {POSITION_BADGE[player.position]}
                   </span>
                   {altPos && (
-                    <HoverTip tip={`Ek mevkiler: ${altPos.replace(/ · /g, ', ')}`} className="squad-row-alt-wrap" placement="left">
+                    <HoverTip tip={`Ek mevkiler: ${altPos.replace(/ · /g, ', ')}`} className="squad-row-alt-wrap" placement="right">
                       <span className="squad-row-alt-pos">+{altPos}</span>
                     </HoverTip>
                   )}

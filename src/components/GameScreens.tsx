@@ -40,12 +40,12 @@ import type { EventOutcome } from '@/engine/events';
 function formatEventOutcome(o: EventOutcome) {
   const parts: string[] = [];
   if (o.moraleDelta) parts.push(`Moral ${o.moraleDelta > 0 ? '+' : ''}${o.moraleDelta}`);
-  if (o.scoreDelta) parts.push(`Skor ${o.scoreDelta > 0 ? '+' : ''}${o.scoreDelta}`);
-  if (o.addYouth) parts.push('Kadroya oyuncu eklenir');
-  if (o.removeWeakest) parts.push('En zayıf oyuncu gider');
-  if (o.nextMatchBonus) parts.push(`Sonraki maç +${o.nextMatchBonus} güç`);
+  if (o.scoreDelta) parts.push(`Anlık skor ${o.scoreDelta > 0 ? '+' : ''}${o.scoreDelta}`);
+  if (o.addYouth) parts.push('Kadroya genç oyuncu eklenir');
+  if (o.removeWeakest) parts.push('En zayıf oyuncu kadrodan çıkar');
+  if (o.nextMatchBonus) parts.push(`Bir sonraki maçta +${o.nextMatchBonus} güç bonusu`);
   if (o.nextMatchRisk) parts.push(formatMatchRiskDelta(o.nextMatchRisk));
-  return parts.length ? `Seçersen: ${parts.join(' · ')}` : '';
+  return parts.length ? parts.join(' · ') : '';
 }
 
 export function CardSelectScreen() {
@@ -175,6 +175,7 @@ export function CardSelectScreen() {
 
             <div className="cards-pick-grid">
               {currentOffers.map((offer, slotIndex) => {
+                const tipPlacement = slotIndex === 0 ? 'right' : slotIndex === currentOffers.length - 1 ? 'left' : 'auto';
                 const inner = isPlayerCard(offer) ? (
                   <PlayerCard
                     key={`${offer.id}-r${offersRerollIndex}`}
@@ -184,6 +185,7 @@ export function CardSelectScreen() {
                     maxSquadSize={maxSquadSize}
                     activeTactics={activeTactics}
                     morale={morale}
+                    tipPlacement={tipPlacement}
                     onSelect={() => { playSound('tick', sound); selectOffer(offer); }}
                     showTagHint={isFirstRun && round === 1}
                   />
@@ -300,25 +302,31 @@ export function EventScreen() {
   ) => {
     const selected = picked === choice;
     const dimmed = picked !== null && picked !== choice;
+    const outcomeText = formatEventOutcome(preview);
     return (
       <button
         type="button"
         disabled={picked !== null}
-        className={eventChoiceClass(tone, selected, dimmed)}
+        className={`${eventChoiceClass(tone, selected, dimmed)} event-choice-card`}
         onClick={() => handlePick(choice)}
       >
-        <span className="block text-xl font-extrabold">{label}</span>
-        <span className={`mt-1 block text-sm font-normal ${dimmed ? 'line-through opacity-40' : 'opacity-90'}`}>
-          {description}
-        </span>
-        {formatEventOutcome(preview) && (
-          <span className={`event-outcome-preview ${dimmed ? 'line-through opacity-40' : ''}`}>
-            {selected ? '✓ Seçildi' : formatEventOutcome(preview)}
-          </span>
-        )}
-        {selected && !formatEventOutcome(preview) && (
-          <span className="event-outcome-preview">✓ Seçildi</span>
-        )}
+        <div className="event-choice-visual" aria-hidden>
+          <span className="event-choice-visual-icon">{choice === 'A' ? '◆' : '◇'}</span>
+          <span className="event-choice-visual-glow" />
+        </div>
+        <div className="event-choice-body">
+          <span className="event-choice-kicker">Seçenek {choice}</span>
+          <span className="event-choice-label">{label}</span>
+          <p className={`event-choice-desc ${dimmed ? 'line-through opacity-40' : ''}`}>{description}</p>
+          {outcomeText && (
+            <p className={`event-choice-outcome ${dimmed ? 'line-through opacity-40' : ''}`}>
+              {selected ? '✓ Seçildi' : outcomeText}
+            </p>
+          )}
+          {selected && !outcomeText && (
+            <p className="event-choice-outcome">✓ Seçildi</p>
+          )}
+        </div>
       </button>
     );
   };
@@ -355,12 +363,19 @@ export function EventScreen() {
             )}
 
             <div className={`event-hero event-hero--${currentEvent.category}`}>
+              <div className="event-hero-scene" aria-hidden>
+                <span className="event-hero-scene-ring" />
+                <span className="event-hero-scene-ring event-hero-scene-ring--2" />
+              </div>
               <span className="event-hero-icon" aria-hidden>{currentEvent.icon}</span>
               <div className="event-hero-glow" aria-hidden />
             </div>
 
             <h2 className="event-title">{currentEvent.title}</h2>
             <p className="event-description">{currentEvent.description}</p>
+            <p className="event-story-bite">
+              {categoryBite.desc} Maç yok — kararın doğrudan moral, kadro veya sonraki maç gücüne yansır.
+            </p>
 
             {offerPlayer && previews.a.addYouth && squad.length < maxSquadSize && (
               <div className="event-player-offer">
@@ -785,7 +800,7 @@ export function RunEndScreen() {
                 <p className="mt-3 text-sm text-neutral-500">Beraberlikler az puan verir; bir sonraki run&apos;da sinerji kurmayı dene.</p>
               )}
               <button type="button" className="btn-primary mt-6 w-full" onClick={() => resetRun()}>BİR DAHA</button>
-              <button type="button" className="btn-secondary mt-2 w-full" onClick={advanceRunEnd}>SIRALAMAYA BAK</button>
+              <button type="button" className="btn-secondary mt-2 w-full" onClick={advanceRunEnd}>İSTATİSTİKLERİNE BAK</button>
               <button type="button" className="mt-2 w-full text-sm text-neutral-500 underline-offset-2 hover:underline" onClick={goToMenu}>
                 Ana Menü
               </button>

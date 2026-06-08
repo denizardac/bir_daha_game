@@ -3,9 +3,12 @@ import { getTacticEffect } from '@/data/tactics';
 import type { ActiveTactic, EventCard, PlayerCard, TacticCard } from '@/types';
 import { resolveEvent, type EventOutcome } from '@/engine/events';
 import {
+  assignSquadToFormation,
+  getActiveFormationKey,
   getFilledSlotAfterPick,
   getLineupPlayerIds,
   getReplacementPreview,
+  simulateSquadAfterPick,
 } from '@/engine/lineupPreview';
 import { getDepartureScore } from '@/engine/squadLogic';
 
@@ -34,6 +37,22 @@ export type PlayerPickSummary = {
   replacedPlayer: PlayerCard | null;
 };
 
+function formatAvgDelta(card: PlayerCard, squad: PlayerCard[]): string {
+  const avg = squad.length ? squad.reduce((s, p) => s + p.currentRating, 0) / squad.length : card.currentRating;
+  const delta = Math.round(card.currentRating - avg);
+  return `${delta >= 0 ? `+${delta}` : delta} ortalama`;
+}
+
+function describeOutgoing(player: PlayerCard, onPitchBefore: boolean): string {
+  if (player.position === 'KL' && !onPitchBefore) {
+    return `Yedek kaleci ${player.name} (${player.currentRating})`;
+  }
+  if (!onPitchBefore) {
+    return `Yedek ${player.name} (${player.currentRating})`;
+  }
+  return `${player.name} (${player.currentRating})`;
+}
+
 export function getPlayerPickSummary(
   card: PlayerCard,
   squad: PlayerCard[],
@@ -41,40 +60,57 @@ export function getPlayerPickSummary(
   morale = 50,
   activeTactics: ActiveTactic[] = [],
 ): PlayerPickSummary {
-  const empty = maxSquad - squad.length;
-  const avg = squad.length ? squad.reduce((s, p) => s + p.currentRating, 0) / squad.length : card.currentRating;
-  const delta = Math.round(card.currentRating - avg);
-  if (empty > 0) {
+  const formationKey = getActiveFormationKey(activeTactics);
+  const lineupIdsBefore = getLineupPlayerIds(squad, activeTactics);
+  const after = simulateSquadAfterPick(squad, card, maxSquad, morale, activeTactics);
+  const lineupAfter = assignSquadToFormation(after, formationKey);
+  const targetSlot = lineupAfter.find((s) => s.player?.id === card.id);
+  const onPitch = !!targetSlot;
+  const avgPart = formatAvgDelta(card, squad);
+  const squadAfterSize = after.length;
+
+  if (squad.length < maxSquad) {
+    if (onPitch && targetSlot) {
+      return {
+        text: `İlk 11'de ${targetSlot.slot.label} slotuna girer · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`,
+        replacedPlayer: null,
+      };
+    }
     return {
-      text: `Kadroya eklenir (${squad.length + 1}/${maxSquad}) · ${delta >= 0 ? `+${delta}` : delta} ortalamaya`,
+      text: `Yedek olarak kalır · uygun saha slotu yok · Kadro ${squadAfterSize}/${maxSquad} · ${avgPart}`,
       replacedPlayer: null,
     };
   }
 
   const replaced = getReplacementPreview(squad, card, maxSquad, morale, activeTactics);
   const filledSlot = getFilledSlotAfterPick(squad, card, maxSquad, activeTactics, morale);
-  const lineupIds = getLineupPlayerIds(squad, activeTactics);
-  const replacedIsBench = replaced ? !lineupIds.has(replaced.id) : false;
+  const replacedOnPitch = replaced ? lineupIdsBefore.has(replaced.id) : false;
+  const outgoing = replaced ? describeOutgoing(replaced, replacedOnPitch) : '';
 
-  if (filledSlot && replacedIsBench && replaced) {
-    const slotName = filledSlot.slot.label;
-    const benchLabel = replaced.position === 'KL' ? 'Yedek kaleci' : 'Yedek';
+  if (onPitch && targetSlot && replaced) {
+    const slotCode = targetSlot.slot.label;
+    if (filledSlot) {
+      return {
+        text: `İlk 11'de ${slotCode} slotuna girer · ${outgoing} kadrodan çıkar`,
+        replacedPlayer: replaced,
+      };
+    }
     return {
-      text: `Boş ${slotName} slotuna yerleştirilir · ${benchLabel} ${replaced.name} (${replaced.currentRating}) çıkar`,
+      text: `İlk 11'de ${slotCode} slotuna girer · ${outgoing} kadrodan çıkar`,
       replacedPlayer: replaced,
     };
   }
 
-  if (filledSlot && replaced) {
+  if (!onPitch && replaced) {
     return {
-      text: `Boş ${filledSlot.slot.label} slotuna yerleştirilir · ${replaced.name} (${replaced.currentRating}) kadrodan çıkar`,
+      text: `Yedek olarak kalır · mevkiler dolu · ${outgoing} kadrodan çıkar`,
       replacedPlayer: replaced,
     };
   }
 
   return {
     text: replaced
-      ? `${replaced.name} (${replaced.currentRating}) yerine geçer`
+      ? `${outgoing} kadrodan çıkar`
       : 'En zayıf oyuncunun yerine geçer',
     replacedPlayer: replaced,
   };

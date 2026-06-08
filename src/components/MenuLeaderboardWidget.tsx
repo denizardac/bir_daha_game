@@ -143,7 +143,11 @@ export function MenuLeaderboardWidget() {
       {expanded && (
         <div className="menu-lb-rows">
           {rows.length === 0 ? (
-            <p className="menu-lb-empty">Henüz skor yok — ilk sen ol!</p>
+            <p className="menu-lb-empty">
+              {tab === 'daily'
+                ? 'Günlük seed run\'ı bitirince burada görünür — serbest mod skorları haftalık listede.'
+                : 'Henüz skor yok — ilk sen ol!'}
+            </p>
           ) : (
             rows.map((row, idx) => {
               if (row.kind === 'gap') {

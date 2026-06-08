@@ -1,5 +1,5 @@
 import { clonePlayer } from '@/data/players';
-import { getPlayablePositions, playerPlaysPosition, slotFitIndex } from '@/data/positionFlexibility';
+import { getPlayablePositions, slotFitIndex } from '@/data/positionFlexibility';
 import { getTacticCategory } from '@/data/tactics';
 import { getFormationDotsByKey, getFormationKey } from '@/engine/tacticVisual';
 import { getDepartureScore, selectDepartingPlayer } from '@/engine/squadLogic';
@@ -166,7 +166,35 @@ function isOutOfPosition(player: PlayerCard, slot: FormationSlotDef): boolean {
   return slotFitIndex(player, slot.preferred) === 99;
 }
 
-/** Kaleci saha dışına çıkmaz; kanatlar kanada, önce tam mevki eşleşmesi */
+function optimizeSlotAssignments(
+  slots: FormationSlotDef[],
+  assigned: (PlayerCard | null)[],
+): void {
+  for (let pass = 0; pass < 4; pass++) {
+    let improved = false;
+    for (let i = 0; i < slots.length; i++) {
+      for (let j = i + 1; j < slots.length; j++) {
+        const pi = assigned[i];
+        const pj = assigned[j];
+        if (!pi || !pj) continue;
+        const before = slotFitIndex(pi, slots[i]!.preferred) + slotFitIndex(pj, slots[j]!.preferred);
+        const after = slotFitIndex(pi, slots[j]!.preferred) + slotFitIndex(pj, slots[i]!.preferred);
+        if (
+          after < before
+          && slotFitIndex(pi, slots[j]!.preferred) < 99
+          && slotFitIndex(pj, slots[i]!.preferred) < 99
+        ) {
+          assigned[i] = pj;
+          assigned[j] = pi;
+          improved = true;
+        }
+      }
+    }
+    if (!improved) break;
+  }
+}
+
+/** Kaleci saha dışına çıkmaz; yalnızca uyumlu mevkiler (fit < 99), sonra swap ile iyileştirme */
 function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (PlayerCard | null)[] {
   const assigned: (PlayerCard | null)[] = Array(slots.length).fill(null);
   const used = new Set<string>();
@@ -186,59 +214,34 @@ function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (
     }
   }
 
-  for (let i = 0; i < slots.length; i++) {
-    if (assigned[i] || slots[i]!.zone === 'kaleci') continue;
-    const primary = slots[i]!.preferred[0];
-    if (!primary) continue;
-    const match = available().find((p) => playerPlaysPosition(p, primary));
-    if (match) take(match, i);
-  }
-
-  const openSlots = slots
+  const fieldSlotIndices = slots
     .map((_, i) => i)
-    .filter((i) => !assigned[i] && slots[i]!.zone !== 'kaleci')
-    .sort((a, b) => slots[a]!.preferred.length - slots[b]!.preferred.length);
+    .filter((i) => slots[i]!.zone !== 'kaleci');
 
-  for (const i of openSlots) {
-    const slot = slots[i]!;
-    let best: PlayerCard | null = null;
-    let bestIdx = 99;
-    for (const p of available()) {
-      if (p.position === 'KL') continue;
-      const idx = slotFitIndex(p, slot.preferred);
-      if (idx < bestIdx) {
-        bestIdx = idx;
-        best = p;
+  while (true) {
+    let bestSlot = -1;
+    let bestPlayer: PlayerCard | null = null;
+    let bestFit = 99;
+
+    for (const slotIdx of fieldSlotIndices) {
+      if (assigned[slotIdx]) continue;
+      const slot = slots[slotIdx]!;
+      for (const p of available()) {
+        if (p.position === 'KL') continue;
+        const fit = slotFitIndex(p, slot.preferred);
+        if (fit < bestFit) {
+          bestFit = fit;
+          bestSlot = slotIdx;
+          bestPlayer = p;
+        }
       }
     }
-    if (best) take(best, i);
+
+    if (!bestPlayer || bestSlot < 0 || bestFit >= 99) break;
+    take(bestPlayer, bestSlot);
   }
 
-  for (const i of openSlots) {
-    if (assigned[i]) continue;
-    const slot = slots[i]!;
-    const zoneMatch = available().find(
-      (p) => p.position !== 'KL' && POSITION_ZONE[p.position] === slot.zone,
-    );
-    if (zoneMatch) take(zoneMatch, i);
-  }
-
-  for (let i = 0; i < slots.length; i++) {
-    if (assigned[i]) continue;
-    const slot = slots[i]!;
-    let best: PlayerCard | null = null;
-    let bestIdx = 99;
-    for (const p of available()) {
-      if (p.position === 'KL') continue;
-      const idx = slotFitIndex(p, slot.preferred);
-      if (idx < bestIdx) {
-        bestIdx = idx;
-        best = p;
-      }
-    }
-    if (best && bestIdx < 99) take(best, i);
-  }
-
+  optimizeSlotAssignments(slots, assigned);
   return assigned;
 }
 
@@ -425,11 +428,6 @@ export function getFormationGaps(squad: PlayerCard[], formationKey: string): Pos
     });
   }
 
-  if (formationKey === '433') {
-    if (!hasPosition(squad, 'SLK')) hints.push({ text: '4-3-3 için sol kanat eksik', tone: 'warn' });
-    if (!hasPosition(squad, 'SÖK')) hints.push({ text: '4-3-3 için sağ kanat eksik', tone: 'warn' });
-  }
-
   if (formationKey === '352' || formationKey === '532') {
     const stp = countPosition(squad, 'STP');
     if (stp < 3) {
@@ -478,21 +476,32 @@ export function getPositionHints(
     }
   }
 
-  if (formationKey === '433') {
-    const needWings = [
-      !hasPosition(after, 'SLK') ? 'sol kanat' : null,
-      !hasPosition(after, 'SÖK') ? 'sağ kanat' : null,
-    ].filter(Boolean) as string[];
-
-    if (needWings.length && (card.position === 'SLK' || card.position === 'SÖK')) {
-      hints.push({ text: `4-3-3 için ${needWings.join(' ve ')} gerekli — bu kart uyum sağlar`, tone: 'good' });
-    } else if (needWings.length) {
-      hints.push({ text: `${formationLabel} seçili — ${needWings.join(', ')} eksik`, tone: 'warn' });
-    }
-  }
-
   const lineupAfter = assignSquadToFormation(after, formationKey);
   const targetSlot = lineupAfter.find((s) => s.player?.id === card.id);
+
+  if (!targetSlot) {
+    const emptyLabels = lineupAfter
+      .filter((s) => !s.player)
+      .map((s) => s.slot.label);
+    const playable = getPlayablePositions(card).map((p) => POSITION_BADGE[p]).join(', ');
+    hints.push({
+      text: 'İlk 11\'de uygun slot yok — seçersen yedek kalır',
+      tone: 'warn',
+    });
+    if (emptyLabels.length) {
+      hints.push({
+        text: `Boş slotlar (${emptyLabels.join(', ')}) bu oyuncunun mevkileriyle uyuşmuyor`,
+        tone: 'info',
+      });
+    } else {
+      hints.push({
+        text: `Saha dolu — oynayabildiği: ${playable}`,
+        tone: 'info',
+      });
+    }
+    return hints.slice(0, 3);
+  }
+
   if (targetSlot) {
     const slotName = slotLabel(targetSlot.slot.label);
     const idealPos = targetSlot.slot.preferred[0];
