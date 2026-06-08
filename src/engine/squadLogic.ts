@@ -1,12 +1,16 @@
 import { SYNERGIES } from '@/data/synergies';
 import { TAG_VALUE } from '@/data/tags';
-import type { PlayerCard, SynergyDefinition } from '@/types';
+import { getStartingEleven } from '@/engine/lineupPreview';
+import type { ActiveTactic, PlayerCard, SynergyDefinition } from '@/types';
 import { formatStat } from '@/utils/formatNumber';
+
+const PROTECTED_DEPARTURE_TAGS = ['MENTOR', 'LİDER', 'KAPİTAN'] as const;
 
 export function getDepartureScore(player: PlayerCard, morale: number): number {
   const tagMultiplier = player.tags.reduce((acc, tag) => acc * (TAG_VALUE[tag] ?? 1), 1);
-  const moraleContribution = player.tags.some((t) => ['LİDER', 'MENTOR', 'KAPİTAN'].includes(t)) ? 1.2 : 1;
-  return formatStat(player.currentRating * tagMultiplier * moraleContribution * (0.8 + morale / 200));
+  const moraleContribution = player.tags.some((t) => PROTECTED_DEPARTURE_TAGS.includes(t as typeof PROTECTED_DEPARTURE_TAGS[number])) ? 1.2 : 1;
+  const protectionBonus = player.tags.some((t) => PROTECTED_DEPARTURE_TAGS.includes(t as typeof PROTECTED_DEPARTURE_TAGS[number])) ? 28 : 0;
+  return formatStat(player.currentRating * tagMultiplier * moraleContribution * (0.8 + morale / 200) + protectionBonus);
 }
 
 export function selectDepartingPlayer(squad: PlayerCard[], morale: number): PlayerCard {
@@ -39,10 +43,12 @@ export function applyMentorGrowth(squad: PlayerCard[]): PlayerCard[] {
   });
 }
 
-export function applyGerileyen(squad: PlayerCard[]): PlayerCard[] {
+export function applyGerileyen(squad: PlayerCard[], activeTactics: ActiveTactic[] = []): PlayerCard[] {
+  const hasRotasyon = activeTactics.some((t) => t.id === 'tactic_rotasyon');
   return squad.map((p) => {
     if (!p.tags.includes('GERİLEYEN')) return p;
     const played = (p.matchesPlayed ?? 0) + 1;
+    if (hasRotasyon) return { ...p, matchesPlayed: played };
     const drop = played % 3 === 0 ? 1 : 0;
     return { ...p, matchesPlayed: played, currentRating: Math.max(55, p.currentRating - drop) };
   });
@@ -70,9 +76,15 @@ export function getBrokenSynergies(
   before: PlayerCard[],
   after: PlayerCard[],
   morale: number,
+  activeTactics: ActiveTactic[] = [],
 ): SynergyDefinition[] {
-  const activeBefore = SYNERGIES.filter((s) => s.check(before, morale));
-  const activeAfterIds = new Set(SYNERGIES.filter((s) => s.check(after, morale)).map((s) => s.id));
+  const lineupBefore = getStartingEleven(before, activeTactics);
+  const lineupAfter = getStartingEleven(after, activeTactics);
+  const ctx = { activeTactics };
+  const activeBefore = SYNERGIES.filter((s) => s.check(lineupBefore.length ? lineupBefore : before, morale, ctx));
+  const activeAfterIds = new Set(
+    SYNERGIES.filter((s) => s.check(lineupAfter.length ? lineupAfter : after, morale, ctx)).map((s) => s.id),
+  );
   return activeBefore.filter((s) => !activeAfterIds.has(s.id));
 }
 

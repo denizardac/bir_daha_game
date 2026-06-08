@@ -30,6 +30,7 @@ export function TacticCard({ card, squad, activeTactics = [], onSelect }: Props)
           onSelect();
         }
       }}
+      aria-label={onSelect ? `Taktik: ${card.name}` : undefined}
       className="card-fut card-fut--pick tactic-card relative flex w-full flex-col text-left"
     >
       <div className="tactic-card-top">

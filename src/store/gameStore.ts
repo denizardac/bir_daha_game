@@ -8,6 +8,8 @@ import {
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
 import { submitRunToLeaderboard } from '@/api/leaderboardRemote';
 import { buildSignedRunPayload } from '@/engine/runIntegrity';
+import { validateRunSubmission } from '@/engine/runValidation';
+import { getEventRatingTarget, resolveEventRemoval } from '@/engine/eventRemoval';
 import { isEventRound } from '@/data/events';
 import { getTacticCategory, getTacticEffect } from '@/data/tactics';
 import { MAX_PLAYER_TAGS } from '@/data/training';
@@ -29,7 +31,7 @@ import {
   getRank,
   getRankPercent,
 } from '@/engine/leaderboard';
-import { applyPlayerToSquad, getReplacementPlayer } from '@/engine/lineupPreview';
+import { applyPlayerToSquad } from '@/engine/lineupPreview';
 import {
   applyGerileyen,
   applyMentorGrowth,
@@ -166,9 +168,18 @@ async function persistRunEndScore(state: GameStore, score: number, roundsComplet
     flawless: flawless && state.lossesCount === 0,
   };
   const signed = await buildSignedRunPayload(base, state.roundHistory);
+  const validation = await validateRunSubmission(signed.entry, state.roundHistory, signed.digest);
+  if (!validation.ok) {
+    console.warn('[leaderboard] Run doğrulanamadı:', validation.reason);
+    const hallEntry = { ...signed.entry, flawless: signed.entry.flawless ?? false };
+    savePersisted(addToHallOfFame(p, hallEntry));
+    return;
+  }
   const hallEntry = { ...signed.entry, flawless: signed.entry.flawless ?? false };
   savePersisted(addToHallOfFame(addScoreToLeaderboards(p, signed.entry), hallEntry));
-  void submitRunToLeaderboard(signed, state.roundHistory, state.isDailySeed);
+  if (state.isDailySeed) {
+    void submitRunToLeaderboard(signed, state.roundHistory, true);
+  }
 }
 
 function persistRun(state: (Partial<RunSnapshot> & Pick<RunSnapshot, 'seed'>) | GameStore) {
@@ -314,18 +325,37 @@ function finalizeBonusRound(
   set(nextState);
 }
 
+function synergyPointsFromMatch(
+  synergy: (typeof SYNERGIES)[number],
+  match: NonNullable<import('@/types').RoundResult['matchResult']>,
+): number {
+  let pts = 0;
+  if (synergy.perGoalBonus && match.goalsFor > 0) pts += synergy.perGoalBonus * match.goalsFor;
+  if (synergy.perWinBonus && match.outcome === 'win') pts += synergy.perWinBonus;
+  if (synergy.perRoundBonus) pts += synergy.perRoundBonus;
+  return pts;
+}
+
 function buildRunEndAnalysis(state: GameStore): RunEndAnalysis {
   const persisted = loadPersisted();
-  const daily = getDailyList(persisted);
+  const rankList = state.isDailySeed
+    ? getDailyList(persisted)
+    : persisted.allTimeLeaderboard;
   const ego = analyzeEgo(state.roundHistory, state.seed);
-  const rank = getRank(state.score, daily);
-  const rankPercent = getRankPercent(state.score, daily);
-  const rivals = getNearRivals(state.score, daily, state.displayName || 'Sen');
+  const rank = getRank(state.score, rankList);
+  const rankPercent = getRankPercent(state.score, rankList);
+  const rivals = getNearRivals(state.score, rankList, state.displayName || 'Sen');
 
   const synergyStats = state.discoveredSynergies.map((id) => {
     const s = SYNERGIES.find((x) => x.id === id)!;
-    const activations = state.roundHistory.filter((r) => r.matchResult?.activeSynergies.includes(id)).length;
-    return { id, name: s.name, icon: s.icon, activations, points: activations * 80 };
+    let activations = 0;
+    let points = 0;
+    for (const r of state.roundHistory) {
+      if (!r.matchResult?.activeSynergies.includes(id)) continue;
+      activations += 1;
+      points += synergyPointsFromMatch(s, r.matchResult);
+    }
+    return { id, name: s.name, icon: s.icon, activations, points };
   });
 
   const badges: string[] = [];
@@ -335,7 +365,7 @@ function buildRunEndAnalysis(state: GameStore): RunEndAnalysis {
 
   return {
     rank,
-    totalPlayers: Math.max(daily.length, 1),
+    totalPlayers: Math.max(rankList.length, 1),
     rankPercent,
     bestDecision: ego.bestDecision,
     worstMistake: ego.worstMistake,
@@ -486,7 +516,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (isTacticBonusRound(state.round, state.maxRounds)) return;
 
     playSound('tick', loadPersisted().soundEnabled);
-    const cost = state.rerollsRemaining;
+    const cost = 1;
     const newIndex = state.offersRerollIndex + cost;
     const offers = drawOffers(
       state.seed,
@@ -501,7 +531,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     );
     const next = {
       currentOffers: offers,
-      rerollsRemaining: 0,
+      rerollsRemaining: state.rerollsRemaining - cost,
       offersRerollIndex: newIndex,
       timerSeconds: cardTimerSeconds(),
     };
@@ -649,10 +679,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (state.squad.length <= 5) morale = Math.max(DANGER_MORALE_FLOOR, morale);
     let rerollsRemaining = state.rerollsRemaining;
     if (outcome.removeWeakest && squad.length > 4) {
-      const sellTarget = outcome.sellPlayerId
-        ? squad.find((p) => p.id === outcome.sellPlayerId) ?? getWeakestPlayer(squad)
-        : getReplacementPlayer(squad, squad[0]!, state.morale, state.activeTactics);
+      const sellTarget = resolveEventRemoval(
+        state.currentEvent.id,
+        choice,
+        squad,
+        state.activeTactics,
+        outcome.sellPlayerId,
+      ) ?? getWeakestPlayer(squad);
       squad = squad.filter((p) => p.id !== sellTarget.id);
+    }
+    if (outcome.tempRatingDelta) {
+      const target = getEventRatingTarget(state.currentEvent.id, choice, squad);
+      if (target) {
+        squad = squad.map((p) =>
+          p.id === target.id ? { ...p, tempRatingMod: (p.tempRatingMod ?? 0) + outcome.tempRatingDelta! } : p,
+        );
+      }
     }
     if (outcome.grantRerolls) {
       rerollsRemaining = Math.min(REROLLS_PER_RUN + 2, rerollsRemaining + outcome.grantRerolls);
@@ -674,7 +716,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       usedEventIds: [...state.usedEventIds, state.currentEvent.id],
       nextMatchRisk: outcome.nextMatchRisk ?? 0,
       nextMatchBonus: outcome.nextMatchBonus ?? 0,
-      recoveryGuaranteed: state.lossesCount <= 2,
+      recoveryGuaranteed: state.lossesCount > 0 && state.lossesCount <= 2,
       ...next,
     });
     persistRun(get());
@@ -687,10 +729,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     let squad = applyPotentialGrowth(state.squad, state.round);
     squad = applyMentorGrowth(squad);
-    squad = applyGerileyen(squad);
+    squad = applyGerileyen(squad, state.activeTactics);
+    squad = squad.map((p) => {
+      const { tempRatingMod, ...rest } = p;
+      void tempRatingMod;
+      return rest;
+    });
 
     let morale = Math.min(100, state.morale + passiveMoraleFromSquad(squad));
-    const synergyMin = getActiveSynergies(squad, morale, { activeTactics: state.activeTactics }).find((s) => s.minMorale)?.minMorale;
+    const activeSynergyList = getActiveSynergies(squad, morale, { activeTactics: state.activeTactics });
+    for (const s of activeSynergyList) {
+      if (s.perMatchMorale) morale = Math.min(100, morale + s.perMatchMorale);
+    }
+    const synergyMin = activeSynergyList.find((s) => s.minMorale)?.minMorale;
     if (synergyMin) morale = Math.max(morale, synergyMin);
 
     let { streak, lossesCount, score, flawless } = state;
@@ -737,7 +788,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const squadBeforeLoss = squad;
       const departing = selectDepartingPlayer(squad, morale);
       squad = squad.filter((p) => p.id !== departing.id);
-      const brokenSynergies = getBrokenSynergies(squadBeforeLoss, squad, morale).map((s) => s.id);
+      const brokenSynergies = getBrokenSynergies(squadBeforeLoss, squad, morale, state.activeTactics).map((s) => s.id);
       if (squad.length <= 5) morale = Math.max(DANGER_MORALE_FLOOR, morale);
       lossesCount += 1;
       playSound('loss', loadPersisted().soundEnabled);
@@ -884,7 +935,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
     const round = state.round + 1;
-    const next = startRound({ ...state, round, recoveryGuaranteed: state.lossesCount <= 2 });
+    const next = startRound({ ...state, round, recoveryGuaranteed: state.lossesCount > 0 && state.lossesCount <= 2 });
     persistRun({ ...state, round, ...next, lastLossPlayer: null, currentMatch: null });
     set({ round, ...next, lastLossPlayer: null, currentMatch: null });
   },

@@ -1,4 +1,5 @@
 import { getTacticEffect } from '@/data/tactics';
+import { FORMATION_SLOT_COUNTS } from '@/data/formations';
 import type { PlayerCard, TacticCard } from '@/types';
 import type { Tag } from '@/types';
 
@@ -54,6 +55,16 @@ export function getFormationDots(tacticId: string): FormationDot[] | null {
 
 export function getFormationDotsByKey(key: string): FormationDot[] | null {
   return FORMATIONS[key] ?? null;
+}
+
+if (import.meta.env.DEV) {
+  for (const key of Object.keys(FORMATIONS)) {
+    const dots = FORMATIONS[key]?.length ?? 0;
+    const slots = FORMATION_SLOT_COUNTS[key] ?? 0;
+    if (dots !== slots) {
+      console.warn(`[formations] ${key}: görsel ${dots} slot, motor ${slots} slot`);
+    }
+  }
 }
 
 export function getTacticHeroCopy(card: TacticCard): { title: string; lines: string[] } {
@@ -121,6 +132,17 @@ export function getTacticBeneficiaryPlayers(card: TacticCard, squad: PlayerCard[
       label: players.length
         ? `${players.length} ${tag} oyuncu bu sistemden yararlanır`
         : `Kadroda ${tag} yok — bonus şimdilik pasif`,
+    };
+  }
+
+  if (card.id === 'tactic_rotasyon') {
+    const tired = squad.filter((p) => p.tags.includes('GERİLEYEN') || p.tags.includes('PERFORMANS DÜŞÜŞÜ'));
+    return {
+      players: tired.slice(0, limit),
+      tag: null,
+      label: tired.length
+        ? `${tired.length} yorgun oyuncu korunur — performans düşüşü yok`
+        : 'Kadro rotasyonu aktif — yorgunluk cezası engellenir',
     };
   }
 

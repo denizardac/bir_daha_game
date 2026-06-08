@@ -8,13 +8,13 @@ export const BITE = {
   tacticIntro:
     'Taktik kartı oyuncu eklemez — formasyon veya oyun sistemi slotuna yerleşir, sonraki maçlarda aktif kalır.',
   tacticBonusIntro:
-    'Round 3, 6, 9, 12, 15: taktik bonusu — 2 taktik + 1 antrenman, maç yok, +35 puan.',
+    'Round 3, 6, 9, 15: taktik bonusu — 2 taktik + 1 antrenman, maç yok, +35 puan (Round 12 olay round\'u).',
   synergyIntro:
     'Sinerji = kadrodaki tag/mevki kombinasyonu. Açılınca gol, galibiyet veya pasif puan bonusu verir.',
   eventIntro:
     'Olay round\'ları: 4, 8, 12. İki seçenek sunulur; ikisi de geçerli — doğru/yanlış yok.',
   eventNoMatch:
-    'Olay seçimleri maç sonucunu etkilemez — kadro, moral ve skorunu şekillendirir.',
+    'Olay round\'unda maç oynanmaz; seçimler kadro, moral, skor ve sonraki maç gücü/riskini şekillendirir.',
   playerPick:
     'Rating maç gücünü belirler; tag\'ler sinerji ve taktik bonusu için birikir.',
   positionIntro:

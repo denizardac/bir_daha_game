@@ -66,6 +66,12 @@ export function explainActiveTactic(tactic: ActiveTactic, squad: PlayerCard[]): 
   if (tactic.fastBonus && fast === 0) lines.push(`HIZLI oyuncu yok — bonus aktif olmaz`);
   if (tactic.technicalBonus && tech > 0) lines.push(`${tech} TEKNİK × +${tactic.technicalBonus} puan/maç`);
   if (tactic.technicalBonus && tech === 0) lines.push(`TEKNİK oyuncu yok — bonus aktif olmaz`);
+  if (tactic.id === 'tactic_rotasyon') {
+    const gerileyen = squad.filter((p) => p.tags.includes('GERİLEYEN')).length;
+    lines.push(gerileyen > 0
+      ? `${gerileyen} GERİLEYEN oyuncu — rating düşüşü engellenir`
+      : 'GERİLEYEN yok — yorgunluk koruması hazır bekler');
+  }
   if (!lines.length) lines.push('Güvenli taban — stabil maç gücü, ekstra ceza yok');
   lines.push('Sonraki maçlarda aktif kalır, oyuncu eklemez');
   return lines;

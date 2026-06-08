@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { MatchEvent, MatchOutcome } from '@/types';
+import type { MatchEvent, MatchOutcome, OpponentStyle } from '@/types';
 
 export type PitchDot = { x: number; y: number; gk?: boolean };
 
@@ -28,7 +28,29 @@ const HOME_FORMATION = [
   { x: 46, y: 36 }, { x: 46, y: 64 },
 ];
 
-const AWAY_FORMATION = HOME_FORMATION.map((p) => ({ ...p, x: 100 - p.x }));
+const AWAY_442 = HOME_FORMATION.map((p) => ({ ...p, x: 100 - p.x }));
+
+const AWAY_433: PitchDot[] = [
+  { x: 92, y: 50, gk: true },
+  { x: 80, y: 15 }, { x: 80, y: 38 }, { x: 80, y: 62 }, { x: 80, y: 85 },
+  { x: 66, y: 28 }, { x: 66, y: 50 }, { x: 66, y: 72 },
+  { x: 54, y: 22 }, { x: 50, y: 50 }, { x: 54, y: 78 },
+];
+
+const AWAY_532: PitchDot[] = [
+  { x: 92, y: 50, gk: true },
+  { x: 80, y: 12 }, { x: 80, y: 30 }, { x: 80, y: 50 }, { x: 80, y: 70 }, { x: 80, y: 88 },
+  { x: 66, y: 35 }, { x: 66, y: 50 }, { x: 66, y: 65 },
+  { x: 54, y: 38 }, { x: 54, y: 62 },
+];
+
+function getAwayFormation(style: OpponentStyle, round: number): PitchDot[] {
+  const aggressive = round % 2 === 0 ? AWAY_433 : AWAY_442;
+  const defensive = round % 2 === 0 ? AWAY_532 : AWAY_442;
+  if (style === 'saldırgan') return aggressive;
+  if (style === 'savunmacı') return defensive;
+  return round % 3 === 0 ? AWAY_433 : AWAY_442;
+}
 
 function eventLabel(ev: MatchEvent): string {
   switch (ev.type) {
@@ -110,7 +132,9 @@ export function MatchAnimation({
   squadCount = 11,
   pitchDots,
   filledCount,
-}: Props) {
+  opponentStyle = 'dengeli',
+  round = 1,
+}: Props & { opponentStyle?: OpponentStyle; round?: number }) {
   const flashClass =
     latestEvent?.type === 'goal_for'
       ? 'match-pitch-flash--win'
@@ -130,6 +154,11 @@ export function MatchAnimation({
     const count = Math.max(1, Math.min(squadCount, HOME_FORMATION.length));
     return HOME_FORMATION.slice(0, count);
   }, [pitchDots, squadCount]);
+
+  const awayPlayers = useMemo(
+    () => getAwayFormation(opponentStyle, round),
+    [opponentStyle, round],
+  );
 
   const highlightHomeIdx = useMemo(() => {
     if (latestEvent?.type === 'goal_for') return Math.min(homePlayers.length - 1, 9);
@@ -213,7 +242,7 @@ export function MatchAnimation({
         )}
       </div>
       <div className="match-pitch-team match-pitch-team--away" aria-hidden>
-        {AWAY_FORMATION.map((p, i) => (
+        {awayPlayers.map((p, i) => (
           <span
             key={i}
             className={`match-pitch-player match-pitch-player--away ${p.gk ? 'match-pitch-player--gk' : ''} ${

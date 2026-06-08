@@ -34,7 +34,7 @@ export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_kaptan', category: 'moral', icon: '👑', title: 'Kaptan Liderliği',
     description: 'Kaptan liderliği sorgulanıyor.',
-    optionA: { label: 'OYNAT', description: 'Risk yüksek · Ödül büyük (+200 puan)' },
+    optionA: { label: 'OYNAT', description: 'Risk yüksek · Sonraki maç gücü +%27' },
     optionB: { label: 'DİNLENDİR', description: 'Moral +10 · Güvenli' },
   },
   {

@@ -32,7 +32,8 @@ const POOL: PlayerTemplate[] = [
   { name: 'Emre Yıldız', rating: 62, position: 'KL', rarity: 'normal', tags: [] },
   { name: 'Can Arslan', rating: 71, position: 'KL', rarity: 'iyi', tags: ['DAYANIKLI'] },
   { name: 'Marcus Silva', rating: 84, position: 'KL', rarity: 'güçlü', tags: ['DAYANIKLI'] },
-  { name: 'Oğuz Demir', rating: 88, position: 'KL', rarity: 'efsane', tags: ['DAYANIKLI'] },
+  { name: 'Oğuz Demir', rating: 88, position: 'KL', rarity: 'efsane', tags: ['DAYANIKLI', 'PENALTI'] },
+  { name: 'Fırat Güneş', rating: 73, position: 'KL', rarity: 'iyi', tags: ['SERBEST VURUŞ'] },
 
   // Stoper
   { name: 'Burak Koç', rating: 61, position: 'STP', rarity: 'normal', tags: ['GÜÇLÜ'] },
@@ -48,8 +49,11 @@ const POOL: PlayerTemplate[] = [
   { name: 'Barış Güneş', rating: 64, position: 'OS', rarity: 'normal', tags: ['YERLİ'] },
   { name: 'Luca Moretti', rating: 74, position: 'OS', rarity: 'iyi', tags: ['TEKNİK'] },
   { name: 'Efe Polat', rating: 76, position: 'OS', rarity: 'iyi', tags: ['TEKNİK', 'YERLİ'] },
-  { name: 'James Okonkwo', rating: 81, position: 'OS', rarity: 'güçlü', tags: ['TEKNİK', 'ASİSTÇİ'] },
-  { name: 'Onur Tekin', rating: 85, position: 'OS', rarity: 'güçlü', tags: ['TEKNİK', 'LİDER'] },
+  { name: 'James Okonkwo', rating: 81, position: 'OS', rarity: 'güçlü', tags: ['TEKNİK', 'ASİSTÇİ', 'YABANCI YILDIZ'] },
+  { name: 'Antoine Dubois', rating: 83, position: 'SF', rarity: 'güçlü', tags: ['FİNİŞÖR', 'YABANCI YILDIZ', 'SERBEST VURUŞ'] },
+  { name: 'Pedro Alves', rating: 80, position: 'SÖK', rarity: 'güçlü', tags: ['HIZLI', 'YABANCI YILDIZ', 'PENALTI'] },
+  { name: 'Onur Tekin', rating: 85, position: 'OS', rarity: 'güçlü', tags: ['TEKNİK', 'LİDER', 'KAPİTAN'] },
+  { name: 'İbrahim Koç', rating: 79, position: 'DOS', rarity: 'iyi', tags: ['SOYUNMA ODASI', 'LİDER'] },
 
   // Defansif orta saha
   { name: 'Hakan Yılmaz', rating: 61, position: 'DOS', rarity: 'normal', tags: [] },
@@ -157,6 +161,11 @@ const PROC_POSITIVE_TAGS: Tag[][] = [
   ['YERLİ', 'GÜÇLÜ'],
   ['HIZLI', 'FİNİŞÖR'],
   ['LİDER'],
+  ['KAPİTAN'],
+  ['SERBEST VURUŞ'],
+  ['PENALTI'],
+  ['SOYUNMA ODASI'],
+  ['YABANCI YILDIZ'],
 ];
 
 const PROC_LATE_NEGATIVE: Tag[] = ['GERİLEYEN', 'SAKATLIK RİSKİ', 'PERFORMANS DÜŞÜŞÜ', 'TARTIŞMALI'];

@@ -25,7 +25,7 @@ export function getMoraleEffect(morale: number): { label: string; detail: string
     label,
     detail:
       morale >= 80
-        ? 'KAPİTAN MODU sinerjisi açılabilir (LİDER + 80 moral)'
+        ? 'LİDER YÜRÜYÜŞÜ sinerjisi açılabilir (LİDER + 80 moral)'
         : morale < 30
           ? 'Kadro performansı ciddi düşer — galibiyet zor'
           : 'Maç gücüne doğrudan etki eder',

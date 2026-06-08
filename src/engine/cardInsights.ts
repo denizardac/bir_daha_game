@@ -67,8 +67,9 @@ function resolveSynergyProgress(
   synergy: (typeof SYNERGIES)[number],
   squad: PlayerCard[],
   card: PlayerCard,
+  morale: number,
 ): PlayerSynergyHint | null {
-  if (synergy.check(squad, 50)) return null;
+  if (synergy.check(squad, morale)) return null;
 
   const before = synergy.getProgress?.(squad);
   const after = synergy.getProgress?.(squad, card);
@@ -151,7 +152,7 @@ export function getPlayerCardInsight(
   const positionHints = getPositionHints(card, squad, activeTactics, maxSquadSize, morale);
 
   const synergies = SYNERGIES
-    .map((s) => resolveSynergyProgress(s, squad, card))
+    .map((s) => resolveSynergyProgress(s, squad, card, morale))
     .filter((x): x is PlayerSynergyHint => x !== null)
     .sort((a, b) => {
       const aPct = a.after / a.required;

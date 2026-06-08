@@ -10,7 +10,7 @@ const OPPONENT_TIPS: Record<OpponentStyle, string> = {
 const GENERIC_TIPS = [
   'FİNİŞÖR tag\'li oyuncular gol potansiyelini artırır.',
   '3+ HIZLI oyuncu — Kontra Ateşi sinerjisine yaklaş.',
-  'Moral 80+ iken KAPİTAN MODU sinerjisi açılabilir.',
+  'Moral 80+ iken LİDER YÜRÜYÜŞÜ sinerjisi açılabilir (LİDER tag).',
   'Clean sheet galibiyette +100 bonus puan.',
   'Seri galibiyet çarpanı 3+ maçta devreye girer.',
   'Eksik kadro (11\'den az) maç gücünü düşürür.',

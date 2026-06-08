@@ -13,6 +13,11 @@ export const TRAINING_TAGS: Tag[] = [
   'SOĞUKKANLI',
   'LİDER',
   'MENTOR',
+  'KAPİTAN',
+  'SERBEST VURUŞ',
+  'PENALTI',
+  'SOYUNMA ODASI',
+  'YABANCI YILDIZ',
 ];
 
 export const MAX_PLAYER_TAGS = 5;

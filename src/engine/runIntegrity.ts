@@ -14,8 +14,13 @@ export async function computeRunDigest(
     picks: roundHistory.map((r) => ({
       round: r.round,
       cardId: r.cardSelected.id,
+      cardKind: r.cardSelected.kind,
       points: r.pointsEarned,
       outcome: r.matchResult?.outcome ?? null,
+      goalsFor: r.matchResult?.goalsFor ?? null,
+      goalsAgainst: r.matchResult?.goalsAgainst ?? null,
+      isTacticBonus: r.isTacticBonus ?? false,
+      eventChoice: r.eventChoice ?? null,
     })),
   });
   const data = new TextEncoder().encode(payload);

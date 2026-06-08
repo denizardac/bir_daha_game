@@ -19,7 +19,7 @@ export const HOW_TO_STEPS: HowToStep[] = [
   {
     icon: '💔',
     title: 'Kayıp',
-    text: 'Mağlubiyette en zayıf oyuncu gider. 6 oyuncu kalırsa run sona erer.',
+    text: 'Mağlubiyette en düşük ayrılma skorlu oyuncu gider. 4 oyuncu kalırsa run sona erer.',
   },
   {
     icon: '📋',

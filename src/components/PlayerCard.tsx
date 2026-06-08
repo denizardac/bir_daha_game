@@ -70,6 +70,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
           onSelect();
         }
       }}
+      aria-label={onSelect ? `${card.name}, rating ${card.currentRating}, ${formatPosition(card.position)}` : undefined}
       className={`card-fut card-fut--pick player-pick-card ${themeClass} relative flex w-full flex-col text-left ${
         onSelect ? 'player-pick-card--selectable' : ''
       } ${selected ? 'ring-2 ring-amber-400 gold-glow' : ''}`}
@@ -81,6 +82,9 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
         <span className={`player-pick-card__rarity-label rarity-badge rarity-badge--${card.rarity}`}>
           {RARITY_LABELS[card.rarity]}
         </span>
+        {card.offerBoosted && (
+          <span className="player-pick-card__boost-badge" title="Teklif kalitesi yükseltildi">⬆ Teklif</span>
+        )}
         {card.rarity === 'efsane' && <span className="rarity-spark" aria-hidden>✦</span>}
       </div>
 

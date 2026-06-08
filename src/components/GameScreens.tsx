@@ -34,6 +34,7 @@ import { formatStatDisplay } from '@/utils/formatNumber';
 import { formatPosition } from '@/utils/positionStyle';
 import { DANGER_MORALE_FLOOR, REROLLS_PER_RUN } from '@/constants/game';
 import { getEventChoiceTones, eventChoiceClass, formatMatchRiskDelta, MATCH_RISK_EXPLAINER } from '@/engine/eventRisk';
+import { formatMatchPowerBonusLabel } from '@/engine/matchPower';
 import { sortSquadByRating } from '@/engine/squadLogic';
 import type { EventOutcome } from '@/engine/events';
 
@@ -52,7 +53,8 @@ function formatEventOutcome(o: EventOutcome, eventId?: string) {
     );
   }
   if (o.grantRerolls) parts.push(`+${o.grantRerolls} çek hakkı`);
-  if (o.nextMatchBonus) parts.push(`Bir sonraki maçta +${o.nextMatchBonus} güç bonusu`);
+  if (o.nextMatchBonus) parts.push(formatMatchPowerBonusLabel(o.nextMatchBonus));
+  if (o.tempRatingDelta) parts.push(`Rating ${o.tempRatingDelta > 0 ? '+' : ''}${o.tempRatingDelta} (1 maç)`);
   if (o.nextMatchRisk) parts.push(formatMatchRiskDelta(o.nextMatchRisk));
   return parts.length ? parts.join(' · ') : '';
 }
@@ -137,7 +139,7 @@ export function CardSelectScreen() {
                     >
                       3&apos;ünü yenile
                       <span className="btn-reroll-all-cost">
-                        {rerollsRemaining > 0 ? `−${rerollsRemaining} hak` : '0 hak'}
+                        {rerollsRemaining > 0 ? '−1 hak' : '0 hak'}
                       </span>
                     </button>
                   </div>
@@ -149,8 +151,13 @@ export function CardSelectScreen() {
                   onOpen={() => setLineupOpen(true)}
                 />
                 {extraDrawAvailable && !extraDrawUsed && (
-                  <button type="button" className="btn-secondary btn-reroll-extra" onClick={redrawOffers}>
-                    🎯 Ekstra çek
+                  <button
+                    type="button"
+                    className="btn-secondary btn-reroll-extra"
+                    title="Round 10 ödülü — 3 yeni oyuncu teklifi"
+                    onClick={redrawOffers}
+                  >
+                    🎯 Ekstra çek (Round 10)
                   </button>
                 )}
               </div>
@@ -326,10 +333,10 @@ export function EventScreen() {
         <div className="event-choice-body">
           <span className="event-choice-kicker">Seçenek {choice}</span>
           <span className="event-choice-label">{label}</span>
-          <p className={`event-choice-desc ${dimmed ? 'line-through opacity-40' : ''}`}>{description}</p>
+          <p className={`event-choice-desc ${dimmed ? 'opacity-50' : ''}`}>{description}</p>
           {outcomeText && (
-            <p className={`event-choice-outcome ${dimmed ? 'line-through opacity-40' : ''}`}>
-              {selected ? '✓ Seçildi' : outcomeText}
+            <p className={`event-choice-outcome ${dimmed ? 'opacity-40' : ''}`}>
+              {selected ? `✓ ${outcomeText}` : outcomeText}
             </p>
           )}
           {selected && !outcomeText && (
@@ -569,6 +576,8 @@ export function MatchScreen() {
               outcome={anim.showResult ? currentMatch.outcome : undefined}
               pitchDots={pitchDots}
               filledCount={lineupSummary.filled}
+              opponentStyle={currentMatch.opponent.style}
+              round={round}
             />
           </div>
 
@@ -652,7 +661,7 @@ export function LossScreen() {
             Not: İlk maçta mağlubiyet sayılmaz — koruma kalkanı aktiftir.
           </p>
           <p className="mt-2 text-base leading-relaxed text-neutral-300">
-            En düşük ayrılma skoru olan oyuncu gider. MENTOR / LİDER / KAPİTAN tag&apos;leri korur. Moral −20.
+            En düşük ayrılma skoru olan oyuncu gider — MENTOR / LİDER / KAPİTAN daha zor ayrılır. Moral −20.
           </p>
 
           <div className="mt-4">
@@ -784,7 +793,7 @@ function ShareCardPreview({ score, analysis, displayName, flawless, roundsComple
 }
 
 export function RunEndScreen() {
-  const { score, roundHistory, squad, goToMenu, resetRun, discoveredSynergies, round, lossesCount, runEndAnalysis, runEndStep, advanceRunEnd, flawless, displayName } = useGameStore();
+  const { score, roundHistory, squad, goToMenu, resetRun, discoveredSynergies, round, lossesCount, runEndAnalysis, runEndStep, advanceRunEnd, flawless, displayName, isDailySeed } = useGameStore();
   const analysis = runEndAnalysis;
   const playerName = displayName || 'Anonim';
   const [shareMsg, setShareMsg] = useState('');
@@ -829,7 +838,9 @@ export function RunEndScreen() {
             <motion.div key="rank" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="panel text-center">
               {analysis ? (
                 <>
-                  <p className="text-lg text-neutral-400">Günlük sıralama</p>
+                  <p className="text-lg text-neutral-400">
+                    {isDailySeed ? 'Günlük sıralama' : 'Tüm zamanlar sıralaması'}
+                  </p>
                   <p className="mt-4 text-4xl font-extrabold">#{analysis.rank} / {analysis.totalPlayers}</p>
                   <p className="mt-2 text-xl">
                     {score > 0

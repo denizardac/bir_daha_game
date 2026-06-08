@@ -995,6 +995,19 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: var(--pc-label) !important;
 }
 
+.player-pick-card__boost-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #86efac;
+  background: rgba(22, 101, 52, 0.35);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+  white-space: nowrap;
+}
+
 .player-pick-card__rarity-row {
   display: flex;
   align-items: center;
@@ -9321,7 +9334,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 @media (min-width: 900px) {
   .loss-screen-layout {
     grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
-    max-height: calc(100vh - 108px);
   }
 }
 
@@ -9336,17 +9348,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   min-height: 0;
 }
 
-@media (min-width: 900px) {
-  .loss-screen-right {
-    max-height: calc(100vh - 108px);
-  }
-}
-
 .loss-screen-lineup {
   padding: 1rem;
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow: visible;
   scrollbar-width: thin;
   scrollbar-color: rgba(251, 191, 36, 0.45) rgba(255, 255, 255, 0.06);
 }

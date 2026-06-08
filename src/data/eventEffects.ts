@@ -44,7 +44,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { moraleDelta: 5, description: 'Savunmada kalındı.' },
   ),
   evt_sakatlik: e(
-    { moraleDelta: -5, description: 'Yıldız yedekle oynadı.' },
+    { moraleDelta: -5, tempRatingDelta: -5, description: 'Yıldız yedekle oynadı — rating −5 (1 maç).' },
     { removeWeakest: true, description: 'Zorunlu değişiklik yapıldı.' },
   ),
   evt_yorgunluk: e(
@@ -100,7 +100,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { moraleDelta: -6, description: 'Yorgunluk arttı.' },
   ),
   evt_kaleci_hata: e(
-    { moraleDelta: -12, description: 'Kaleci özgüveni düştü.' },
+    { moraleDelta: -12, tempRatingDelta: -4, description: 'Kaleci özgüveni düştü — KL rating −4 (1 maç).' },
     { nextMatchBonus: 60, description: 'Ekstra kaleci antrenmanı.' },
   ),
   evt_penalti_antrenman: e(

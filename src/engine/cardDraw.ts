@@ -1,3 +1,4 @@
+import { isEventRound } from '@/data/events';
 import { PLAYER_POOL, clonePlayer } from '@/data/players';
 import { filterPoolByRound } from '@/data/playerPoolMeta';
 import { cloneTactic, TACTIC_CARDS } from '@/data/tactics';
@@ -41,27 +42,32 @@ function getPoolForRound(round: number, seed: string, lossesCount: number, recov
   return pool;
 }
 
-function upgradeWeakestCard(cards: PlayerCard[], pool: PlayerCard[], rng: () => number, minRating: number): PlayerCard[] {
+function upgradeWeakestCard(cards: PlayerCard[], pool: PlayerCard[], rng: () => number, minRating: number, markBoost = false): PlayerCard[] {
   const result = [...cards];
-  const weakestIdx = result.reduce((minI, c, i, arr) => (c.rating < arr[minI]!.rating ? i : minI), 0);
-  const backup = pool.filter((p) => p.rating >= minRating && !result.some((c) => c.id === p.id));
+  const weakestIdx = result.reduce(
+    (minI, c, i, arr) => (c.currentRating < arr[minI]!.currentRating ? i : minI),
+    0,
+  );
+  const backup = pool.filter((p) => p.currentRating >= minRating && !result.some((c) => c.id === p.id));
   if (backup.length) {
-    result[weakestIdx] = clonePlayer(backup[Math.floor(rng() * Math.min(backup.length, 6))]!);
+    const upgraded = clonePlayer(backup[Math.floor(rng() * Math.min(backup.length, 6))]!);
+    if (markBoost) upgraded.offerBoosted = true;
+    result[weakestIdx] = upgraded;
   }
   return result;
 }
 
 function silentCardUpgrade(cards: PlayerCard[], pool: PlayerCard[], round: number, rng: () => number): PlayerCard[] {
   if (round > 3 || cards.length === 0) return cards;
-  const avg = cards.reduce((s, c) => s + c.rating, 0) / cards.length;
-  const minRating = Math.min(...cards.map((c) => c.rating));
+  const avg = cards.reduce((s, c) => s + c.currentRating, 0) / cards.length;
+  const minRating = Math.min(...cards.map((c) => c.currentRating));
   let result = cards;
 
   if (avg < 68 || minRating < 65) {
-    result = upgradeWeakestCard(result, pool, rng, 70);
+    result = upgradeWeakestCard(result, pool, rng, 70, true);
   }
-  if (round === 1 && Math.max(...result.map((c) => c.rating)) < 72) {
-    result = upgradeWeakestCard(result, pool, rng, 72);
+  if (round === 1 && Math.max(...result.map((c) => c.currentRating)) < 72) {
+    result = upgradeWeakestCard(result, pool, rng, 72, true);
   }
   return result;
 }
@@ -242,6 +248,7 @@ export function rerollSinglePlayerOffer(
 
 export function getOfferDrawModeForRound(round: number, maxRounds = 15): OfferDrawMode {
   if (round === maxRounds) return 'players';
+  if (isEventRound(round)) return 'players';
   return round > 0 && round % 3 === 0 ? 'tacticBonus' : 'players';
 }
 
@@ -252,9 +259,9 @@ export function pickAutoOffer(offers: GameCard[], squadSize: number, maxSquadSiz
   }
   const players = offers.filter((o): o is PlayerCard => o.kind === 'player');
   if (squadSize < maxSquadSize && players.length) {
-    return [...players].sort((a, b) => b.rating - a.rating)[0]!;
+    return [...players].sort((a, b) => b.currentRating - a.currentRating)[0]!;
   }
-  if (players.length) return [...players].sort((a, b) => b.rating - a.rating)[0]!;
+  if (players.length) return [...players].sort((a, b) => b.currentRating - a.currentRating)[0]!;
   return offers[0]!;
 }
 

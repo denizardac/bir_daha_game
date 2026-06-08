@@ -20,6 +20,8 @@ export interface EventOutcome {
   grantRerolls?: number;
   nextMatchRisk?: number;
   nextMatchBonus?: number;
+  /** Bir sonraki maç için geçici rating değişimi (ör. −5) */
+  tempRatingDelta?: number;
   description: string;
 }
 

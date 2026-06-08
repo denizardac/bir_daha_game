@@ -1,4 +1,5 @@
-import { getActiveSynergies } from '@/data/synergies';
+import { SYNERGIES } from '@/data/synergies';
+import { getStartingEleven } from '@/engine/lineupPreview';
 import { FINALE_MATCH_BONUS } from '@/engine/roundFlow';
 import type { ActiveTactic, MatchResult, PlayerCard } from '@/types';
 
@@ -9,10 +10,14 @@ function streakMultiplier(streak: number): number {
   return 1;
 }
 
+function matchSynergies(match: MatchResult) {
+  return SYNERGIES.filter((s) => match.activeSynergies.includes(s.id));
+}
+
 export function calculateRoundPoints(
   match: MatchResult,
   squad: PlayerCard[],
-  morale: number,
+  _morale: number,
   streak: number,
   round: number,
   lossesCount: number,
@@ -22,6 +27,8 @@ export function calculateRoundPoints(
 ): number {
   if (match.outcome === 'loss') return 0;
 
+  const starters = getStartingEleven(squad, activeTactics);
+  const scoringSquad = starters.length ? starters : squad;
   const opponentRating = match.opponent.rating;
   let points = 0;
 
@@ -30,13 +37,13 @@ export function calculateRoundPoints(
     points += match.goalsFor * 50;
     points -= match.goalsAgainst * 20;
     if (match.cleanSheet) points += 100;
-    const avg = squad.reduce((s, p) => s + p.currentRating, 0) / Math.max(squad.length, 1);
+    const avg = scoringSquad.reduce((s, p) => s + p.currentRating, 0) / Math.max(scoringSquad.length, 1);
     if (opponentRating - avg >= 15) points += 500;
   } else {
     points += Math.floor(opponentRating * 2.5);
   }
 
-  const synergies = getActiveSynergies(squad, morale, { activeTactics });
+  const synergies = matchSynergies(match);
   for (const synergy of synergies) {
     if (synergy.perGoalBonus && match.goalsFor > 0) points += synergy.perGoalBonus * match.goalsFor;
     if (synergy.perWinBonus && match.outcome === 'win') points += synergy.perWinBonus;
@@ -44,8 +51,12 @@ export function calculateRoundPoints(
   }
 
   for (const t of activeTactics) {
-    if (t.technicalBonus) points += squad.filter((p) => p.tags.includes('TEKNİK')).length * (t.technicalBonus ?? 0);
-    if (t.fastBonus) points += squad.filter((p) => p.tags.includes('HIZLI')).length * (t.fastBonus ?? 0);
+    if (t.technicalBonus) {
+      points += scoringSquad.filter((p) => p.tags.includes('TEKNİK')).length * (t.technicalBonus ?? 0);
+    }
+    if (t.fastBonus) {
+      points += scoringSquad.filter((p) => p.tags.includes('HIZLI')).length * (t.fastBonus ?? 0);
+    }
   }
 
   if (match.outcome === 'win') points = Math.floor(points * streakMultiplier(streak));
@@ -56,7 +67,7 @@ export function calculateRoundPoints(
   if (round === 1 && match.outcome === 'win') points += 200;
   if (round === 15) points += FINALE_MATCH_BONUS;
   if (round === 15 && lossesCount === 0) points += 2000;
-  if (squad.length <= 4 && match.outcome === 'win') points += 800;
+  if (scoringSquad.length <= 4 && match.outcome === 'win') points += 800;
   for (const id of match.newlyDiscoveredSynergies) {
     points += 200;
     void id;

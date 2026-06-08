@@ -53,6 +53,10 @@ export interface PlayerCard {
   matchesPlayed?: number;
   warriorProtected?: boolean;
   isStarter?: boolean;
+  /** Olay / maç sonrası geçici rating düşüşü (bir sonraki maç) */
+  tempRatingMod?: number;
+  /** Sessiz teklif yükseltmesi — oyuncu kartında gösterilir */
+  offerBoosted?: boolean;
 }
 
 export interface TacticCard {
