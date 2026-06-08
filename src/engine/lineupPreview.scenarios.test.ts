@@ -205,6 +205,15 @@ describe('lineup scenarios — mevki × formasyon (18+ koşul)', () => {
     expect(slot).toBe('DOS');
   });
 
+  it('16b — 352 orta hat bek etiketi yok (SLK/DOS/OS/OOS/SĞK)', () => {
+    const lineup = assignSquadToFormation([gk(70)], '352');
+    const midLabels = lineup
+      .filter((s) => s.slot.zone === 'orta' || (s.slot.zone === 'hucum' && ['SLK', 'SĞK'].includes(s.slot.label)))
+      .map((s) => s.slot.label);
+    expect(midLabels).toEqual(['SLK', 'DOS', 'OS', 'OOS', 'SĞK']);
+    expect(lineup.some((s) => s.slot.label === 'SĞB' || s.slot.label === 'SLB')).toBe(false);
+  });
+
   it('17 — 532 formasyonunda OS orta sahada', () => {
     const gk = p({ id: 'gk', name: 'KL', position: 'KL', currentRating: 70, rating: 70 });
     const squad = [
