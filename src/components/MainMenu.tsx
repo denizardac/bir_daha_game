@@ -34,9 +34,18 @@ export function MainMenu() {
     setStartPrompt(null);
   };
 
+  const savedRun = loadPersisted().currentRun;
+
   const handleNewRunFromContinue = () => {
-    const saved = loadPersisted().currentRun;
-    openStart(saved?.isDailySeed ?? true, true);
+    openStart(savedRun?.isDailySeed ?? true, true);
+  };
+
+  const handlePlayClick = (daily: boolean) => {
+    if (showContinuePrompt) {
+      openStart(daily, true);
+      return;
+    }
+    openStart(daily);
   };
 
   const quickLinks = [
@@ -107,7 +116,10 @@ export function MainMenu() {
                     <div className="menu-continue-banner">
                       <div className="menu-continue-text">
                         <p className="menu-continue-title">Devam eden runun var</p>
-                        <p className="menu-continue-sub">Kaldığın yerden devam et veya yeni başla</p>
+                        <p className="menu-continue-sub">
+                          Round {savedRun?.round ?? '?'} · Skor {formatScore(savedRun?.score ?? 0)}
+                          {' · '}Kaldığın yerden devam et veya yeni başla
+                        </p>
                       </div>
                       <div className="menu-continue-actions">
                         <button type="button" className="btn-secondary menu-continue-btn" onClick={handleNewRunFromContinue}>Yeni Run</button>
@@ -138,14 +150,14 @@ export function MainMenu() {
                 </div>
 
                 <div className="menu-play-actions">
-                  <button type="button" className="btn-primary menu-play-btn" onClick={() => openStart(true)}>
+                  <button type="button" className="btn-primary menu-play-btn" onClick={() => handlePlayClick(true)}>
                     <span className="menu-play-btn-icon">▶</span>
                     <span>
                       <span className="menu-play-btn-label">Oyna — Günlük Seed</span>
                       <span className="menu-play-btn-sub">Herkes aynı kartları görür · skor kıyaslanır</span>
                     </span>
                   </button>
-                  <button type="button" className="btn-secondary menu-play-btn-alt" onClick={() => openStart(false)}>
+                  <button type="button" className="btn-secondary menu-play-btn-alt" onClick={() => handlePlayClick(false)}>
                     Serbest Mod — rastgele seed
                   </button>
                 </div>

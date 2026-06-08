@@ -49,6 +49,7 @@ import type {
   TrainingCard,
 } from '@/types';
 import { isPlayerCard, isTacticCard, isTrainingCard } from '@/types';
+import { isResumableRun, mergeRunSnapshot, type RunSnapshot, toRunSnapshot } from '@/engine/runPersistence';
 import { getAnonymousId, loadPersisted, savePersisted } from '@/utils/storage';
 import { playSound } from '@/utils/sound';
 
@@ -107,6 +108,7 @@ interface GameStore extends GameState {
   dismissMilestone: (id: string) => void;
   dismissSynergyReveal: () => void;
   tickTimer: () => void;
+  saveCurrentRun: () => void;
   setScreen: (screen: Screen) => void;
 }
 
@@ -169,12 +171,16 @@ async function persistRunEndScore(state: GameStore, score: number, roundsComplet
   void submitRunToLeaderboard(signed, state.roundHistory, state.isDailySeed);
 }
 
-function persistRun(state: Partial<GameState> & Pick<GameState, 'seed'>) {
+function persistRun(state: (Partial<RunSnapshot> & Pick<RunSnapshot, 'seed'>) | GameStore) {
   const p = loadPersisted();
+  const input = 'screen' in state
+    ? toRunSnapshot(state as GameStore & Record<string, unknown>)
+    : (state as Partial<RunSnapshot> & Pick<RunSnapshot, 'seed'>);
+  const next = mergeRunSnapshot(p.currentRun as Partial<RunSnapshot> | null, input);
   savePersisted({
     ...p,
-    currentRun: { ...state },
-    discoveredSynergies: state.discoveredSynergies ?? p.discoveredSynergies,
+    currentRun: next,
+    discoveredSynergies: next.discoveredSynergies ?? p.discoveredSynergies,
   });
 }
 
@@ -358,8 +364,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   init: () => {
     getAnonymousId();
     const p = loadPersisted();
-    const saved = p.currentRun as Partial<GameState> | null;
-    set({ showContinuePrompt: !!(saved && saved.phase !== 'runEnd'), isFirstRun: p.isFirstRun });
+    const saved = p.currentRun as Partial<RunSnapshot> | null;
+    set({ showContinuePrompt: isResumableRun(saved), isFirstRun: p.isFirstRun });
   },
 
   startRun: (daily = true, displayName = 'Anonim') => {
@@ -375,36 +381,57 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   continueRun: () => {
-    const p = loadPersisted();
-    const saved = p.currentRun as Partial<GameState> | null;
-    if (!saved?.seed) return;
+    const saved = loadPersisted().currentRun as Partial<RunSnapshot> | null;
+    if (!isResumableRun(saved) || !saved?.seed) return;
+
     const squad = saved.squad ?? getStartingSquad();
+    const phase = saved.phase ?? 'cardSelect';
+    let currentOffers = saved.currentOffers ?? [];
+    if (phase === 'cardSelect' && currentOffers.length === 0) {
+      currentOffers = drawOffers(
+        saved.seed,
+        saved.round ?? 1,
+        saved.lossesCount ?? 0,
+        squad.map((x) => x.id),
+        saved.activeTactics?.map((t) => t.id) ?? [],
+        saved.recoveryGuaranteed ?? false,
+        saved.offersRerollIndex ?? 0,
+        'normal',
+        getOfferDrawModeForRound(saved.round ?? 1, saved.maxRounds ?? MAX_ROUNDS),
+      );
+    }
+
     set({
       ...(saved as GameState),
       squad,
       displayName: saved.displayName ?? 'Anonim',
       screen: 'game',
       showContinuePrompt: false,
-      currentOffers: saved.phase === 'cardSelect'
-        ? drawOffers(
-            saved.seed,
-            saved.round ?? 1,
-            saved.lossesCount ?? 0,
-            squad.map((x) => x.id),
-            saved.activeTactics?.map((t) => t.id) ?? [],
-            saved.recoveryGuaranteed ?? false,
-            saved.offersRerollIndex ?? 0,
-            'normal',
-            getOfferDrawModeForRound(saved.round ?? 1, saved.maxRounds ?? MAX_ROUNDS),
-          )
-        : [],
+      phase,
+      currentOffers: phase === 'cardSelect' ? currentOffers : (saved.currentOffers ?? []),
+      currentMatch: saved.currentMatch ?? null,
+      currentEvent: saved.currentEvent ?? null,
+      lastLossPlayer: saved.lastLossPlayer ?? null,
       rerollsRemaining: saved.rerollsRemaining ?? REROLLS_PER_RUN,
       offersRerollIndex: saved.offersRerollIndex ?? 0,
-      timerSeconds: cardTimerSeconds(),
-      usedEventIds: [],
+      timerSeconds: phase === 'cardSelect' ? cardTimerSeconds() : (saved.timerSeconds ?? 0),
+      usedEventIds: saved.usedEventIds ?? [],
+      trainingFlow: saved.trainingFlow ?? null,
+      pendingOffersShown: saved.pendingOffersShown ?? [],
+      pendingSelected: saved.pendingSelected ?? null,
+      lastLossBrokenSynergies: saved.lastLossBrokenSynergies ?? [],
+      pendingSynergyReveal: saved.pendingSynergyReveal ?? [],
+      nextMatchRisk: saved.nextMatchRisk ?? 0,
+      nextMatchBonus: saved.nextMatchBonus ?? 0,
       runEndStep: 0,
       pendingMilestones: [],
     });
+  },
+
+  saveCurrentRun: () => {
+    const s = get();
+    if (s.screen !== 'game' || s.phase === 'runEnd') return;
+    persistRun(s);
   },
 
   dismissMilestone: (id) => set((s) => ({ pendingMilestones: s.pendingMilestones.filter((m) => m.id !== id) })),
@@ -497,13 +524,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (isTacticBonusRound(state.round, state.maxRounds)) {
       if (isTrainingCard(card)) {
-        set({
-          trainingFlow: {
-            card,
-            offeredTags: card.offeredTags,
-            step: 'player',
-          },
-        });
+        const trainingFlow: TrainingFlow = {
+          card,
+          offeredTags: card.offeredTags,
+          step: 'player',
+        };
+        set({ trainingFlow });
+        persistRun({ ...get(), trainingFlow });
         return;
       }
 
@@ -561,13 +588,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!state.trainingFlow) return;
     const player = state.squad.find((p) => p.id === playerId);
     if (!player || player.tags.length >= MAX_PLAYER_TAGS) return;
-    set({
-      trainingFlow: {
-        ...state.trainingFlow,
-        step: 'tag',
-        selectedPlayerId: playerId,
-      },
-    });
+    const trainingFlow: TrainingFlow = {
+      ...state.trainingFlow,
+      step: 'tag',
+      selectedPlayerId: playerId,
+    };
+    set({ trainingFlow });
+    persistRun(get());
   },
 
   completeTraining: (tag) => {
@@ -589,18 +616,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     finalizeBonusRound(state, squad, state.activeTactics, card, set);
   },
 
-  cancelTraining: () => set({ trainingFlow: null }),
+  cancelTraining: () => {
+    set({ trainingFlow: null });
+    persistRun({ ...get(), trainingFlow: null });
+  },
 
   backTrainingPlayer: () => {
     const state = get();
     if (!state.trainingFlow) return;
-    set({
-      trainingFlow: {
-        ...state.trainingFlow,
-        step: 'player',
-        selectedPlayerId: undefined,
-      },
-    });
+    const trainingFlow: TrainingFlow = {
+      ...state.trainingFlow,
+      step: 'player',
+      selectedPlayerId: undefined,
+    };
+    set({ trainingFlow });
+    persistRun(get());
   },
 
   autoSelectOffer: () => {
@@ -877,7 +907,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const s = get();
     if (!isCardTimerEnabled() || s.phase !== 'cardSelect') return;
     if (s.timerSeconds <= 1) get().autoSelectOffer();
-    else set({ timerSeconds: s.timerSeconds - 1 });
+    else {
+      const timerSeconds = s.timerSeconds - 1;
+      set({ timerSeconds });
+      if (timerSeconds % 5 === 0) persistRun({ ...get(), timerSeconds });
+    }
   },
 
   setScreen: (screen) => set({ screen }),

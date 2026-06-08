@@ -4,7 +4,7 @@ import { POSITION_BADGE, POSITION_LABELS } from '@/utils/positionStyle';
 /** Birincil mevkiye göre oynayabildiği ek slotlar */
 export const SECONDARY_POSITIONS: Partial<Record<Position, Position[]>> = {
   OS: ['DOS', 'OOS'],
-  OOS: ['OS', 'DOS'],
+  OOS: ['OS', 'DOS', 'SÖK', 'SLK'],
   DOS: ['OS', 'OOS'],
   SF: ['SLK', 'SÖK'],
   SLK: ['SF', 'SÖK', 'OOS'],

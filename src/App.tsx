@@ -17,6 +17,19 @@ export default function App() {
     init();
   }, [init]);
 
+  useEffect(() => {
+    const flush = () => useGameStore.getState().saveCurrentRun();
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    window.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      window.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', flush);
+    };
+  }, []);
+
   switch (screen) {
     case 'game':
       return <GameScreen />;

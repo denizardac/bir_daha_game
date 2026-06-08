@@ -194,6 +194,10 @@ function SynergiesSection() {
         Rehberde görünen detay: <strong>{revealedCount}/{TOTAL_SYNERGIES}</strong>
         {discovered.length > 0 && ` · Run’larda keşfettiklerin: ${discovered.length}`}
       </p>
+      <p className="guide-synergy-note">
+        <strong>Açık</strong> sinerjiler tarayıcı geçmişinden gelmez — oyunda her zaman görünür olan {SYNERGIES.filter((s) => !s.hidden).length} kombinasyon.
+        <strong> Keşfedildi</strong> rozeti yalnızca run sırasında açtığın gizli sinerjiler içindir.
+      </p>
       <div className="guide-synergy-list">
         {SYNERGIES.map((s) => {
           const isDiscovered = discovered.includes(s.id);

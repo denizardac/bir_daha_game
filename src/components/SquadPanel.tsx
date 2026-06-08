@@ -19,7 +19,7 @@ interface Props {
 
 function SquadTagChip({ tag }: { tag: Tag }) {
   return (
-    <HoverTip tip={TAG_DESCRIPTIONS[tag]} className="syn-tag-chip-wrap">
+    <HoverTip tip={TAG_DESCRIPTIONS[tag]} className="syn-tag-chip-wrap" placement="left">
       <span className={`syn-tag-chip syn-tag-chip--squad syn-tag-chip--${tag.replace(/\s+/g, '-')}`}>
         <span className="syn-tag-icon" aria-hidden>{TAG_ICONS[tag]}</span>
         <span className="syn-tag-label">{tag}</span>
@@ -71,21 +71,21 @@ export function SquadPanel({ squad, maxSquadSize, round, maxRounds, activeTactic
               <div className="squad-row-info">
                 <div className="squad-row-head">
                   <p className="squad-row-name" title={player.name}>{player.name}</p>
-                  {player.tags.length > 0 && (
-                    <div className="squad-row-tags squad-row-tags--inline">
-                      {player.tags.map((t) => (
-                        <SquadTagChip key={t} tag={t} />
-                      ))}
-                    </div>
-                  )}
                   <span className="squad-row-rating">{player.currentRating}</span>
                 </div>
+                {player.tags.length > 0 && (
+                  <div className="squad-row-tags squad-row-tags--below">
+                    {player.tags.map((t) => (
+                      <SquadTagChip key={t} tag={t} />
+                    ))}
+                  </div>
+                )}
                 <div className="squad-row-sub">
                   <span className="squad-row-pos" title={POSITION_LABELS[player.position]}>
                     {POSITION_BADGE[player.position]}
                   </span>
                   {altPos && (
-                    <HoverTip tip={`Ek mevkiler: ${altPos.replace(/ · /g, ', ')}`} className="squad-row-alt-wrap">
+                    <HoverTip tip={`Ek mevkiler: ${altPos.replace(/ · /g, ', ')}`} className="squad-row-alt-wrap" placement="left">
                       <span className="squad-row-alt-pos">+{altPos}</span>
                     </HoverTip>
                   )}

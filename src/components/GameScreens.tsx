@@ -669,37 +669,43 @@ export function LossScreen() {
             </div>
           )}
 
-          {remainingScores.length > 0 && (
-            <div className="mt-4 rounded-xl bg-neutral-900/80 p-4">
-              <p className="mb-3 text-sm font-bold uppercase tracking-wide text-neutral-400">Kalan kadro — ayrılma riski</p>
-              <ul className="loss-risk-list">
-                {remainingScores.slice(0, 5).map(({ player, score: ds }) => (
-                  <li key={player.id} className={`loss-risk-row ${player.id === remainingScores[0]?.player.id ? 'loss-risk-row--hot' : ''}`}>
-                    <span className="loss-risk-name">{player.name}</span>
-                    <span className="loss-risk-pos">{formatPosition(player.position)}</span>
-                    <span className="loss-risk-score">{formatStatDisplay(ds)}</span>
-                    {player.id === remainingScores[0]?.player.id && (
-                      <span className="loss-risk-badge">En riskli</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {dangerMode && (
-            <p className="mt-3 rounded-lg border border-red-700/50 bg-red-950/30 px-3 py-2 text-center text-sm font-bold text-red-300">
-              TEHLİKE — {squad.length} oyuncu kaldı · Bir kayıp daha = run biter
-            </p>
-          )}
-          <button type="button" className="btn-primary mt-6 w-full" onClick={finishLoss}>
-            {squad.length <= 4 ? 'Run Özeti' : 'Sonraki Round'}
-          </button>
         </motion.div>
 
-        <div className="loss-screen-lineup panel">
-          <p className="loss-screen-lineup-title">Kadro & diziliş</p>
-          <LineupPreviewExpanded squad={squad} activeTactics={activeTactics} />
+        <div className="loss-screen-right">
+          <div className="loss-screen-lineup panel">
+            <p className="loss-screen-lineup-title">Kadro & diziliş</p>
+            <LineupPreviewExpanded squad={squad} activeTactics={activeTactics} />
+          </div>
+
+          <div className="loss-screen-actions panel">
+            {remainingScores.length > 0 && (
+              <div className="loss-risk-block">
+                <p className="loss-risk-title">Kalan kadro — ayrılma riski</p>
+                <ul className="loss-risk-list">
+                  {remainingScores.slice(0, 6).map(({ player, score: ds }) => (
+                    <li key={player.id} className={`loss-risk-row ${player.id === remainingScores[0]?.player.id ? 'loss-risk-row--hot' : ''}`}>
+                      <span className="loss-risk-name">{player.name}</span>
+                      <span className="loss-risk-pos">{formatPosition(player.position)}</span>
+                      <span className="loss-risk-score">{formatStatDisplay(ds)}</span>
+                      {player.id === remainingScores[0]?.player.id && (
+                        <span className="loss-risk-badge">En riskli</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {dangerMode && (
+              <p className="loss-danger-banner">
+                TEHLİKE — {squad.length} oyuncu kaldı · Bir kayıp daha = run biter
+              </p>
+            )}
+
+            <button type="button" className="btn-primary loss-screen-cta" onClick={finishLoss}>
+              {squad.length <= 4 ? 'Run Özeti' : 'Sonraki Round'}
+            </button>
+          </div>
         </div>
         </div>
       </div>

@@ -7734,9 +7734,25 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .guide-synergy-progress {
-  margin: 0 0 0.85rem;
+  margin: 0 0 0.45rem;
   font-size: 0.9rem;
   color: var(--text-secondary);
+}
+
+.guide-synergy-note {
+  margin: 0 0 0.85rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(212, 212, 216, 0.92);
+  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.guide-synergy-note strong {
+  color: #fde68a;
+  font-weight: 700;
 }
 
 .guide-synergy-list {
@@ -8068,6 +8084,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   position: fixed;
   z-index: 9999;
   pointer-events: none;
+}
+
+.hover-tip-popup--profile {
+  max-width: 15.5rem;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.45;
 }
 
 .tag-trait-badge-wrap,
@@ -9099,6 +9122,18 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   overflow: hidden;
 }
 
+.squad-row-tags--below {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+}
+
+.squad-row-tags--below .syn-tag-chip {
+  font-size: 0.58rem;
+  padding: 0.08rem 0.32rem;
+}
+
 .squad-row-tags--inline .syn-tag-chip {
   font-size: 0.52rem;
   padding: 0.04rem 0.22rem;
@@ -9146,12 +9181,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   display: grid;
   gap: 1rem;
   margin-top: 0.75rem;
+  align-items: start;
 }
 
 @media (min-width: 900px) {
   .loss-screen-layout {
-    grid-template-columns: 1fr 1.05fr;
-    align-items: start;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
+    max-height: calc(100vh - 108px);
   }
 }
 
@@ -9159,10 +9195,64 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   padding: 1.25rem;
 }
 
+.loss-screen-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-height: 0;
+}
+
+@media (min-width: 900px) {
+  .loss-screen-right {
+    max-height: calc(100vh - 108px);
+  }
+}
+
 .loss-screen-lineup {
   padding: 1rem;
-  max-height: calc(100vh - 120px);
+  flex: 1;
+  min-height: 0;
   overflow: auto;
+}
+
+.loss-screen-actions {
+  padding: 1rem 1.1rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(12, 12, 14, 0.92);
+  border: 1px solid rgba(251, 191, 36, 0.18);
+}
+
+.loss-risk-block {
+  margin: 0;
+}
+
+.loss-risk-title {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(163, 163, 163, 0.95);
+}
+
+.loss-danger-banner {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(185, 28, 28, 0.45);
+  background: rgba(69, 10, 10, 0.35);
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fca5a5;
+}
+
+.loss-screen-cta {
+  width: 100%;
+  margin: 0;
 }
 
 .loss-screen-lineup-title {
@@ -9437,9 +9527,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .lineup-pitch--v2 {
-  min-height: 400px;
+  min-height: 440px;
   border-radius: 14px;
   border-width: 2px;
+}
+
+.lineup-dot-anchor .lineup-dot {
+  position: relative;
+  transform: none;
+  left: auto;
+  top: auto;
 }
 
 .lineup-pitch-stripes {
@@ -9475,34 +9572,86 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-bottom: none;
 }
 
-.lineup-dot--v2 {
-  width: 2.6rem;
-  height: 2.6rem;
-  min-width: 2.6rem;
+.lineup-dot-anchor {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
 
-.lineup-dot--v2 .lineup-dot-rating {
-  font-size: 0.78rem;
+.lineup-dot-hover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lineup-dot--v2,
+.lineup-dot--v3 {
+  width: 3.35rem;
+  height: 3.35rem;
+  min-width: 3.35rem;
+  border-radius: 12px;
+  border-width: 2px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  gap: 0.05rem;
+}
+
+.lineup-dot--v2 .lineup-dot-rating,
+.lineup-dot--v3 .lineup-dot-rating {
+  font-size: 0.92rem;
   font-weight: 900;
+  line-height: 1;
 }
 
-.lineup-dot--v2 .lineup-dot-name {
-  font-size: 0.48rem;
+.lineup-dot--v2 .lineup-dot-name,
+.lineup-dot--v3 .lineup-dot-name {
+  font-size: 0.58rem;
   font-weight: 700;
-  max-width: 2.4rem;
+  max-width: 3rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
-.lineup-dot--v2 .lineup-dot-badge {
-  font-size: 0.5rem;
+.lineup-dot--v2 .lineup-dot-badge,
+.lineup-dot--v3 .lineup-dot-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 0.05rem 0.28rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fde68a;
 }
 
-.lineup-dot--v2.lineup-dot--empty {
-  width: 2.2rem;
-  height: 2.2rem;
+.lineup-dot--v2 .lineup-dot-label,
+.lineup-dot--v3 .lineup-dot-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.lineup-dot--v2.lineup-dot--empty,
+.lineup-dot--v3.lineup-dot--empty {
+  width: 2.85rem;
+  height: 2.85rem;
+  min-width: 2.85rem;
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.lineup-dot--v3.lineup-dot--gk {
+  border-color: rgba(251, 191, 36, 0.75);
+  background: linear-gradient(165deg, rgba(251, 191, 36, 0.35), rgba(120, 80, 10, 0.55));
+}
+
+.lineup-dot--v3.lineup-dot--filled {
+  background: linear-gradient(165deg, rgba(30, 30, 35, 0.95), rgba(10, 10, 12, 0.98));
+}
+
+.lineup-dot--v3.lineup-dot--mismatch {
+  border-color: rgba(248, 113, 113, 0.65);
+  box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.25);
 }
 
 .lineup-modal-aside {

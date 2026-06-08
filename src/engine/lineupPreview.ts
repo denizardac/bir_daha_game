@@ -341,21 +341,28 @@ export function getBenchExplanations(squad: PlayerCard[], activeTactics: ActiveT
       };
     }
 
-    const bestFit = emptySlots.reduce<number>((best, slot) => {
+    let bestFit = 99;
+    let bestSlotLabel = '';
+    for (const slot of emptySlots) {
       const fit = slotFitIndex(player, slot.slot.preferred);
-      return fit < best ? fit : best;
-    }, 99);
+      if (fit < bestFit) {
+        bestFit = fit;
+        bestSlotLabel = slot.slot.label;
+      }
+    }
 
     if (emptySlots.length > 0 && bestFit < 99) {
       return {
         player,
-        reason: 'Boş slota uygun ama kadro kotası dolu — yeni transfer yedek çıkarır',
+        reason: `Boş ${bestSlotLabel} slotuna uygun — kadro küçük olduğu için şimdilik yedek`,
       };
     }
     if (emptySlots.length > 0) {
+      const emptyLabels = [...new Set(emptySlots.map((s) => s.slot.label))].join(', ');
+      const playable = getPlayablePositions(player).map((p) => POSITION_BADGE[p]).join(', ');
       return {
         player,
-        reason: `Boş slotlara mevki uymuyor (${POSITION_LABELS[player.position]})`,
+        reason: `Boş slotlar (${emptyLabels}) uyumsuz — oynayabildiği: ${playable}`,
       };
     }
     return {

@@ -6,10 +6,10 @@ interface Props {
   tip: string;
   children: ReactNode;
   className?: string;
-  placement?: 'top' | 'bottom' | 'auto';
+  placement?: 'top' | 'bottom' | 'left' | 'right' | 'auto';
 }
 
-type TipPlace = 'top' | 'bottom';
+type TipPlace = 'top' | 'bottom' | 'left' | 'right';
 
 /** Hover / focus — viewport içinde kalır (portal + fixed) */
 export function HoverTip({ tip, children, className = '', placement = 'auto' }: Props) {
@@ -24,14 +24,38 @@ export function HoverTip({ tip, children, className = '', placement = 'auto' }: 
     const rect = el.getBoundingClientRect();
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceLeft = rect.left;
+    const spaceRight = window.innerWidth - rect.right;
 
     let place: TipPlace = 'top';
     if (placement === 'bottom') place = 'bottom';
     else if (placement === 'top') place = 'top';
-    else place = spaceBelow >= 72 || spaceBelow >= spaceAbove ? 'bottom' : 'top';
+    else if (placement === 'left') place = 'left';
+    else if (placement === 'right') place = 'right';
+    else {
+      const maxSide = Math.max(spaceLeft, spaceRight);
+      if (maxSide >= 160 && maxSide >= spaceBelow && maxSide >= spaceAbove) {
+        place = spaceRight >= spaceLeft ? 'right' : 'left';
+      } else {
+        place = spaceBelow >= 72 || spaceBelow >= spaceAbove ? 'bottom' : 'top';
+      }
+    }
 
-    const x = Math.min(Math.max(rect.left + rect.width / 2, 88), window.innerWidth - 88);
-    const y = place === 'top' ? rect.top - 8 : rect.bottom + 8;
+    let x = rect.left + rect.width / 2;
+    let y = rect.top + rect.height / 2;
+    if (place === 'top') {
+      x = Math.min(Math.max(rect.left + rect.width / 2, 88), window.innerWidth - 88);
+      y = rect.top - 8;
+    } else if (place === 'bottom') {
+      x = Math.min(Math.max(rect.left + rect.width / 2, 88), window.innerWidth - 88);
+      y = rect.bottom + 8;
+    } else if (place === 'left') {
+      x = rect.left - 10;
+      y = Math.min(Math.max(rect.top + rect.height / 2, 48), window.innerHeight - 48);
+    } else {
+      x = rect.right + 10;
+      y = Math.min(Math.max(rect.top + rect.height / 2, 48), window.innerHeight - 48);
+    }
     setPos({ x, y, place });
   }, [placement]);
 
@@ -65,7 +89,14 @@ export function HoverTip({ tip, children, className = '', placement = 'auto' }: 
           style={{
             left: pos.x,
             top: pos.y,
-            transform: pos.place === 'top' ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
+            transform:
+              pos.place === 'top'
+                ? 'translate(-50%, -100%)'
+                : pos.place === 'bottom'
+                  ? 'translate(-50%, 0)'
+                  : pos.place === 'left'
+                    ? 'translate(-100%, -50%)'
+                    : 'translate(0, -50%)',
           }}
           role="tooltip"
         >

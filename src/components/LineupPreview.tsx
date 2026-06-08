@@ -1,9 +1,11 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
+import { HoverTip } from '@/components/HoverTip';
 import { getPlayablePositions } from '@/data/positionFlexibility';
+import { TAG_ICONS } from '@/data/tags';
 import { getBenchExplanations, getSquadLineupSummary } from '@/engine/lineupPreview';
 import type { ActiveTactic, PlayerCard } from '@/types';
-import { POSITION_BADGE } from '@/utils/positionStyle';
+import { POSITION_BADGE, POSITION_LABELS } from '@/utils/positionStyle';
 
 interface Props {
   squad: PlayerCard[];
@@ -12,6 +14,16 @@ interface Props {
 
 function clampPct(value: number, min = 10, max = 90) {
   return Math.min(max, Math.max(min, value));
+}
+
+function buildLineupPlayerTip(player: PlayerCard, slotCode: string, outOfPosition: boolean): string {
+  const positions = getPlayablePositions(player).map((p) => POSITION_BADGE[p]).join(' · ');
+  const tagLine =
+    player.tags.length > 0
+      ? player.tags.map((t) => `${TAG_ICONS[t]} ${t}`).join(' · ')
+      : 'Tag yok';
+  const mismatch = outOfPosition ? '\n⚠ Bu slotta uyumsuz oynuyor' : '';
+  return `${player.name} · ${player.currentRating}\n${POSITION_LABELS[player.position]} (${slotCode})\nMevkiler: ${positions}\n${tagLine}${mismatch}`;
 }
 
 function lineupMetaParts(summary: ReturnType<typeof getSquadLineupSummary>) {
@@ -88,33 +100,51 @@ function LineupPitchContent({
           <div className="lineup-pitch-box lineup-pitch-box--top" aria-hidden />
           <div className="lineup-pitch-box lineup-pitch-box--bottom" aria-hidden />
           <div className="lineup-pitch-glow" aria-hidden />
-          {summary.lineup.map((slot) => (
-            <div
-              key={slot.index}
-              className={`lineup-dot lineup-dot--v2 ${slot.player ? 'lineup-dot--filled' : 'lineup-dot--empty'} ${
-                slot.outOfPosition ? 'lineup-dot--mismatch' : ''
-              } ${slot.role === 'gk' ? 'lineup-dot--gk' : ''}`}
-              style={{
-                left: `${clampPct(slot.x)}%`,
-                top: `${clampPct(slot.y, 8, 92)}%`,
-              }}
-              title={
-                slot.player
-                  ? `${slot.player.name} · ${getPlayablePositions(slot.player).map((p) => POSITION_BADGE[p]).join('/')}${slot.outOfPosition ? ' (uyumsuz)' : ''}`
-                  : `Boş · ${slot.slot.label}`
-              }
-            >
-              {slot.player ? (
-                <>
-                  <span className="lineup-dot-rating">{slot.player.currentRating}</span>
-                  <span className="lineup-dot-name">{slot.player.name.split(' ').pop()}</span>
-                  <span className="lineup-dot-badge">{slot.slot.label}</span>
-                </>
-              ) : (
-                <span className="lineup-dot-label">{slot.slot.label}</span>
-              )}
-            </div>
-          ))}
+          {summary.lineup.map((slot) => {
+            const tipPlacement = slot.x >= 52 ? 'left' : 'right';
+            const dot = (
+              <div
+                className={`lineup-dot lineup-dot--v3 ${slot.player ? 'lineup-dot--filled' : 'lineup-dot--empty'} ${
+                  slot.outOfPosition ? 'lineup-dot--mismatch' : ''
+                } ${slot.role === 'gk' ? 'lineup-dot--gk' : ''}`}
+              >
+                {slot.player ? (
+                  <>
+                    <span className="lineup-dot-rating">{slot.player.currentRating}</span>
+                    <span className="lineup-dot-name">{slot.player.name.split(' ').pop()}</span>
+                    <span className="lineup-dot-badge">{slot.slot.label}</span>
+                  </>
+                ) : (
+                  <span className="lineup-dot-label">{slot.slot.label}</span>
+                )}
+              </div>
+            );
+
+            return (
+              <div
+                key={slot.index}
+                className="lineup-dot-anchor"
+                style={{
+                  left: `${clampPct(slot.x)}%`,
+                  top: `${clampPct(slot.y, 8, 92)}%`,
+                }}
+              >
+                {slot.player ? (
+                  <HoverTip
+                    tip={buildLineupPlayerTip(slot.player, slot.slot.label, slot.outOfPosition)}
+                    placement={tipPlacement}
+                    className="lineup-dot-hover"
+                  >
+                    {dot}
+                  </HoverTip>
+                ) : (
+                  <HoverTip tip={`Boş slot · ${slot.slot.label}`} placement={tipPlacement} className="lineup-dot-hover">
+                    {dot}
+                  </HoverTip>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         <aside className="lineup-modal-aside">
