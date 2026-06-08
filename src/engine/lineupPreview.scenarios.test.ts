@@ -3,11 +3,15 @@ import { getStartingSquad } from '@/data/players';
 import { getPlayerPickSummary } from '@/engine/contextPreview';
 import {
   assignSquadToFormation,
+  canDisplaceStarter,
+  getBenchExplanations,
   getPositionHints,
+  getSquadLineupSummary,
   isIllegalCentralMidWingSlot,
   slotAcceptsPlayer,
   WING_SLOT_LABELS,
 } from '@/engine/lineupPreview';
+import { slotFitIndex } from '@/data/positionFlexibility';
 import type { PlayerCard, Position } from '@/types';
 
 function p(
@@ -150,7 +154,7 @@ describe('lineup scenarios — mevki × formasyon (18+ koşul)', () => {
   });
 
   it('14 — önizleme: DOS kanat boşken yedek veya orta saha', () => {
-    const squad = base442Ten();
+    const squad = base442Ten().filter((x) => x.id !== 'dos');
     const dos = p({ id: 'd', name: 'DOS', position: 'DOS', currentRating: 66, rating: 66 });
     const summary = getPlayerPickSummary(dos, squad, 11, 50, []);
     expect(summary.text).not.toContain('SĞK');
@@ -269,5 +273,415 @@ describe('lineup scenarios — mevki × formasyon (18+ koşul)', () => {
     const sinan = p({ id: 's', name: 'Sinan', position: 'DOS', currentRating: 68, rating: 68 });
     const sinanLabel = slotOf([...squad, sinan], 's', '442');
     if (sinanLabel) expect(WING_SLOT_LABELS.has(sinanLabel)).toBe(false);
+  });
+});
+
+function gk(r = 70) {
+  return p({ id: 'gk', name: 'KL', position: 'KL', currentRating: r, rating: r });
+}
+
+/** Kullanıcı raporu: 77 OOS tam kadro → OS; kısmi kadro → OS (SĞK değil) */
+describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
+  it('23 — 77 OOS tam 11/11: OS slotuna girer, 62 OS yedek', () => {
+    const squad = [
+      gk(88),
+      ...['slb', 'stp1', 'stp2', 'sgb'].map((id, i) =>
+        p({ id, name: id, position: (['SLB', 'STP', 'STP', 'SÖB'] as const)[i]!, currentRating: 63 + i, rating: 63 + i }),
+      ),
+      p({ id: 'dos', name: 'DOS', position: 'DOS', currentRating: 68, rating: 68 }),
+      p({ id: 'slk', name: 'SLK', position: 'SLK', currentRating: 66, rating: 66 }),
+      p({ id: 'sf', name: 'SF', position: 'SF', currentRating: 70, rating: 70 }),
+      p({ id: 'os62', name: 'Zayıf OS', position: 'OS', currentRating: 62, rating: 62 }),
+      p({ id: 'oos74', name: 'SĞK OOS', position: 'OOS', currentRating: 74, rating: 74 }),
+      p({ id: 'new', name: '77 OOS', position: 'OOS', currentRating: 77, rating: 77 }),
+    ];
+    expect(slotOf(squad, 'new', '442')).toBe('OS');
+    expect(slotOf(squad, 'oos74', '442')).toBe('SĞK');
+    expect(slotOf(squad, 'os62', '442')).toBeUndefined();
+  });
+
+  it('24 — 77 OOS kısmi kadro: OS upgrade, SĞK kanat doldurma önceliği yok', () => {
+    const partial = [
+      gk(88),
+      p({ id: 'slb', name: 'SLB', position: 'SLB', currentRating: 65, rating: 65 }),
+      p({ id: 'stp1', name: 'STP1', position: 'STP', currentRating: 66, rating: 66 }),
+      p({ id: 'stp2', name: 'STP2', position: 'STP', currentRating: 64, rating: 64 }),
+      p({ id: 'dos', name: 'DOS', position: 'DOS', currentRating: 68, rating: 68 }),
+      p({ id: 'slk', name: 'SLK', position: 'SLK', currentRating: 66, rating: 66 }),
+      p({ id: 'sf', name: 'SF', position: 'SF', currentRating: 70, rating: 70 }),
+      p({ id: 'oos74', name: 'SĞK OOS', position: 'OOS', currentRating: 74, rating: 74 }),
+      p({ id: 'new', name: '77 OOS', position: 'OOS', currentRating: 77, rating: 77 }),
+    ];
+    expect(slotOf(partial, 'new', '442')).toBe('OS');
+    expect(slotOf(partial, 'oos74', '442')).toBe('SĞK');
+  });
+
+  it('25 — 77 OOS önizleme tam kadro: OS metni', () => {
+    const squad = [
+      gk(88),
+      p({ id: 'os62', name: 'OS', position: 'OS', currentRating: 62, rating: 62 }),
+      p({ id: 'oos74', name: 'OOS', position: 'OOS', currentRating: 74, rating: 74 }),
+      ...['slb', 'stp1', 'stp2', 'sgb', 'dos', 'slk', 'sf'].map((id, i) =>
+        p({
+          id,
+          name: id,
+          position: (['SLB', 'STP', 'STP', 'SÖB', 'DOS', 'SLK', 'SF'] as const)[i]!,
+          currentRating: 65 + i,
+          rating: 65 + i,
+        }),
+      ),
+    ];
+    const incoming = p({ id: 'g', name: 'Gökhan', position: 'OOS', currentRating: 77, rating: 77 });
+    const summary = getPlayerPickSummary(incoming, squad, 11, 50, []);
+    expect(summary.text).toMatch(/OS slotuna girer/);
+    expect(summary.text).not.toContain('SĞK');
+  });
+
+  it('26 — 77 OOS önizleme kısmi kadro: OS metni (SĞK değil)', () => {
+    const squad = [
+      gk(88),
+      p({ id: 'oos74', name: 'OOS', position: 'OOS', currentRating: 74, rating: 74 }),
+      ...['slb', 'stp1', 'stp2', 'dos', 'slk', 'sf'].map((id, i) =>
+        p({
+          id,
+          name: id,
+          position: (['SLB', 'STP', 'STP', 'DOS', 'SLK', 'SF'] as const)[i]!,
+          currentRating: 65 + i,
+          rating: 65 + i,
+        }),
+      ),
+    ];
+    const incoming = p({ id: 'g', name: 'Gökhan', position: 'OOS', currentRating: 77, rating: 77 });
+    const summary = getPlayerPickSummary(incoming, squad, 11, 50, []);
+    expect(summary.text).toMatch(/OS slotuna girer/);
+    expect(summary.text).not.toContain('SĞK');
+  });
+
+  it('27 — OOS native OS slotunu 8 puanla işgal edemez', () => {
+    const os = p({ id: 'os', name: 'OS', position: 'OS', currentRating: 59, rating: 59 });
+    const oos = p({ id: 'oos', name: 'OOS', position: 'OOS', currentRating: 67, rating: 67 });
+    const osSlot = { label: 'OS', preferred: ['OS', 'OOS', 'DOS'] as const, zone: 'orta' as const };
+    expect(canDisplaceStarter(oos, os, { ...osSlot, preferred: [...osSlot.preferred] })).toBe(false);
+  });
+
+  it('28 — DOS 66 zayıf OS 59 yerine OS slotuna girer', () => {
+    const squad = [
+      gk(70),
+      p({ id: 'slb', name: 'SLB', position: 'SLB', currentRating: 65, rating: 65 }),
+      p({ id: 'stp1', name: 'STP1', position: 'STP', currentRating: 66, rating: 66 }),
+      p({ id: 'stp2', name: 'STP2', position: 'STP', currentRating: 64, rating: 64 }),
+      p({ id: 'sgb', name: 'SGB', position: 'SÖB', currentRating: 65, rating: 65 }),
+      p({ id: 'dos', name: 'DOS', position: 'DOS', currentRating: 70, rating: 70 }),
+      p({ id: 'weak', name: 'Zayıf OS', position: 'OS', currentRating: 59, rating: 59 }),
+      p({ id: 'oos', name: 'OOS', position: 'OOS', currentRating: 67, rating: 67 }),
+      p({ id: 'slk', name: 'SLK', position: 'SLK', currentRating: 66, rating: 66 }),
+      p({ id: 'sf', name: 'SF', position: 'SF', currentRating: 68, rating: 68 }),
+      p({ id: 'nik', name: 'Nikolai Kane', position: 'DOS', currentRating: 66, rating: 66 }),
+    ];
+    expect(slotOf(squad, 'nik', '442')).toBe('OS');
+    expect(slotOf(squad, 'weak', '442')).toBeUndefined();
+  });
+
+  it('29 — Adeyemi SF oynayamaz (fit 99)', () => {
+    const ade = p({ id: 'ade', name: 'Adeyemi', position: 'OOS', currentRating: 74, rating: 74 });
+    expect(slotFitIndex(ade, ['SF'])).toBe(99);
+  });
+
+  it('30 — Hakan DOS boş OS varken orta sahaya girer', () => {
+    const squad = [
+      gk(88),
+      p({ id: 'celik', name: 'Çelik', position: 'STP', currentRating: 63, rating: 63 }),
+      p({ id: 'koc', name: 'Koç', position: 'STP', currentRating: 61, rating: 61 }),
+      p({ id: 'ade', name: 'Adeyemi', position: 'OOS', currentRating: 74, rating: 74 }),
+      p({ id: 'hak', name: 'Hakan', position: 'DOS', currentRating: 61, rating: 61 }),
+      p({ id: 'riza', name: 'Rıza', position: 'SLK', currentRating: 60, rating: 60 }),
+      p({ id: 'can', name: 'Arslan', position: 'KL', currentRating: 62, rating: 62 }),
+    ];
+    const lineup = assignSquadToFormation(squad, '442');
+    const hak = lineup.find((s) => s.player?.id === 'hak');
+    expect(hak?.slot.zone).toBe('orta');
+    expect(lineup.find((s) => s.player?.id === 'ade')?.slot.label).not.toBe('SF');
+  });
+
+  it('31 — bench açıklaması: orta saha dolu mesajı', () => {
+    const squad = [
+      gk(88),
+      p({ id: 'celik', name: 'Çelik', position: 'STP', currentRating: 63, rating: 63 }),
+      p({ id: 'koc', name: 'Koç', position: 'STP', currentRating: 61, rating: 61 }),
+      p({ id: 'ade', name: 'Adeyemi', position: 'OOS', currentRating: 74, rating: 74 }),
+      p({ id: 'acar', name: 'Acar', position: 'OS', currentRating: 62, rating: 62 }),
+      p({ id: 'hak', name: 'Hakan', position: 'DOS', currentRating: 61, rating: 61 }),
+      p({ id: 'riza', name: 'Rıza', position: 'SLK', currentRating: 60, rating: 60 }),
+      p({ id: 'can', name: 'Arslan', position: 'KL', currentRating: 62, rating: 62 }),
+    ];
+    const bench = getBenchExplanations(squad, []);
+    const hakan = bench.find((b) => b.player.id === 'hak');
+    expect(hakan?.reason).toMatch(/Orta saha dolu|yedek/i);
+  });
+
+  it('32 — OS asla kanatta kalmaz (100 seed)', () => {
+    for (let i = 0; i < 100; i++) {
+      const squad = [
+        gk(),
+        ...Array.from({ length: 8 }, (_, j) =>
+          p({
+            id: `p${i}_${j}`,
+            name: `P${j}`,
+            position: (['STP', 'SLB', 'SÖB', 'DOS', 'OOS', 'SLK', 'SÖK', 'SF'] as const)[j % 8]!,
+            currentRating: 60 + j,
+            rating: 60 + j,
+          }),
+        ),
+        p({ id: `os${i}`, name: 'OS', position: 'OS', currentRating: 70 + (i % 5), rating: 70 + (i % 5) }),
+      ];
+      const label = slotOf(squad, `os${i}`, '442');
+      if (label) expect(WING_SLOT_LABELS.has(label)).toBe(false);
+    }
+  });
+
+  it('33 — DOS asla kanatta kalmaz (100 seed)', () => {
+    for (let i = 0; i < 100; i++) {
+      const squad = [
+        gk(),
+        ...Array.from({ length: 8 }, (_, j) =>
+          p({
+            id: `p${i}_${j}`,
+            name: `P${j}`,
+            position: (['STP', 'SLB', 'SÖB', 'OS', 'OOS', 'SLK', 'SÖK', 'SF'] as const)[j % 8]!,
+            currentRating: 60 + j,
+            rating: 60 + j,
+          }),
+        ),
+        p({ id: `dos${i}`, name: 'DOS', position: 'DOS', currentRating: 68 + (i % 4), rating: 68 + (i % 4) }),
+      ];
+      const label = slotOf(squad, `dos${i}`, '442');
+      if (label) expect(WING_SLOT_LABELS.has(label)).toBe(false);
+    }
+  });
+
+  it('34 — 433 OS zayıf OS düşürür', () => {
+    const squad = base442Ten();
+    const strong = p({ id: 's', name: 'OS', position: 'OS', currentRating: 72, rating: 72 });
+    const lineup = assignSquadToFormation([...squad, strong], '433');
+    expect(lineup.find((x) => x.player?.id === 's')?.slot.label).toBe('OS');
+    expect(lineup.some((x) => x.player?.id === 'weak')).toBe(false);
+  });
+
+  it('35 — 4231 OS merkezde kalır', () => {
+    const squad = [
+      gk(),
+      ...['slb', 'stp1', 'stp2', 'sgb', 'dos1', 'dos2', 'slk', 'oos', 'sf'].map((id, i) =>
+        p({
+          id,
+          name: id,
+          position: (['SLB', 'STP', 'STP', 'SÖB', 'DOS', 'DOS', 'SLK', 'OOS', 'SF'] as const)[i]!,
+          currentRating: 64 + i,
+          rating: 64 + i,
+        }),
+      ),
+      p({ id: 'os', name: 'OS', position: 'OS', currentRating: 71, rating: 71 }),
+    ];
+    const slot = slotOf(squad, 'os', '4231');
+    expect(slot === 'OOS' || slot === 'OS' || slot === 'DOS').toBe(true);
+  });
+
+  it('36 — 352 DOS merkezde', () => {
+    const squad = [
+      gk(),
+      ...['stp1', 'stp2', 'stp3', 'slb', 'sgb', 'os', 'oos', 'sf1', 'sf2'].map((id, i) =>
+        p({
+          id,
+          name: id,
+          position: (['STP', 'STP', 'STP', 'SLB', 'SÖB', 'OS', 'OOS', 'SF', 'SF'] as const)[i]!,
+          currentRating: 62 + i,
+          rating: 62 + i,
+        }),
+      ),
+      p({ id: 'd', name: 'DOS', position: 'DOS', currentRating: 70, rating: 70 }),
+    ];
+    expect(slotOf(squad, 'd', '352')).toBe('DOS');
+  });
+
+  it('37 — 532 OS merkezde', () => {
+    const squad = [
+      gk(),
+      ...['slb', 'stp1', 'stp2', 'stp3', 'sgb', 'dos', 'oos', 'sf1', 'sf2'].map((id, i) =>
+        p({
+          id,
+          name: id,
+          position: (['SLB', 'STP', 'STP', 'STP', 'SÖB', 'DOS', 'OOS', 'SF', 'SF'] as const)[i]!,
+          currentRating: 62 + i,
+          rating: 62 + i,
+        }),
+      ),
+      p({ id: 'o', name: 'OS', position: 'OS', currentRating: 71, rating: 71 }),
+    ];
+    expect(slotOf(squad, 'o', '532')).toBe('OS');
+  });
+
+  it('38 — KL sahada oynayamaz', () => {
+    const squad = base442Ten().filter((x) => x.id !== 'gk');
+    const kl = p({ id: 'k', name: 'KL', position: 'KL', currentRating: 65, rating: 65 });
+    const lineup = assignSquadToFormation([...squad, kl], '442');
+    for (const slot of lineup) {
+      if (slot.player?.position === 'KL') expect(slot.slot.zone).toBe('kaleci');
+    }
+  });
+
+  it('39 — en güçlü KL kaleye', () => {
+    const squad = [
+      p({ id: 'k1', name: 'KL1', position: 'KL', currentRating: 60, rating: 60 }),
+      p({ id: 'k2', name: 'KL2', position: 'KL', currentRating: 75, rating: 75 }),
+      ...base442Ten().filter((x) => x.id !== 'gk'),
+    ];
+    expect(slotOf(squad, 'k2', '442')).toBe('KL');
+  });
+
+  it('40 — OOS orta doluysa kanada gider', () => {
+    const squad = [
+      gk(),
+      ...['slb', 'stp1', 'stp2', 'sgb', 'dos', 'os', 'slk', 'sf'].map((id, i) =>
+        p({
+          id,
+          name: id,
+          position: (['SLB', 'STP', 'STP', 'SÖB', 'DOS', 'OS', 'SLK', 'SF'] as const)[i]!,
+          currentRating: 65 + i,
+          rating: 65 + i,
+        }),
+      ),
+      p({ id: 'o', name: 'OOS', position: 'OOS', currentRating: 72, rating: 72 }),
+    ];
+    expect(slotOf(squad, 'o', '442')).toBe('SĞK');
+  });
+
+  it('41 — güçlü OS zayıf OS düşürür (442)', () => {
+    const squad = base442Ten();
+    const strong = p({ id: 's', name: 'OS', position: 'OS', currentRating: 72, rating: 72 });
+    const lineup = assignSquadToFormation([...squad, strong], '442');
+    expect(lineup.find((x) => x.player?.id === 's')?.slot.label).toBe('OS');
+    expect(lineup.some((x) => x.player?.id === 'weak')).toBe(false);
+  });
+
+  it('42 — güçlü DOS zayıf DOS düşürür', () => {
+    const squad = base442Ten();
+    const strong = p({ id: 's', name: 'DOS', position: 'DOS', currentRating: 75, rating: 75 });
+    const lineup = assignSquadToFormation([...squad, strong], '442');
+    expect(lineup.find((x) => x.player?.id === 's')?.slot.zone).toBe('orta');
+  });
+
+  it('43 — SF çift slot doldurma', () => {
+    const squad = [
+      gk(),
+      ...['slb', 'stp1', 'stp2', 'sgb', 'dos', 'os', 'oos', 'slk', 'sgk'].map((id, i) =>
+        p({
+          id,
+          name: id,
+          position: (['SLB', 'STP', 'STP', 'SÖB', 'DOS', 'OS', 'OOS', 'SLK', 'SÖK'] as const)[i]!,
+          currentRating: 64 + i,
+          rating: 64 + i,
+        }),
+      ),
+      p({ id: 'sf1', name: 'SF1', position: 'SF', currentRating: 70, rating: 70 }),
+      p({ id: 'sf2', name: 'SF2', position: 'SF', currentRating: 68, rating: 68 }),
+    ];
+    const lineup = assignSquadToFormation(squad, '442');
+    const sfCount = lineup.filter((s) => s.slot.label === 'SF' && s.player).length;
+    expect(sfCount).toBe(2);
+  });
+
+  it('44 — 7 kişilik kadro: orta saha öncelikli', () => {
+    const squad = getStartingSquad();
+    const lineup = assignSquadToFormation(squad, '442');
+    const filled = lineup.filter((s) => s.player).length;
+    expect(filled).toBe(7);
+    const mids = lineup.filter((s) => s.player && s.slot.zone === 'orta');
+    expect(mids.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('45 — 8 kişilik kadro OS/DOS kanatta değil', () => {
+    const squad = [...getStartingSquad(), p({ id: 'x', name: 'X', position: 'STP', currentRating: 65, rating: 65 })];
+    const lineup = assignSquadToFormation(squad, '442');
+    for (const slot of lineup) {
+      if (!slot.player) continue;
+      if (slot.player.position === 'OS' || slot.player.position === 'DOS') {
+        expect(WING_SLOT_LABELS.has(slot.slot.label)).toBe(false);
+      }
+    }
+  });
+
+  it('46 — getSquadLineupSummary: 10 oyuncu sahada', () => {
+    const squad = base442Ten();
+    const summary = getSquadLineupSummary(squad, []);
+    const onPitch = summary.lineup.filter((s) => s.player).map((s) => s.player!.id);
+    const missing = squad.filter((pl) => !onPitch.includes(pl.id)).map((pl) => pl.id);
+    expect(missing).toEqual([]);
+    expect(summary.filled).toBe(10);
+  });
+
+  it('47 — 11 kişi: en fazla 1 uyumsuz yedek', () => {
+    const squad = [...base442Ten(), p({ id: 'x', name: 'X', position: 'STP', currentRating: 80, rating: 80 })];
+    const summary = getSquadLineupSummary(squad, []);
+    expect(summary.bench).toBeLessThanOrEqual(1);
+    expect(summary.filled).toBeGreaterThanOrEqual(10);
+  });
+
+  it('48 — Bolt Demir OS 442 OS slotu', () => {
+    const squad = base442Ten();
+    const bolt = p({ id: 'bolt', name: 'Bolt Demir', position: 'OS', currentRating: 73, rating: 73 });
+    expect(slotOf([...squad, bolt], 'bolt', '442')).toBe('OS');
+  });
+
+  it('49 — Sinan Kurt DOS kanata gitmez', () => {
+    const squad = base442Ten();
+    const sinan = p({ id: 'sinan', name: 'Sinan Kurt', position: 'DOS', currentRating: 68, rating: 68 });
+    const label = slotOf([...squad, sinan], 'sinan', '442');
+    if (label) expect(WING_SLOT_LABELS.has(label)).toBe(false);
+  });
+
+  it('50 — Umut Sarı OS 433 OS slotu', () => {
+    const squad = base442Ten();
+    const umut = p({ id: 'umut', name: 'Umut Sarı', position: 'OS', currentRating: 64, rating: 64 });
+    expect(slotOf([...squad, umut], 'umut', '433')).toBe('OS');
+  });
+
+  it('51 — çift OOS: biri kanat biri orta', () => {
+    const squad = [
+      gk(),
+      ...['slb', 'stp1', 'stp2', 'sgb', 'dos', 'os', 'slk', 'sf'].map((id, i) =>
+        p({
+          id,
+          name: id,
+          position: (['SLB', 'STP', 'STP', 'SÖB', 'DOS', 'OS', 'SLK', 'SF'] as const)[i]!,
+          currentRating: 65 + i,
+          rating: 65 + i,
+        }),
+      ),
+      p({ id: 'o1', name: 'OOS1', position: 'OOS', currentRating: 75, rating: 75 }),
+      p({ id: 'o2', name: 'OOS2', position: 'OOS', currentRating: 70, rating: 70 }),
+    ];
+    const lineup = assignSquadToFormation(squad, '442');
+    const oosOnPitch = lineup.filter((s) => s.player?.position === 'OOS');
+    expect(oosOnPitch.length).toBeGreaterThanOrEqual(1);
+    expect(oosOnPitch.some((s) => WING_SLOT_LABELS.has(s.slot.label) || s.slot.zone === 'orta')).toBe(true);
+    const o2 = lineup.find((s) => s.player?.id === 'o2');
+    if (o2) expect(WING_SLOT_LABELS.has(o2.slot.label) || o2.slot.zone === 'orta').toBe(true);
+  });
+
+  it('52 — önizleme kısmi: 77 OOS OS öncelik', () => {
+    const squad = [
+      gk(88),
+      p({ id: 'oos', name: 'OOS', position: 'OOS', currentRating: 74, rating: 74 }),
+      ...['slb', 'stp1', 'stp2', 'dos', 'slk', 'sf'].map((id, i) =>
+        p({
+          id,
+          name: id,
+          position: (['SLB', 'STP', 'STP', 'DOS', 'SLK', 'SF'] as const)[i]!,
+          currentRating: 65 + i,
+          rating: 65 + i,
+        }),
+      ),
+    ];
+    const incoming = p({ id: 'n', name: 'New', position: 'OOS', currentRating: 77, rating: 77 });
+    expect(getPlayerPickSummary(incoming, squad, 11, 50, []).text).toMatch(/OS slotuna girer/);
   });
 });

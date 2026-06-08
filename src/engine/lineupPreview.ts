@@ -100,6 +100,16 @@ export function canDisplaceStarter(
   if (ratingGap <= 0) return false;
   if (chFit > occFit) return false;
 
+  const slotIdeal = slot.preferred[0];
+  if (
+    slotIdeal
+    && occupant.position === slotIdeal
+    && challenger.position === 'OOS'
+    && ratingGap < 12
+  ) {
+    return false;
+  }
+
   const idealCh = getSlotFitTier(challenger, slot.preferred) === 'ideal';
   const samePos = challenger.position === occupant.position;
   const midClash = isMidfieldPlayer(challenger) && isMidfieldPlayer(occupant) && slot.zone === 'orta';
@@ -107,9 +117,188 @@ export function canDisplaceStarter(
   if (idealCh && ratingGap >= 1) return true;
   if (samePos && ratingGap >= 2) return true;
   if (midClash && chFit <= occFit && ratingGap >= 2) return true;
+  if (
+    midClash
+    && (challenger.position === 'DOS' || challenger.position === 'OS')
+    && chFit <= occFit + 2
+    && ratingGap >= 4
+  ) {
+    return true;
+  }
   if (chFit < occFit && ratingGap >= 3) return true;
   if (chFit === occFit && ratingGap >= 5) return true;
   return false;
+}
+
+/** Boş slot doldururken kanat mı merkez orta mı daha iyi? (düşük = öncelikli) */
+function emptySlotPickScore(player: PlayerCard, slot: FormationSlotDef): number {
+  const fit = slotFitIndex(player, slot.preferred);
+  if (fit >= 99) return 99;
+  let score = fit;
+  if (isMidfieldPlayer(player)) {
+    if (slot.zone === 'orta') score -= 0.35;
+    if (WING_SLOT_LABELS.has(slot.label)) score += 0.35;
+  }
+  return score;
+}
+
+function centralMidSlotIndices(slots: FormationSlotDef[], fieldSlotIndices: number[]): number[] {
+  return fieldSlotIndices.filter((i) => slots[i]!.zone === 'orta');
+}
+
+function findWeakestDisplaceTarget(
+  challenger: PlayerCard,
+  slots: FormationSlotDef[],
+  assigned: (PlayerCard | null)[],
+  slotIndices: number[],
+): number {
+  let bestIdx = -1;
+  let bestChFit = 99;
+  let bestOccRating = Infinity;
+  const emptyCentralLabels = new Set(
+    slotIndices
+      .filter((i) => !assigned[i] && slots[i]!.zone === 'orta')
+      .map((i) => slots[i]!.label),
+  );
+  for (const i of slotIndices) {
+    if (isGkSlot(slots, i)) continue;
+    const occupant = assigned[i];
+    if (!occupant || occupant.position === 'KL') continue;
+    if (!canDisplaceStarter(challenger, occupant, slots[i]!)) continue;
+    const slot = slots[i]!;
+    if (
+      challenger.position === 'OOS'
+      && emptyCentralLabels.has('OS')
+      && slot.label === 'DOS'
+    ) {
+      continue;
+    }
+    if (
+      challenger.position === 'DOS'
+      && emptyCentralLabels.has('DOS')
+      && slot.label === 'OS'
+    ) {
+      continue;
+    }
+    const chFit = slotFitIndex(challenger, slot.preferred);
+    if (
+      chFit < bestChFit
+      || (chFit === bestChFit && occupant.currentRating < bestOccRating)
+    ) {
+      bestChFit = chFit;
+      bestOccRating = occupant.currentRating;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+function assignedPlayerIds(assigned: (PlayerCard | null)[]): Set<string> {
+  return new Set(assigned.filter(Boolean).map((p) => p!.id));
+}
+
+/** Güçlü orta saha, zayıf merkez starter'ı düşürür — boş kanat doldurmadan önce */
+function promoteMidfieldByDisplacingWeakest(
+  slots: FormationSlotDef[],
+  assigned: (PlayerCard | null)[],
+  squad: PlayerCard[],
+  fieldSlotIndices: number[],
+): boolean {
+  const onPitch = assignedPlayerIds(assigned);
+  const centralIndices = centralMidSlotIndices(slots, fieldSlotIndices);
+  const candidates = squad
+    .filter((p) => p.position !== 'KL' && !onPitch.has(p.id))
+    .filter((p) => isMidfieldPlayer(p))
+    .sort((a, b) => b.currentRating - a.currentRating);
+
+  for (const challenger of candidates) {
+    const bestIdx = findWeakestDisplaceTarget(challenger, slots, assigned, centralIndices);
+    if (bestIdx < 0) continue;
+    assigned[bestIdx] = challenger;
+    return true;
+  }
+  return false;
+}
+
+/** Kanattaki orta saha oyuncusunu merkeze yükseltir; düşen kanata sığmıyorsa boş kalır */
+function upgradeMidfieldOverWing(
+  slots: FormationSlotDef[],
+  assigned: (PlayerCard | null)[],
+  fieldSlotIndices: number[],
+): void {
+  const centralIndices = centralMidSlotIndices(slots, fieldSlotIndices);
+  for (let pass = 0; pass < 4; pass++) {
+    let changed = false;
+    for (const wi of fieldSlotIndices) {
+      if (!WING_SLOT_LABELS.has(slots[wi]!.label)) continue;
+      const wingPlayer = assigned[wi];
+      if (!wingPlayer || !isMidfieldPlayer(wingPlayer)) continue;
+
+      const bestIdx = findWeakestDisplaceTarget(wingPlayer, slots, assigned, centralIndices);
+      if (bestIdx < 0) continue;
+
+      const displaced = assigned[bestIdx]!;
+      assigned[bestIdx] = wingPlayer;
+      if (slotAcceptsPlayer(displaced, slots[wi]!)) {
+        assigned[wi] = displaced;
+      } else {
+        assigned[wi] = null;
+      }
+      changed = true;
+    }
+    if (!changed) break;
+  }
+}
+
+/** Displacement sonrası sahada kalmayan oyuncuları kalan boş slotlara yerleştirir */
+function fillAllRemainingSlots(
+  slots: FormationSlotDef[],
+  assigned: (PlayerCard | null)[],
+  squad: PlayerCard[],
+  fieldSlotIndices: number[],
+): void {
+  for (let pass = 0; pass < squad.length; pass++) {
+    let placed = false;
+    const onPitch = assignedPlayerIds(assigned);
+    const unplaced = squad.filter((p) => p.position !== 'KL' && !onPitch.has(p.id));
+
+    for (const slotIdx of fieldSlotIndices) {
+      if (assigned[slotIdx]) continue;
+      const slot = slots[slotIdx]!;
+      const pick = unplaced
+        .filter((p) => slotAcceptsPlayer(p, slot))
+        .map((p) => ({ p, score: emptySlotPickScore(p, slot) }))
+        .filter((x) => x.score < 99)
+        .sort((a, b) => a.score - b.score || b.p.currentRating - a.p.currentRating)[0];
+      if (pick) {
+        assigned[slotIdx] = pick.p;
+        placed = true;
+      }
+    }
+    if (!placed) break;
+  }
+}
+
+/** Boş merkez orta slotlarını, kanat doldurmadan önce uygun oyuncularla doldurur */
+function fillEmptyCentralMidSlots(
+  slots: FormationSlotDef[],
+  assigned: (PlayerCard | null)[],
+  squad: PlayerCard[],
+  fieldSlotIndices: number[],
+): void {
+  const centralIndices = centralMidSlotIndices(slots, fieldSlotIndices);
+  for (const slotIdx of centralIndices) {
+    if (assigned[slotIdx]) continue;
+    const slot = slots[slotIdx]!;
+    const onPitch = assignedPlayerIds(assigned);
+    const pick = squad
+      .filter((p) => !onPitch.has(p.id) && p.position !== 'KL')
+      .filter((p) => slotAcceptsPlayer(p, slot))
+      .map((p) => ({ p, score: emptySlotPickScore(p, slot) }))
+      .filter((x) => x.score < 99)
+      .sort((a, b) => a.score - b.score || b.p.currentRating - a.p.currentRating)[0];
+    if (pick) assigned[slotIdx] = pick.p;
+  }
 }
 
 const FORMATION_SLOTS: Record<string, FormationSlotDef[]> = {
@@ -241,12 +430,10 @@ function optimizeSlotAssignments(
 /** Kaleci saha dışına çıkmaz; yalnızca uyumlu mevkiler (fit < 99), sonra swap ile iyileştirme */
 function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (PlayerCard | null)[] {
   const assigned: (PlayerCard | null)[] = Array(slots.length).fill(null);
-  const used = new Set<string>();
-  const available = () => squad.filter((p) => !used.has(p.id));
+  const available = () => squad.filter((p) => !assignedPlayerIds(assigned).has(p.id));
 
   const take = (player: PlayerCard, slotIdx: number) => {
     assigned[slotIdx] = player;
-    used.add(player.id);
   };
 
   const klIdx = slots.findIndex((s) => s.zone === 'kaleci');
@@ -273,10 +460,16 @@ function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (
     take(best, slotIdx);
   }
 
+  while (promoteMidfieldByDisplacingWeakest(slots, assigned, squad, fieldSlotIndices)) {
+    /* güçlü orta saha önce zayıf merkez starter'ı düşürür */
+  }
+
+  fillEmptyCentralMidSlots(slots, assigned, squad, fieldSlotIndices);
+
   while (true) {
     let bestSlot = -1;
     let bestPlayer: PlayerCard | null = null;
-    let bestFit = 99;
+    let bestScore = 99;
 
     for (const slotIdx of fieldSlotIndices) {
       if (assigned[slotIdx]) continue;
@@ -284,23 +477,39 @@ function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (
       for (const p of available()) {
         if (p.position === 'KL') continue;
         if (!slotAcceptsPlayer(p, slot)) continue;
-        const fit = slotFitIndex(p, slot.preferred);
-        if (fit < bestFit) {
-          bestFit = fit;
+        if (
+          isMidfieldPlayer(p)
+          && WING_SLOT_LABELS.has(slot.label)
+          && findWeakestDisplaceTarget(
+            p,
+            slots,
+            assigned,
+            centralMidSlotIndices(slots, fieldSlotIndices),
+          ) >= 0
+        ) {
+          continue;
+        }
+        const score = emptySlotPickScore(p, slot);
+        if (score < bestScore || (score === bestScore && p.currentRating > (bestPlayer?.currentRating ?? -1))) {
+          bestScore = score;
           bestSlot = slotIdx;
           bestPlayer = p;
         }
       }
     }
 
-    if (!bestPlayer || bestSlot < 0 || bestFit >= 99) break;
+    if (!bestPlayer || bestSlot < 0 || bestScore >= 99) break;
     take(bestPlayer, bestSlot);
   }
 
   displaceWeakerStarters(slots, assigned, squad);
   promoteUnassignedByDisplacingWeakest(slots, assigned, squad);
+  upgradeMidfieldOverWing(slots, assigned, fieldSlotIndices);
+  fillEmptyCentralMidSlots(slots, assigned, squad, fieldSlotIndices);
   optimizeSlotAssignments(slots, assigned);
   displaceWeakerStarters(slots, assigned, squad);
+  upgradeMidfieldOverWing(slots, assigned, fieldSlotIndices);
+  fillAllRemainingSlots(slots, assigned, squad, fieldSlotIndices);
   evictIllegalSlotAssignments(slots, assigned, squad);
 
   for (let i = 0; i < assigned.length; i++) {
@@ -330,7 +539,9 @@ function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (
     if (pick) assigned[i] = pick.p;
   }
 
+  fillAllRemainingSlots(slots, assigned, squad, fieldSlotIndices);
   evictIllegalSlotAssignments(slots, assigned, squad);
+  fillAllRemainingSlots(slots, assigned, squad, fieldSlotIndices);
   return assigned;
 }
 
@@ -369,20 +580,10 @@ function displaceWeakerStarters(
       .filter((p) => !onPitch.has(p.id) && p.position !== 'KL')
       .sort((a, b) => b.currentRating - a.currentRating);
 
-    for (const challenger of bench) {
-      let bestIdx = -1;
-      let bestOccRating = Infinity;
+    const fieldIndices = slots.map((_, i) => i).filter((i) => !isGkSlot(slots, i));
 
-      for (let i = 0; i < slots.length; i++) {
-        if (isGkSlot(slots, i)) continue;
-        const occupant = assigned[i];
-        if (!occupant || occupant.position === 'KL') continue;
-        if (!canDisplaceStarter(challenger, occupant, slots[i]!)) continue;
-        if (occupant.currentRating < bestOccRating) {
-          bestOccRating = occupant.currentRating;
-          bestIdx = i;
-        }
-      }
+    for (const challenger of bench) {
+      const bestIdx = findWeakestDisplaceTarget(challenger, slots, assigned, fieldIndices);
 
       if (bestIdx >= 0) {
         const displaced = assigned[bestIdx]!;
@@ -407,21 +608,10 @@ function promoteUnassignedByDisplacingWeakest(
     .filter((p) => p.position !== 'KL' && !usedIds().has(p.id))
     .sort((a, b) => b.currentRating - a.currentRating);
 
+  const fieldIndices = slots.map((_, i) => i).filter((i) => !isGkSlot(slots, i));
+
   for (const challenger of unassigned) {
-    let bestIdx = -1;
-    let bestOccRating = Infinity;
-
-    for (let i = 0; i < slots.length; i++) {
-      if (isGkSlot(slots, i)) continue;
-      const occupant = assigned[i];
-      if (!occupant) continue;
-      if (!canDisplaceStarter(challenger, occupant, slots[i]!)) continue;
-      if (occupant.currentRating < bestOccRating) {
-        bestOccRating = occupant.currentRating;
-        bestIdx = i;
-      }
-    }
-
+    const bestIdx = findWeakestDisplaceTarget(challenger, slots, assigned, fieldIndices);
     if (bestIdx >= 0) assigned[bestIdx] = challenger;
   }
 }
@@ -589,6 +779,15 @@ export function getBenchExplanations(squad: PlayerCard[], activeTactics: ActiveT
     if (emptySlots.length > 0) {
       const emptyLabels = [...new Set(emptySlots.map((s) => s.slot.label))].join(', ');
       const playable = getPlayablePositions(player).map((p) => POSITION_BADGE[p]).join(', ');
+      const filledMids = summary.lineup
+        .filter((s) => s.player && s.slot.zone === 'orta' && slotFitIndex(player, s.slot.preferred) < 99)
+        .map((s) => `${s.slot.label} (${s.player!.name} ${s.player!.currentRating})`);
+      if (filledMids.length > 0 && isMidfieldPlayer(player)) {
+        return {
+          player,
+          reason: `Orta saha dolu (${filledMids.join(', ')}) — boş slotlar (${emptyLabels}) uyumsuz`,
+        };
+      }
       return {
         player,
         reason: `Boş slotlar (${emptyLabels}) uyumsuz — oynayabildiği: ${playable}`,

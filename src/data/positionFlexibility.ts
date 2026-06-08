@@ -42,7 +42,6 @@ export function getSlotFitTier(player: Pick<PlayerCard, 'position'>, preferred: 
   if (fit >= 99) return 'forced';
   const ideal = preferred[0];
   if (ideal && player.position === ideal) return 'ideal';
-  if (fit === 0) return 'ideal';
   return 'flex';
 }
 
