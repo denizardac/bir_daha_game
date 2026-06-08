@@ -224,9 +224,9 @@ export function CardSelectScreen() {
                     card={offer}
                     onSelect={() => { playSound('tick', sound); selectOffer(offer); }}
                   />
-                ) : (
+                ) : isTacticCard(offer) ? (
                   <TacticCard key={`${offer.id}-r${offersRerollIndex}`} card={offer} squad={squad} activeTactics={activeTactics} onSelect={() => selectOffer(offer)} />
-                );
+                ) : null;
                 const label = isTrainingCard(offer)
                   ? 'Antrenman kartı'
                   : isPlayerCard(offer)

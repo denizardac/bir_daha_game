@@ -52,7 +52,7 @@ describe('SÖK → boş OOS flex (Özdemir senaryosu)', () => {
     expect(SLOTS_433[flashIdx]!.label).toBe('OOS');
 
     const lineup = assignSquadToFormation(squad, '433');
-    const summary = getSquadLineupSummary(squad, [{ id: 'tactic_433', name: '4-3-3', attackMod: 0, defenseMod: 0 }]);
+    const summary = getSquadLineupSummary(squad, [{ id: 'tactic_433', name: '4-3-3', description: '4-3-3', attackMod: 0, defenseMod: 0 }]);
     expect(summary.filled).toBe(11);
     expect(summary.benchPlayers.some((b) => b.id === 'flash')).toBe(false);
     expect(lineup.find((s) => s.slot.label === 'OOS')?.player?.id).toBe('flash');
