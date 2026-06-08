@@ -1,6 +1,7 @@
 import { SYNERGIES } from '@/data/synergies';
 import { getStartingEleven } from '@/engine/lineupPreview';
 import { FINALE_MATCH_BONUS } from '@/engine/roundFlow';
+import { passiveTagRoundPoints } from '@/engine/tagMechanics';
 import type { ActiveTactic, MatchResult, PlayerCard } from '@/types';
 
 function streakMultiplier(streak: number): number {
@@ -49,6 +50,8 @@ export function calculateRoundPoints(
     if (synergy.perWinBonus && match.outcome === 'win') points += synergy.perWinBonus;
     if (synergy.perRoundBonus) points += synergy.perRoundBonus;
   }
+
+  points += passiveTagRoundPoints(scoringSquad);
 
   for (const t of activeTactics) {
     if (t.technicalBonus) {

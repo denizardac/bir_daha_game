@@ -1,5 +1,6 @@
 import { SYNERGIES } from '@/data/synergies';
 import { TAG_VALUE } from '@/data/tags';
+import { injuryRatingPenalty, injuryRiskChance } from '@/engine/tagMechanics';
 import { getStartingEleven } from '@/engine/lineupPreview';
 import type { ActiveTactic, PlayerCard, SynergyDefinition } from '@/types';
 import { formatStat } from '@/utils/formatNumber';
@@ -24,6 +25,7 @@ export function selectDepartingPlayer(squad: PlayerCard[], morale: number): Play
 
 export function applyPotentialGrowth(squad: PlayerCard[], round: number): PlayerCard[] {
   return squad.map((player) => {
+    if (player.tags.includes('PİK DÖNEM')) return player;
     if (player.tags.includes('YENİ SEZON') && round <= 3) return player;
     if (!player.tags.includes('POTANSİYEL') && !player.tags.includes('YENİ SEZON')) return player;
     const ceiling = player.potentialCeiling ?? player.rating + 15;
@@ -43,13 +45,31 @@ export function applyMentorGrowth(squad: PlayerCard[]): PlayerCard[] {
   });
 }
 
+export function applyInjuryRisk(squad: PlayerCard[], rng: () => number): PlayerCard[] {
+  return squad.map((p) => {
+    if (!p.tags.includes('SAKATLIK RİSKİ')) return p;
+    if (rng() >= injuryRiskChance()) return p;
+    return { ...p, tempRatingMod: (p.tempRatingMod ?? 0) + injuryRatingPenalty() };
+  });
+}
+
 export function applyGerileyen(squad: PlayerCard[], activeTactics: ActiveTactic[] = []): PlayerCard[] {
   const hasRotasyon = activeTactics.some((t) => t.id === 'tactic_rotasyon');
   return squad.map((p) => {
-    if (!p.tags.includes('GERİLEYEN')) return p;
+    if (p.tags.includes('DAYANIKLI')) return p;
+
+    const hasGerileyen = p.tags.includes('GERİLEYEN');
+    const hasPerformans = p.tags.includes('PERFORMANS DÜŞÜŞÜ');
+    if (!hasGerileyen && !hasPerformans) return p;
+
     const played = (p.matchesPlayed ?? 0) + 1;
     if (hasRotasyon) return { ...p, matchesPlayed: played };
-    const drop = played % 3 === 0 ? 1 : 0;
+
+    let drop = 0;
+    if (played % 3 === 0) {
+      if (hasGerileyen) drop += 1;
+      if (hasPerformans) drop += 2;
+    }
     return { ...p, matchesPlayed: played, currentRating: Math.max(55, p.currentRating - drop) };
   });
 }
@@ -59,7 +79,7 @@ export function passiveMoraleFromSquad(squad: PlayerCard[]): number {
   if (squad.some((p) => p.tags.includes('LİDER'))) bonus += 10;
   if (squad.some((p) => p.tags.includes('KAPİTAN'))) bonus += 15;
   if (squad.some((p) => p.tags.includes('SOYUNMA ODASI'))) bonus += 5;
-  if (squad.filter((p) => p.tags.includes('YERLİ')).length >= 7) bonus += 5;
+  if (squad.filter((p) => p.tags.includes('YERLİ')).length >= 5) bonus += 5;
   return bonus;
 }
 

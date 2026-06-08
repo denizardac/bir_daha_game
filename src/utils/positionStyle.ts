@@ -32,6 +32,20 @@ export function formationSlotLabel(slotCode: string): string {
   return FORMATION_SLOT_LABELS[slotCode] ?? slotCode;
 }
 
+/** Oyuncu ana mevki ≠ slot — tek satır uyarı (tekrarlayan “DOS — OOS” birleşimi yok) */
+export function formatSlotMismatchWarn(
+  card: Pick<PlayerCard, 'position'>,
+  slotCode: string,
+  tier: 'flex' | 'forced',
+): string {
+  const player = `${POSITION_LABELS[card.position]} (${POSITION_BADGE[card.position]})`;
+  const slot = `${slotCode} (${formationSlotLabel(slotCode)})`;
+  if (tier === 'forced') {
+    return `⚠ ${player} bu slota uyumsuz — ${slot} slotunda ciddi performans riski`;
+  }
+  return `⚠ ${player}, ${slot} slotunda oynar — mevki uyumu zayıf`;
+}
+
 /** Kısa rozet metni — SÖK gibi kafa karıştıran kodlar yok */
 export const POSITION_BADGE: Record<Position, string> = {
   KL: 'KL',

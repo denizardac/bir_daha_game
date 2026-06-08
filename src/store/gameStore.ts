@@ -22,7 +22,7 @@ import { simulateMatch } from '@/engine/matchSimulation';
 import { calculateRoundPoints } from '@/engine/scoring';
 import { addToHallOfFame } from '@/engine/hallOfFame';
 import { detectMatchMilestones, mergeMilestones, type Milestone } from '@/engine/milestones';
-import { getDailySeed, getRandomSeed } from '@/engine/seed';
+import { createRng, getDailySeed, getRandomSeed } from '@/engine/seed';
 import {
   addScoreToLeaderboards,
   analyzeEgo,
@@ -34,6 +34,7 @@ import {
 import { applyPlayerToSquad } from '@/engine/lineupPreview';
 import {
   applyGerileyen,
+  applyInjuryRisk,
   applyMentorGrowth,
   applyPotentialGrowth,
   getBrokenSynergies,
@@ -728,8 +729,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const match = state.currentMatch;
     if (!match || !state.pendingSelected) return;
 
+    const injuryRng = createRng(state.seed, 'injury', state.round);
     let squad = applyPotentialGrowth(state.squad, state.round);
     squad = applyMentorGrowth(squad);
+    squad = applyInjuryRisk(squad, injuryRng);
     squad = applyGerileyen(squad, state.activeTactics);
     squad = squad.map((p) => {
       const { tempRatingMod, ...rest } = p;

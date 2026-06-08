@@ -1,3 +1,4 @@
+import { pickFreeStartTraitForPosition, pickTagsForPosition } from '@/data/positionTraitPools';
 import { createRng } from '@/engine/seed';
 import type { PlayerCard, Position, Rarity, Tag } from '@/types';
 
@@ -118,6 +119,17 @@ const POOL: PlayerTemplate[] = [
   { name: 'Marco Dias', rating: 69, position: 'SÖB', rarity: 'normal', tags: ['HIZLI'] },
   { name: 'Kerim Sağ', rating: 74, position: 'SÖB', rarity: 'iyi', tags: ['TEKNİK'] },
   { name: 'Luis Ortega', rating: 81, position: 'SÖB', rarity: 'güçlü', tags: ['HIZLI', 'ASİSTÇİ'] },
+
+  // SAVAŞÇI / ölü tag havuzu — mevkiye uygun
+  { name: 'Cem Vural', rating: 71, position: 'DOS', rarity: 'iyi', tags: ['SAVAŞÇI', 'GÜÇLÜ'] },
+  { name: 'Onur Bek', rating: 69, position: 'STP', rarity: 'normal', tags: ['SAVAŞÇI', 'DAYANIKLI'] },
+  { name: 'Halil Uzun', rating: 76, position: 'STP', rarity: 'iyi', tags: ['UZUN', 'GÜÇLÜ'] },
+  { name: 'Emre Kısa', rating: 68, position: 'SF', rarity: 'normal', tags: ['KISA', 'FİNİŞÖR'] },
+  { name: 'Vedat Peak', rating: 84, position: 'OS', rarity: 'güçlü', tags: ['PİK DÖNEM', 'TEKNİK'] },
+  { name: 'Kaan Yeni', rating: 64, position: 'SLK', rarity: 'normal', tags: ['YENİ SEZON', 'YERLİ'] },
+  { name: 'Volkan Kart', rating: 73, position: 'DOS', rarity: 'iyi', tags: ['KIRMIZI KART', 'SAVAŞÇI'] },
+  { name: 'Murat Risk', rating: 77, position: 'SF', rarity: 'iyi', tags: ['SAKATLIK RİSKİ', 'FİNİŞÖR'] },
+  { name: 'Selim Soğuk', rating: 72, position: 'KL', rarity: 'iyi', tags: ['SOĞUKKANLI', 'DAYANIKLI'] },
 ];
 
 function hashMix(n: number, salt: number): number {
@@ -144,39 +156,13 @@ const PROC_POSITIONS: Position[] = [
   'KL', 'STP', 'SLB', 'SÖB', 'STP', 'DOS', 'OS', 'OOS', 'OOS', 'SLK', 'SÖK', 'SF',
 ];
 
-const PROC_POSITIVE_TAGS: Tag[][] = [
-  [],
-  ['YERLİ'],
-  ['HIZLI'],
-  ['TEKNİK'],
-  ['FİNİŞÖR'],
-  ['GÜÇLÜ'],
-  ['DAYANIKLI'],
-  ['POTANSİYEL'],
-  ['MENTOR'],
-  ['YERLİ', 'HIZLI'],
-  ['TEKNİK', 'ASİSTÇİ'],
-  ['SOĞUKKANLI'],
-  ['ASİSTÇİ', 'TEKNİK'],
-  ['YERLİ', 'GÜÇLÜ'],
-  ['HIZLI', 'FİNİŞÖR'],
-  ['LİDER'],
-  ['KAPİTAN'],
-  ['SERBEST VURUŞ'],
-  ['PENALTI'],
-  ['SOYUNMA ODASI'],
-  ['YABANCI YILDIZ'],
-];
-
-const PROC_LATE_NEGATIVE: Tag[] = ['GERİLEYEN', 'SAKATLIK RİSKİ', 'PERFORMANS DÜŞÜŞÜ', 'TARTIŞMALI'];
-
-function proceduralTags(i: number, rating: number): Tag[] {
-  const base = [...PROC_POSITIVE_TAGS[hashMix(i, 13) % PROC_POSITIVE_TAGS.length]!];
-  if (rating >= 74 && i >= 35 && hashMix(i, 71) % 100 < 16) {
-    const neg = PROC_LATE_NEGATIVE[hashMix(i, 19) % PROC_LATE_NEGATIVE.length]!;
-    if (!base.includes(neg)) base.push(neg);
-  }
-  return base;
+function proceduralTags(i: number, rating: number, position: Position): Tag[] {
+  let state = hashMix(i, 13);
+  const rng = () => {
+    state = Math.imul(state ^ (state >>> 15), 0x2c1b3c6d);
+    return (state >>> 0) / 0xffffffff;
+  };
+  return pickTagsForPosition(position, rating, rng, 2);
 }
 
 function generateExtraPlayers(): PlayerCard[] {
@@ -203,7 +189,7 @@ function generateExtraPlayers(): PlayerCard[] {
       rating,
       position: pos,
       rarity: rarityFromRating(rating),
-      tags: proceduralTags(i, rating),
+      tags: proceduralTags(i, rating, pos),
     }, `gen_${String(i + 1).padStart(3, '0')}`));
   }
   return out;
@@ -229,14 +215,10 @@ const BAD_START_TAGS: Tag[] = ['GERİLEYEN', 'SAKATLIK RİSKİ', 'PERFORMANS DÜ
 const FREE_START_SIZE = 7;
 
 function pickFreeStartTrait(rng: () => number, template: PlayerTemplate): Tag[] {
-  if (rng() > 0.38) return [];
-  if (template.tags.length) return [template.tags[Math.floor(rng() * template.tags.length)]!];
-  const pool: Tag[] = template.position === 'KL'
-    ? ['DAYANIKLI', 'SOĞUKKANLI']
-    : template.position === 'STP'
-      ? ['GÜÇLÜ', 'DAYANIKLI', 'YERLİ']
-      : ['HIZLI', 'YERLİ', 'TEKNİK', 'ASİSTÇİ'];
-  return [pool[Math.floor(rng() * pool.length)]!];
+  if (template.tags.length && rng() <= 0.38) {
+    return [template.tags[Math.floor(rng() * template.tags.length)]!];
+  }
+  return pickFreeStartTraitForPosition(template.position, rng);
 }
 
 function cloneFreeStarter(template: PlayerCard, rng: () => number, id: string): PlayerCard {
@@ -253,7 +235,7 @@ function cloneFreeStarter(template: PlayerCard, rng: () => number, id: string): 
     rating,
     position: template.position,
     rarity: rarityFromRating(rating),
-    tags: tags.length ? tags : template.tags.slice(0, 1),
+    tags,
   }, id, true);
 }
 

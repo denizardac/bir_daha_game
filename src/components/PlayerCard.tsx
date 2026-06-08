@@ -54,7 +54,6 @@ function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergi
 
 export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeTactics = [], morale = 50, onSelect, selected, showTagHint, tipPlacement = 'auto' }: Props) {
   const insight = getPlayerCardInsight(card, squad, discovered, maxSquadSize, activeTactics, morale);
-  const primaryWarn = insight.positionHints.find((h) => h.tone === 'warn');
   const themeVars = getPlayerCardThemeVars(card.rarity, card.position);
   const themeClass = getPlayerCardThemeClass(card.rarity, card.position);
   const altPos = formatAltPositionsBadge(card.position);
@@ -123,10 +122,6 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
           <div className="card-pick-scroll">
             {showTagHint && card.tags[0] && (
               <p className="hint-flash">Aynı tag&apos;ler sinerji açar — sağ panelde ilerlemeni gör</p>
-            )}
-
-            {primaryWarn && (
-              <p className="card-position-alert">{primaryWarn.text}</p>
             )}
 
             <div className="card-insight card-insight--player card-pick-core">

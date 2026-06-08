@@ -47,6 +47,8 @@ export interface PlayerCard {
   rating: number;
   currentRating: number;
   position: Position;
+  /** Boş dizi = yalnızca ana mevki; tanımsız = pozisyon varsayılan flex listesi */
+  flexPositions?: Position[];
   rarity: Rarity;
   tags: Tag[];
   potentialCeiling?: number;

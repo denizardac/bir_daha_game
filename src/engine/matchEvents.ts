@@ -1,3 +1,4 @@
+import { redCardChanceMultiplier } from '@/engine/tagMechanics';
 import type { MatchEvent, PlayerCard } from '@/types';
 
 const OPP_SCORERS = ['Rakip #9', 'Rakip #11', 'Rakip #7', 'Rakip #10', 'Rakip #8'];
@@ -88,8 +89,12 @@ export function generateMatchEvents(
     });
   }
 
-  if (rng() < 0.12) {
-    const p = squad[Math.floor(rng() * squad.length)]!;
+  const redPool = squad.flatMap((p) => {
+    const w = redCardChanceMultiplier(p.tags.includes('KIRMIZI KART'));
+    return Array.from({ length: w }, () => p);
+  });
+  if (redPool.length && rng() < 0.12) {
+    const p = redPool[Math.floor(rng() * redPool.length)]!;
     events.push({
       minute: Math.floor(rng() * 55) + 25,
       type: 'red_for',

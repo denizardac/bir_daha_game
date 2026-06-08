@@ -11,6 +11,11 @@ import {
   tacticDefenseMultiplier,
 } from '@/engine/matchPower';
 import { generateMatchEvents } from '@/engine/matchEvents';
+import {
+  attackTagMultiplier,
+  defenseTagMultiplier,
+  moraleStabilityBonus,
+} from '@/engine/tagMechanics';
 import { createRng, generateOpponent, seedVariation } from '@/engine/seed';
 import type { ActiveTactic, MatchHighlight, MatchResult, PlayerCard } from '@/types';
 
@@ -56,7 +61,7 @@ function squadStrength(
 ): number {
   const avg = squad.reduce((sum, p) => sum + effectivePlayerRating(p), 0) / Math.max(squad.length, 1);
   const fill = lineupFillFactor(squad.length, round);
-  const moraleFactor = 0.75 + (morale / 100) * 0.4;
+  const moraleFactor = 0.75 + (morale / 100) * 0.4 + moraleStabilityBonus(squad, morale);
   const attackTactic = tacticAttackMultiplier(tactics);
   const defenseTactic = tacticDefenseMultiplier(tactics);
   const tacticMod = attackTactic * Math.max(0.55, defenseTactic);
@@ -73,20 +78,30 @@ function tekForvetMultiplier(squad: PlayerCard[], tactics: ActiveTactic[]): numb
   return 0.85;
 }
 
-function attackPower(squad: PlayerCard[], tactics: ActiveTactic[], ourStrength: number): number {
-  const finisher = 1 + squad.filter((p) => p.tags.includes('FİNİŞÖR')).length * 0.08;
-  const fast = 1 + squad.filter((p) => p.tags.includes('HIZLI')).length * 0.05
-    + tactics.reduce((s, t) => s + (t.fastBonus ?? 0) / 100, 0);
-  const tech = 1 + squad.filter((p) => p.tags.includes('TEKNİK')).length * 0.04
-    + tactics.reduce((s, t) => s + (t.technicalBonus ?? 0) / 50, 0);
+function attackPower(
+  squad: PlayerCard[],
+  tactics: ActiveTactic[],
+  ourStrength: number,
+  behindInMatch: boolean,
+): number {
   const attackTactic = tacticAttackMultiplier(tactics);
-  return (ourStrength / 62) * finisher * fast * tech * tekForvetMultiplier(squad, tactics) * attackTactic;
+  const tacticFast = tactics.reduce((s, t) => s + (t.fastBonus ?? 0) / 100, 0);
+  const tacticTech = tactics.reduce((s, t) => s + (t.technicalBonus ?? 0) / 50, 0);
+  return (ourStrength / 62)
+    * attackTagMultiplier(squad, behindInMatch)
+    * (1 + tacticFast + tacticTech * 0.5)
+    * tekForvetMultiplier(squad, tactics)
+    * attackTactic;
 }
 
-function defensePower(tactics: ActiveTactic[], synergies: ReturnType<typeof getActiveSynergies>): number {
+function defensePower(
+  squad: PlayerCard[],
+  tactics: ActiveTactic[],
+  synergies: ReturnType<typeof getActiveSynergies>,
+): number {
   const defenseTactic = tacticDefenseMultiplier(tactics);
   const cleanSheetBoost = synergies.reduce((s, syn) => s + (syn.cleanSheetDefenseBonus ?? 0), 0);
-  return defenseTactic * (1 + cleanSheetBoost * 0.5);
+  return defenseTactic * defenseTagMultiplier(squad) * (1 + cleanSheetBoost * 0.5);
 }
 
 function applyStrengthNudges(
@@ -146,10 +161,10 @@ export function simulateMatch(
   let theirStrength = opponent.rating * (0.9 + rng() * 0.2);
   theirStrength *= matchRiskMultiplier(matchRisk);
 
-  const defense = defensePower(activeTactics, synergiesPreview);
+  const defense = defensePower(starters, activeTactics, synergiesPreview);
   const theirAttack = theirStrength / Math.max(defense, 0.5);
 
-  let goalsFor = rollGoals(rng, attackPower(starters, activeTactics, ourStrength));
+  let goalsFor = rollGoals(rng, attackPower(starters, activeTactics, ourStrength, false));
   let goalsAgainst = rollGoals(rng, theirAttack / Math.max(ourStrength * 0.95, 1));
 
   const behind = goalsAgainst > goalsFor;

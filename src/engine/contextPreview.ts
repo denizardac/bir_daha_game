@@ -2,7 +2,6 @@ import { getSynergyProgressForCard, SYNERGIES } from '@/data/synergies';
 import { getTacticCategory, getTacticEffect } from '@/data/tactics';
 import type { ActiveTactic, EventCard, PlayerCard, TacticCard } from '@/types';
 import { resolveEvent, type EventOutcome } from '@/engine/events';
-import { getSlotFitTier } from '@/data/positionFlexibility';
 import {
   assignSquadToFormation,
   canDisplaceStarter,
@@ -147,12 +146,7 @@ export function getPlayerPickSummary(
   const avgPart = formatAvgDelta(card, squad);
   const squadAfterSize = after.length;
 
-  const fitNote = (slot: NonNullable<typeof targetSlot>) => {
-    const tier = getSlotFitTier(card, slot.slot.preferred);
-    if (tier === 'forced') return ' · Uyumsuz mevki — performans riski';
-    if (tier === 'flex') return ` · ${formationSlotLabel(slot.slot.label)} rolü — alışık değil`;
-    return '';
-  };
+  const fitNote = (_slot: NonNullable<typeof targetSlot>) => '';
 
   if (squad.length < maxSquad) {
     if (onPitch && targetSlot) {

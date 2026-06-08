@@ -357,11 +357,11 @@ describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
     expect(summary.text).not.toContain('SĞK');
   });
 
-  it('27 — OOS native OS slotunu 8 puanla işgal edemez', () => {
+  it('27 — OOS +1 rating ile OS slotunu alabilir', () => {
     const os = p({ id: 'os', name: 'OS', position: 'OS', currentRating: 59, rating: 59 });
     const oos = p({ id: 'oos', name: 'OOS', position: 'OOS', currentRating: 67, rating: 67 });
     const osSlot = { label: 'OS', preferred: ['OS', 'OOS', 'DOS'] as const, zone: 'orta' as const };
-    expect(canDisplaceStarter(oos, os, { ...osSlot, preferred: [...osSlot.preferred] })).toBe(false);
+    expect(canDisplaceStarter(oos, os, { ...osSlot, preferred: [...osSlot.preferred] })).toBe(true);
   });
 
   it('28 — DOS 66 zayıf OS 59 yerine OS slotuna girer', () => {
@@ -406,13 +406,16 @@ describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
   it('31 — bench açıklaması: orta saha dolu mesajı', () => {
     const squad = [
       gk(88),
+      p({ id: 'slb', name: 'Sol', position: 'SLB', currentRating: 63, rating: 63 }),
+      p({ id: 'sgb', name: 'Sağ', position: 'SÖB', currentRating: 63, rating: 63 }),
       p({ id: 'celik', name: 'Çelik', position: 'STP', currentRating: 63, rating: 63 }),
       p({ id: 'koc', name: 'Koç', position: 'STP', currentRating: 61, rating: 61 }),
       p({ id: 'ade', name: 'Adeyemi', position: 'OOS', currentRating: 74, rating: 74 }),
       p({ id: 'acar', name: 'Acar', position: 'OS', currentRating: 62, rating: 62 }),
+      p({ id: 'nik', name: 'Nikolai', position: 'DOS', currentRating: 65, rating: 65 }),
       p({ id: 'hak', name: 'Hakan', position: 'DOS', currentRating: 61, rating: 61 }),
       p({ id: 'riza', name: 'Rıza', position: 'SLK', currentRating: 60, rating: 60 }),
-      p({ id: 'can', name: 'Arslan', position: 'KL', currentRating: 62, rating: 62 }),
+      p({ id: 'sf', name: 'Forvet', position: 'SF', currentRating: 68, rating: 68 }),
     ];
     const bench = getBenchExplanations(squad, []);
     const hakan = bench.find((b) => b.player.id === 'hak');
@@ -665,6 +668,33 @@ describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
     expect(oosOnPitch.some((s) => WING_SLOT_LABELS.has(s.slot.label) || s.slot.zone === 'orta')).toBe(true);
     const o2 = lineup.find((s) => s.player?.id === 'o2');
     if (o2) expect(WING_SLOT_LABELS.has(o2.slot.label) || o2.slot.zone === 'orta').toBe(true);
+  });
+
+  it('53 — 78 OOS boş SĞK varken DOS yerine kanada gider', () => {
+    const base = [
+      p({ id: 'kl', name: 'Taş', position: 'KL', currentRating: 74, rating: 74 }),
+      p({ id: 'stp1', name: 'Kaya', position: 'STP', currentRating: 74, rating: 74 }),
+      p({ id: 'stp2', name: 'Işık', position: 'STP', currentRating: 69, rating: 69 }),
+      p({ id: 'slk', name: 'Karaca', position: 'SLK', currentRating: 67, rating: 67 }),
+      p({ id: 'dos', name: 'Weak', position: 'DOS', currentRating: 58, rating: 58 }),
+      p({ id: 'oos1', name: 'Demir', position: 'OOS', currentRating: 74, rating: 74 }),
+      p({ id: 'oos2', name: 'Aktaş', position: 'OOS', currentRating: 69, rating: 69 }),
+      p({ id: 'sf', name: 'Kane', position: 'SF', currentRating: 74, rating: 74 }),
+    ];
+    const incoming = p({
+      id: 'yigit',
+      name: 'Yiğit Arslan',
+      position: 'OOS',
+      currentRating: 78,
+      rating: 78,
+      tags: ['YERLİ', 'HIZLI'],
+    });
+    const summary = getPlayerPickSummary(incoming, base, 11, 50, []);
+    expect(summary.text).toMatch(/SĞK( \(OOS\))? slotuna girer/);
+    expect(summary.text).not.toMatch(/DOS slotuna girer/);
+    const after = [...base, incoming];
+    expect(slotOf(after, 'yigit', '442')).toBe('SĞK');
+    expect(slotOf(after, 'oos1', '442')).toBe('OS');
   });
 
   it('52 — önizleme kısmi: 77 OOS OS öncelik', () => {

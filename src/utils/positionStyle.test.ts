@@ -4,6 +4,7 @@ import {
   POSITION_BADGE,
   POSITION_LABELS,
   formatLineupPlayerTip,
+  formatSlotMismatchWarn,
   formationSlotLabel,
 } from '@/utils/positionStyle';
 
@@ -20,6 +21,13 @@ describe('position labels', () => {
     expect(formationSlotLabel('SĞK')).toBe('Sağ Kanat');
     expect(FORMATION_SLOT_LABELS.OS).toBe('Orta Saha');
     expect(FORMATION_SLOT_LABELS.DOS).toBe('Defansif Orta Saha');
+  });
+
+  it('slot mismatch warn names player and slot separately', () => {
+    const warn = formatSlotMismatchWarn({ position: 'OOS' }, 'DOS', 'flex');
+    expect(warn).toContain('Ofansif Orta Saha (OOS)');
+    expect(warn).toContain('DOS (Defansif Orta Saha)');
+    expect(warn).not.toMatch(/Defansif Orta Saha — Ofansif/);
   });
 
   it('does not confuse player badge with slot code in lineup tip', () => {
