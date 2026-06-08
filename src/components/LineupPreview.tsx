@@ -5,7 +5,7 @@ import { getPlayablePositions } from '@/data/positionFlexibility';
 import { TAG_ICONS } from '@/data/tags';
 import { getBenchExplanations, getSquadLineupSummary } from '@/engine/lineupPreview';
 import type { ActiveTactic, PlayerCard } from '@/types';
-import { POSITION_BADGE, POSITION_LABELS } from '@/utils/positionStyle';
+import { formatLineupPlayerTip, formationSlotLabel, POSITION_BADGE } from '@/utils/positionStyle';
 
 interface Props {
   squad: PlayerCard[];
@@ -17,13 +17,12 @@ function clampPct(value: number, min = 10, max = 90) {
 }
 
 function buildLineupPlayerTip(player: PlayerCard, slotCode: string, outOfPosition: boolean): string {
-  const positions = getPlayablePositions(player).map((p) => POSITION_BADGE[p]).join(' · ');
+  const playableBadges = getPlayablePositions(player).map((p) => POSITION_BADGE[p]).join(' · ');
   const tagLine =
     player.tags.length > 0
       ? player.tags.map((t) => `${TAG_ICONS[t]} ${t}`).join(' · ')
       : 'Tag yok';
-  const mismatch = outOfPosition ? '\n⚠ Bu slotta uyumsuz oynuyor' : '';
-  return `${player.name} · ${player.currentRating}\n${POSITION_LABELS[player.position]} (${slotCode})\nMevkiler: ${positions}\n${tagLine}${mismatch}`;
+  return formatLineupPlayerTip(player, slotCode, { playableBadges, tagLine, outOfPosition });
 }
 
 function lineupMetaParts(summary: ReturnType<typeof getSquadLineupSummary>) {
@@ -112,7 +111,7 @@ function LineupPitchContent({
                   <>
                     <span className="lineup-dot-rating">{slot.player.currentRating}</span>
                     <span className="lineup-dot-name">{slot.player.name.split(' ').pop()}</span>
-                    <span className="lineup-dot-badge">{slot.slot.label}</span>
+                    <span className="lineup-dot-badge">{POSITION_BADGE[slot.player.position]}</span>
                   </>
                 ) : (
                   <span className="lineup-dot-label">{slot.slot.label}</span>
@@ -138,7 +137,11 @@ function LineupPitchContent({
                     {dot}
                   </HoverTip>
                 ) : (
-                  <HoverTip tip={`Boş slot · ${slot.slot.label}`} placement={tipPlacement} className="lineup-dot-hover">
+                  <HoverTip
+                    tip={`Boş slot · ${formationSlotLabel(slot.slot.label)} (${slot.slot.label})`}
+                    placement={tipPlacement}
+                    className="lineup-dot-hover"
+                  >
                     {dot}
                   </HoverTip>
                 )}

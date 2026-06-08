@@ -7,6 +7,7 @@ import { explainActiveTactic } from '@/engine/squadInsights';
 import { getPositionHints, type PositionHint } from '@/engine/lineupPreview';
 import { getSynergyBenefitText } from '@/engine/squadInsights';
 import type { ActiveTactic, PlayerCard, Tag, TacticCard } from '@/types';
+import { formatPosition } from '@/utils/positionStyle';
 
 export type PlayerSynergyHint = {
   icon: string;
@@ -136,11 +137,6 @@ function getPlayerTacticContributions(
     }
     return { tacticName: tactic.name, lines: lines.length ? lines : ['Bu sistemden doğrudan tag bonusu almaz'] };
   });
-}
-
-function formatPosition(pos: PlayerCard['position']): string {
-  const map: Record<string, string> = { KL: 'Kaleci', STP: 'Stoper', SF: 'Forvet', OS: 'Orta Saha' };
-  return map[pos] ?? pos;
 }
 
 export function getPlayerCardInsight(

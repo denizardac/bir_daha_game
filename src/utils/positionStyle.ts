@@ -1,17 +1,36 @@
 import type { PlayerCard, Position, Tag } from '@/types';
 
+/** Oyuncu kartındaki Position kodu → tam Türkçe isim */
 export const POSITION_LABELS: Record<Position, string> = {
   KL: 'Kaleci',
   STP: 'Stoper',
   SLB: 'Sol Bek',
   SÖB: 'Sağ Bek',
-  DOS: 'Defansif Orta',
+  DOS: 'Defansif Orta Saha',
   OS: 'Orta Saha',
   SLK: 'Sol Kanat',
   SÖK: 'Sağ Kanat',
-  OOS: 'Ofansif Orta',
-  SF: 'Forvet',
+  OOS: 'Ofansif Orta Saha',
+  SF: 'Santrafor',
 };
+
+/** Dizilişteki slot kısaltması → tam isim (SĞB / SĞK saha etiketleri) */
+export const FORMATION_SLOT_LABELS: Record<string, string> = {
+  KL: 'Kaleci',
+  STP: 'Stoper',
+  SLB: 'Sol Bek',
+  SĞB: 'Sağ Bek',
+  DOS: 'Defansif Orta Saha',
+  OS: 'Orta Saha',
+  SLK: 'Sol Kanat',
+  SĞK: 'Sağ Kanat',
+  OOS: 'Ofansif Orta Saha',
+  SF: 'Santrafor',
+};
+
+export function formationSlotLabel(slotCode: string): string {
+  return FORMATION_SLOT_LABELS[slotCode] ?? slotCode;
+}
 
 /** Kısa rozet metni — SÖK gibi kafa karıştıran kodlar yok */
 export const POSITION_BADGE: Record<Position, string> = {
@@ -98,4 +117,26 @@ export function getPlayerAvatarBackground(player: Pick<PlayerCard, 'position' | 
 
 export function formatPosition(position: Position, mode: 'label' | 'badge' = 'label'): string {
   return mode === 'badge' ? POSITION_BADGE[position] : POSITION_LABELS[position];
+}
+
+/** Diziliş hover — ana mevki ile slot rolünü karıştırmaz */
+export function formatLineupPlayerTip(
+  player: Pick<PlayerCard, 'name' | 'currentRating' | 'position'>,
+  slotCode: string,
+  options: { playableBadges: string; tagLine: string; outOfPosition: boolean },
+): string {
+  const { playableBadges, tagLine, outOfPosition } = options;
+  const lines = [
+    `${player.name} · ${player.currentRating}`,
+    `Ana mevki: ${POSITION_LABELS[player.position]} (${POSITION_BADGE[player.position]})`,
+    `Bu slotta: ${formationSlotLabel(slotCode)} (${slotCode})`,
+    `Oynayabildiği: ${playableBadges}`,
+    tagLine,
+  ];
+  if (outOfPosition) {
+    lines.push('⚠ Bu slotta uyumsuz oynuyor');
+  } else if (POSITION_BADGE[player.position] !== slotCode) {
+    lines.push(`Rol: ${formationSlotLabel(slotCode)} slotunda oynuyor`);
+  }
+  return lines.filter(Boolean).join('\n');
 }

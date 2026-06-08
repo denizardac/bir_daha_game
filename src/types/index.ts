@@ -303,19 +303,6 @@ export const RARITY_LABELS: Record<Rarity, string> = {
   efsane: 'Efsane',
 };
 
-export const POSITION_LABELS: Record<Position, string> = {
-  KL: 'Kaleci',
-  STP: 'Stoper',
-  SLB: 'Sol Bek',
-  SÖB: 'Sağ Bek',
-  DOS: 'Def. Orta Saha',
-  OS: 'Orta Saha',
-  SLK: 'Sol Kanat',
-  SÖK: 'Sağ Kanat',
-  OOS: 'Of. Orta Saha',
-  SF: 'Santrafor',
-};
-
 export function isPlayerCard(card: GameCard): card is PlayerCard {
   return card.kind === 'player';
 }

@@ -9774,13 +9774,28 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   opacity: 0.85;
 }
 
-.lineup-dot--v3.lineup-dot--gk {
-  border-color: rgba(251, 191, 36, 0.75);
-  background: linear-gradient(165deg, rgba(251, 191, 36, 0.88), rgba(202, 138, 4, 0.92));
+.lineup-dot--v3.lineup-dot--gk,
+.lineup-dot--v3.lineup-dot--gk.lineup-dot--filled {
+  border-color: #fde047;
+  background: linear-gradient(165deg, #fbbf24 0%, #d97706 100%);
   color: #1c1917;
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.45);
 }
 
-.lineup-dot--v3.lineup-dot--filled {
+.lineup-dot--v3.lineup-dot--gk .lineup-dot-rating,
+.lineup-dot--v3.lineup-dot--gk .lineup-dot-name,
+.lineup-dot--v3.lineup-dot--gk .lineup-dot-badge,
+.lineup-dot--v3.lineup-dot--gk .lineup-dot-label {
+  color: #1c1917;
+  opacity: 1;
+}
+
+.lineup-dot--v3.lineup-dot--gk .lineup-dot-badge {
+  background: rgba(0, 0, 0, 0.12);
+  color: #292524;
+}
+
+.lineup-dot--v3.lineup-dot--filled:not(.lineup-dot--gk) {
   background: linear-gradient(165deg, rgba(30, 30, 35, 0.95), rgba(10, 10, 12, 0.98));
 }
 

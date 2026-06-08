@@ -4,23 +4,10 @@ import { getTacticCategory } from '@/data/tactics';
 import { getFormationDotsByKey, getFormationKey } from '@/engine/tacticVisual';
 import { getDepartureScore, selectDepartingPlayer } from '@/engine/squadLogic';
 import type { ActiveTactic, PlayerCard, Position } from '@/types';
-import { POSITION_BADGE, POSITION_LABELS } from '@/utils/positionStyle';
-
-const SLOT_LABELS: Record<string, string> = {
-  KL: 'Kaleci',
-  SLB: 'Sol Bek',
-  SĞB: 'Sağ Bek',
-  STP: 'Stoper',
-  DOS: 'Def. Orta Saha',
-  OS: 'Orta Saha',
-  SLK: 'Sol Kanat',
-  SĞK: 'Sağ Kanat',
-  OOS: 'Of. Orta Saha',
-  SF: 'Santrafor',
-};
+import { formationSlotLabel, POSITION_BADGE, POSITION_LABELS } from '@/utils/positionStyle';
 
 function slotLabel(label: string): string {
-  return SLOT_LABELS[label] ?? label;
+  return formationSlotLabel(label);
 }
 
 export type PositionZone = 'kaleci' | 'savunma' | 'orta' | 'hucum';
@@ -217,6 +204,17 @@ function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (
   const fieldSlotIndices = slots
     .map((_, i) => i)
     .filter((i) => slots[i]!.zone !== 'kaleci');
+
+  // Önce ana mevki = slot ideal pozisyonu (OS → OS slotu, DOS → DOS slotu)
+  for (const slotIdx of fieldSlotIndices) {
+    if (assigned[slotIdx]) continue;
+    const primary = slots[slotIdx]!.preferred[0];
+    if (!primary) continue;
+    const matches = available().filter((p) => p.position === primary);
+    if (!matches.length) continue;
+    const best = [...matches].sort((a, b) => b.currentRating - a.currentRating)[0]!;
+    take(best, slotIdx);
+  }
 
   while (true) {
     let bestSlot = -1;
@@ -524,12 +522,12 @@ export function getPositionHints(
       });
     } else if (targetSlot.slot.preferred.includes(card.position)) {
       hints.push({
-        text: `${formationLabel} · ${slotName} · ${POSITION_LABELS[card.position]} oynar`,
+        text: `${formationLabel} · ${slotName} (${targetSlot.slot.label}) · ${POSITION_LABELS[card.position]} (${cardBadge}) oynar`,
         tone: 'info',
       });
     } else {
       hints.push({
-        text: `${formationLabel} · ${slotName} · ${POSITION_LABELS[card.position]} (alternatif mevki)`,
+        text: `${formationLabel} · ${slotName} (${targetSlot.slot.label}) · ${POSITION_LABELS[card.position]} (${cardBadge}) — alternatif`,
         tone: 'info',
       });
     }

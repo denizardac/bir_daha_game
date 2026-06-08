@@ -1,6 +1,5 @@
 import type { Position, Rarity } from '@/types';
-import { POSITION_LABELS } from '@/types';
-import { POSITION_BADGE } from '@/utils/positionStyle';
+import { POSITION_BADGE, POSITION_LABELS } from '@/utils/positionStyle';
 
 export type GuideSectionId = 'genel' | 'oyuncular' | 'tagler' | 'taktikler' | 'sinerjiler' | 'olaylar';
 
