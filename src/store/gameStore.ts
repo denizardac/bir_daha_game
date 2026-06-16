@@ -31,7 +31,7 @@ import {
   getRank,
   getRankPercent,
 } from '@/engine/leaderboard';
-import { applyPlayerToSquad } from '@/engine/lineupPreview';
+import { applyPlayerToSquad, normalizeSquadGoalkeepers } from '@/engine/lineupPreview';
 import {
   applyGerileyen,
   applyInjuryRisk,
@@ -128,7 +128,7 @@ function initialRun(
   displayName: string,
   streakBonus = getDailyStreakBonus(0),
 ): GameState {
-  const squad = getStartingSquad(seed, isDailySeed);
+  const squad = normalizeSquadGoalkeepers(getStartingSquad(seed, isDailySeed));
   return {
     seed,
     isDailySeed,
@@ -438,7 +438,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const saved = loadPersisted().currentRun as Partial<RunSnapshot> | null;
     if (!isResumableRun(saved) || !saved?.seed) return;
 
-    const squad = saved.squad ?? getStartingSquad(saved.seed, saved.isDailySeed ?? true);
+    const squad = normalizeSquadGoalkeepers(saved.squad ?? getStartingSquad(saved.seed, saved.isDailySeed ?? true));
     const phase = saved.phase ?? 'cardSelect';
     let currentOffers = saved.currentOffers ?? [];
     if (phase === 'cardSelect' && currentOffers.length === 0) {

@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { formatDailyDate } from '@/engine/seed';
 import { formatScore } from '@/engine/scoring';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
-import { getDailyList } from '@/engine/leaderboard';
 import { MenuBiteTipsWidget } from '@/components/MenuBiteTipsWidget';
 import { MenuHowToWidget } from '@/components/MenuHowToWidget';
 import { MenuLeaderboardWidget } from '@/components/MenuLeaderboardWidget';
@@ -19,7 +18,6 @@ export function MainMenu() {
   const setScreen = useGameStore((s) => s.setScreen);
   const showContinuePrompt = useGameStore((s) => s.showContinuePrompt);
   const stats = getPersistedStats();
-  const dailyPlayers = getDailyList(stats).length;
 
   const [startPrompt, setStartPrompt] = useState<{ daily: boolean; afterAbandon?: boolean } | null>(null);
 
@@ -149,18 +147,6 @@ export function MainMenu() {
 
                   <MenuDailyScoreChart />
 
-                  <div className="menu-daily-stats">
-                    <div className="menu-daily-stat">
-                      <span className="menu-daily-stat-num">{dailyPlayers}</span>
-                      <span className="menu-daily-stat-label">kişi bugün oynadı</span>
-                    </div>
-                    {stats.allTimeBest > 0 && (
-                      <div className="menu-daily-stat">
-                        <span className="menu-daily-stat-num">{formatScore(stats.allTimeBest)}</span>
-                        <span className="menu-daily-stat-label">tüm zamanlar rekoru</span>
-                      </div>
-                    )}
-                  </div>
                 </div>
 
                 <div className="menu-play-actions">

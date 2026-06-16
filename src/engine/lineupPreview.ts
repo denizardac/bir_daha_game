@@ -373,6 +373,14 @@ export function getReplacementPlayer(
   return selectDepartingPlayer(squad, morale);
 }
 
+/** Kadroda en fazla bir kaleci — fazlası düşük ratingli olarak çıkar */
+export function normalizeSquadGoalkeepers(squad: PlayerCard[]): PlayerCard[] {
+  const gks = squad.filter((p) => p.position === 'KL');
+  if (gks.length <= 1) return squad;
+  const keep = [...gks].sort((a, b) => b.currentRating - a.currentRating)[0]!;
+  return squad.filter((p) => p.position !== 'KL' || p.id === keep.id);
+}
+
 export function applyPlayerToSquad(
   squad: PlayerCard[],
   incoming: PlayerCard,
@@ -381,6 +389,16 @@ export function applyPlayerToSquad(
   activeTactics: ActiveTactic[] = [],
 ): PlayerCard[] {
   const cloned = clonePlayer(incoming);
+
+  // Tek kaleci — yeni KL gelince mevcut kaleci kadrodan çıkar
+  if (cloned.position === 'KL') {
+    const gks = squad.filter((p) => p.position === 'KL');
+    if (gks.length > 0) {
+      const out = [...gks].sort((a, b) => a.currentRating - b.currentRating)[0]!;
+      return [...squad.filter((p) => p.id !== out.id), cloned];
+    }
+  }
+
   if (squad.length < maxSquadSize) return [...squad, cloned];
   const out = getReplacementPlayer(squad, incoming, morale, activeTactics);
   return [...squad.filter((p) => p.id !== out.id), cloned];

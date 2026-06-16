@@ -168,7 +168,16 @@ export function MatchAnimation({
 
   const showPitchOutcome = !playing && outcome && !halftime;
 
-  return (
+  const feedLines = eventFeed.length > 0 ? (
+    eventFeed.slice(-3).map((ev, i) => (
+      <p key={`${ev.minute}-${ev.type}-${i}`} className={`match-pitch-feed-line ${eventClass(ev)}`}>
+        <span className="match-pitch-feed-min">{ev.minute}&apos;</span>
+        {eventLabel(ev)}
+      </p>
+    ))
+  ) : null;
+
+  const pitchEl = (
     <div className={`match-pitch match-pitch--v2 ${wide ? 'match-pitch--wide' : ''} ${flashClass} ${!playing ? 'match-pitch--ended' : ''}`}>
       <div className="match-pitch-grass match-pitch-grass--stripes" aria-hidden />
       <div className="match-pitch-overlay" aria-hidden />
@@ -262,16 +271,26 @@ export function MatchAnimation({
         ⚽
       </motion.div>
 
-      {eventFeed.length > 0 && (
+      {!wide && feedLines && (
         <div className="match-pitch-feed">
-          {eventFeed.slice(-3).map((ev, i) => (
-            <p key={`${ev.minute}-${ev.type}-${i}`} className={`match-pitch-feed-line ${eventClass(ev)}`}>
-              <span className="match-pitch-feed-min">{ev.minute}&apos;</span>
-              {eventLabel(ev)}
-            </p>
-          ))}
+          {feedLines}
         </div>
       )}
     </div>
   );
+
+  if (wide) {
+    return (
+      <div className="match-arena-stack">
+        {pitchEl}
+        {feedLines && (
+          <div className="match-pitch-feed match-pitch-feed--below" aria-label="Maç olayları">
+            {feedLines}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return pitchEl;
 }

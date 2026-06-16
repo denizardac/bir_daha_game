@@ -6,6 +6,7 @@ import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
 import { getSquadLineupSummary } from '@/engine/lineupPreview';
 import { sortSquadByRating } from '@/engine/squadLogic';
 import type { ActiveTactic, PlayerCard as PlayerCardType, Tag } from '@/types';
+import { formatSquadListName } from '@/utils/squadDisplayName';
 import { POSITION_LABELS, POSITION_BADGE } from '@/utils/positionStyle';
 
 interface Props {
@@ -20,9 +21,8 @@ interface Props {
 function SquadTagChip({ tag }: { tag: Tag }) {
   return (
     <HoverTip tip={TAG_DESCRIPTIONS[tag]} className="syn-tag-chip-wrap" placement="right">
-      <span className={`syn-tag-chip syn-tag-chip--squad syn-tag-chip--${tag.replace(/\s+/g, '-')}`}>
+      <span className={`syn-tag-chip syn-tag-chip--squad syn-tag-chip--icon-only syn-tag-chip--${tag.replace(/\s+/g, '-')}`}>
         <span className="syn-tag-icon" aria-hidden>{TAG_ICONS[tag]}</span>
-        <span className="syn-tag-label">{tag}</span>
       </span>
     </HoverTip>
   );
@@ -38,19 +38,19 @@ export function SquadPanel({ squad, maxSquadSize, round, maxRounds, activeTactic
   return (
     <div className="panel squad-panel">
       <div className="squad-panel-head">
-        <div className="squad-panel-head-main">
-          <h2 className="text-lg font-extrabold uppercase tracking-wide">Kadro</h2>
+        <div className="squad-panel-head-row">
+          <h2 className="squad-panel-title">Kadro</h2>
           <span className="squad-panel-stat">
-            {summary.squadSize}/{maxSquadSize} kadro · {summary.filled}/11 saha · Ort. {avg}
+            {summary.squadSize}/{maxSquadSize} · {summary.filled}/11 saha · Ort. {avg}
           </span>
-          <div className="round-progress round-progress--inline">
-            {Array.from({ length: maxRounds }, (_, i) => (
-              <div
-                key={i}
-                className={`round-dot ${i + 1 < round ? 'done' : i + 1 === round ? 'current' : ''}`}
-              />
-            ))}
-          </div>
+        </div>
+        <div className="round-progress round-progress--inline squad-panel-rounds">
+          {Array.from({ length: maxRounds }, (_, i) => (
+            <div
+              key={i}
+              className={`round-dot ${i + 1 < round ? 'done' : i + 1 === round ? 'current' : ''}`}
+            />
+          ))}
         </div>
       </div>
 
@@ -67,23 +67,23 @@ export function SquadPanel({ squad, maxSquadSize, round, maxRounds, activeTactic
               key={player.id}
               className={`squad-row squad-row--filled squad-row--roomy ${!onPitch ? 'squad-row--bench' : ''} ${isBenchGk ? 'squad-row--bench-gk' : ''}`}
             >
-              <PlayerPortrait player={player} size="sm" starter={onPitch} />
+              <PlayerPortrait player={player} size="xs" starter={onPitch} />
               <div className="squad-row-info">
                 <div className="squad-row-head">
-                  <p className="squad-row-name" title={player.name}>{player.name}</p>
+                  <p className="squad-row-name" title={player.name}>{formatSquadListName(player.name)}</p>
                   <span className="squad-row-rating">{player.currentRating}</span>
                 </div>
-                {player.tags.length > 0 && (
-                  <div className="squad-row-tags squad-row-tags--below">
-                    {player.tags.map((t) => (
-                      <SquadTagChip key={t} tag={t} />
-                    ))}
-                  </div>
-                )}
                 <div className="squad-row-sub">
                   <span className="squad-row-pos" title={POSITION_LABELS[player.position]}>
                     {POSITION_BADGE[player.position]}
                   </span>
+                  {player.tags.length > 0 && (
+                    <div className="squad-row-tags squad-row-tags--inline-icons">
+                      {player.tags.map((t) => (
+                        <SquadTagChip key={t} tag={t} />
+                      ))}
+                    </div>
+                  )}
                   {altPos && (
                     <HoverTip tip={`Ek mevkiler: ${altPos.replace(/ · /g, ', ')}`} className="squad-row-alt-wrap" placement="right">
                       <span className="squad-row-alt-pos">+{altPos}</span>

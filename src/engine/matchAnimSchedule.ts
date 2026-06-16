@@ -123,3 +123,93 @@ export function buildMatchAnimSchedule(
 
   return timers;
 }
+
+/** Hız değişiminde maçı sıfırlamadan kalan olayları yeniden planla */
+export function buildMatchAnimScheduleResume(
+  events: MatchEvent[],
+  finalGoalsFor: number,
+  finalGoalsAgainst: number,
+  fromMinute: number,
+  currentGoalsFor: number,
+  currentGoalsAgainst: number,
+  currentFeed: MatchEvent[],
+  onUpdate: (partial: Partial<MatchAnimState>) => void,
+  onGoalSound: () => void,
+  onWhistleSound: () => void,
+  speed = 1,
+): ReturnType<typeof setTimeout>[] {
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  const spd = speed > 0 ? speed : 1;
+  let t = 120;
+  let gf = currentGoalsFor;
+  let ga = currentGoalsAgainst;
+  let prevMinute = fromMinute;
+  let halftimeShown = fromMinute >= 45;
+  const feed = [...currentFeed];
+
+  const schedule = (delay: number, fn: () => void) => {
+    timers.push(setTimeout(fn, delay / spd));
+  };
+
+  const remaining = events.filter((ev) => ev.minute > fromMinute);
+
+  for (const ev of remaining) {
+    if (!halftimeShown && ev.minute >= 45 && fromMinute < 45) {
+      const htAt = t + segmentMs(prevMinute, 45);
+      schedule(htAt, () => onUpdate({ minute: 45, halftime: true, latestEvent: null }));
+      t = htAt + HALFTIME_PAUSE;
+      schedule(t, () => onUpdate({ halftime: false, minute: 46 }));
+      prevMinute = 46;
+      halftimeShown = true;
+    }
+
+    const gap = segmentMs(prevMinute, ev.minute);
+    t += gap;
+    const at = t;
+
+    schedule(at, () => {
+      feed.push(ev);
+      if (ev.type === 'goal_for' || ev.type === 'goal_against') onGoalSound();
+      if (ev.type === 'goal_for') gf += 1;
+      else if (ev.type === 'goal_against') ga += 1;
+      onUpdate({
+        minute: ev.minute,
+        goalsFor: gf,
+        goalsAgainst: ga,
+        eventFeed: [...feed],
+        latestEvent: ev,
+      });
+    });
+
+    schedule(at + POPUP_DURATION, () => onUpdate({ latestEvent: null }));
+    prevMinute = ev.minute;
+  }
+
+  if (!halftimeShown && fromMinute < 45) {
+    t += segmentMs(prevMinute, 45);
+    schedule(t, () => onUpdate({ minute: 45, halftime: true, latestEvent: null }));
+    t += HALFTIME_PAUSE;
+    schedule(t, () => onUpdate({ halftime: false, minute: 46 }));
+    prevMinute = 46;
+  }
+
+  if (fromMinute < 90) {
+    t += segmentMs(prevMinute, 90);
+    schedule(t, () => {
+      onWhistleSound();
+      onUpdate({
+        minute: 90,
+        playing: false,
+        goalsFor: finalGoalsFor,
+        goalsAgainst: finalGoalsAgainst,
+        latestEvent: null,
+        halftime: false,
+      });
+    });
+
+    schedule(t + FULLTIME_PAUSE, () => onUpdate({ showResult: true }));
+    schedule(t + FULLTIME_PAUSE + 1400, () => onUpdate({ showHighlights: true }));
+  }
+
+  return timers;
+}

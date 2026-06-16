@@ -7,6 +7,9 @@ import { explainActiveTactic } from '@/engine/squadInsights';
 import type { ActiveTactic, GameCard, PlayerCard, TacticCard } from '@/types';
 import { isTacticCard } from '@/types';
 
+import type { TacticDraft } from '@/engine/runPersistence';
+import { TACTIC_CARDS } from '@/data/tactics';
+
 interface Props {
   squad: PlayerCard[];
   morale: number;
@@ -15,6 +18,7 @@ interface Props {
   round: number;
   currentOffers?: GameCard[];
   discoveredSynergies: string[];
+  tacticDraft?: TacticDraft;
 }
 
 function activeInCategory(activeTactics: ActiveTactic[], category: 'formasyon' | 'sistem') {
@@ -31,12 +35,14 @@ function TacticSlot({
   active,
   preview,
   squad,
+  draftSelected,
 }: {
   label: string;
   category: 'formasyon' | 'sistem';
   active?: ActiveTactic;
   preview?: TacticCard;
   squad: PlayerCard[];
+  draftSelected?: boolean;
 }) {
   const filled = Boolean(active);
   const replacing = filled && preview && preview.id !== active?.id;
@@ -45,13 +51,15 @@ function TacticSlot({
   const hoverTip = active
     ? explainActiveTactic(active, squad).join('\n')
   : preview
-    ? `Seçersen ${label.toLowerCase()} slotuna yerleşir.\n${preview.name}`
+    ? draftSelected
+      ? `Seçildi — onaylayınca ${label.toLowerCase()} slotuna yerleşir.\n${preview.name}`
+      : `Seçersen ${label.toLowerCase()} slotuna yerleşir.\n${preview.name}`
     : `${label} slotu boş — taktik kartı seç`;
 
   return (
     <HoverTip tip={hoverTip} className="tactic-slot-wrap">
     <div
-      className={`tactic-slot ${filled ? 'tactic-slot--filled' : 'tactic-slot--empty'} ${showPreview ? 'tactic-slot--preview' : ''}`}
+      className={`tactic-slot ${filled ? 'tactic-slot--filled' : 'tactic-slot--empty'} ${showPreview ? 'tactic-slot--preview' : ''} ${draftSelected ? 'tactic-slot--draft' : ''}`}
     >
       <MiniTacticBoard
         tacticId={active?.id ?? preview?.id}
@@ -79,7 +87,9 @@ function TacticSlot({
         ) : showPreview ? (
           <>
             <p className="tactic-slot-name tactic-slot-name--preview">{name}</p>
-            <p className="tactic-slot-detail">Seçersen bu slota yerleşir</p>
+            <p className="tactic-slot-detail tactic-slot-detail--active">
+              {draftSelected ? 'Seçildi — onayla' : 'Seçersen bu slota yerleşir'}
+            </p>
           </>
         ) : (
           <p className="tactic-slot-empty">Boş — taktik kartı seç</p>
@@ -133,6 +143,11 @@ function EventSlot({
   );
 }
 
+function draftTacticCard(draftId: string | null): TacticCard | undefined {
+  if (!draftId) return undefined;
+  return TACTIC_CARDS.find((t) => t.id === draftId);
+}
+
 export function SidePanel({
   squad,
   morale,
@@ -141,11 +156,16 @@ export function SidePanel({
   round,
   currentOffers,
   discoveredSynergies,
+  tacticDraft,
 }: Props) {
   const formation = activeInCategory(activeTactics, 'formasyon');
   const system = activeInCategory(activeTactics, 'sistem');
-  const previewFormation = offerInCategory(currentOffers, 'formasyon');
-  const previewSystem = offerInCategory(currentOffers, 'sistem');
+  const previewFormation = draftTacticCard(tacticDraft?.formationId ?? null)
+    ?? offerInCategory(currentOffers, 'formasyon');
+  const previewSystem = draftTacticCard(tacticDraft?.systemId ?? null)
+    ?? offerInCategory(currentOffers, 'sistem');
+  const draftFormationSelected = Boolean(tacticDraft?.formationId);
+  const draftSystemSelected = Boolean(tacticDraft?.systemId);
 
   return (
     <div className="panel side-panel">
@@ -160,6 +180,7 @@ export function SidePanel({
               active={formation}
               preview={previewFormation}
               squad={squad}
+              draftSelected={draftFormationSelected}
             />
             <TacticSlot
               label="Oyun Sistemi"
@@ -167,6 +188,7 @@ export function SidePanel({
               active={system}
               preview={previewSystem}
               squad={squad}
+              draftSelected={draftSystemSelected}
             />
           </div>
         </div>

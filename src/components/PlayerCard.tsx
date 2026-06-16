@@ -7,7 +7,7 @@ import { ReplacementPlayerTip } from '@/components/ReplacementPlayerTip';
 import { HoverTip } from '@/components/HoverTip';
 import { PlayerPortrait } from '@/components/PlayerPortrait';
 import { TagTraitBadges } from '@/components/TagTraitBadges';
-import { TAG_ICONS } from '@/data/tags';
+import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
 import type { ActiveTactic, PlayerCard as PlayerCardType } from '@/types';
 import { RARITY_LABELS } from '@/types';
 import { POSITION_LABELS, POSITION_BADGE, formatPosition } from '@/utils/positionStyle';
@@ -24,6 +24,8 @@ interface Props {
   selected?: boolean;
   showTagHint?: boolean;
   tipPlacement?: 'left' | 'right' | 'auto';
+  onReroll?: () => void;
+  rerollDisabled?: boolean;
 }
 
 function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergies'][number] }) {
@@ -54,7 +56,7 @@ function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergi
   );
 }
 
-export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeTactics = [], morale = 50, onSelect, selected, showTagHint, tipPlacement = 'auto' }: Props) {
+export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeTactics = [], morale = 50, onSelect, selected, showTagHint, tipPlacement = 'auto', onReroll, rerollDisabled }: Props) {
   const insight = getPlayerCardInsight(card, squad, discovered, maxSquadSize, activeTactics, morale);
   const themeVars = getPlayerCardThemeVars(card.rarity, card.position);
   const themeClass = getPlayerCardThemeClass(card.rarity, card.position);
@@ -93,41 +95,64 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
         </span>
       )}
       <div className="player-pick-card__rarity-row">
-        <span className={`player-pick-card__rarity-label rarity-badge rarity-badge--${card.rarity}`}>
-          {RARITY_LABELS[card.rarity]}
-        </span>
-        <span className="archetype-badge" title={archetype.label}>
-          <span aria-hidden>{archetype.icon}</span> {archetype.label}
-        </span>
-        {card.offerBoosted && (
-          <span className="player-pick-card__boost-badge" title="Teklif kalitesi yükseltildi">⬆ Teklif</span>
+        <div className="player-pick-card__rarity-main">
+          <span className={`player-pick-card__rarity-label rarity-badge rarity-badge--${card.rarity}`}>
+            {RARITY_LABELS[card.rarity]}
+          </span>
+          <span className="archetype-badge" title={archetype.label}>
+            <span aria-hidden>{archetype.icon}</span> {archetype.label}
+          </span>
+          {card.rarity === 'efsane' && <span className="rarity-spark" aria-hidden>✦</span>}
+        </div>
+        {onReroll && (
+          <button
+            type="button"
+            className="btn-reroll-slot btn-reroll-slot--in-card"
+            disabled={rerollDisabled}
+            title={rerollDisabled ? 'Yenileme hakkın kalmadı' : 'Bu kartı yenile (−1 hak)'}
+            aria-label={`${card.name} kartını yenile`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (rerollDisabled) return;
+              onReroll();
+            }}
+          >
+            🔄
+          </button>
         )}
-        {card.rarity === 'efsane' && <span className="rarity-spark" aria-hidden>✦</span>}
       </div>
 
       <div className="card-body">
         <div className="card-pick-top">
-          <div className="card-pick-hero">
-            <PlayerPortrait player={card} size="md" />
-            <div className="card-pick-hero-info">
-              <div className="card-pick-name-row">
-                <h3 className="player-name">{card.name}</h3>
-                {card.tags.length > 0 && (
-                  <div className="card-pick-hero-traits card-pick-hero-traits--inline">
-                    <TagTraitBadges tags={card.tags} tipPlacement={tipPlacement} />
-                  </div>
-                )}
-              </div>
-              <div className="card-pick-stats">
-                <span className="rating-big">{card.currentRating}</span>
-                <span className="pos-badge player-pick-card__pos-badge" title={POSITION_LABELS[card.position]}>
+          <div className="card-pick-hero card-pick-hero--compact">
+            <PlayerPortrait player={card} size="sm" />
+            <div className="card-pick-hero-body">
+              <h3 className="player-name">{card.name}</h3>
+              <div className="card-pick-stat-strip">
+                <span className="card-pick-stat card-pick-stat--rating">{card.currentRating}</span>
+                <span
+                  className="card-pick-stat card-pick-stat--pos"
+                  title={POSITION_LABELS[card.position]}
+                >
                   {POSITION_BADGE[card.position]}
                 </span>
+                {altPos?.split(' · ').map((pos) => (
+                  <span key={pos} className="card-pick-stat card-pick-stat--alt">{pos}</span>
+                ))}
               </div>
-              <p className="player-pos-label">
-                {formatPosition(card.position)}
-                {altPos && <span className="player-alt-pos"> · {altPos}</span>}
-              </p>
+              {card.tags.length > 0 && (
+                <div className="card-pick-trait-row">
+                  {card.tags.map((tag) => (
+                    <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} className="card-pick-trait-wrap" placement={tipPlacement}>
+                      <span className={`card-pick-trait-pill tag-trait-badge tag-trait-badge--${tag.replace(/\s+/g, '-')}`}>
+                        <span className="tag-trait-icon" aria-hidden>{TAG_ICONS[tag]}</span>
+                        <span className="tag-trait-name">{tag}</span>
+                      </span>
+                    </HoverTip>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -4,32 +4,32 @@ export const HOW_TO_STEPS: HowToStep[] = [
   {
     icon: '⚽',
     title: 'Başla',
-    text: '7 oyuncuyla başla. 15 round boyunca kadroyu 11\'e tamamla — her round bir karar.',
+    text: '7 oyuncuyla başlarsın. 15 round boyunca kadroyu 11\'e tamamlamaya çalışırsın.',
   },
   {
     icon: '🃏',
     title: 'Kart Seç',
-    text: 'Her round 3 karttan birini seç: oyuncu, taktik veya antrenman (bonus round).',
+    text: 'Her round 3 karttan birini al: yeni oyuncu, taktik veya özel antrenman.',
   },
   {
     icon: '⚡',
     title: 'Maç & Puan',
-    text: 'Seçimden sonra maç oynanır. Gol, galibiyet ve sinerji bonusları skoru artırır.',
+    text: 'Seçimden sonra maç oynanır. Gol, sinerji ve seri skoru yükseltir.',
   },
   {
     icon: '💔',
     title: 'Kayıp',
-    text: 'Mağlubiyette en düşük ayrılma skorlu oyuncu gider. 4 oyuncu kalırsa run sona erer.',
+    text: 'Mağlubiyette en zayıf oyuncu gider. Kadro 4\'e düşerse run biter.',
   },
   {
     icon: '📋',
-    title: 'Taktik Slotları',
-    text: 'Formasyon + oyun sistemi ayrı slot. İkisi birlikte aktif kalır, maç bonusu verir.',
+    title: 'Taktik',
+    text: 'Round 3/6/9/12\'de formasyon + oyun sistemi seç. İkisi birlikte bonus verir.',
   },
   {
     icon: '🏆',
     title: 'Sinerji & Olay',
-    text: 'Tag\'ler sinerji açar. Round 4, 8, 11 ve 14\'te olay kartı — iki seçenek, ikisi geçerli.',
+    text: 'Aynı tag\'leri topla, sinerji aç. Round 4/8/11/14\'te olay kartı gelir.',
   },
 ];
 

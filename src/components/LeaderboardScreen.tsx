@@ -51,7 +51,7 @@ export function LeaderboardScreen() {
         <button type="button" className="btn-secondary mb-6" onClick={() => setScreen('menu')}>← Ana Menü</button>
         <h1 className="mb-2 text-4xl font-extrabold uppercase">Leaderboard</h1>
         {remote && (
-          <p className="mb-4 text-sm text-emerald-400">Canlı sıralama — Supabase</p>
+          <p className="mb-4 text-sm text-emerald-400">Canlı sıralama</p>
         )}
 
         <div className="mb-4 flex flex-wrap gap-2">

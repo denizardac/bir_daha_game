@@ -9,6 +9,7 @@ export function MenuDailyScoreChart() {
   const buckets = buildDailyScoreBuckets(daily);
   const maxCount = Math.max(...buckets.map((b) => b.count), 1);
   const yourScore = stats.todayScore;
+  const dailyPlayers = daily.length;
 
   return (
     <div className="menu-score-chart">
@@ -44,9 +45,20 @@ export function MenuDailyScoreChart() {
           );
         })}
       </div>
-      {yourScore > 0 && (
-        <p className="menu-score-chart-you">Sen: {formatScore(yourScore)}</p>
-      )}
+      <div className="menu-score-chart-footer">
+        {yourScore > 0 && (
+          <span className="menu-score-chart-you">Sen: {formatScore(yourScore)}</span>
+        )}
+        <span className="menu-score-chart-meta">
+          <strong>{dailyPlayers}</strong> kişi bugün oynadı
+          {stats.allTimeBest > 0 && (
+            <>
+              {' · '}
+              Rekor <strong>{formatScore(stats.allTimeBest)}</strong>
+            </>
+          )}
+        </span>
+      </div>
     </div>
   );
 }

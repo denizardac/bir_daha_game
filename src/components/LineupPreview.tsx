@@ -220,17 +220,17 @@ export function LineupPreviewSidebar({
   return (
     <div className="lineup-preview-sidebar lineup-preview-sidebar--v2">
       <div className="lineup-preview-sidebar-main">
-        <div className="lineup-preview-sidebar-text">
+        <div className="lineup-preview-sidebar-row">
           <span className="lineup-preview-title">İlk 11</span>
           <span className="lineup-preview-formation">{summary.formationLabel}</span>
-          <span className="lineup-preview-meta-inline">
-            {summary.filled}/11 saha · {summary.squadSize}/11 kadro
-            {emptyOnField > 0 ? ` · ${emptyOnField} boş` : ''}
-          </span>
         </div>
+        <span className="lineup-preview-meta-inline">
+          {summary.filled}/11 saha · {summary.squadSize}/11 kadro
+          {emptyOnField > 0 ? ` · ${emptyOnField} boş` : ''}
+        </span>
         {onShow && (
-          <button type="button" className="lineup-show-btn" onClick={onShow}>
-            Göster
+          <button type="button" className="lineup-show-btn lineup-show-btn--block" onClick={onShow}>
+            Dizilişi göster
           </button>
         )}
       </div>

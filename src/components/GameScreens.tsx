@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GameHeader } from '@/components/GameHeader';
 import { PlayerCard, PlayerCardMini } from '@/components/PlayerCard';
 import { TacticCard } from '@/components/TacticCard';
-import { PickMoraleBanner } from '@/components/PickMoraleBanner';
+import { CardSelectCommandBar, type CardPickMode } from '@/components/CardSelectCommandBar';
+import { TacticPickGrid } from '@/components/TacticPickGrid';
+import { buildMatchAnimSchedule, buildMatchAnimScheduleResume, type MatchAnimState } from '@/engine/matchAnimSchedule';
 import { SquadPanel } from '@/components/SquadPanel';
-import { LineupPreviewCenterTrigger, LineupPreviewExpanded, LineupPreviewModal } from '@/components/LineupPreview';
 import { isFinaleRound, isTacticBonusRound } from '@/engine/roundFlow';
 import { getLegendaryChanceTier } from '@/engine/seed';
 import { canPassCardPick } from '@/engine/cardPass';
@@ -16,7 +17,7 @@ import { MoralePanel } from '@/components/MoralePanel';
 import { PlayerHeroMini } from '@/components/PlayerHero';
 import { MatchTeamCard } from '@/components/MatchPickPanel';
 import { getActiveSynergies, getSynergyById, SYNERGIES } from '@/data/synergies';
-import { getTacticCategory } from '@/data/tactics';
+import { getSidePanelNearSynergies } from '@/engine/squadInsights';
 import { BITE, EVENT_CATEGORY_BITE } from '@/data/biteTips';
 import { getEventPresentation } from '@/data/eventVisuals';
 import { EventChoiceVisual, EventSceneVisual } from '@/components/EventSceneVisual';
@@ -25,19 +26,17 @@ import { calculateRoundPoints, formatScore } from '@/engine/scoring';
 import { getSquadLineupSummary, lineupSlotToMatchPitch } from '@/engine/lineupPreview';
 import { getPersistedStats, TOTAL_SYNERGIES, useGameStore } from '@/store/gameStore';
 import { isPlayerCard, isSkipCard, isTacticCard, isTrainingCard } from '@/types';
-import type { ActiveTactic, GameCard, PlayerCard as PlayerCardModel } from '@/types';
-import type { TacticDraft } from '@/engine/runPersistence';
 import { MatchAnimation } from '@/components/MatchAnimation';
 import { MatchMoraleBanner } from '@/components/MatchMoraleBanner';
 import { MatchLeftPanel, MatchRightPanel } from '@/components/MatchLivePanels';
+import { LineupPreviewCenterTrigger, LineupPreviewExpanded, LineupPreviewModal } from '@/components/LineupPreview';
 import { TrainingPickModal } from '@/components/TrainingPickModal';
-import { buildMatchAnimSchedule, type MatchAnimState } from '@/engine/matchAnimSchedule';
 import { FirstWinCelebration } from '@/components/FirstWinCelebration';
 import { downloadShareCard, copyShareCardImage, getShareTier, renderShareCardToCanvas } from '@/utils/shareCard';
 import { playSound } from '@/utils/sound';
 import { formatStatDisplay } from '@/utils/formatNumber';
 import { formatPosition } from '@/utils/positionStyle';
-import { DANGER_MORALE_FLOOR, REROLLS_PER_RUN } from '@/constants/game';
+import { DANGER_MORALE_FLOOR } from '@/constants/game';
 import { getEventChoiceTones, eventChoiceClass, formatMatchRiskDelta, MATCH_RISK_EXPLAINER } from '@/engine/eventRisk';
 import { formatMatchPowerBonusLabel } from '@/engine/matchPower';
 import { sortSquadByRating } from '@/engine/squadLogic';
@@ -81,85 +80,16 @@ function formatEventOutcome(o: EventOutcome, eventId?: string) {
   return parts.length ? parts.join(' · ') : '';
 }
 
-function TacticPickRows({
-  offers,
-  squad,
-  activeTactics,
-  draft,
-  sound,
-  onSelect,
-  onConfirm,
-}: {
-  offers: GameCard[];
-  squad: PlayerCardModel[];
-  activeTactics: ActiveTactic[];
-  draft: TacticDraft;
-  sound: boolean;
-  onSelect: (card: GameCard) => void;
-  onConfirm: () => void;
-}) {
-  const tactics = offers.filter(isTacticCard);
-  const formations = tactics.filter((o) => getTacticCategory(o.id) === 'formasyon');
-  const systems = tactics.filter((o) => getTacticCategory(o.id) === 'sistem');
-  const ready = Boolean(draft.formationId && draft.systemId);
-
-  const renderRow = (
-    cards: typeof tactics,
-    step: number,
-    title: string,
-    selectedId: string | null,
-  ) => (
-    <div className="tactic-pick-row">
-      <p className="tactic-pick-row-title">
-        <span className={`tactic-pick-step ${selectedId ? 'tactic-pick-step--done' : ''}`}>{selectedId ? '✓' : step}</span>
-        {title}
-      </p>
-      <div className="tactic-pick-cards">
-        {cards.map((card) => (
-          <div key={card.id} className="tactic-pick-card-slot">
-            <TacticCard
-              card={card}
-              squad={squad}
-              activeTactics={activeTactics}
-              selected={selectedId === card.id}
-              onSelect={() => { playSound('tick', sound); onSelect(card); }}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="tactic-pick-rows">
-      {renderRow(formations, 1, 'Formasyon seç', draft.formationId)}
-      {renderRow(systems, 2, 'Oyun sistemi seç', draft.systemId)}
-      <div className="tactic-pick-confirm-row">
-        <button
-          type="button"
-          className="btn-primary tactic-pick-confirm"
-          disabled={!ready}
-          onClick={() => { playSound('tick', sound); onConfirm(); }}
-        >
-          {ready ? 'Onayla ve devam et' : 'Önce formasyon ve sistem seç'}
-          <span className="tactic-pick-confirm-hint">
-            {ready ? 'İkisi de slota yerleşir · +35 puan · +8 moral' : 'Her satırdan bir kart seçmelisin'}
-          </span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export function CardSelectScreen() {
   const [lineupOpen, setLineupOpen] = useState(false);
+  const [pickMode, setPickMode] = useState<CardPickMode>('cards');
   const state = useGameStore();
   const {
     round, maxRounds, squad, maxSquadSize, morale, score, streak,
     currentOffers, selectOffer, passCardPick,
     dangerMode, isFirstRun, discoveredSynergies, activeTactics, usedEventIds,
     extraDrawAvailable, extraDrawUsed, redrawOffers,
-    rerollsRemaining, rerollSingleOffer, rerollAllOffers, offersRerollIndex,
+    rerollsRemaining, rerollSingleOffer, offersRerollIndex,
     trainingFlow, beginTraining, pickTrainingPlayer, completeTraining, cancelTraining, backTrainingPlayer,
     tacticDraft, confirmTacticRound,
   } = state;
@@ -168,6 +98,7 @@ export function CardSelectScreen() {
   const empty = maxSquadSize - squad.length;
   const lineupSummary = getSquadLineupSummary(squad, activeTactics);
   const activeSynergies = getActiveSynergies(squad, morale, { activeTactics });
+  const nearSynergies = getSidePanelNearSynergies(squad, morale, discoveredSynergies, currentOffers, 4);
   const emptyField = 11 - lineupSummary.filled;
   const tacticBonus = isTacticBonusRound(round, maxRounds);
   const finaleMatch = isFinaleRound(round, maxRounds);
@@ -191,12 +122,74 @@ export function CardSelectScreen() {
             ? '3 oyuncu teklifi · Kadro dolu — istersen pas geç, mevcut kadroyla maça çık'
             : '3 oyuncu teklifi · Kadro dolu — en riskli oyuncunun yerine geçer';
 
+  const pickTitle = finaleMatch
+    ? 'Şampiyonluk Maçı'
+    : tacticBonus
+      ? 'Taktik Bonusu'
+      : 'Bir Kart Seç';
+
+  const cardsLocked = pickMode === 'training' || Boolean(trainingFlow);
+
+  const handlePickModeChange = (mode: CardPickMode) => {
+    setPickMode(mode);
+    if (mode === 'training' && !trainingFlow) {
+      playSound('tick', sound);
+      beginTraining();
+    }
+  };
+
   return (
-    <div className={`game-shell pitch-bg card-select-screen ${dangerMode ? 'danger-pulse' : ''}`}>
+    <div className={`game-shell pitch-bg card-select-screen ${tacticBonus ? 'card-select-screen--tactic' : ''} ${dangerMode ? 'danger-pulse' : ''}`}>
       <div className="card-select-inner w-full max-w-none px-3 py-2 md:px-4 md:py-3">
         <GameHeader round={round} maxRounds={maxRounds} score={score} streak={streak} />
 
-        <PickMoraleBanner morale={morale} compact />
+        {!tacticBonus ? (
+          <CardSelectCommandBar
+            morale={morale}
+            pickMode={pickMode}
+            onPickModeChange={handlePickModeChange}
+            trainingAvailable={!finaleMatch}
+            title={pickTitle}
+            subtitle={pickSubtitle}
+            activeSynergies={activeSynergies}
+            nearSynergies={nearSynergies}
+            rerollsRemaining={rerollsRemaining}
+            actions={(
+              <>
+                <LineupPreviewCenterTrigger
+                  squad={squad}
+                  activeTactics={activeTactics}
+                  compact
+                  onOpen={() => setLineupOpen(true)}
+                />
+                {extraDrawAvailable && !extraDrawUsed && (
+                  <button
+                    type="button"
+                    className="btn-secondary btn-reroll-extra"
+                    title="Round 10 ödülü — 3 yeni oyuncu teklifi"
+                    onClick={redrawOffers}
+                    disabled={cardsLocked}
+                  >
+                    🎯 Ekstra çek
+                  </button>
+                )}
+                {canPass && (
+                  <button
+                    type="button"
+                    className="btn-pass-pick btn-pass-pick--toolbar"
+                    title="Kadro aynı kalır · doğrudan maça"
+                    disabled={cardsLocked}
+                    onClick={() => { playSound('tick', sound); passCardPick(); }}
+                  >
+                    Pas geç
+                  </button>
+                )}
+              </>
+            )}
+          />
+        ) : (
+          <MatchMoraleBanner morale={morale} />
+        )}
 
         {dangerMode && (
           <p className="card-select-danger-banner">
@@ -214,80 +207,7 @@ export function CardSelectScreen() {
             onShowLineup={() => setLineupOpen(true)}
           />
 
-          <div className="card-pick-center min-w-0">
-            <div className="card-pick-toolbar">
-              <div className="card-pick-toolbar-main">
-                {finaleMatch ? (
-                  <h2 className="card-pick-title card-pick-title--finale">Şampiyonluk Maçı</h2>
-                ) : tacticBonus ? (
-                  <h2 className="card-pick-title card-pick-title--tactic">Taktik Bonusu</h2>
-                ) : (
-                  <h2 className="card-pick-title">Bir Kart Seç</h2>
-                )}
-                <p className="card-pick-subtitle">{pickSubtitle}</p>
-              </div>
-              <div className="card-pick-toolbar-actions">
-                {!tacticBonus && (
-                  <div className="card-pick-reroll-bar">
-                    <span
-                      className={`card-pick-reroll-count ${rerollsRemaining <= 0 ? 'card-pick-reroll-count--empty' : ''}`}
-                      title="Kalan yenileme hakkı"
-                    >
-                      🔄 {rerollsRemaining}/{REROLLS_PER_RUN}
-                    </span>
-                    <button
-                      type="button"
-                      className="btn-reroll-all"
-                      disabled={rerollsRemaining <= 0}
-                      onClick={() => { playSound('tick', sound); rerollAllOffers(); }}
-                    >
-                      3&apos;ünü yenile
-                      <span className="btn-reroll-all-cost">
-                        {rerollsRemaining > 0 ? '−1 hak' : '0 hak'}
-                      </span>
-                    </button>
-                  </div>
-                )}
-                <LineupPreviewCenterTrigger
-                  squad={squad}
-                  activeTactics={activeTactics}
-                  compact
-                  onOpen={() => setLineupOpen(true)}
-                />
-                {extraDrawAvailable && !extraDrawUsed && (
-                  <button
-                    type="button"
-                    className="btn-secondary btn-reroll-extra"
-                    title="Round 10 ödülü — 3 yeni oyuncu teklifi"
-                    onClick={redrawOffers}
-                  >
-                    🎯 Ekstra çek (Round 10)
-                  </button>
-                )}
-                {!finaleMatch && !tacticBonus && (
-                  <>
-                    <button
-                      type="button"
-                      className="btn-train-pick btn-train-pick--toolbar"
-                      title="Kart yerine bir oyuncuya kalıcı nitelik ekle · sonra maça çık"
-                      onClick={() => { playSound('tick', sound); beginTraining(); }}
-                    >
-                      🎓 Özel antrenman
-                    </button>
-                    {canPass && (
-                      <button
-                        type="button"
-                        className="btn-pass-pick btn-pass-pick--toolbar"
-                        title="Kadro aynı kalır · doğrudan maça"
-                        onClick={() => { playSound('tick', sound); passCardPick(); }}
-                      >
-                        Pas geç
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
+          <div className={`card-pick-center min-w-0 ${cardsLocked ? 'card-pick-center--training' : ''} ${tacticBonus ? 'card-pick-center--tactic' : ''}`}>
             <LineupPreviewModal
               open={lineupOpen}
               onClose={() => setLineupOpen(false)}
@@ -305,16 +225,6 @@ export function CardSelectScreen() {
               </div>
             )}
 
-            {tacticBonus && (
-              <div className="card-pick-bonus-banner">
-                <span className="card-pick-bonus-icon" aria-hidden>📋</span>
-                <div>
-                  <p className="card-pick-bonus-title">Taktik günü — maç yok</p>
-                  <p className="card-pick-bonus-desc">Bir formasyon ve bir oyun sistemi seç; ikisi de slota yerleşir ve sonraki maçlarda aktif kalır. +35 puan · +8 moral.</p>
-                </div>
-              </div>
-            )}
-
             {!tacticBonus && (() => {
               const tier = getLegendaryChanceTier(round);
               if (!tier.boosted) return null;
@@ -326,21 +236,8 @@ export function CardSelectScreen() {
               );
             })()}
 
-            {!tacticBonus && activeSynergies.length > 0 && (
-              <div className="card-pick-synergy-strip">
-                <span className="card-pick-synergy-strip-label">Aktif sinerjiler</span>
-                <div className="card-pick-synergy-strip-chips">
-                  {activeSynergies.map((s) => (
-                    <span key={s.id} className="card-pick-synergy-chip" title={s.description}>
-                      <span aria-hidden>{s.icon}</span> {s.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {tacticBonus ? (
-              <TacticPickRows
+              <TacticPickGrid
                 offers={currentOffers}
                 squad={squad}
                 activeTactics={activeTactics}
@@ -351,7 +248,7 @@ export function CardSelectScreen() {
               />
             ) : (
               <>
-                <div className="cards-pick-grid">
+                <div className={`cards-pick-grid ${cardsLocked ? 'cards-pick-grid--locked' : ''}`}>
                   {currentOffers.map((offer, slotIndex) => {
                     const tipPlacement = slotIndex === 0 ? 'right' : slotIndex === currentOffers.length - 1 ? 'left' : 'auto';
                     const inner = isPlayerCard(offer) ? (
@@ -364,42 +261,24 @@ export function CardSelectScreen() {
                         activeTactics={activeTactics}
                         morale={morale}
                         tipPlacement={tipPlacement}
-                        onSelect={() => { playSound('tick', sound); selectOffer(offer); }}
+                        onSelect={() => {
+                          if (cardsLocked) return;
+                          playSound('tick', sound);
+                          selectOffer(offer);
+                        }}
+                        onReroll={() => {
+                          if (rerollsRemaining <= 0 || cardsLocked) return;
+                          playSound('tick', sound);
+                          rerollSingleOffer(slotIndex);
+                        }}
+                        rerollDisabled={rerollsRemaining <= 0 || cardsLocked}
                         showTagHint={isFirstRun && round === 1}
                       />
                     ) : isTacticCard(offer) ? (
                       <TacticCard key={`${offer.id}-r${offersRerollIndex}`} card={offer} squad={squad} activeTactics={activeTactics} onSelect={() => selectOffer(offer)} />
                     ) : null;
-                    const label = isPlayerCard(offer) ? 'Oyuncu kartı' : 'Taktik kartı';
                     return (
                       <div key={`${offer.id}-slot-r${offersRerollIndex}-i${slotIndex}`} className="card-pick-slot">
-                        <div className="card-pick-slot-head">
-                          <span className={`card-pick-slot-label ${
-                            isPlayerCard(offer)
-                              ? 'card-pick-slot-label--player'
-                              : 'card-pick-slot-label--tactic'
-                          }`}>
-                            {label}
-                          </span>
-                          {isPlayerCard(offer) && (
-                            <button
-                              type="button"
-                              className="btn-reroll-slot"
-                              disabled={rerollsRemaining <= 0}
-                              title={rerollsRemaining > 0 ? 'Bu kartı yenile (−1 hak)' : 'Yenileme hakkın kalmadı'}
-                              aria-label={`${offer.name} kartını yenile`}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (rerollsRemaining <= 0) return;
-                                playSound('tick', sound);
-                                rerollSingleOffer(slotIndex);
-                              }}
-                            >
-                              {rerollsRemaining > 0 ? '🔄' : '0'}
-                            </button>
-                          )}
-                        </div>
                         <div className="card-pick-slot-anchor">{inner}</div>
                       </div>
                     );
@@ -417,7 +296,7 @@ export function CardSelectScreen() {
               selectedPlayerId={trainingFlow.selectedPlayerId}
               onPickPlayer={pickTrainingPlayer}
               onPickTag={completeTraining}
-              onClose={cancelTraining}
+              onClose={() => { cancelTraining(); setPickMode('cards'); }}
               onBack={backTrainingPlayer}
             />
           )}
@@ -430,6 +309,7 @@ export function CardSelectScreen() {
             round={round}
             currentOffers={currentOffers}
             discoveredSynergies={discoveredSynergies}
+            tacticDraft={tacticBonus ? tacticDraft : undefined}
           />
         </div>
       </div>
@@ -440,6 +320,7 @@ export function CardSelectScreen() {
 export function EventScreen() {
   const { currentEvent, resolveEventChoice, round, maxRounds, score, streak, squad, morale, isFirstRun, seed, discoveredSynergies, activeTactics, maxSquadSize } = useGameStore();
   const [picked, setPicked] = useState<'A' | 'B' | null>(null);
+  const [lineupOpen, setLineupOpen] = useState(false);
   const pickTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -519,7 +400,21 @@ export function EventScreen() {
 
         <div className="game-layout event-layout">
           <div className="panel space-y-3">
-            <h3 className="text-sm font-bold uppercase text-neutral-400">Kadro durumu</h3>
+            <div className="event-squad-head">
+              <h3 className="text-sm font-bold uppercase text-neutral-400">Kadro durumu</h3>
+              <LineupPreviewCenterTrigger
+                squad={squad}
+                activeTactics={activeTactics}
+                compact
+                onOpen={() => setLineupOpen(true)}
+              />
+            </div>
+            <LineupPreviewModal
+              open={lineupOpen}
+              onClose={() => setLineupOpen(false)}
+              squad={squad}
+              activeTactics={activeTactics}
+            />
             <p className="text-lg font-extrabold">
               {lineupSummary.squadSize}/{maxSquadSize} kadro · {lineupSummary.filled}/11 saha · Ort. {avg}
             </p>
@@ -637,9 +532,15 @@ export function MatchScreen() {
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const prevGoalsRef = useRef(0);
   const toastIdRef = useRef(0);
+  const speedRef = useRef(speed);
+  const animRef = useRef(anim);
+  const speedReadyRef = useRef(false);
+  speedRef.current = speed;
+  animRef.current = anim;
 
   useEffect(() => {
     if (!currentMatch) return;
+    speedReadyRef.current = false;
     prevGoalsRef.current = 0;
     setMicroToasts([]);
     setAnim({
@@ -661,11 +562,34 @@ export function MatchScreen() {
       (partial) => setAnim((prev) => ({ ...prev, ...partial })),
       () => playSound('goal', getPersistedStats().soundEnabled),
       () => playSound('whistle', getPersistedStats().soundEnabled),
+      speedRef.current,
+    );
+    timersRef.current = timers;
+    speedReadyRef.current = true;
+    return () => timers.forEach(clearTimeout);
+  }, [currentMatch]);
+
+  useEffect(() => {
+    if (!currentMatch || !speedReadyRef.current) return;
+    const snapshot = animRef.current;
+    if (!snapshot.playing || snapshot.showResult) return;
+    timersRef.current.forEach(clearTimeout);
+    const timers = buildMatchAnimScheduleResume(
+      currentMatch.events,
+      currentMatch.goalsFor,
+      currentMatch.goalsAgainst,
+      snapshot.minute,
+      snapshot.goalsFor,
+      snapshot.goalsAgainst,
+      snapshot.eventFeed,
+      (partial) => setAnim((prev) => ({ ...prev, ...partial })),
+      () => playSound('goal', getPersistedStats().soundEnabled),
+      () => playSound('whistle', getPersistedStats().soundEnabled),
       speed,
     );
     timersRef.current = timers;
     return () => timers.forEach(clearTimeout);
-  }, [currentMatch, speed]);
+  }, [speed, currentMatch]);
 
   // Maçı atla — animasyonu kapatıp doğrudan sonuca git
   const skipMatch = () => {

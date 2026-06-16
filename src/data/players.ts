@@ -339,7 +339,12 @@ export function getStartingSquad(seed?: string, isDaily = true): PlayerCard[] {
   }
 
   while (squad.length < FREE_START_SIZE) {
-    const available = pool.filter((p) => !usedNames.has(p.name));
+    const hasGk = squad.some((p) => p.position === 'KL');
+    const available = pool.filter((p) => {
+      if (usedNames.has(p.name)) return false;
+      if (hasGk && p.position === 'KL') return false;
+      return true;
+    });
     if (!available.length) break;
     const pick = available[Math.floor(rng() * available.length)]!;
     usedNames.add(pick.name);
