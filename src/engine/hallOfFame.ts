@@ -1,7 +1,17 @@
 import type { HallOfFameEntry, PersistedData } from '@/types';
 
+const ISTANBUL_TZ = 'Europe/Istanbul';
+
+/** Sezon anahtarı (YYYY-MM, İstanbul takvimi) — günlük seed ile aynı saat diliminde kalır */
 export function getSeasonKey(date = new Date()): string {
-  return date.toISOString().slice(0, 7);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ISTANBUL_TZ,
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(date);
+  const y = parts.find((p) => p.type === 'year')!.value;
+  const m = parts.find((p) => p.type === 'month')!.value;
+  return `${y}-${m}`;
 }
 
 export function getSeasonLabel(monthKey: string): string {

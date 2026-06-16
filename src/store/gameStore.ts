@@ -1,7 +1,5 @@
 import { create } from 'zustand';
 import {
-  CARD_TIMER_DEFAULT_ENABLED,
-  CARD_TIMER_SECONDS,
   DANGER_MORALE_FLOOR,
   REROLLS_PER_RUN,
 } from '@/constants/game';
@@ -11,9 +9,9 @@ import { buildSignedRunPayload } from '@/engine/runIntegrity';
 import { validateRunSubmission } from '@/engine/runValidation';
 import { getEventRatingTarget, resolveEventRemoval } from '@/engine/eventRemoval';
 import { isEventRound } from '@/data/events';
-import { getTacticCategory, getTacticEffect } from '@/data/tactics';
+import { getTacticCard, getTacticCategory, getTacticEffect } from '@/data/tactics';
 import { canAddTag } from '@/data/tagConflicts';
-import { MAX_PLAYER_TAGS } from '@/data/training';
+import { createTrainingCard, MAX_PLAYER_TAGS } from '@/data/training';
 import { getActiveSynergies, SYNERGIES, TOTAL_SYNERGIES } from '@/data/synergies';
 import { getStartingSquad } from '@/data/players';
 import { drawEvent, createLoanPlayer, createYouthPlayer, resolveEvent } from '@/engine/events';
@@ -48,26 +46,28 @@ import type {
   GameCard,
   GamePhase,
   GameState,
+  RoundResult,
   RunEndAnalysis,
   Screen,
   Tag,
   TrainingCard,
 } from '@/types';
-import { isPlayerCard, isTacticCard, isTrainingCard, isSkipCard } from '@/types';
-import { isResumableRun, mergeRunSnapshot, type RunSnapshot, toRunSnapshot } from '@/engine/runPersistence';
-import { getAnonymousId, loadPersisted, savePersisted } from '@/utils/storage';
+import { isPlayerCard, isTacticCard, isSkipCard } from '@/types';
+import { isResumableRun, mergeRunSnapshot, type RunSnapshot, type TacticDraft, toRunSnapshot } from '@/engine/runPersistence';
+import { getAnonymousId, loadPersisted, savePartial, savePersisted } from '@/utils/storage';
 import { playSound } from '@/utils/sound';
 
 const MAX_ROUNDS = 15;
 const MAX_SQUAD = 11;
 
+// Kart zamanlayıcısı oyundan tamamen kaldırıldı — her zaman kapalı.
+// timerSeconds 0 kalır; scoring'deki zamanlayıcı bonusu da böylece devre dışı.
 function cardTimerSeconds() {
-  return CARD_TIMER_SECONDS;
+  return 0;
 }
 
 function isCardTimerEnabled() {
-  const p = loadPersisted();
-  return p.cardTimerEnabled ?? CARD_TIMER_DEFAULT_ENABLED;
+  return false;
 }
 
 interface TrainingFlow {
@@ -83,6 +83,7 @@ interface GameStore extends GameState {
   pendingOffersShown: GameCard[];
   pendingSelected: GameCard | null;
   trainingFlow: TrainingFlow | null;
+  tacticDraft: TacticDraft;
   usedEventIds: string[];
   nextMatchRisk: number;
   nextMatchBonus: number;
@@ -95,7 +96,9 @@ interface GameStore extends GameState {
   continueRun: () => void;
   abandonRun: () => void;
   selectOffer: (card: GameCard) => void;
+  confirmTacticRound: () => void;
   passCardPick: () => void;
+  beginTraining: () => void;
   pickTrainingPlayer: (playerId: string) => void;
   completeTraining: (tag: Tag) => void;
   cancelTraining: () => void;
@@ -288,6 +291,7 @@ function finalizeBonusRound(
       pendingOffersShown: [],
       pendingSelected: null,
       trainingFlow: null,
+      tacticDraft: { formationId: null, systemId: null },
     });
     clearRun();
     return;
@@ -331,6 +335,7 @@ function finalizeBonusRound(
     pendingOffersShown: [],
     pendingSelected: null,
     trainingFlow: null,
+    tacticDraft: { formationId: null, systemId: null } as TacticDraft,
     ...next,
   };
   playSound('tick', loadPersisted().soundEnabled);
@@ -354,7 +359,12 @@ function buildRunEndAnalysis(state: GameStore): RunEndAnalysis {
   const rankList = state.isDailySeed
     ? getDailyList(persisted)
     : persisted.allTimeLeaderboard;
-  const ego = analyzeEgo(state.roundHistory, state.seed);
+  const ego = analyzeEgo(
+    state.roundHistory,
+    state.seed,
+    getStartingSquad(state.seed, state.isDailySeed),
+    state.isDailySeed,
+  );
   const rank = getRank(state.score, rankList);
   const rankPercent = getRankPercent(state.score, rankList);
   const rivals = getNearRivals(state.score, rankList, state.displayName || 'Sen');
@@ -396,6 +406,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   pendingOffersShown: [],
   pendingSelected: null,
   trainingFlow: null,
+  tacticDraft: { formationId: null, systemId: null },
   usedEventIds: [],
   nextMatchRisk: 0,
   nextMatchBonus: 0,
@@ -420,7 +431,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     clearRun();
     persistRun(run);
     savePersisted({ ...loadPersisted(), lastPlayerName: name });
-    set({ ...run, screen: 'game', showContinuePrompt: false, pendingOffersShown: [], pendingSelected: null, usedEventIds: [], runEndStep: 0, pendingMilestones: [], lastLossBrokenSynergies: [], pendingSynergyReveal: [], nextMatchRisk: 0, nextMatchBonus: 0 });
+    set({ ...run, screen: 'game', showContinuePrompt: false, pendingOffersShown: [], pendingSelected: null, trainingFlow: null, tacticDraft: { formationId: null, systemId: null }, usedEventIds: [], runEndStep: 0, pendingMilestones: [], lastLossBrokenSynergies: [], pendingSynergyReveal: [], nextMatchRisk: 0, nextMatchBonus: 0 });
   },
 
   continueRun: () => {
@@ -457,9 +468,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastLossPlayer: saved.lastLossPlayer ?? null,
       rerollsRemaining: saved.rerollsRemaining ?? REROLLS_PER_RUN,
       offersRerollIndex: saved.offersRerollIndex ?? 0,
-      timerSeconds: phase === 'cardSelect' ? cardTimerSeconds() : (saved.timerSeconds ?? 0),
+      timerSeconds: 0,
       usedEventIds: saved.usedEventIds ?? [],
       trainingFlow: saved.trainingFlow ?? null,
+      tacticDraft: saved.tacticDraft ?? { formationId: null, systemId: null },
       pendingOffersShown: saved.pendingOffersShown ?? [],
       pendingSelected: saved.pendingSelected ?? null,
       lastLossBrokenSynergies: saved.lastLossBrokenSynergies ?? [],
@@ -560,35 +572,36 @@ export const useGameStore = create<GameStore>((set, get) => ({
   selectOffer: (card) => {
     const state = get();
     if (state.phase !== 'cardSelect') return;
-    playSound('select', loadPersisted().soundEnabled);
 
     let squad = [...state.squad];
     let activeTactics = [...state.activeTactics];
 
     if (isTacticBonusRound(state.round, state.maxRounds)) {
-      if (isTrainingCard(card)) {
-        const trainingFlow: TrainingFlow = {
-          card,
-          offeredTags: card.offeredTags,
-          step: 'player',
-        };
-        set({ trainingFlow });
-        persistRun({ ...get(), trainingFlow });
-        return;
-      }
-
+      // Taktik round: formasyon ve sistem ayrı ayrı seçilir, onaylanana kadar taslakta tutulur.
       if (!isTacticCard(card)) return;
       const category = getTacticCategory(card.id);
-      activeTactics = [
-        ...activeTactics.filter((t) => getTacticCategory(t.id) !== category),
-        getTacticEffect(card.id),
-      ];
-      finalizeBonusRound(state, squad, activeTactics, card, set);
+      if (category !== 'formasyon' && category !== 'sistem') return;
+      playSound('select', loadPersisted().soundEnabled);
+      const tacticDraft: TacticDraft = {
+        ...state.tacticDraft,
+        ...(category === 'formasyon' ? { formationId: card.id } : { systemId: card.id }),
+      };
+      set({ tacticDraft });
+      persistRun({ ...get(), tacticDraft });
       return;
     }
 
+    playSound('select', loadPersisted().soundEnabled);
+
     if (isPlayerCard(card)) {
       squad = applyPlayerToSquad(squad, card, state.maxSquadSize, state.morale, state.activeTactics);
+      // Koleksiyon: efsane kart çekildiyse kaydet
+      if (card.rarity === 'efsane') {
+        const persisted = loadPersisted();
+        if (!persisted.collectedLegends.includes(card.name)) {
+          savePartial({ collectedLegends: [...persisted.collectedLegends, card.name] });
+        }
+      }
     } else if (isSkipCard(card)) {
       if (!canPassCardPick({
         phase: state.phase,
@@ -636,6 +649,39 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
+  confirmTacticRound: () => {
+    const state = get();
+    if (state.phase !== 'cardSelect' || !isTacticBonusRound(state.round, state.maxRounds)) return;
+    const { formationId, systemId } = state.tacticDraft;
+    if (!formationId || !systemId) return;
+
+    // Aynı kategorideki aktif taktikleri çıkar, seçilen formasyon + sistemi ekle.
+    const activeTactics = [
+      ...state.activeTactics.filter((t) => {
+        const cat = getTacticCategory(t.id);
+        return cat !== 'formasyon' && cat !== 'sistem';
+      }),
+      getTacticEffect(formationId),
+      getTacticEffect(systemId),
+    ];
+    // Round geçmişinde gösterim için formasyon kartını birincil seçim olarak kullan.
+    const primaryCard = getTacticCard(formationId) ?? getTacticCard(systemId)!;
+    finalizeBonusRound(state, [...state.squad], activeTactics, primaryCard, set);
+  },
+
+  beginTraining: () => {
+    const state = get();
+    if (state.phase !== 'cardSelect') return;
+    // Antrenman yalnızca normal oyuncu seçim round'larında bir alternatiftir (taktik round'unda değil).
+    if (isTacticBonusRound(state.round, state.maxRounds)) return;
+    if (state.trainingFlow) return;
+    playSound('select', loadPersisted().soundEnabled);
+    const card = createTrainingCard(state.seed, state.round, state.offersRerollIndex ?? 0);
+    const trainingFlow: TrainingFlow = { card, offeredTags: card.offeredTags, step: 'player' };
+    set({ trainingFlow });
+    persistRun({ ...get(), trainingFlow });
+  },
+
   pickTrainingPlayer: (playerId) => {
     const state = get();
     if (!state.trainingFlow) return;
@@ -666,7 +712,40 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ...state.trainingFlow.card,
       description: `${player.name} → ${tag}`,
     };
-    finalizeBonusRound(state, squad, state.activeTactics, card, set);
+
+    // Antrenman normal round'da oyuncu seçiminin yerine geçer: nitelik eklenir, ardından maç oynanır.
+    const match = simulateMatch(
+      state.seed,
+      state.round,
+      squad,
+      state.morale,
+      state.maxSquadSize,
+      state.discoveredSynergies,
+      state.activeTactics,
+      state.nextMatchRisk,
+      state.nextMatchBonus,
+      state.lossesCount,
+      state.isDailySeed,
+    );
+
+    set({
+      squad,
+      currentMatch: match,
+      phase: 'match',
+      pendingOffersShown: [...state.currentOffers],
+      pendingSelected: card,
+      currentOffers: [],
+      trainingFlow: null,
+      nextMatchRisk: 0,
+      nextMatchBonus: 0,
+    });
+    persistRun({
+      ...get(),
+      squad,
+      currentMatch: match,
+      phase: 'match',
+      trainingFlow: null,
+    });
   },
 
   cancelTraining: () => {
@@ -702,6 +781,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
   autoSelectOffer: () => {
     const s = get();
     if (s.phase !== 'cardSelect' || !s.currentOffers.length) return;
+    if (isTacticBonusRound(s.round, s.maxRounds)) {
+      // Taktik round: ilk formasyon + ilk sistemi otomatik seç ve onayla.
+      const formation = s.currentOffers.find((c) => isTacticCard(c) && getTacticCategory(c.id) === 'formasyon');
+      const system = s.currentOffers.find((c) => isTacticCard(c) && getTacticCategory(c.id) === 'sistem');
+      if (formation) get().selectOffer(formation);
+      if (system) get().selectOffer(system);
+      get().confirmTacticRound();
+      return;
+    }
     if (canPassCardPick({
       phase: s.phase,
       round: s.round,
@@ -719,6 +807,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   resolveEventChoice: (choice) => {
     const state = get();
     if (!state.currentEvent) return;
+    // Koleksiyon: görülen olayı kaydet
+    {
+      const persisted = loadPersisted();
+      if (!persisted.seenEvents.includes(state.currentEvent.id)) {
+        savePartial({ seenEvents: [...persisted.seenEvents, state.currentEvent.id] });
+      }
+    }
     const outcome = resolveEvent(state.currentEvent, choice, state);
     let squad = [...state.squad];
     let score = state.score + outcome.scoreDelta;
@@ -752,11 +847,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
         : createYouthPlayer(state.seed, state.round);
       squad = [...squad, player];
     }
-    const next = startRound({ ...state, squad, morale, score, eventResolvedThisRound: true, usedEventIds: [...state.usedEventIds, state.currentEvent.id] });
+    if (outcome.grantTag) {
+      const tag = outcome.grantTag;
+      // Tag'i taşımayan, en yüksek ratingli oyuncuya ver (efsanenin gençlere aktardığı buff)
+      const candidates = squad.filter((p) => !p.tags.includes(tag));
+      if (candidates.length) {
+        const target = [...candidates].sort((a, b) => b.currentRating - a.currentRating)[0]!;
+        squad = squad.map((p) =>
+          p.id === target.id ? { ...p, tags: [...p.tags, tag] } : p,
+        );
+      }
+    }
+
+    // Olay puanını roundHistory'ye işle — yoksa skor toplamı totalScore ile uyuşmaz
+    const eventHistoryEntry: RoundResult = {
+      round: state.round,
+      cardsShown: [],
+      cardSelected: {
+        kind: 'event',
+        id: state.currentEvent.id,
+        name: state.currentEvent.title,
+        description: choice === 'A' ? state.currentEvent.optionA.label : state.currentEvent.optionB.label,
+      },
+      matchResult: null,
+      pointsEarned: outcome.scoreDelta,
+      eventChoice: choice,
+      isEvent: true,
+    };
+    const roundHistory = [...state.roundHistory, eventHistoryEntry];
+
+    const next = startRound({ ...state, squad, morale, score, roundHistory, eventResolvedThisRound: true, usedEventIds: [...state.usedEventIds, state.currentEvent.id] });
     set({
       squad,
       score,
       morale,
+      roundHistory,
       rerollsRemaining,
       currentEvent: null,
       eventResolvedThisRound: true,
@@ -772,7 +897,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   finishMatch: () => {
     const state = get();
     const match = state.currentMatch;
-    if (!match || !state.pendingSelected) return;
+    // Idempotency: yalnızca maç fazında ve seçili kart varken işle (çift "Devam" tıklaması korunur)
+    if (state.phase !== 'match' || !match || !state.pendingSelected) return;
 
     const injuryRng = createRng(state.seed, 'injury', state.round);
     let squad = applyPotentialGrowth(state.squad, state.round);
@@ -785,7 +911,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return rest;
     });
 
-    let morale = Math.min(100, state.morale + passiveMoraleFromSquad(squad));
+    const tacticMorale = state.activeTactics.reduce((n, t) => n + (t.moralePerMatch ?? 0), 0);
+    let morale = Math.min(100, state.morale + passiveMoraleFromSquad(squad) + tacticMorale);
     const activeSynergyList = getActiveSynergies(squad, morale, { activeTactics: state.activeTactics });
     for (const s of activeSynergyList) {
       if (s.perMatchMorale) morale = Math.min(100, morale + s.perMatchMorale);
@@ -967,6 +1094,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   finishLoss: () => {
     const state = get();
+    // Idempotency: yalnızca kayıp fazında işle — çift tıklamada round iki kez artmasın
+    if (state.phase !== 'loss') return;
     if (state.squad.length <= 4 || state.round >= state.maxRounds) {
       const analysis = buildRunEndAnalysis(state);
       const pendingMilestones = mergeMilestones(state.pendingMilestones, detectMatchMilestones({

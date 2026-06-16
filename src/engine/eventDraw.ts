@@ -41,7 +41,6 @@ const FALLBACK_EVENT_IDS = new Set([
   'evt_sakatlik',
   'evt_yorgunluk',
   'evt_kaleci_hata',
-  'evt_penalti_antrenman',
 ]);
 
 function pickWeighted(rng: () => number, items: EventCard[], weights: number[]): EventCard {

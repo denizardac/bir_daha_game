@@ -39,6 +39,10 @@ export function analyzeEgoReplay(
   let worst: { round: number; desc: string; diff: number } | null = null;
 
   for (const r of roundHistory) {
+    if (r.isEvent) {
+      // Olay kararı için alternatif kart yok — en iyi/en kötü karar analizine dahil edilmez
+      continue;
+    }
     if (r.isTacticBonus) {
       if (isTacticCard(r.cardSelected)) {
         const updated = applyTacticPick(activeTactics, r.cardSelected);

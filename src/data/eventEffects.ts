@@ -12,7 +12,7 @@ const e = (
 
 export const EVENT_EFFECTS: Record<string, Pair> = {
   evt_transfer_teklif: e(
-    { removeWeakest: true, grantRerolls: 3, description: 'Yıldız oyuncu satıldı — ekstra çek hakkı.' },
+    { removeWeakest: true, grantRerolls: 3, scoreDelta: 220, description: 'Yıldız yüksek bonservisle satıldı — büyük gelir + ekstra çek hakkı.' },
     { moraleDelta: 15, description: 'Teklif reddedildi — takım birlikte kaldı, moral yükseldi.' },
   ),
   evt_genc_yetenek: e(
@@ -28,15 +28,15 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { nextMatchBonus: 100, description: 'Sistem korundu, risk alındı.' },
   ),
   evt_saha: e(
-    { nextMatchBonus: 50, description: 'Direkt oyun tercih edildi.' },
-    { nextMatchBonus: 50, description: 'Teknik oyun tercih edildi.' },
+    { conditionalBonus: { tags: ['GÜÇLÜ', 'HIZLI'], perTag: 18, base: 20, cap: 110 }, description: 'Direkt oyun — fiziksel oyuncular öne çıktı.' },
+    { conditionalBonus: { tags: ['TEKNİK'], perTag: 26, base: 20, cap: 110 }, description: 'Teknik oyun — pas ustaları öne çıktı.' },
   ),
   evt_kaptan: e(
     { nextMatchBonus: 175, nextMatchRisk: 0.18, description: 'Kaptan oynatıldı — yüksek ödül, orta risk.' },
     { moraleDelta: 10, description: 'Kaptan dinlendirildi.' },
   ),
   evt_basin: e(
-    { description: 'Sessiz kalındı.' },
+    { scoreDelta: 35, description: 'Sessiz kalındı — takım gürültüye aldırmadan odaklandı (+35 puan).' },
     { moraleDelta: 20, description: 'Basına cevap verildi.' },
   ),
   evt_taraftar: e(
@@ -69,7 +69,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
   ),
   evt_scout: e(
     { addYouth: true, description: 'Scout önerisi kabul edildi.' },
-    { moraleDelta: 8, description: 'Scout bekletildi.' },
+    { grantRerolls: 1, description: 'Scout beklerken alternatif isimler buldu — +1 çek hakkı.' },
   ),
   evt_yildiz_sozlesme: e(
     { scoreDelta: -80, description: 'Prim ödendi, bütçe daraldı.' },
@@ -77,7 +77,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
   ),
   evt_diger_kulup: e(
     { removeWeakest: true, description: 'Oyuncu gitti, kadro inceldi.' },
-    { moraleDelta: 10, description: 'Takım birlikte kaldı.' },
+    { nextMatchBonus: 55, description: 'Oyuncu kalmaya ikna edildi — motive, sonraki maç +55.' },
   ),
   evt_acemi_hata: e(
     { moraleDelta: -8, description: 'Gençler etkilendi.' },
@@ -112,8 +112,8 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { moraleDelta: 4, description: 'Standart antrenman.' },
   ),
   evt_yagmur: e(
-    { nextMatchBonus: 45, description: 'Yağmur futbolu tercih edildi.' },
-    { nextMatchBonus: 45, description: 'Teknik oyun tercih edildi.' },
+    { conditionalBonus: { tags: ['GÜÇLÜ', 'HIZLI'], perTag: 16, base: 15, cap: 100 }, description: 'Yağmur futbolu — fiziksel oyuncular zeminden faydalandı.' },
+    { conditionalBonus: { tags: ['TEKNİK'], perTag: 24, base: 15, cap: 100 }, description: 'Teknik oyun — top kontrolü öne çıktı.' },
   ),
   evt_sicak_hava: e(
     { nextMatchBonus: 35, nextMatchRisk: 0.12, description: 'Yüksek tempo — küçük bonus, hafif risk.' },
@@ -132,7 +132,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { moraleDelta: 8, description: 'Sakin kalındı.' },
   ),
   evt_social_media: e(
-    { description: 'Sessiz kalındı.' },
+    { scoreDelta: 25, description: 'Sessiz kalındı — dikkat dağılmadı, odak korundu (+25 puan).' },
     { moraleDelta: 15, description: 'Taraftarla etkileşim moral getirdi.' },
   ),
   evt_tv_program: e(
@@ -200,7 +200,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { moraleDelta: 3, description: 'Hafif antrenman.' },
   ),
   evt_ofsayt: e(
-    { nextMatchBonus: 55, description: 'Ofsayt tuzağı hazır.' },
+    { conditionalBonus: { tags: ['HIZLI'], perTag: 18, base: 25, cap: 95 }, description: 'Ofsayt tuzağı — hızlı oyuncular tuzağı deldi.' },
     { moraleDelta: 4, description: 'Basit antrenman.' },
   ),
   evt_kontratak: e(
@@ -213,18 +213,18 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
   ),
   evt_menajer_krizi: e(
     { removeWeakest: true, description: 'Menajer oyuncuyu götürdü.' },
-    { moraleDelta: 8, description: 'Kriz yönetildi.' },
+    { scoreDelta: 70, description: 'Kriz lehe çevrildi — tazminat geliri (+70 puan).' },
   ),
   evt_tesis: e(
     { moraleDelta: 12, description: 'Yeni tesis moral getirdi.' },
-    { scoreDelta: 100, description: 'Bütçe antrenmana aktarıldı.' },
+    { scoreDelta: 60, grantTag: 'DAYANIKLI', description: 'Yeni kondisyon merkezi — bir oyuncu DAYANIKLI oldu, +60 puan.' },
   ),
   evt_havaalanı: e(
     { moraleDelta: -5, description: 'Gecikme moral düşürdü.' },
     { scoreDelta: 70, description: 'Özel uçak, dinlenme bonusu.' },
   ),
   evt_legend_ziyaret: e(
-    { moraleDelta: 25, description: 'Efsane ziyareti moral patlattı.' },
+    { moraleDelta: 18, grantTag: 'MENTOR', description: 'Efsane bir oyuncuya akıl hocalığı yaptı — MENTOR kazandırdı, moral +18.' },
     { scoreDelta: 80, description: 'Antrenman odaklı geçildi.' },
   ),
   evt_kirmizi_forma: e(

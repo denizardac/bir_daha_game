@@ -7,3 +7,6 @@ dist
 .DS_Store
 .vite
 tsconfig.tsbuildinfo
+
+# Supabase CLI yerel durum dosyaları (proje-ref, pooler-url vb. — commit etme)
+supabase/.temp/

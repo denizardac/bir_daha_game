@@ -2,7 +2,7 @@
 export const SYNERGY_GUIDE_HINTS: Record<string, { teaser: string; tags?: string[] }> = {
   synergy_kontr_atiligi: { teaser: 'Hızlı oyuncuları çoğalt — kontra gücü artar.', tags: ['HIZLI'] },
   synergy_ruzgar_gibi: { teaser: '4+ hızlı oyuncu topla; gol çarpanı yükselir.', tags: ['HIZLI'] },
-  synergy_kanatlar: { teaser: 'Sol ve sağ kanatta hızlı oyuncular gerekir.', tags: ['HIZLI', 'SLK', 'SĞK'] },
+  synergy_kanatlar: { teaser: 'Sol ve sağ kanatta hızlı oyuncular gerekir.', tags: ['HIZLI', 'SLK', 'SÖK'] },
   synergy_topa_sahip: { teaser: 'Teknik oyuncuları bir araya getir.', tags: ['TEKNİK'] },
   synergy_mister_asist: { teaser: 'Asistçi tag\'li oyuncuları eşleştir.', tags: ['ASİSTÇİ'] },
   synergy_duran_top: { teaser: 'Duran top uzmanları aynı kadroda buluşmalı.', tags: ['SERBEST VURUŞ', 'PENALTI'] },
@@ -20,7 +20,7 @@ export const SYNERGY_GUIDE_HINTS: Record<string, { teaser: string; tags?: string
   synergy_efsaneler: { teaser: 'Kadroda 3+ efsane kart topla.', tags: ['efsane'] },
   synergy_savasci_ruhu: { teaser: 'Savaşçı ruhlu oyuncu gerideyken parlar.', tags: ['SAVAŞÇI'] },
   synergy_altin_defans: { teaser: '2 güçlü stoper savunmayı kilitler.', tags: ['GÜÇLÜ', 'STP'] },
-  synergy_yildiz_hucum: { teaser: 'Güçlü kanat ve forvet hattı kur.', tags: ['SF', 'SLK', 'SĞK'] },
+  synergy_yildiz_hucum: { teaser: 'Güçlü kanat ve forvet hattı kur.', tags: ['SF', 'SLK', 'SÖK'] },
   synergy_pas_motoru: { teaser: 'Asistçi ve teknik oyuncularla pas ağı.', tags: ['ASİSTÇİ', 'TEKNİK'] },
   synergy_demir_form: { teaser: 'Dayanıklı oyuncularla form kalkanı.', tags: ['DAYANIKLI'] },
   synergy_ucuz_kadro: { teaser: 'Gerileyen veteranlarla ucuz ama tecrübeli kadro.', tags: ['GERİLEYEN'] },

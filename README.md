@@ -27,13 +27,13 @@ PWA: service worker + `public/icons/` PNG seti — mobilde ana ekrana eklenebili
 
 ### V1 MVP
 - Core döngü: kart seç → maç → puan / kayıp
-- 120+ oyuncu kartı, 26 tag, 22 sinerji
+- 200+ oyuncu kartı, 26 tag, 29 sinerji
 - Günlük seed, local save, devam et
 - Anonim leaderboard (günlük)
 
 ### V2
 - Taktik kartları (10 adet — formasyon + sistem)
-- Olay kartları (15 adet, round 4/8/12)
+- Olay kartları (56 adet havuz, round 4/8/12)
 - Ego sistemi (en iyi karar / en kritik hata)
 - Paylaşım kartı + kopyala
 - Haftalık leaderboard

@@ -2,9 +2,7 @@ import { isEventRound } from '@/data/events';
 import { PLAYER_POOL, clonePlayer } from '@/data/players';
 import { filterPoolByRound } from '@/data/playerPoolMeta';
 import { cloneTactic, TACTIC_CARDS } from '@/data/tactics';
-import { createTrainingCard } from '@/data/training';
 import { createRng, getRarityWeights, pickOne, weightedPick } from '@/engine/seed';
-import { getTacticCategory } from '@/data/tactics';
 import type { GameCard, PlayerCard, Rarity, TacticCard } from '@/types';
 
 export type SquadRef = Pick<PlayerCard, 'id' | 'name' | 'position'>;
@@ -172,31 +170,26 @@ function drawTacticBonusOffers(
   rerollIndex = 0,
 ): GameCard[] {
   const rng = createRng(seed, 'tactic-bonus', round, rerollIndex);
-  let pool = TACTIC_CARDS.filter((t) => !activeTacticIds.includes(t.id));
-  if (pool.length < 2) pool = [...TACTIC_CARDS];
 
-  const picked: TacticCard[] = [];
-  const take = (candidates: TacticCard[]) => {
-    const open = candidates.filter((c) => !picked.some((p) => p.id === c.id));
-    if (!open.length) return;
-    picked.push(cloneTactic(pickOne(rng, open)));
+  // Her kategoriden, halihazırda aktif olmayan kartlardan 2 teklif çek.
+  // Yeterli yoksa aktif olanları da havuza dahil et (fallback).
+  const pickFrom = (category: 'formasyon' | 'sistem', count: number): TacticCard[] => {
+    let pool = TACTIC_CARDS.filter((t) => t.category === category && !activeTacticIds.includes(t.id));
+    if (pool.length < count) pool = TACTIC_CARDS.filter((t) => t.category === category);
+
+    const picked: TacticCard[] = [];
+    while (picked.length < count) {
+      const open = pool.filter((c) => !picked.some((p) => p.id === c.id));
+      if (!open.length) break;
+      picked.push(cloneTactic(pickOne(rng, open)));
+    }
+    return picked;
   };
 
-  const hasFormation = activeTacticIds.some((id) => getTacticCategory(id) === 'formasyon');
-  take(pool.filter((t) => {
-    if (t.category !== 'formasyon') return false;
-    if (t.id === 'tactic_442' && !hasFormation) return false;
-    return true;
-  }));
-  take(pool.filter((t) => t.category === 'sistem'));
-  while (picked.length < 2) {
-    const open = pool.filter((c) => !picked.some((p) => p.id === c.id));
-    if (!open.length) break;
-    take(open);
-  }
-
-  const training = createTrainingCard(seed, round, rerollIndex);
-  return [...picked.slice(0, 2), training];
+  const formations = pickFrom('formasyon', 2);
+  const systems = pickFrom('sistem', 2);
+  // Sıra: [formasyon, formasyon, sistem, sistem] — UI kategoriye göre ayırır.
+  return [...formations, ...systems];
 }
 
 export function drawOffers(
@@ -280,9 +273,4 @@ export function pickAutoOffer(offers: GameCard[], squadSize: number, maxSquadSiz
   }
   if (players.length) return [...players].sort((a, b) => b.currentRating - a.currentRating)[0]!;
   return offers[0]!;
-}
-
-/** @deprecated use drawOffers */
-export function drawCards(seed: string, round: number, lossesCount: number, squad: SquadRef[]): PlayerCard[] {
-  return drawOffers(seed, round, lossesCount, squad, [], false).filter((c): c is PlayerCard => c.kind === 'player');
 }

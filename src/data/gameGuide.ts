@@ -108,7 +108,7 @@ export function formatGuidePosition(pos: Position) {
 }
 
 export const GUIDE_EVENT_INFO = {
-  rounds: 'Round 4, 8 ve 12\'de olay kartı gelir. İki seçenek sunulur; ikisi de geçerli sonuç verir.',
+  rounds: 'Round 4, 8, 11 ve 14\'te olay kartı gelir. İki seçenek sunulur; ikisi de geçerli sonuç verir.',
   categories: [
     { name: 'Transfer', desc: 'Oyuncu al/sat, genç yetenek, kadro değişimi' },
     { name: 'Taktik', desc: 'Formasyon baskısı, saha koşulları, sistem değişikliği' },

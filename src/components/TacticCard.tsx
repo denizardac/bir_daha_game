@@ -10,9 +10,10 @@ interface Props {
   squad: PlayerCard[];
   activeTactics?: ActiveTactic[];
   onSelect?: () => void;
+  selected?: boolean;
 }
 
-export function TacticCard({ card, squad, activeTactics = [], onSelect }: Props) {
+export function TacticCard({ card, squad, activeTactics = [], onSelect, selected }: Props) {
   const insight = getTacticCardInsight(card, squad, activeTactics);
   const baseEffects = getTacticEffectLines(card);
   const beneficiary = getTacticBeneficiaryPlayers(card, squad);
@@ -31,7 +32,8 @@ export function TacticCard({ card, squad, activeTactics = [], onSelect }: Props)
         }
       }}
       aria-label={onSelect ? `Taktik: ${card.name}` : undefined}
-      className="card-fut card-fut--pick tactic-card relative flex w-full flex-col text-left"
+      aria-pressed={onSelect ? Boolean(selected) : undefined}
+      className={`card-fut card-fut--pick tactic-card relative flex w-full flex-col text-left ${selected ? 'tactic-card--selected' : ''}`}
     >
       <div className="tactic-card-top">
         <div className="tactic-card-accent" />
@@ -91,7 +93,7 @@ export function TacticCard({ card, squad, activeTactics = [], onSelect }: Props)
 
       {onSelect && (
         <div className="card-pick-footer">
-          <p className="select-cta">SEÇ</p>
+          <p className="select-cta">{selected ? '✓ SEÇİLİ' : 'SEÇ'}</p>
         </div>
       )}
     </motion.div>

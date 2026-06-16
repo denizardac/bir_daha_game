@@ -7,10 +7,17 @@ export interface PersistedTrainingFlow {
   selectedPlayerId?: string;
 }
 
+/** Taktik round'unda formasyon + sistem ayrı ayrı seçilir; onaylanana kadar taslak tutulur */
+export interface TacticDraft {
+  formationId: string | null;
+  systemId: string | null;
+}
+
 /** localStorage'da saklanan run — GameState + oyun içi geçici alanlar */
 export type RunSnapshot = GameState & {
   usedEventIds: string[];
   trainingFlow: PersistedTrainingFlow | null;
+  tacticDraft: TacticDraft;
   pendingOffersShown: GameCard[];
   pendingSelected: GameCard | null;
   lastLossBrokenSynergies: string[];
@@ -23,6 +30,7 @@ type SnapshotSource = Partial<RunSnapshot> & {
   seed: string;
   usedEventIds?: string[];
   trainingFlow?: PersistedTrainingFlow | null;
+  tacticDraft?: TacticDraft;
   pendingOffersShown?: GameCard[];
   pendingSelected?: GameCard | null;
   lastLossBrokenSynergies?: string[];
@@ -30,6 +38,8 @@ type SnapshotSource = Partial<RunSnapshot> & {
   nextMatchRisk?: number;
   nextMatchBonus?: number;
 };
+
+const EMPTY_TACTIC_DRAFT: TacticDraft = { formationId: null, systemId: null };
 
 const GAME_STATE_KEYS: (keyof GameState)[] = [
   'seed', 'isDailySeed', 'displayName', 'round', 'maxRounds', 'squad', 'maxSquadSize',
@@ -50,6 +60,7 @@ export function mergeRunSnapshot(
     ...partial,
     usedEventIds: partial.usedEventIds ?? base.usedEventIds ?? [],
     trainingFlow: partial.trainingFlow !== undefined ? partial.trainingFlow : (base.trainingFlow ?? null),
+    tacticDraft: partial.tacticDraft ?? base.tacticDraft ?? { ...EMPTY_TACTIC_DRAFT },
     pendingOffersShown: partial.pendingOffersShown ?? base.pendingOffersShown ?? [],
     pendingSelected: partial.pendingSelected !== undefined ? partial.pendingSelected : (base.pendingSelected ?? null),
     lastLossBrokenSynergies: partial.lastLossBrokenSynergies ?? base.lastLossBrokenSynergies ?? [],
@@ -72,6 +83,7 @@ export function toRunSnapshot(source: SnapshotSource & Record<string, unknown>):
     seed: source.seed,
     usedEventIds: source.usedEventIds ?? [],
     trainingFlow: source.trainingFlow ?? null,
+    tacticDraft: source.tacticDraft ?? { ...EMPTY_TACTIC_DRAFT },
     pendingOffersShown: source.pendingOffersShown ?? [],
     pendingSelected: source.pendingSelected ?? null,
     lastLossBrokenSynergies: source.lastLossBrokenSynergies ?? [],

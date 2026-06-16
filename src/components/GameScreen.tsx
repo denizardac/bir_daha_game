@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import {
   CardSelectScreen,
@@ -12,12 +11,6 @@ import { TutorialCoach } from '@/components/TutorialCoach';
 
 export function GameScreen() {
   const phase = useGameStore((s) => s.phase);
-  const tickTimer = useGameStore((s) => s.tickTimer);
-
-  useEffect(() => {
-    const id = setInterval(() => tickTimer(), 1000);
-    return () => clearInterval(id);
-  }, [tickTimer]);
 
   return (
     <div className="game-viewport">

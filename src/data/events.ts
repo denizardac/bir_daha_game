@@ -4,7 +4,7 @@ export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_transfer_teklif', category: 'transfer', icon: '💰', title: 'Transfer Teklifi',
     description: 'Menajerin telefonu çalıyor: rakip kulüp, kadrodaki yıldızına yüksek teklif yapmış. Satış parası kasaya girecek ama sahada boşluk kalacak.',
-    optionA: { label: 'SAT', description: 'Yıldız gider · 3 ekstra çek hakkı kazanırsın' },
+    optionA: { label: 'SAT', description: 'Yıldız satılır · +220 puan · +3 çek hakkı' },
     optionB: { label: 'REDDET', description: 'Takım birlikte kalır · Moral +15' },
   },
   {
@@ -22,32 +22,32 @@ export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_formasyon', category: 'taktik', icon: '📋', title: 'Rakip Formasyonu',
     description: 'Rakip senin sistemini yiyor gibi görünüyor.',
-    optionA: { label: 'DEĞİŞTİR', description: 'Hazırlıksız formasyon · -10 moral' },
-    optionB: { label: 'DEVAM ET', description: 'Risk al · Galibiyet +100 potansiyel' },
+    optionA: { label: 'DEĞİŞTİR', description: 'Hazırlıksız formasyon · Moral -10' },
+    optionB: { label: 'DEVAM ET', description: 'Sistem korunur · Sonraki maç +100' },
   },
   {
     id: 'evt_saha', category: 'taktik', icon: '🌧️', title: 'Kötü Saha',
     description: 'Hakem saha koşullarının kötü olduğunu söyledi.',
-    optionA: { label: 'DİREKT OYUN', description: 'GÜÇLÜ/HIZLI bonus' },
-    optionB: { label: 'TEKNİK OYUN', description: 'TEKNİK bonus' },
+    optionA: { label: 'DİREKT OYUN', description: 'GÜÇLÜ/HIZLI oyuncu başına bonus' },
+    optionB: { label: 'TEKNİK OYUN', description: 'TEKNİK oyuncu başına bonus' },
   },
   {
     id: 'evt_kaptan', category: 'moral', icon: '👑', title: 'Kaptan Liderliği',
     description: 'Maç öncesi toplantıda kaptanın sesi titriyor. Takım ona güveniyor mu, yoksa yorgun düşmüş mü — karar senin.',
-    optionA: { label: 'OYNAT', description: 'Risk yüksek · Sonraki maç gücü +%27' },
-    optionB: { label: 'DİNLENDİR', description: 'Moral +10 · Güvenli' },
+    optionA: { label: 'OYNAT', description: 'Sonraki maç +175 · orta risk' },
+    optionB: { label: 'DİNLENDİR', description: 'Moral +10 · güvenli' },
   },
   {
     id: 'evt_basin', category: 'moral', icon: '📰', title: 'Basın Eleştirisi',
     description: 'Basın takımı eleştiriyor.',
-    optionA: { label: 'SESSİZ KAL', description: 'Sadece oyun puanı sayılır' },
-    optionB: { label: 'CEVAP VER', description: 'Moral +20 · TARTIŞMALI riski' },
+    optionA: { label: 'SESSİZ KAL', description: 'Gürültüye aldırma · odak +35 puan' },
+    optionB: { label: 'CEVAP VER', description: 'Moral +20 · medyaya yanıt' },
   },
   {
     id: 'evt_taraftar', category: 'moral', icon: '📣', title: 'Taraftar Baskısı',
     description: 'Tribünler baskı yapıyor.',
-    optionA: { label: 'HÜCUM', description: 'Risk yüksek · Gol bonusu' },
-    optionB: { label: 'SAVUN', description: 'Moral +5 · Güvenli' },
+    optionA: { label: 'HÜCUM', description: 'Sonraki maç +90 · risk' },
+    optionB: { label: 'SAVUN', description: 'Moral +5 · güvenli' },
   },
   {
     id: 'evt_sakatlik', category: 'fiziksel', icon: '🤕', title: 'Sakatlık',
@@ -58,8 +58,8 @@ export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_yorgunluk', category: 'fiziksel', icon: '😴', title: 'Aşırı Yorgunluk',
     description: '3 oyuncu yorgunluk belirtisi gösteriyor.',
-    optionA: { label: 'ROTASYON', description: 'Rating -3 geçici' },
-    optionB: { label: 'RİSKE GİR', description: 'Maç kaybı riski +30%' },
+    optionA: { label: 'ROTASYON', description: 'Rotasyon · Moral -3' },
+    optionB: { label: 'RİSKE GİR', description: 'Yorgun oyna · kayıp riski +22%' },
   },
   {
     id: 'evt_zehir', category: 'ozel', icon: '🍽️', title: 'Yemek Zehirlenmesi',
@@ -71,7 +71,7 @@ export const EVENT_CARDS: EventCard[] = [
     id: 'evt_efsane_konusma', category: 'ozel', icon: '🏆', title: 'Efsane Konuşması',
     description: 'Kulüp efsanesi soyunma odasına girdi. Gençlerin gözleri parlıyor, tecrübesini paylaşmak istiyor.',
     optionA: { label: 'DİNLE', description: 'Takım toplantısı · Moral +30' },
-    optionB: { label: 'ANTRENMANA GEÇ', description: 'Kısa teşekkür · +50 puan' },
+    optionB: { label: 'ANTRENMANA GEÇ', description: 'Kısa teşekkür · +50 puan (anında)' },
   },
   {
     id: 'evt_var', category: 'ozel', icon: '📺', title: 'VAR Arızası',
@@ -83,13 +83,13 @@ export const EVENT_CARDS: EventCard[] = [
     id: 'evt_moral_boost', category: 'moral', icon: '🎤', title: 'Takım Toplantısı',
     description: 'Oyuncular bir araya geldi.',
     optionA: { label: 'MOTİVE ET', description: 'Moral +15' },
-    optionB: { label: 'ANTRENMAN', description: 'Sonraki maç +50 puan' },
+    optionB: { label: 'ANTRENMAN', description: 'Sonraki maç +50 bonus' },
   },
   {
     id: 'evt_scout', category: 'transfer', icon: '🔍', title: 'Scout Raporu',
     description: 'Scout yeni bir oyuncu öneriyor.',
     optionA: { label: 'İMZALA', description: 'Orta rating oyuncu eklenir' },
-    optionB: { label: 'BEKLE', description: 'Moral +8' },
+    optionB: { label: 'BEKLE', description: 'Alternatif isimler · +1 çek hakkı' },
   },
   {
     id: 'evt_yildiz_sozlesme', category: 'transfer', icon: '📝', title: 'Yıldız Sözleşmesi',
@@ -101,7 +101,7 @@ export const EVENT_CARDS: EventCard[] = [
     id: 'evt_diger_kulup', category: 'transfer', icon: '👀', title: 'Gizli Gözlem',
     description: 'Rakip kulüp kadronu izliyor.',
     optionA: { label: 'SAT', description: 'En zayıf oyuncu gider' },
-    optionB: { label: 'KORU', description: 'Moral +10' },
+    optionB: { label: 'KORU', description: 'Oyuncu ikna edilir · Sonraki maç +55' },
   },
   {
     id: 'evt_acemi_hata', category: 'transfer', icon: '😬', title: 'Acemi Hatası',
@@ -131,7 +131,7 @@ export const EVENT_CARDS: EventCard[] = [
     id: 'evt_menajer_krizi', category: 'transfer', icon: '🤝', title: 'Menajer Krizi',
     description: 'Menajer başka kulübe transfer baskısı yapıyor.',
     optionA: { label: 'AYIR', description: 'Oyuncu gider' },
-    optionB: { label: 'TUT', description: 'Moral +8' },
+    optionB: { label: 'TUT', description: 'Kriz lehe döner · +70 puan' },
   },
   {
     id: 'evt_antrenman_camp', category: 'taktik', icon: '⛺', title: 'Kamp Haftası',
@@ -142,7 +142,7 @@ export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_kaleci_hata', category: 'taktik', icon: '🧤', title: 'Kaleci Hatası',
     description: 'Kaleci son antrenmanda kritik hata yaptı.',
-    optionA: { label: 'ELEŞTİR', description: 'Moral -12' },
+    optionA: { label: 'ELEŞTİR', description: 'Moral -12 · KL rating -4 (1 maç)' },
     optionB: { label: 'DESTEKLE', description: 'Sonraki maç +60 bonus' },
   },
   {
@@ -160,31 +160,31 @@ export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_yagmur', category: 'taktik', icon: '🌧️', title: 'Yağmur Uyarısı',
     description: 'Maç yağmurda oynanacak.',
-    optionA: { label: 'FİZİKSEL', description: 'GÜÇLÜ/HIZLI bonus' },
-    optionB: { label: 'TEKNİK', description: 'TEKNİK bonus' },
+    optionA: { label: 'FİZİKSEL', description: 'GÜÇLÜ/HIZLI oyuncu başına bonus' },
+    optionB: { label: 'TEKNİK', description: 'TEKNİK oyuncu başına bonus' },
   },
   {
     id: 'evt_ofsayt', category: 'taktik', icon: '🚩', title: 'Ofsayt Tuzağı',
     description: 'Rakip ofsayt tuzağı kuruyor.',
-    optionA: { label: 'HAZIRLAN', description: 'Sonraki maç +55 bonus' },
+    optionA: { label: 'HIZLILARLA DEL', description: 'HIZLI oyuncu başına bonus' },
     optionB: { label: 'NORMAL', description: 'Moral +4' },
   },
   {
     id: 'evt_kontratak', category: 'taktik', icon: '⚡', title: 'Kontra Antrenmanı',
     description: 'Hızlı çıkışlar üzerine çalışılacak.',
-    optionA: { label: 'AGRESİF', description: 'Risk + ödül +95 bonus' },
+    optionA: { label: 'AGRESİF', description: 'Sonraki maç +100 · orta risk' },
     optionB: { label: 'DENGELİ', description: 'Moral +7' },
   },
   {
     id: 'evt_kirmizi_forma', category: 'taktik', icon: '🟥', title: 'Agresif Plan',
     description: 'Sert oyun planı tartışılıyor.',
-    optionA: { label: 'SERT OYNA', description: 'Risk · +70 bonus' },
+    optionA: { label: 'SERT OYNA', description: 'Sonraki maç +75 · risk' },
     optionB: { label: 'DİSİPLİN', description: 'Moral +6' },
   },
   {
     id: 'evt_sicak_hava', category: 'fiziksel', icon: '☀️', title: 'Sıcak Hava',
     description: '40°C sıcaklık uyarısı var.',
-    optionA: { label: 'TEMPO', description: 'Yüksek tempo riski' },
+    optionA: { label: 'TEMPO', description: 'Sonraki maç +35 · hafif risk' },
     optionB: { label: 'YAVAŞ', description: 'Moral +6' },
   },
   {
@@ -203,7 +203,7 @@ export const EVENT_CARDS: EventCard[] = [
     id: 'evt_doktor', category: 'fiziksel', icon: '🏥', title: 'Sağlık Kontrolü',
     description: 'Takım doktoru tam kontrol istiyor.',
     optionA: { label: 'KONTROL', description: 'Moral +8' },
-    optionB: { label: 'ATLA', description: 'Acele dönüş riski' },
+    optionB: { label: 'ATLA', description: 'Sonraki maç +25 · düşük risk' },
   },
   {
     id: 'evt_fizyoterapist', category: 'fiziksel', icon: '💆', title: 'Fizyoterapi',
@@ -226,13 +226,13 @@ export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_derbi', category: 'moral', icon: '🔥', title: 'Derbi Haftası',
     description: 'Şehir derbisi yaklaşıyor.',
-    optionA: { label: 'ATEŞLE', description: 'Risk · +120 bonus' },
+    optionA: { label: 'ATEŞLE', description: 'Sonraki maç +110 · orta risk' },
     optionB: { label: 'SAKİN', description: 'Moral +8' },
   },
   {
     id: 'evt_social_media', category: 'moral', icon: '📱', title: 'Sosyal Medya',
     description: 'Taraftarlar sosyal medyada baskı yapıyor.',
-    optionA: { label: 'SESSİZ', description: 'Odak korundu' },
+    optionA: { label: 'SESSİZ', description: 'Odak korundu · +25 puan' },
     optionB: { label: 'YANITLA', description: 'Moral +15' },
   },
   {
@@ -304,13 +304,13 @@ export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_eksik_kadro', category: 'ozel', icon: '⚠️', title: 'Eksik Kadro',
     description: 'Birden fazla oyuncu cezalı/sakat.',
-    optionA: { label: 'RİSKE GİR', description: 'Maç kaybı riski +25%' },
+    optionA: { label: 'RİSKE GİR', description: 'Sonraki maç +45 · kayıp riski %20' },
     optionB: { label: 'TRANSFER', description: 'Acil oyuncu eklenir' },
   },
   {
     id: 'evt_uzatma', category: 'ozel', icon: '⏱️', title: 'Uzatma Hazırlığı',
     description: 'Kupada uzatma ihtimali yüksek.',
-    optionA: { label: 'HAZIRLAN', description: 'Risk · +85 bonus' },
+    optionA: { label: 'HAZIRLAN', description: 'Sonraki maç +90 · orta risk' },
     optionB: { label: 'NORMAL', description: 'Moral +5' },
   },
   {
@@ -322,24 +322,24 @@ export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_sampiyonluk_baskisi', category: 'ozel', icon: '👑', title: 'Şampiyonluk Baskısı',
     description: 'Basın şampiyonluk konuşmaya başladı.',
-    optionA: { label: 'BASKI', description: 'Büyük risk · +150 bonus' },
+    optionA: { label: 'BASKI', description: 'Sonraki maç +125 · yüksek risk' },
     optionB: { label: 'SAKİN', description: 'Moral +10' },
   },
   {
     id: 'evt_tesis', category: 'ozel', icon: '🏟️', title: 'Yeni Tesis',
     description: 'Kulüp antrenman tesisini yeniledi.',
     optionA: { label: 'KUTLA', description: 'Moral +12' },
-    optionB: { label: 'ANTRENMAN', description: '+100 puan' },
+    optionB: { label: 'KONDİSYON', description: 'Bir oyuncu DAYANIKLI olur · +60 puan' },
   },
   {
     id: 'evt_legend_ziyaret', category: 'ozel', icon: '⭐', title: 'Efsane Ziyareti',
     description: 'Kulüp efsanesi antrenmana geldi.',
-    optionA: { label: 'DİNLE', description: 'Moral +25' },
+    optionA: { label: 'DİNLE', description: 'Bir oyuncu MENTOR olur · Moral +18' },
     optionB: { label: 'ODAK', description: '+80 puan' },
   },
 ];
 
-export const EVENT_ROUNDS = [4, 8, 12] as const;
+export const EVENT_ROUNDS = [4, 8, 11, 14] as const;
 
 export function isEventRound(round: number): boolean {
   return EVENT_ROUNDS.includes(round as (typeof EVENT_ROUNDS)[number]);

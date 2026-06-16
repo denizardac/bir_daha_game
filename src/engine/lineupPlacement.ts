@@ -28,7 +28,15 @@ export function slotAcceptsPlayerForPlacement(player: PlayerCard, slot: Placemen
   if (player.position === 'KL') return slot.zone === 'kaleci';
   if (slot.zone === 'kaleci') return false;
   const slotRole = slot.preferred[0];
-  if (!slotRole || !playerPlaysPosition(player, slotRole)) return false;
+  if (!slotRole) return false;
+  // Kabul: oyuncu slotun birincil rolünü oynayabiliyor, VEYA kendi doğal mevkisi
+  // slotun preferred listesinde açıkça yer alıyor (çoklu-rollü kanat slotları:
+  // 3-5-2'de SLK slotu ['SLB','SLK','SÖK'] gibi — saf SLK/SÖK oyuncusu kabul edilmeli).
+  // Tek başına preferred[0]'a güvenmek bu kanat oyuncularını yanlışça reddediyordu;
+  // tüm listeye güvenmek ise DOS→OOS→kanat gibi 2 sıçramalı sapmalara izin veriyordu.
+  if (!playerPlaysPosition(player, slotRole) && !slot.preferred.includes(player.position)) {
+    return false;
+  }
   return slotFitIndex(player, slot.preferred) < 99;
 }
 

@@ -1,6 +1,7 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { HoverTip } from '@/components/HoverTip';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { getPlayablePositions } from '@/data/positionFlexibility';
 import { TAG_ICONS } from '@/data/tags';
 import { getBenchExplanations, getSquadLineupSummary } from '@/engine/lineupPreview';
@@ -194,15 +195,8 @@ export function LineupPreviewModal({
 }: Props & { open: boolean; onClose: () => void }) {
   const summary = getSquadLineupSummary(squad, activeTactics);
   const modalStyle = useCenterModalStyle(open);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, open, onClose);
 
   if (!open) return null;
 
@@ -210,9 +204,11 @@ export function LineupPreviewModal({
     <>
       <div className="lineup-preview-backdrop" onClick={onClose} aria-hidden />
       <div
+        ref={modalRef}
         className="lineup-preview-popover lineup-preview-popover--center lineup-preview-popover--hero lineup-preview-popover--v2"
         style={modalStyle}
         role="dialog"
+        aria-modal="true"
         aria-label="Diziliş önizlemesi"
       >
         <div className="lineup-preview-popover-head lineup-preview-popover-head--v2">

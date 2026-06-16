@@ -37,14 +37,53 @@ const FORMATIONS: Record<string, FormationDot[]> = {
     { x: 22, y: 36 }, { x: 50, y: 32 }, { x: 78, y: 36 },
     { x: 50, y: 16 },
   ],
+  '343': [
+    { x: 50, y: 90, role: 'gk' },
+    { x: 28, y: 72 }, { x: 50, y: 72 }, { x: 72, y: 72 },
+    { x: 12, y: 50 }, { x: 38, y: 52 }, { x: 62, y: 52 }, { x: 88, y: 50 },
+    { x: 25, y: 22 }, { x: 50, y: 18 }, { x: 75, y: 22 },
+  ],
+  'diamond': [
+    { x: 50, y: 90, role: 'gk' },
+    { x: 16, y: 72 }, { x: 38, y: 72 }, { x: 62, y: 72 }, { x: 84, y: 72 },
+    { x: 50, y: 58 },
+    { x: 32, y: 44 }, { x: 68, y: 44 },
+    { x: 50, y: 30 },
+    { x: 38, y: 14 }, { x: 62, y: 14 },
+  ],
+  '4411': [
+    { x: 50, y: 90, role: 'gk' },
+    { x: 18, y: 72 }, { x: 38, y: 72 }, { x: 62, y: 72 }, { x: 82, y: 72 },
+    { x: 16, y: 50 }, { x: 40, y: 50 }, { x: 60, y: 50 }, { x: 84, y: 50 },
+    { x: 50, y: 30 },
+    { x: 50, y: 14 },
+  ],
+  '3412': [
+    { x: 50, y: 90, role: 'gk' },
+    { x: 30, y: 74 }, { x: 50, y: 74 }, { x: 70, y: 74 },
+    { x: 12, y: 52 }, { x: 40, y: 52 }, { x: 60, y: 52 }, { x: 88, y: 52 },
+    { x: 50, y: 32 },
+    { x: 38, y: 14 }, { x: 62, y: 14 },
+  ],
+  '451': [
+    { x: 50, y: 90, role: 'gk' },
+    { x: 18, y: 72 }, { x: 38, y: 72 }, { x: 62, y: 72 }, { x: 82, y: 72 },
+    { x: 14, y: 48 }, { x: 33, y: 50 }, { x: 50, y: 48 }, { x: 67, y: 50 }, { x: 86, y: 48 },
+    { x: 50, y: 20 },
+  ],
 };
 
 export function getFormationKey(id: string): string | null {
+  if (id.includes('4231')) return '4231';
+  if (id.includes('4411')) return '4411';
+  if (id.includes('3412')) return '3412';
+  if (id.includes('451')) return '451';
   if (id.includes('442')) return '442';
   if (id.includes('433')) return '433';
   if (id.includes('352')) return '352';
   if (id.includes('532')) return '532';
-  if (id.includes('4231')) return '4231';
+  if (id.includes('343')) return '343';
+  if (id.includes('diamond')) return 'diamond';
   return null;
 }
 
@@ -57,7 +96,7 @@ export function getFormationDotsByKey(key: string): FormationDot[] | null {
   return FORMATIONS[key] ?? null;
 }
 
-if (import.meta.env.DEV) {
+if (import.meta.env?.DEV) {
   for (const key of Object.keys(FORMATIONS)) {
     const dots = FORMATIONS[key]?.length ?? 0;
     const slots = FORMATION_SLOT_COUNTS[key] ?? 0;

@@ -41,12 +41,12 @@ type SubmitBody = {
   weekKey: string;
 };
 
-async function computeDigest(
+function canonicalPayload(
   seed: string,
   roundHistory: SubmitBody['roundHistory'],
   totalScore: number,
   roundsCompleted: number,
-): Promise<string> {
+): string {
   const picks: RoundPick[] = roundHistory.map((r) => ({
     round: r.round,
     cardId: r.cardSelected?.id ?? '',
@@ -58,11 +58,37 @@ async function computeDigest(
     isTacticBonus: r.isTacticBonus ?? false,
     eventChoice: r.eventChoice ?? null,
   }));
+  return JSON.stringify({ seed, totalScore, roundsCompleted, picks });
+}
 
-  const payload = JSON.stringify({ seed, totalScore, roundsCompleted, picks });
-  const data = new TextEncoder().encode(payload);
+/** İstemciyle aynı algoritma — yalnızca taşıma bütünlüğü kontrolü (gizli anahtar yok) */
+async function computeDigest(
+  seed: string,
+  roundHistory: SubmitBody['roundHistory'],
+  totalScore: number,
+  roundsCompleted: number,
+): Promise<string> {
+  const data = new TextEncoder().encode(canonicalPayload(seed, roundHistory, totalScore, roundsCompleted));
   const hash = await crypto.subtle.digest('SHA-256', data);
   return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+
+/**
+ * Sunucuya özel gizli anahtarla HMAC-SHA256 imzası. Anahtar yalnızca sunucuda (env)
+ * bulunduğu için istemci bu imzayı üretemez → depolanan kayıt sahteci tarafından
+ * taklit edilemez ve sunucu kendi kayıtlarını sonradan doğrulayabilir.
+ * Not: Tam hile koruması için sunucunun run'ı seed'den yeniden simüle etmesi gerekir (kapsam dışı).
+ */
+async function computeHmacSignature(payload: string, secret: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 function validate(body: SubmitBody): string | null {
@@ -90,13 +116,25 @@ function validate(body: SubmitBody): string | null {
   return null;
 }
 
+// ALLOWED_ORIGIN env ayarlıysa yalnızca o origin'e izin ver; yoksa '*' (geriye dönük uyumlu).
+const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
+const CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Vary': 'Origin',
+};
+const JSON_HEADERS = { 'Content-Type': 'application/json', ...CORS_HEADERS };
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ ok: false, error: 'Yalnızca POST' }), {
+      status: 405,
+      headers: JSON_HEADERS,
     });
   }
 
@@ -106,7 +144,7 @@ Deno.serve(async (req) => {
     if (err) {
       return new Response(JSON.stringify({ ok: false, error: err }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        headers: JSON_HEADERS,
       });
     }
 
@@ -120,9 +158,18 @@ Deno.serve(async (req) => {
     if (expectedDigest !== body.digest) {
       return new Response(JSON.stringify({ ok: false, error: 'Digest doğrulanamadı' }), {
         status: 403,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        headers: JSON_HEADERS,
       });
     }
+
+    // Sunucuya özel HMAC imzası — depolanan kaydı istemci taklit edemez.
+    const hmacSecret = Deno.env.get('LEADERBOARD_HMAC_SECRET');
+    const storedSignature = hmacSecret
+      ? await computeHmacSignature(
+          canonicalPayload(body.entry.seed, body.roundHistory, body.entry.totalScore, body.entry.roundsCompleted),
+          hmacSecret,
+        )
+      : body.digest;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -139,7 +186,7 @@ Deno.serve(async (req) => {
 
     if (existing && existing.total_score >= body.entry.totalScore) {
       return new Response(JSON.stringify({ ok: true, skipped: true, reason: 'Mevcut skor daha yüksek' }), {
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        headers: JSON_HEADERS,
       });
     }
 
@@ -154,7 +201,7 @@ Deno.serve(async (req) => {
         is_daily: Boolean(body.isDaily),
         day_key: body.dayKey,
         week_key: body.weekKey,
-        integrity_digest: body.digest,
+        integrity_digest: storedSignature,
         round_count: body.roundHistory.length,
         client_version: body.clientVersion ?? 'unknown',
         submitted_at: new Date().toISOString(),
@@ -165,18 +212,18 @@ Deno.serve(async (req) => {
     if (upsertError) {
       return new Response(JSON.stringify({ ok: false, error: upsertError.message }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        headers: JSON_HEADERS,
       });
     }
 
     return new Response(JSON.stringify({ ok: true }), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: JSON_HEADERS,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Bilinmeyen hata';
     return new Response(JSON.stringify({ ok: false, error: message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: JSON_HEADERS,
     });
   }
 });

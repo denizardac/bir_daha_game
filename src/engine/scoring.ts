@@ -68,16 +68,20 @@ export function calculateRoundPoints(
   points = Math.floor(points * mult);
 
   if (round === 1 && match.outcome === 'win') points += 200;
-  if (round === 15) points += FINALE_MATCH_BONUS;
-  if (round === 15 && lossesCount === 0) points += 2000;
+  // Final (round 15) bonusları yalnızca ŞAMPİYONLUK (galibiyet) ile verilir — beraberlik şampiyonluk değildir
+  if (round === 15 && match.outcome === 'win') points += FINALE_MATCH_BONUS;
+  if (round === 15 && match.outcome === 'win' && lossesCount === 0) points += 2000;
   if (scoringSquad.length <= 4 && match.outcome === 'win') points += 800;
   for (const id of match.newlyDiscoveredSynergies) {
     points += 200;
     void id;
   }
 
+  // SİNERJİ FIRTINASI — 3+ aktif sinerji (matchSimulation highlight'ı ile birebir, düz +150)
+  if (match.activeSynergies.length >= 3) points += 150;
+
   points += timerSecondsLeft * 5;
-  if (round === 15 && flawless && lossesCount === 0) points += 2000;
+  if (round === 15 && match.outcome === 'win' && flawless && lossesCount === 0) points += 2000;
 
   return Math.max(0, Math.floor(points));
 }

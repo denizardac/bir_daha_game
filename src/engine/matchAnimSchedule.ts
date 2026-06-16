@@ -36,8 +36,10 @@ export function buildMatchAnimSchedule(
   onUpdate: (partial: Partial<MatchAnimState>) => void,
   onGoalSound: () => void,
   onWhistleSound: () => void,
+  speed = 1,
 ): ReturnType<typeof setTimeout>[] {
   const timers: ReturnType<typeof setTimeout>[] = [];
+  const spd = speed > 0 ? speed : 1;
   let t = KICKOFF_DELAY;
   let gf = 0;
   let ga = 0;
@@ -46,7 +48,7 @@ export function buildMatchAnimSchedule(
   const feed: MatchEvent[] = [];
 
   const schedule = (delay: number, fn: () => void) => {
-    timers.push(setTimeout(fn, delay));
+    timers.push(setTimeout(fn, delay / spd));
   };
 
   schedule(0, () => {

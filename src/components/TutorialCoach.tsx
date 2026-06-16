@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { savePartial, loadPersisted } from '@/utils/storage';
 import { useGameStore } from '@/store/gameStore';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 const STEPS = [
   {
@@ -25,7 +26,7 @@ const STEPS = [
     round: 4,
     phase: 'event' as const,
     title: 'Olay kartı — iki seçenek',
-    body: 'Round 4, 8 ve 12\'de olay gelir. İkisi de geçerli; kadro ve moraline göre seç. Maç oynanmaz.',
+    body: 'Round 4, 8, 11 ve 14\'te olay gelir. İkisi de geçerli; kadro ve moraline göre seç. Maç oynanmaz.',
     highlight: 'A veya B seçeneğine tıkla.',
   },
 ];
@@ -36,16 +37,20 @@ export function TutorialCoach() {
   const isFirstRun = useGameStore((s) => s.isFirstRun);
   const persisted = loadPersisted();
   const [dismissedSteps, setDismissedSteps] = useState<Set<string>>(() => new Set());
-
-  if (!isFirstRun || persisted.tutorialCompleted) return null;
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const step = STEPS.find((s) => s.round === round && s.phase === phase);
-  if (!step || dismissedSteps.has(step.id)) return null;
+  const visible = isFirstRun && !persisted.tutorialCompleted && !!step && !dismissedSteps.has(step.id);
 
   const dismiss = () => {
+    if (!step) return;
     setDismissedSteps((prev) => new Set(prev).add(step.id));
     if (round >= 4) savePartial({ tutorialCompleted: true, isFirstRun: false });
   };
+
+  useFocusTrap(modalRef, visible, dismiss);
+
+  if (!visible || !step) return null;
 
   return (
     <AnimatePresence>
@@ -58,11 +63,13 @@ export function TutorialCoach() {
         aria-hidden
       />
       <motion.div
+        ref={modalRef}
         className="tutorial-coach"
         initial={{ opacity: 0, y: 20, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12 }}
         role="dialog"
+        aria-modal="true"
         aria-label="Öğretici"
         onClick={(e) => e.stopPropagation()}
       >

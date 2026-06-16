@@ -8,6 +8,9 @@ type PlayerTemplate = {
   position: Position;
   rarity: Rarity;
   tags: Tag[];
+  signature?: boolean;
+  signatureColor?: string;
+  signatureQuote?: string;
 };
 
 function makePlayer(template: PlayerTemplate, id: string, isStarter = false): PlayerCard {
@@ -25,6 +28,9 @@ function makePlayer(template: PlayerTemplate, id: string, isStarter = false): Pl
     tags: template.tags,
     potentialCeiling: ceiling,
     isStarter,
+    ...(template.signature ? { signature: true } : {}),
+    ...(template.signatureColor ? { signatureColor: template.signatureColor } : {}),
+    ...(template.signatureQuote ? { signatureQuote: template.signatureQuote } : {}),
   };
 }
 
@@ -33,7 +39,7 @@ const POOL: PlayerTemplate[] = [
   { name: 'Emre Yıldız', rating: 62, position: 'KL', rarity: 'normal', tags: [] },
   { name: 'Can Arslan', rating: 71, position: 'KL', rarity: 'iyi', tags: ['DAYANIKLI'] },
   { name: 'Marcus Silva', rating: 84, position: 'KL', rarity: 'güçlü', tags: ['DAYANIKLI'] },
-  { name: 'Oğuz Demir', rating: 88, position: 'KL', rarity: 'efsane', tags: ['DAYANIKLI', 'PENALTI'] },
+  { name: 'Oğuz Demir', rating: 88, position: 'KL', rarity: 'efsane', tags: ['DAYANIKLI', 'PENALTI'], signature: true, signatureColor: '#f59e0b', signatureQuote: 'Bu kale benim evim — kimse içeri giremez.' },
   { name: 'Fırat Güneş', rating: 73, position: 'KL', rarity: 'iyi', tags: ['SERBEST VURUŞ'] },
 
   // Stoper
@@ -77,7 +83,7 @@ const POOL: PlayerTemplate[] = [
   { name: 'Isaac Mensah', rating: 75, position: 'SF', rarity: 'iyi', tags: ['POTANSİYEL', 'HIZLI'] },
   { name: 'Murat Eren', rating: 79, position: 'SF', rarity: 'iyi', tags: ['FİNİŞÖR', 'YERLİ'] },
   { name: 'Victor Kane', rating: 86, position: 'SF', rarity: 'güçlü', tags: ['FİNİŞÖR', 'GÜÇLÜ'] },
-  { name: 'Enes Yıldırım', rating: 90, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'HIZLI'] },
+  { name: 'Enes Yıldırım', rating: 90, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'HIZLI'], signature: true, signatureColor: '#ef4444', signatureQuote: 'Kale gördüğüm an gerisi içgüdü.' },
 
   // Yerli gençler
   { name: 'Umut Sarı', rating: 64, position: 'OS', rarity: 'normal', tags: ['YERLİ', 'POTANSİYEL'] },
@@ -102,15 +108,15 @@ const POOL: PlayerTemplate[] = [
   { name: 'Wind Çakır', rating: 75, position: 'SLK', rarity: 'iyi', tags: ['HIZLI'] },
 
   // Efsane
-  { name: 'Legend Petrović', rating: 91, position: 'OS', rarity: 'efsane', tags: ['TEKNİK', 'LİDER'] },
-  { name: 'Star Nakamura', rating: 89, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'TEKNİK'] },
+  { name: 'Legend Petrović', rating: 91, position: 'OS', rarity: 'efsane', tags: ['TEKNİK', 'LİDER'], signature: true, signatureColor: '#22d3ee', signatureQuote: 'Oyunu okurum; koşmama gerek kalmaz.' },
+  { name: 'Star Nakamura', rating: 89, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'TEKNİK'], signature: true, signatureColor: '#e879f9', signatureQuote: 'Sahne benim, ışıkları açın.' },
 
   // Ofansif orta saha
   { name: 'Kaan Öztürk', rating: 66, position: 'OOS', rarity: 'normal', tags: ['TEKNİK'] },
   { name: 'Bruno Santos', rating: 75, position: 'OOS', rarity: 'iyi', tags: ['TEKNİK', 'ASİSTÇİ'] },
   { name: 'Yiğit Arslan', rating: 78, position: 'OOS', rarity: 'iyi', tags: ['YERLİ', 'HIZLI'] },
   { name: 'Nico Berg', rating: 84, position: 'OOS', rarity: 'güçlü', tags: ['FİNİŞÖR', 'TEKNİK'] },
-  { name: 'Maestro Silva', rating: 88, position: 'OOS', rarity: 'efsane', tags: ['TEKNİK', 'ASİSTÇİ'] },
+  { name: 'Maestro Silva', rating: 88, position: 'OOS', rarity: 'efsane', tags: ['TEKNİK', 'ASİSTÇİ'], signature: true, signatureColor: '#a855f7', signatureQuote: 'Pas bir cümledir; ben şiir yazarım.' },
 
   // Bekler
   { name: 'Serkan Yıldız', rating: 64, position: 'SLB', rarity: 'normal', tags: ['YERLİ'] },
@@ -130,6 +136,53 @@ const POOL: PlayerTemplate[] = [
   { name: 'Volkan Kart', rating: 73, position: 'DOS', rarity: 'iyi', tags: ['KIRMIZI KART', 'SAVAŞÇI'] },
   { name: 'Murat Risk', rating: 77, position: 'SF', rarity: 'iyi', tags: ['SAKATLIK RİSKİ', 'FİNİŞÖR'] },
   { name: 'Selim Soğuk', rating: 72, position: 'KL', rarity: 'iyi', tags: ['SOĞUKKANLI', 'DAYANIKLI'] },
+
+  // --- Genişletme kadrosu (v2) — havuz çeşitliliği + eksik tag/mevki doldurma ---
+  // Kaleci
+  { name: 'Berkay Aslan', rating: 80, position: 'KL', rarity: 'güçlü', tags: ['DAYANIKLI', 'LİDER'] },
+  { name: 'Diallo Konaté', rating: 87, position: 'KL', rarity: 'efsane', tags: ['DAYANIKLI', 'SOĞUKKANLI'] },
+  // Stoper
+  { name: 'Nuri Şen', rating: 76, position: 'STP', rarity: 'iyi', tags: ['GÜÇLÜ', 'DAYANIKLI'] },
+  { name: 'Viktor Novak', rating: 88, position: 'STP', rarity: 'efsane', tags: ['GÜÇLÜ', 'LİDER', 'KAPİTAN'], signature: true, signatureColor: '#38bdf8', signatureQuote: 'Arkamdan geçmek? Önce benden geç.' },
+  { name: 'Emir Toprak', rating: 67, position: 'STP', rarity: 'normal', tags: ['SAVAŞÇI'] },
+  // Bekler
+  { name: 'Caner Yıldız', rating: 78, position: 'SLB', rarity: 'iyi', tags: ['HIZLI', 'DAYANIKLI'] },
+  { name: 'Bruno Reis', rating: 83, position: 'SLB', rarity: 'güçlü', tags: ['HIZLI', 'ASİSTÇİ'] },
+  { name: 'Doğan Acar', rating: 75, position: 'SÖB', rarity: 'iyi', tags: ['GÜÇLÜ', 'YERLİ'] },
+  { name: 'Mason Hill', rating: 82, position: 'SÖB', rarity: 'güçlü', tags: ['HIZLI', 'TEKNİK'] },
+  // Defansif orta saha
+  { name: 'Sergio Bravo', rating: 85, position: 'DOS', rarity: 'güçlü', tags: ['GÜÇLÜ', 'LİDER'] },
+  { name: 'Tarık Demir', rating: 70, position: 'DOS', rarity: 'iyi', tags: ['SAVAŞÇI', 'YERLİ'] },
+  // Orta saha
+  { name: 'Andrea Pirloni', rating: 89, position: 'OS', rarity: 'efsane', tags: ['TEKNİK', 'ASİSTÇİ', 'SOYUNMA ODASI'] },
+  { name: 'Kenan Ural', rating: 73, position: 'OS', rarity: 'iyi', tags: ['TEKNİK', 'YENİ SEZON'] },
+  // Ofansif orta saha
+  { name: 'Reza Karimi', rating: 81, position: 'OOS', rarity: 'güçlü', tags: ['TEKNİK', 'HIZLI'] },
+  { name: 'Metehan Can', rating: 69, position: 'OOS', rarity: 'normal', tags: ['YERLİ', 'POTANSİYEL'] },
+  // Kanatlar
+  { name: 'Diego Luz', rating: 87, position: 'SLK', rarity: 'efsane', tags: ['HIZLI', 'FİNİŞÖR', 'ASİSTÇİ'], signature: true, signatureColor: '#f97316', signatureQuote: 'Kanat benim otobanım — limit yok.' },
+  { name: 'Berkan Yel', rating: 71, position: 'SLK', rarity: 'iyi', tags: ['HIZLI', 'YERLİ'] },
+  { name: 'Kwame Asante', rating: 84, position: 'SÖK', rarity: 'güçlü', tags: ['HIZLI', 'FİNİŞÖR'] },
+  { name: 'Sefa Ok', rating: 66, position: 'SÖK', rarity: 'normal', tags: ['HIZLI', 'YENİ SEZON'] },
+  // Forvet
+  { name: 'Mauro Bianchi', rating: 88, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'SOĞUKKANLI', 'PENALTI'], signature: true, signatureColor: '#fbbf24', signatureQuote: 'Penaltı mı? O zaten gol demek.' },
+  { name: 'Cenk Yaman', rating: 77, position: 'SF', rarity: 'iyi', tags: ['FİNİŞÖR', 'YERLİ'] },
+  { name: 'Goran Petrović', rating: 82, position: 'SF', rarity: 'güçlü', tags: ['FİNİŞÖR', 'GÜÇLÜ'] },
+  { name: 'Yiğithan Er', rating: 65, position: 'SF', rarity: 'normal', tags: ['POTANSİYEL', 'YERLİ'] },
+  { name: 'Lukas Brandt', rating: 79, position: 'SF', rarity: 'iyi', tags: ['FİNİŞÖR', 'DAYANIKLI'] },
+
+  // --- Anahtar tag dengesi (v3) — KAPİTAN / SOYUNMA ODASI / SERBEST VURUŞ / PENALTI havuzunu doldur ---
+  // KAPİTAN (artık 5 oyuncu): Onur Tekin, Viktor Novak + aşağıdakiler
+  { name: 'Tuna Reis', rating: 80, position: 'DOS', rarity: 'güçlü', tags: ['KAPİTAN', 'LİDER', 'SAVAŞÇI'] },
+  { name: 'Çağan Yüce', rating: 78, position: 'OS', rarity: 'iyi', tags: ['KAPİTAN', 'SOYUNMA ODASI'] },
+  { name: 'Eren Soylu', rating: 83, position: 'STP', rarity: 'güçlü', tags: ['KAPİTAN', 'GÜÇLÜ', 'SOYUNMA ODASI'] },
+  // SOYUNMA ODASI (artık 5): İbrahim Koç, Andrea Pirloni + Çağan, Eren + Murat
+  { name: 'Murat Aksu', rating: 75, position: 'SÖB', rarity: 'iyi', tags: ['SOYUNMA ODASI', 'MENTOR'] },
+  // SERBEST VURUŞ (artık 5): Fırat Güneş, Antoine Dubois, Pedro Alves + Sancar, Bora
+  { name: 'Sancar Ok', rating: 79, position: 'OOS', rarity: 'iyi', tags: ['SERBEST VURUŞ', 'TEKNİK'] },
+  { name: 'Bora Şahin', rating: 81, position: 'SF', rarity: 'güçlü', tags: ['SERBEST VURUŞ', 'PENALTI', 'FİNİŞÖR'] },
+  // PENALTI (artık 5): Oğuz Demir, Pedro Alves, Mauro Bianchi + Bora + Kayra
+  { name: 'Kayra Demir', rating: 74, position: 'OOS', rarity: 'iyi', tags: ['PENALTI', 'TEKNİK'] },
 ];
 
 function hashMix(n: number, salt: number): number {
@@ -165,6 +218,29 @@ function proceduralTags(i: number, rating: number, position: Position): Tag[] {
   return pickTagsForPosition(position, rating, rng, 2);
 }
 
+/** Mevkiye göre tematik lakaplar — prosedürel kartlara kimlik kazandırır (isim tekrarını kırar) */
+const NICKNAMES_BY_ROLE: Partial<Record<Position, string[]>> = {
+  KL: ['Wall', 'Kale', 'Duvar'],
+  STP: ['Tank', 'Kaya', 'Duvar', 'Patron'],
+  SLB: ['Roket', 'Express', 'Turbo'],
+  SÖB: ['Roket', 'Express', 'Turbo'],
+  DOS: ['Süpürge', 'Motor', 'Çelik'],
+  OS: ['Maestro', 'Beyin', 'Usta'],
+  OOS: ['Sihirbaz', 'Maestro', 'No.10'],
+  SLK: ['Flash', 'Şimşek', 'Kasırga'],
+  SÖK: ['Flash', 'Şimşek', 'Kasırga'],
+  SF: ['Golcü', 'Avcı', 'Nişancı', 'Top'],
+};
+
+function pickNickname(i: number, pos: Position, rating: number): string | null {
+  const pool = NICKNAMES_BY_ROLE[pos];
+  if (!pool || !pool.length) return null;
+  // Yüksek ratingli kartlara daha sık lakap (kimlik hissi); ortalama ~%30
+  const chance = rating >= 82 ? 55 : rating >= 74 ? 35 : 22;
+  if (hashMix(i, 71) % 100 >= chance) return null;
+  return pool[hashMix(i, 89) % pool.length]!;
+}
+
 function generateExtraPlayers(): PlayerCard[] {
   const first = [
     'Emre', 'Can', 'Burak', 'Deniz', 'Kaan', 'Arda', 'Oğuz', 'Selim', 'Mert', 'Tolga',
@@ -183,9 +259,15 @@ function generateExtraPlayers(): PlayerCard[] {
     const pos = PROC_POSITIONS[i % PROC_POSITIONS.length]!;
     const fi = hashMix(i, 3) % first.length;
     const li = (hashMix(i, 7) + Math.floor(i / first.length)) % last.length;
-    const suffix = hashMix(i, 59) % 100 < 12 ? ` ${String.fromCharCode(65 + (i % 26))}.` : '';
+    const nick = pickNickname(i, pos, rating);
+    let name = `${first[fi]} ${last[li]}`;
+    if (nick) {
+      name = `${first[fi]} "${nick}" ${last[li]}`;
+    } else if (hashMix(i, 59) % 100 < 12) {
+      name = `${name} ${String.fromCharCode(65 + (i % 26))}.`;
+    }
     out.push(makePlayer({
-      name: `${first[fi]} ${last[li]}${suffix}`,
+      name,
       rating,
       position: pos,
       rarity: rarityFromRating(rating),
@@ -201,7 +283,7 @@ export const PLAYER_POOL: PlayerCard[] = [
 ];
 
 const DAILY_START_SQUAD: PlayerTemplate[] = [
-  { name: 'Can Arslan', rating: 62, position: 'KL', rarity: 'normal', tags: [] },
+  { name: 'Cenk Arslan', rating: 62, position: 'KL', rarity: 'normal', tags: [] },
   { name: 'Burak Koç', rating: 61, position: 'STP', rarity: 'normal', tags: ['GÜÇLÜ'] },
   { name: 'Kerem Aydın', rating: 60, position: 'STP', rarity: 'normal', tags: [] },
   { name: 'Mert Çelik', rating: 63, position: 'STP', rarity: 'normal', tags: [] },

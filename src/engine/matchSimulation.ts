@@ -59,15 +59,14 @@ function squadStrength(
   tactics: ActiveTactic[],
   synergies: ReturnType<typeof getActiveSynergies>,
 ): number {
+  // Taktik-nötr takım gücü: taktik çarpanları attackPower/defensePower'da uygulanır
+  // (aksi halde hücum taktiği hem burada hem attackPower'da uygulanıp karelenirdi).
   const avg = squad.reduce((sum, p) => sum + effectivePlayerRating(p), 0) / Math.max(squad.length, 1);
   const fill = lineupFillFactor(squad.length, round);
   const moraleFactor = 0.75 + (morale / 100) * 0.4 + moraleStabilityBonus(squad, morale);
-  const attackTactic = tacticAttackMultiplier(tactics);
-  const defenseTactic = tacticDefenseMultiplier(tactics);
-  const tacticMod = attackTactic * Math.max(0.55, defenseTactic);
   const ratingMult = synergyRatingMultiplier(synergies);
   const positionFit = positionFitMultiplier(squad, tactics);
-  return avg * fill * moraleFactor * tacticMod * ratingMult * positionFit;
+  return avg * fill * moraleFactor * ratingMult * positionFit;
 }
 
 function tekForvetMultiplier(squad: PlayerCard[], tactics: ActiveTactic[]): number {
@@ -214,7 +213,7 @@ export function simulateMatch(
     }
   }
   if (cleanSheet && outcome === 'win') highlights.push({ text: '🛡️ MÜKEMMEL SAVUNMA', points: 100 });
-  if (synergies.length >= 3) highlights.push({ text: '🌪️ SİNERJİ FIRTINASI', points: 150 });
+  if (synergies.length >= 3 && outcome !== 'loss') highlights.push({ text: '🌪️ SİNERJİ FIRTINASI', points: 150 });
 
   let wowMoment: string | undefined;
   if (opponent.rating >= 90 && outcome === 'win') wowMoment = 'ŞOKCU GALİBİYET — dev rakibi yendin!';

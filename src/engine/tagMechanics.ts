@@ -1,4 +1,4 @@
-import type { PlayerCard, Position, Tag } from '@/types';
+import type { PlayerCard, Tag } from '@/types';
 
 /** Oyuncu başına maç gücü katkıları — tooltip ile birebir */
 export const TAG_ATTACK_BONUS: Partial<Record<Tag, number>> = {
@@ -112,16 +112,4 @@ export function injuryRatingPenalty(): number {
 
 export function redCardChanceMultiplier(hasTag: boolean): number {
   return hasTag ? 2 : 1;
-}
-
-const WING_CAPABLE = new Set<Position>(['OOS', 'SLK', 'SÖK']);
-
-export function prefersWingOverCentralMid(player: PlayerCard, slotLabel: string, zone: string): boolean {
-  if (!WING_CAPABLE.has(player.position)) return false;
-  if (zone !== 'orta') return false;
-  return slotLabel === 'DOS' || slotLabel === 'OS';
-}
-
-export function isWingSlotLabel(label: string): boolean {
-  return label === 'SLK' || label === 'SĞK';
 }

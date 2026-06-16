@@ -38,12 +38,24 @@ supabase functions deploy submit-score
 
 `project-ref`: Supabase → Project Settings → General → Reference ID
 
+### Edge Function secrets (opsiyonel ama önerilir)
+
+```bash
+# Depolanan kayıtları sunucuya özel anahtarla HMAC-SHA256 imzalar (istemci taklit edemez)
+supabase secrets set LEADERBOARD_HMAC_SECRET="uzun-rastgele-bir-deger"
+
+# CORS'u yalnızca prod origin'e kısıtla (yoksa '*')
+supabase secrets set ALLOWED_ORIGIN="https://birdaha.tech"
+```
+
 ### Fonksiyon ne yapar?
 
-1. `roundHistory` puanlarını toplar → `totalScore` ile karşılaştırır (±30 tolerans)
-2. SHA-256 **digest** doğrular (client ile aynı algoritma)
-3. Round başına şüpheli puan farkını reddeder
-4. Service role ile DB’ye yazar (anon key ile yazılamaz)
+1. Yalnızca `POST` kabul eder; CORS `ALLOWED_ORIGIN` ile kısıtlanabilir
+2. `roundHistory` puanlarını toplar → `totalScore` ile karşılaştırır (±30 tolerans)
+3. SHA-256 **digest** doğrular (client ile aynı algoritma — taşıma bütünlüğü)
+4. `LEADERBOARD_HMAC_SECRET` varsa kaydı **HMAC-SHA256** ile imzalayıp saklar
+5. Round başına şüpheli puan farkını reddeder
+6. Service role ile DB’ye yazar (anon key ile yazılamaz)
 
 ---
 

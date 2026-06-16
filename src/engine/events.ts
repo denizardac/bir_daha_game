@@ -1,10 +1,9 @@
 import { EVENT_EFFECTS } from '@/data/eventEffects';
-import { EVENT_CARDS } from '@/data/events';
 import { PLAYER_POOL, clonePlayer } from '@/data/players';
 import { drawEvent as pickContextEvent, type EventDrawContext } from '@/engine/eventDraw';
 import { getStarFieldPlayer } from '@/engine/eventSubjects';
 import { createRng } from '@/engine/seed';
-import type { EventCard, GameState, PlayerCard, Position } from '@/types';
+import type { EventCard, GameState, PlayerCard, Position, Tag } from '@/types';
 
 export type { EventDrawContext } from '@/engine/eventDraw';
 export { getEventDrawWeight, isEventEligible, filterEventsForDraw } from '@/engine/eventDraw';
@@ -30,7 +29,15 @@ export interface EventOutcome {
   nextMatchBonus?: number;
   /** Bir sonraki maç için geçici rating değişimi (ör. −5) */
   tempRatingDelta?: number;
+  /** Kadro tag'lerine göre hesaplanan sonraki maç bonusu (tag-koşullu seçim) */
+  conditionalBonus?: { tags: Tag[]; perTag: number; base?: number; cap?: number };
+  /** Bir oyuncuya kalıcı tag kazandırır (benzersiz olay mekaniği) */
+  grantTag?: Tag;
   description: string;
+}
+
+function countSquadTags(squad: PlayerCard[], tags: Tag[]): number {
+  return squad.reduce((n, p) => n + (tags.some((t) => p.tags.includes(t)) ? 1 : 0), 0);
 }
 
 export function resolveEvent(
@@ -41,12 +48,26 @@ export function resolveEvent(
   const pair = EVENT_EFFECTS[event.id];
   if (pair) {
     const outcome = choice === 'A' ? { ...pair[0] } : { ...pair[1] };
+
+    // Tag-koşullu bonus → gerçek sonraki-maç bonusuna çevir (sahte seçim değil)
+    if (outcome.conditionalBonus) {
+      const { tags, perTag, base = 0, cap } = outcome.conditionalBonus;
+      const matchCount = countSquadTags(state.squad, tags);
+      let bonus = base + matchCount * perTag;
+      if (cap !== undefined) bonus = Math.min(cap, bonus);
+      outcome.nextMatchBonus = (outcome.nextMatchBonus ?? 0) + bonus;
+      const tagLabel = tags.join('/');
+      outcome.description = matchCount > 0
+        ? `${matchCount} ${tagLabel} oyuncu öne çıktı — sonraki maç +${bonus}.`
+        : `Kadroda ${tagLabel} az — sonraki maç +${bonus}.`;
+    }
+
     if (event.id === 'evt_transfer_teklif' && choice === 'A') {
       const star = getStarFieldPlayer(state.squad);
       if (star) {
         outcome.sellPlayerId = star.id;
         outcome.sellPlayerName = star.name;
-        outcome.description = `${star.name} (${star.currentRating}) satıldı — 3 ekstra çek hakkı kazandın.`;
+        outcome.description = `${star.name} (${star.currentRating}) yüksek bonservisle satıldı — +${outcome.scoreDelta} puan ve ${outcome.grantRerolls ?? 0} ekstra çek hakkı.`;
       }
     }
     return outcome;
@@ -109,5 +130,3 @@ export function createLoanPlayer(seed: string, round: number): PlayerCard {
     tags: rating >= 78 ? ['FİNİŞÖR'] : rating >= 72 ? ['TEKNİK'] : ['DAYANIKLI'],
   });
 }
-
-export const EVENT_CARD_COUNT = EVENT_CARDS.length;

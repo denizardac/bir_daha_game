@@ -8,11 +8,11 @@ export const BITE = {
   tacticIntro:
     'Taktik kartı oyuncu eklemez — formasyon veya oyun sistemi slotuna yerleşir, sonraki maçlarda aktif kalır.',
   tacticBonusIntro:
-    'Round 3, 6, 9, 15: taktik bonusu — 2 taktik + 1 antrenman, maç yok, +35 puan (Round 12 olay round\'u).',
+    'Round 3, 6, 9, 12: taktik bonusu — 2 taktik + 1 antrenman, maç yok, +35 puan.',
   synergyIntro:
     'Sinerji = kadrodaki tag/mevki kombinasyonu. Açılınca gol, galibiyet veya pasif puan bonusu verir.',
   eventIntro:
-    'Olay round\'ları: 4, 8, 12. İki seçenek sunulur; ikisi de geçerli — doğru/yanlış yok.',
+    'Olay round\'ları: 4, 8, 11, 14. İki seçenek sunulur; ikisi de geçerli — doğru/yanlış yok.',
   eventNoMatch:
     'Olay round\'unda maç oynanmaz; seçimler kadro, moral, skor ve sonraki maç gücü/riskini şekillendirir.',
   playerPick:
@@ -26,7 +26,7 @@ export const MENU_BITE_TIPS: { icon: string; title: string; text: string; menuTe
   { icon: '🏷️', title: 'Tag\'ler', text: BITE.tagsIntro, menuText: 'Kartlarda görünür — aynı tag\'ler sinerji açar.' },
   { icon: '⚡', title: 'Sinerjiler', text: BITE.synergyIntro, menuText: 'Tag/mevki kombinasyonu — maç ve puan bonusu.' },
   { icon: '📋', title: 'Taktikler', text: BITE.tacticIntro, menuText: 'Slota yerleşir, sonraki maçlarda bonus verir.' },
-  { icon: '🎭', title: 'Olaylar', text: BITE.eventIntro, menuText: 'Round 4, 8, 12 — iki seçenek, ikisi geçerli.' },
+  { icon: '🎭', title: 'Olaylar', text: BITE.eventIntro, menuText: 'Round 4, 8, 11, 14 — iki seçenek, ikisi geçerli.' },
   { icon: '📍', title: 'Mevkiler', text: BITE.positionIntro, menuText: 'Rol etiketi — aynı mevkiden birden fazla olabilir.' },
 ];
 

@@ -29,7 +29,7 @@ export const HOW_TO_STEPS: HowToStep[] = [
   {
     icon: '🏆',
     title: 'Sinerji & Olay',
-    text: 'Tag\'ler sinerji açar. Round 4, 8 ve 12\'de olay kartı — iki seçenek, ikisi geçerli.',
+    text: 'Tag\'ler sinerji açar. Round 4, 8, 11 ve 14\'te olay kartı — iki seçenek, ikisi geçerli.',
   },
 ];
 

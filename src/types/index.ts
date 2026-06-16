@@ -34,7 +34,7 @@ export type CardKind = 'player' | 'tactic';
 
 export type GamePhase = 'cardSelect' | 'match' | 'event' | 'loss' | 'runEnd';
 
-export type Screen = 'menu' | 'game' | 'synergies' | 'leaderboard' | 'hallOfFame' | 'howToPlay' | 'settings' | 'gameGuide';
+export type Screen = 'menu' | 'game' | 'synergies' | 'leaderboard' | 'hallOfFame' | 'settings' | 'gameGuide' | 'collection';
 
 export type MatchOutcome = 'win' | 'draw' | 'loss';
 
@@ -59,6 +59,12 @@ export interface PlayerCard {
   tempRatingMod?: number;
   /** Sessiz teklif yükseltmesi — oyuncu kartında gösterilir */
   offerBoosted?: boolean;
+  /** İkonik imza kartı — özel portre rengi, alıntı, koleksiyon hedefi */
+  signature?: boolean;
+  /** İmza kartı portre/rozet rengi (CSS rengi) */
+  signatureColor?: string;
+  /** İmza kartının özel sözü (kart detayında gösterilir) */
+  signatureQuote?: string;
 }
 
 export interface TacticCard {
@@ -85,7 +91,15 @@ export interface SkipCard {
   description: string;
 }
 
-export type GameCard = PlayerCard | TacticCard | TrainingCard | SkipCard;
+/** Olay kartı kararının roundHistory'de temsili (skor doğrulaması için) */
+export interface EventResultCard {
+  kind: 'event';
+  id: string;
+  name: string;
+  description: string;
+}
+
+export type GameCard = PlayerCard | TacticCard | TrainingCard | SkipCard | EventResultCard;
 
 export type MatchEventType =
   | 'goal_for'
@@ -160,12 +174,16 @@ export interface RoundResult {
   pointsEarned: number;
   eventChoice?: 'A' | 'B';
   isTacticBonus?: boolean;
+  /** Bu girdi bir olay kararına ait (maç değil) — round sayımından hariç tutulur */
+  isEvent?: boolean;
 }
 
 export interface SynergyProgress {
   current: number;
   required: number;
   icon: string;
+  /** Ek koşul ipucu (ör. "moral 80 gerekiyor", "0 yerli gerekiyor") */
+  note?: string;
 }
 
 export interface SynergyDefinition {
@@ -300,6 +318,10 @@ export interface PersistedData {
   seasonKey: string;
   hallOfFame: HallOfFameEntry[];
   seasonArchive: Record<string, HallOfFameEntry[]>;
+  /** Koleksiyon: hiç görülmüş olay id'leri */
+  seenEvents: string[];
+  /** Koleksiyon: hiç kadroya katılmış efsane kart isimleri */
+  collectedLegends: string[];
 }
 
 export const RARITY_COLORS: Record<Rarity, string> = {
@@ -330,4 +352,8 @@ export function isTrainingCard(card: GameCard): card is TrainingCard {
 
 export function isSkipCard(card: GameCard): card is SkipCard {
   return card.kind === 'skip';
+}
+
+export function isEventCard(card: GameCard): card is EventResultCard {
+  return card.kind === 'event';
 }

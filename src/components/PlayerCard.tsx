@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { formatAltPositionsBadge } from '@/data/positionFlexibility';
+import { getPlayerArchetype } from '@/data/archetypes';
 import { getPlayerCardInsight } from '@/engine/cardInsights';
 import { ReplacementPlayerTip } from '@/components/ReplacementPlayerTip';
 import { HoverTip } from '@/components/HoverTip';
@@ -57,6 +59,9 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
   const themeVars = getPlayerCardThemeVars(card.rarity, card.position);
   const themeClass = getPlayerCardThemeClass(card.rarity, card.position);
   const altPos = formatAltPositionsBadge(card.position);
+  const archetype = getPlayerArchetype(card);
+  const hasDetail = insight.positionHints.length > 0 || insight.synergies.length > 0 || insight.tacticContributions.length > 0;
+  const [showDetail, setShowDetail] = useState(false);
 
   return (
     <motion.div
@@ -78,9 +83,21 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
       whileTap={undefined}
     >
       <div className="rarity-bar player-pick-card__bar" />
+      {card.signature && (
+        <span
+          className="signature-ribbon"
+          style={card.signatureColor ? { background: card.signatureColor } : undefined}
+          title="İmza kart"
+        >
+          ✒ İMZA
+        </span>
+      )}
       <div className="player-pick-card__rarity-row">
         <span className={`player-pick-card__rarity-label rarity-badge rarity-badge--${card.rarity}`}>
           {RARITY_LABELS[card.rarity]}
+        </span>
+        <span className="archetype-badge" title={archetype.label}>
+          <span aria-hidden>{archetype.icon}</span> {archetype.label}
         </span>
         {card.offerBoosted && (
           <span className="player-pick-card__boost-badge" title="Teklif kalitesi yükseltildi">⬆ Teklif</span>
@@ -124,6 +141,12 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
               <p className="hint-flash">Aynı tag&apos;ler sinerji açar — sağ panelde ilerlemeni gör</p>
             )}
 
+            {card.signature && card.signatureQuote && (
+              <p className="signature-quote" style={card.signatureColor ? { borderColor: card.signatureColor } : undefined}>
+                “{card.signatureQuote}”
+              </p>
+            )}
+
             <div className="card-insight card-insight--player card-pick-core">
               <p className="card-insight-title">Seçersen</p>
               {insight.replacedPlayer ? (
@@ -152,8 +175,22 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
               )}
             </div>
 
-            {(insight.positionHints.length > 0 || insight.synergies.length > 0 || insight.tacticContributions.length > 0) && (
-              <div className="card-pick-extra">
+            {hasDetail && (
+              <button
+                type="button"
+                className="card-insight-toggle"
+                aria-expanded={showDetail}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDetail((v) => !v);
+                }}
+              >
+                {showDetail ? 'Detayı gizle ▲' : 'Detayı göster ▼'}
+              </button>
+            )}
+
+            {hasDetail && (
+              <div className={`card-pick-extra ${showDetail ? 'card-pick-extra--open' : 'card-pick-extra--collapsed'}`}>
                 {insight.tacticContributions.length > 0 && activeTactics.length > 0 && (
                   <div className="card-tactic-contrib-block">
                     <p className="card-insight-subtitle">Taktik katkısı</p>

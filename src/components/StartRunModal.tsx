@@ -1,4 +1,5 @@
 import { useEffect, useRef, type FormEvent } from 'react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface Props {
   open: boolean;
@@ -12,6 +13,8 @@ const MAX_NAME_LEN = 18;
 
 export function StartRunModal({ open, daily, defaultName = '', onConfirm, onCancel }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, open, onCancel);
 
   useEffect(() => {
     if (!open) return;
@@ -34,6 +37,7 @@ export function StartRunModal({ open, daily, defaultName = '', onConfirm, onCanc
   return (
     <div className="start-run-overlay" role="presentation" onClick={onCancel}>
       <div
+        ref={modalRef}
         className="start-run-modal panel"
         role="dialog"
         aria-modal="true"

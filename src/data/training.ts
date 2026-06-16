@@ -36,7 +36,7 @@ export function createTrainingCard(seed: string, round: number, rerollIndex = 0)
     kind: 'training',
     id: `training-r${round}-${rerollIndex}`,
     name: 'Özel Antrenman',
-    description: 'Kadrodan bir oyuncu seç, nitelik ekle — maç yok, +35 puan',
+    description: 'Oyuncu kartı yerine: kadrondan birine kalıcı nitelik ekle, sonra maça çık',
     offeredTags,
   };
 }

@@ -9,6 +9,9 @@ export function playSound(type: 'tick' | 'select' | 'goal' | 'win' | 'loss' | 's
   if (!enabled) return;
   try {
     const ac = getCtx();
+    // Chrome/Safari AudioContext'i kullanıcı etkileşimine kadar 'suspended' tutar.
+    // playSound bir tıklama/dokunma içinde çağrıldığından resume burada başarılı olur.
+    if (ac.state === 'suspended') void ac.resume();
     const osc = ac.createOscillator();
     const gain = ac.createGain();
     osc.connect(gain);

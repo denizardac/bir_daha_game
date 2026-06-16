@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assignPlayersByRules, type PlacementSlotDef } from '@/engine/lineupPlacement';
+import { assignSquadToFormation } from '@/engine/lineupPreview';
 import type { PlayerCard } from '@/types';
 
 const SLOTS_442: PlacementSlotDef[] = [
@@ -164,6 +165,31 @@ describe('lineupPlacement — genel kurallar', () => {
     ];
     expect(slot433(squad, 'gokhan')).toBe('DOS');
     expect(slot433(squad, 'oos')).toBe('OOS');
+  });
+
+  it('3-5-2 — saf SLK/SÖK gerçek formasyonda kanat slotuna oturur', () => {
+    // 3-5-2'de kanat slotları kanat-öncelikli ama bek de kabul eder.
+    // Saf bir kanat oyuncusu SF'ye düşmemeli, kendi kanat slotuna oturmalı (regresyon).
+    function slot352(squad: PlayerCard[], id: string) {
+      const lineup = assignSquadToFormation(squad, '352');
+      const found = lineup.find((s) => s.player?.id === id);
+      return found ? found.slot.label : null;
+    }
+    const squad = [
+      p({ id: 'kl', name: 'KL', position: 'KL', currentRating: 70, rating: 70 }),
+      p({ id: 'stp1', name: 'S1', position: 'STP', currentRating: 70, rating: 70 }),
+      p({ id: 'stp2', name: 'S2', position: 'STP', currentRating: 70, rating: 70 }),
+      p({ id: 'stp3', name: 'S3', position: 'STP', currentRating: 70, rating: 70 }),
+      p({ id: 'dos', name: 'D', position: 'DOS', currentRating: 70, rating: 70 }),
+      p({ id: 'os', name: 'O', position: 'OS', currentRating: 70, rating: 70 }),
+      p({ id: 'oos', name: 'Oo', position: 'OOS', currentRating: 70, rating: 70 }),
+      p({ id: 'sf1', name: 'F1', position: 'SF', currentRating: 70, rating: 70 }),
+      p({ id: 'sf2', name: 'F2', position: 'SF', currentRating: 70, rating: 70 }),
+      p({ id: 'slk', name: 'Sol Kanat', position: 'SLK', currentRating: 72, rating: 72 }),
+      p({ id: 'sok', name: 'Sağ Kanat', position: 'SÖK', currentRating: 72, rating: 72 }),
+    ];
+    expect(slot352(squad, 'slk')).toBe('SLK');
+    expect(slot352(squad, 'sok')).toBe('SĞK');
   });
 
   it('flexPositions boş = yalnızca ana mevki', () => {

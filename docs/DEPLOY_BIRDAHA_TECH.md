@@ -34,9 +34,12 @@ Supabase **halloldu** sayılır: tabloda skor görünüyorsa ve Leaderboard’da
 5. **Environment variables** (Production):
 
 ```
-VITE_SUPABASE_URL=https://lvqqktoxgsfconcaivyx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ... (legacy anon key — .env'deki ile aynı)
+VITE_SUPABASE_URL=https://<PROJE-REF>.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ... (anon key — .env'deki ile aynı)
 ```
+
+> Gerçek proje URL'si ve anahtarı dokümana yazma; yalnızca Cloudflare/Netlify
+> ortam değişkenlerine ve gitignore'lanmış `.env` dosyasına gir.
 
 6. **Save and Deploy** — ilk build bitsin (~2 dk)
 

@@ -49,9 +49,10 @@ export function MainMenu() {
   };
 
   const quickLinks = [
-    { icon: '📖', label: 'Oyun Rehberi', desc: 'Tag, taktik, sinerji ve mevki rehberi', screen: 'gameGuide' as const },
+    { icon: '📖', label: 'Nasıl Oynanır & Rehber', desc: 'Kurallar + tag, taktik, sinerji ve mevki rehberi', screen: 'gameGuide' as const },
+    { icon: '🗃️', label: 'Koleksiyon', desc: 'Açtığın sinerji, efsane ve olayları topla', screen: 'collection' as const },
     { icon: '🏛️', label: 'Hall of Fame', desc: 'Aylık ve tüm zamanlar rekor tablosu', screen: 'hallOfFame' as const },
-    { icon: '⚡', label: 'Sinerjiler', desc: '22 kombinasyon — bonus koşulları', screen: 'synergies' as const },
+    { icon: '⚡', label: 'Sinerjiler', desc: '29 kombinasyon — bonus koşulları', screen: 'synergies' as const },
     { icon: '⚙️', label: 'Ayarlar', desc: 'Ses ve oyun tercihleri', screen: 'settings' as const },
   ];
 
@@ -72,12 +73,25 @@ export function MainMenu() {
               Bir Daha
             </h1>
             <p className="menu-hero-tagline">Aynı seed. Farklı sen.</p>
-            {stats.dailyStreak > 1 && (
+
+            <div className="menu-hero-records">
+              <div className="menu-hero-record">
+                <span className="menu-hero-record-label">Senin en iyin</span>
+                <span className="menu-hero-record-value">{formatScore(stats.allTimeBest)}</span>
+              </div>
+              <div className="menu-hero-record menu-hero-record--today">
+                <span className="menu-hero-record-label">Günün rekoru</span>
+                <span className="menu-hero-record-value">{formatScore(stats.todayScore)}</span>
+              </div>
+              <div className={`menu-hero-record menu-hero-record--streak ${stats.dailyStreak > 1 ? 'is-hot' : ''}`}>
+                <span className="menu-hero-record-label">🔥 Seri</span>
+                <span className="menu-hero-record-value">{stats.dailyStreak} gün</span>
+              </div>
+            </div>
+
+            {stats.dailyStreak > 1 && getDailyStreakBonus(stats.dailyStreak).label && (
               <p className="menu-streak">
-                🔥 {stats.dailyStreak} gün üst üste
-                {getDailyStreakBonus(stats.dailyStreak).label && (
-                  <span className="menu-streak-bonus"> · {getDailyStreakBonus(stats.dailyStreak).label}</span>
-                )}
+                <span className="menu-streak-bonus">{getDailyStreakBonus(stats.dailyStreak).label}</span>
               </p>
             )}
           </div>
@@ -157,8 +171,12 @@ export function MainMenu() {
                       <span className="menu-play-btn-sub">Herkes aynı kartları görür · skor kıyaslanır</span>
                     </span>
                   </button>
-                  <button type="button" className="btn-secondary menu-play-btn-alt" onClick={() => handlePlayClick(false)}>
-                    Serbest Mod — rastgele seed
+                  <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" onClick={() => handlePlayClick(false)}>
+                    <span className="menu-play-btn-icon">🎲</span>
+                    <span>
+                      <span className="menu-play-btn-label">Serbest Mod — rastgele seed</span>
+                      <span className="menu-play-btn-sub">Her oyunda yeni kadro · pratik yap, sınır yok</span>
+                    </span>
                   </button>
                 </div>
               </div>

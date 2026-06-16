@@ -184,11 +184,21 @@ function getTacticWhyPick(card: TacticCard): string[] {
     tactic_352: ['Gol atmak istiyorsan', 'Baskılı oyun — savunma riski bilinçli tercih'],
     tactic_532: ['Gol yememek öncelikse', 'Savunma duvarı — skor düşük kalabilir'],
     tactic_4231: ['TEKNİK oyuncuların varsa', 'Modern oyun — orta saha kontrolü'],
+    tactic_343: ['Üç forvet + iki kanat oyuncusu varsa', 'En agresif formasyon — savunma açık kalır'],
+    tactic_diamond: ['Orta sahan kalabalık ve TEKNİK ise', 'Merkez kontrolü — kanat boşlukları riskli'],
     tactic_yuksek_blok: ['Rakibi baskı altında tut', 'Gol yeme ihtimali azalır'],
     tactic_topla_oyn: ['TEKNİK tag\'li oyunculara göre', 'Maç başına ekstra puan'],
     tactic_direkt: ['HIZLI tag\'li oyunculara göre', 'Kontra ve sprint bonusu'],
     tactic_rotasyon: ['Kadro yorgunluğundan korun', 'Performans düşüşü engellenir'],
     tactic_tekli_forvet: ['Tek forvet FİNİŞÖR ise', 'Hücum odağı — forvete yüklenir'],
+    tactic_catenaccio: ['Skoru korumak istiyorsan', 'En güçlü savunma — gol atmak zorlaşır'],
+    tactic_gegenpress: ['HIZLI ve agresif kadrolarda', 'Hücum + hız bonusu', '⚠ Yüksek savunma çizgisi — geç gol riski'],
+    tactic_tiki_taka: ['TEKNİK oyuncuların çoksa', 'En yüksek teknik bonus', '⚠ Savunma açığı — gol yiyebilirsin'],
+    tactic_park_bus: ['Güçlü rakibe karşı skoru tut', 'Aşılmaz savunma', '⚠ Hücum neredeyse durur — gol atmak çok zor'],
+    tactic_kanat_bindirme: ['HIZLI bek/kanatların varsa', 'Kanatlardan akın bonusu', '⚠ Bekler öne çıkınca arkada boşluk'],
+    tactic_4411: ['Gölge forvet + golcü ikilin varsa', 'Dengeli, ikinci forvetli hücum'],
+    tactic_3412: ['İki santrafor + 10 numara ile', 'Çok hücumcu', '⚠ Kanat savunması zayıf'],
+    tactic_451: ['Gol yememek öncelikse', 'Beş orta saha — kalabalık merkez', '⚠ Tek forvet — gol kısır kalabilir'],
   };
   return map[card.id] ?? [card.effectSummary];
 }

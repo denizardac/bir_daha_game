@@ -31,7 +31,7 @@ export function validateRunSubmissionSync(
     return { ok: false, reason: 'Bütünlük özeti uyuşmuyor' };
   }
 
-  const playedRounds = roundHistory.filter((r) => !r.isTacticBonus || r.pointsEarned > 0);
+  const playedRounds = roundHistory.filter((r) => !r.isEvent && (!r.isTacticBonus || r.pointsEarned > 0));
   if (playedRounds.length > entry.roundsCompleted + 2) {
     return { ok: false, reason: 'Round sayısı tutarsız' };
   }

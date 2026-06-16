@@ -1,6 +1,6 @@
 import { isEventRound } from '@/data/events';
 
-/** Round 3, 6, 9, 12 — taktik/formasyon + antrenman, maç yok (15 = şampiyonluk maçı; olay round'ları hariç) */
+/** Round 3, 6, 9, 12 — taktik/formasyon + antrenman, maç yok (15 = şampiyonluk maçı; olay round'ları 4/8/11/14 hariç) */
 export function isTacticBonusRound(round: number, maxRounds = 15): boolean {
   return round > 0 && round % 3 === 0 && round < maxRounds && !isEventRound(round);
 }

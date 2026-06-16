@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface Props {
   title: string;
@@ -22,6 +24,8 @@ export function ConfirmModal({
   onCancel,
 }: Props) {
   const icon = danger ? '⚠️' : menu ? '🏠' : '❓';
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, true, onCancel);
 
   return (
     <motion.div
@@ -32,6 +36,7 @@ export function ConfirmModal({
       onClick={onCancel}
     >
       <motion.div
+        ref={modalRef}
         className={`confirm-modal ${menu ? 'confirm-modal--menu' : ''} ${danger ? 'confirm-modal--danger' : ''}`}
         initial={{ scale: 0.92, opacity: 0, y: 12 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}

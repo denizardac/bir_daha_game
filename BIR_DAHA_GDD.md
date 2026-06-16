@@ -990,24 +990,27 @@ Her run'da düşük olasılıklı bir "vay be" anı kasıtlı tutulur:
 
 ## 18. TEKNİK MİMARİ
 
-### 18.1 Önerilen Stack (Web-First)
+### 18.1 Gerçekleşen Stack (Web-First)
 
 **Frontend:**
 ```
-React + TypeScript
-  ├── Zustand (state yönetimi — basit, roguelite için ideal)
+Vite + React + TypeScript
+  ├── Zustand (state yönetimi)
   ├── Framer Motion (animasyonlar)
-  ├── Tailwind CSS (UI)
-  └── Canvas / Pixi.js (maç animasyonu için — V2'de)
+  ├── Tailwind CSS + özel CSS (UI; maç animasyonu CSS/Framer ile — Pixi.js KULLANILMADI)
+  └── vite-plugin-pwa (Workbox service worker, offline + install)
 ```
 
 **Backend (Leaderboard için):**
 ```
-Node.js + Express (veya Next.js API routes)
-  ├── PostgreSQL (skor veritabanı)
-  ├── Redis (günlük seed cache + hızlı sıralama)
-  └── JWT (anonim oturum — V1'de isim bile almadan)
+Supabase
+  ├── PostgreSQL + Row Level Security (skor tablosu; doğrudan yazım kapalı)
+  ├── Edge Function (Deno) "submit-score" — digest doğrulama + HMAC imzalama
+  └── Anonim istemci kimliği (localStorage UUID; JWT/Redis/Express KULLANILMADI)
 ```
+
+> Not: GDD'nin ilk taslağındaki Node+Express+Redis ve Pixi.js önerileri
+> uygulanmadı; gerçek dağıtım yukarıdaki Supabase + CSS/Framer yığınıdır.
 
 **Seed Üretimi:**
 ```javascript

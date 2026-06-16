@@ -1,5 +1,6 @@
 import { analyzeEgoReplay } from '@/engine/egoAnalysis';
-import type { LeaderboardEntry, PersistedData, RoundResult } from '@/types';
+import { getStartingSquad } from '@/data/players';
+import type { LeaderboardEntry, PersistedData, PlayerCard, RoundResult } from '@/types';
 import { getDailyDateKey, getDailySeed } from '@/engine/seed';
 
 export function getWeekKey(date = new Date()): string {
@@ -65,8 +66,10 @@ export function addScoreToLeaderboards(
 }
 
 function isYesterday(last: string, today: string): boolean {
-  const d = new Date(today);
-  d.setDate(d.getDate() - 1);
+  // today/last zaten İstanbul takvim günü (YYYY-MM-DD); UTC midnight üzerinden
+  // hesapla ki çalışma ortamının yerel saat dilimi off-by-one yaratmasın.
+  const d = new Date(`${today}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
   return last === d.toISOString().slice(0, 10);
 }
 
@@ -118,7 +121,7 @@ export function generateFakeRivals(seed: string, count: number): LeaderboardEntr
 }
 
 export function ensureLeaderboardPopulation(data: PersistedData): PersistedData {
-  if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  if (import.meta.env?.VITE_SUPABASE_URL && import.meta.env?.VITE_SUPABASE_ANON_KEY) {
     return data;
   }
   const seed = getDailySeed();
@@ -131,68 +134,12 @@ export function ensureLeaderboardPopulation(data: PersistedData): PersistedData 
   };
 }
 
-/** @deprecated estimateAltPoints — analyzeEgoReplay kullan */
-export function analyzeEgoLegacy(roundHistory: RoundResult[], seed: string) {
-  let best: { round: number; cardName: string; diff: number; synergy?: string } | null = null;
-  let worst: { round: number; desc: string; diff: number } | null = null;
-
-  for (const r of roundHistory) {
-    if (r.isTacticBonus || !r.matchResult) continue;
-    const alts = r.cardsShown.filter((c) => c.id !== r.cardSelected.id);
-    for (const alt of alts) {
-      const diff = r.pointsEarned - estimateAltPoints(r, alt);
-      if (!best || diff > best.diff) {
-        best = {
-          round: r.round,
-          cardName: r.cardSelected.kind === 'player' ? r.cardSelected.name : r.cardSelected.name,
-          diff,
-          synergy: r.matchResult.newlyDiscoveredSynergies[0],
-        };
-      }
-      if (diff < 0 && (!worst || diff < worst.diff)) {
-        worst = {
-          round: r.round,
-          desc: `${alt.kind === 'player' ? alt.name : alt.name} seçseydin daha iyi olabilirdi`,
-          diff,
-        };
-      }
-    }
-    if (r.eventChoice && r.pointsEarned < 100) {
-      worst = {
-        round: r.round,
-        desc: 'Olay kartı kararı sonraki roundları zorlaştırdı',
-        diff: -150,
-      };
-    }
-  }
-
-  const rarePercent = best ? 5 + (seed.charCodeAt(0) % 12) : 50;
-
-  return {
-    bestDecision: best
-      ? {
-          round: best.round,
-          cardName: best.cardName,
-          rarePercent,
-          pointsGained: Math.max(100, best.diff + 500),
-          synergyActivated: best.synergy,
-        }
-      : null,
-    worstMistake: worst
-      ? { round: worst.round, description: worst.desc, pointsLost: Math.abs(worst.diff) + 200 }
-      : null,
-  };
-}
-
-function estimateAltPoints(r: RoundResult, alt: RoundResult['cardsShown'][0]): number {
-  if (alt.kind === 'tactic') return r.pointsEarned * 0.85;
-  if (alt.kind === 'player') return r.pointsEarned - (alt.rating - (r.cardSelected.kind === 'player' ? r.cardSelected.rating : 70)) * 8;
-  return r.pointsEarned * 0.9;
-}
-
-export function analyzeEgo(roundHistory: RoundResult[], seed: string) {
-  if (roundHistory.some((r) => r.matchResult)) {
-    return analyzeEgoReplay(roundHistory, seed);
-  }
-  return analyzeEgoLegacy(roundHistory, seed);
+export function analyzeEgo(
+  roundHistory: RoundResult[],
+  seed: string,
+  startingSquad?: PlayerCard[],
+  isDailySeed = true,
+) {
+  const squad = startingSquad ?? getStartingSquad(seed, isDailySeed);
+  return analyzeEgoReplay(roundHistory, seed, squad);
 }

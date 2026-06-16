@@ -49,13 +49,13 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_kanatlar', name: 'ÇİFT KANAT', icon: '🦅', hidden: true,
-    description: 'Sol + Sağ Kanat HIZLI — gol ×1.12',
-    check: (s) => hasPosTag(s, 'SLK', 'HIZLI') && hasPosTag(s, 'SÖK', 'HIZLI'), goalMultiplier: 1.12,
+    description: 'Sol + Sağ Kanat HIZLI — gol ×1.22, gol başına +20',
+    check: (s) => hasPosTag(s, 'SLK', 'HIZLI') && hasPosTag(s, 'SÖK', 'HIZLI'), goalMultiplier: 1.22, perGoalBonus: 20,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const have = (hasPosTag(combined, 'SLK', 'HIZLI') ? 1 : 0) + (hasPosTag(combined, 'SÖK', 'HIZLI') ? 1 : 0);
       if (have >= 2) return null;
-      return { current: have, required: 2, icon: '🦅' };
+      return { current: have, required: 2, icon: '🦅', note: 'SLK + SÖK ikisi de HIZLI olmalı' };
     },
   },
   {
@@ -82,6 +82,13 @@ export const SYNERGIES: SynergyDefinition[] = [
     id: 'synergy_duran_top', name: 'SET PİECE', icon: '🥅', hidden: true,
     description: 'Serbest vuruş + penaltı — gol başına +50',
     check: (s) => countTag(s, 'SERBEST VURUŞ') >= 1 && countTag(s, 'PENALTI') >= 1, perGoalBonus: 50,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const fk = countTag(combined, 'SERBEST VURUŞ') >= 1;
+      const pen = countTag(combined, 'PENALTI') >= 1;
+      if (fk && pen) return null;
+      return { current: (fk ? 1 : 0) + (pen ? 1 : 0), required: 2, icon: '🥅', note: 'SERBEST VURUŞ + PENALTI gerekiyor' };
+    },
   },
   {
     id: 'synergy_akademi', name: 'GENÇ YETENEK', icon: '📚', hidden: false,
@@ -101,14 +108,20 @@ export const SYNERGIES: SynergyDefinition[] = [
     check: (s, morale) => countTag(s, 'LİDER') >= 1 && morale >= 80, perWinBonus: 150,
     getProgress: (s, c) => {
       if (countTag(c ? [...s, c] : s, 'LİDER') >= 1) return null;
-      return { current: countTag(s, 'LİDER'), required: 1, icon: '👑' };
+      return { current: countTag(s, 'LİDER'), required: 1, icon: '👑', note: 'ayrıca moral 80+ gerekiyor' };
     },
   },
   {
     id: 'synergy_soyunma_odasi', name: 'TAKIM RUHU', icon: '🎤', hidden: true,
-    description: 'Kaptan + soyunma odası + mentor — moral tabanı 70',
+    description: 'Kaptan + soyunma odası + mentor — moral tabanı 70, +20/round, galibiyet +60',
     check: (s) => countTag(s, 'KAPİTAN') >= 1 && countTag(s, 'SOYUNMA ODASI') >= 1 && countTag(s, 'MENTOR') >= 1,
-    minMorale: 70, perMatchMorale: 5,
+    minMorale: 70, perMatchMorale: 5, perRoundBonus: 20, perWinBonus: 60,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const have = (countTag(combined, 'KAPİTAN') >= 1 ? 1 : 0) + (countTag(combined, 'SOYUNMA ODASI') >= 1 ? 1 : 0) + (countTag(combined, 'MENTOR') >= 1 ? 1 : 0);
+      if (have >= 3) return null;
+      return { current: have, required: 3, icon: '🎤', note: 'KAPİTAN + SOYUNMA ODASI + MENTOR' };
+    },
   },
   {
     id: 'synergy_ev_sahibi', name: 'YERLİ KADRO', icon: '🏠', hidden: false,
@@ -125,6 +138,13 @@ export const SYNERGIES: SynergyDefinition[] = [
     description: '3+ yabancı yıldız, 0 yerli — rating ×1.15',
     check: (s) => countTag(s, 'YABANCI YILDIZ') >= 3 && countTag(s, 'YERLİ') === 0,
     ratingMultiplier: 1.15, perRoundBonus: 12,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const stars = countTag(combined, 'YABANCI YILDIZ');
+      const locals = countTag(combined, 'YERLİ');
+      if (stars >= 3 && locals === 0) return null;
+      return { current: Math.min(stars, 3), required: 3, icon: '🌍', note: locals > 0 ? `⚠ kadroda 0 yerli olmalı (şu an ${locals})` : 'kadroda 0 yerli olmalı' };
+    },
   },
   {
     id: 'synergy_karma_guc', name: 'KARMA DENGE', icon: '⚖️', hidden: true,
@@ -142,15 +162,27 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_uc_boyut', name: 'ÜÇLÜ HÜCUM', icon: '🔺', hidden: false,
-    description: 'Forvet + Sol Kanat + Sağ Kanat FİNİŞÖR — gol ×1.3',
-    check: (s) => hasPosTag(s, 'SF', 'FİNİŞÖR') && hasPosTag(s, 'SLK', 'FİNİŞÖR') && hasPosTag(s, 'SÖK', 'FİNİŞÖR'),
+    description: 'Hücum hattında (SF/kanat) 2+ FİNİŞÖR — gol ×1.3',
+    check: (s) => s.filter((p) => (p.position === 'SF' || p.position === 'SLK' || p.position === 'SÖK') && p.tags.includes('FİNİŞÖR')).length >= 2,
     goalMultiplier: 1.3,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const n = combined.filter((p) => (p.position === 'SF' || p.position === 'SLK' || p.position === 'SÖK') && p.tags.includes('FİNİŞÖR')).length;
+      if (n >= 2) return null;
+      return { current: n, required: 2, icon: '🔺', note: 'forvet/kanatta FİNİŞÖR topla' };
+    },
   },
   {
     id: 'synergy_saglam_orta', name: 'ORTA DUVAR', icon: '🧱', hidden: false,
-    description: '2+ orta saha TEKNİK/GÜÇLÜ — orta saha kilitlenir',
+    description: '2+ orta saha TEKNİK/GÜÇLÜ — +18/round, gol yeme azalır',
     check: (s) => countMidfieldWithTrait(s, ['TEKNİK', 'GÜÇLÜ']) >= 2,
     cleanSheetDefenseBonus: 0.12, perRoundBonus: 18,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const n = countMidfieldWithTrait(combined, ['TEKNİK', 'GÜÇLÜ']);
+      if (n >= 2) return null;
+      return { current: n, required: 2, icon: '🧱', note: 'orta sahada TEKNİK/GÜÇLÜ' };
+    },
   },
   {
     id: 'synergy_tanri_modu', name: 'ZİRVE GÜN', icon: '✨', hidden: true,
@@ -165,11 +197,23 @@ export const SYNERGIES: SynergyDefinition[] = [
     description: '4 HIZLI + 2 TEKNİK + 1 ASİSTÇİ — galibiyet +130',
     check: (s) => countTag(s, 'HIZLI') >= 4 && countTag(s, 'TEKNİK') >= 2 && countTag(s, 'ASİSTÇİ') >= 1,
     perWinBonus: 130, goalMultiplier: 1.15,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const have = (countTag(combined, 'HIZLI') >= 4 ? 1 : 0) + (countTag(combined, 'TEKNİK') >= 2 ? 1 : 0) + (countTag(combined, 'ASİSTÇİ') >= 1 ? 1 : 0);
+      if (have >= 3) return null;
+      return { current: have, required: 3, icon: '🌪️', note: '4 HIZLI · 2 TEKNİK · 1 ASİSTÇİ' };
+    },
   },
   {
     id: 'synergy_efsaneler', name: 'EFSANE 11', icon: '🏆', hidden: true,
     description: '3+ efsane kart — galibiyet +180, moral tabanı 75',
     check: (s) => countRarity(s, 'efsane') >= 3, perWinBonus: 180, minMorale: 75,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const n = countRarity(combined, 'efsane');
+      if (n >= 3) return null;
+      return { current: n, required: 3, icon: '🏆', note: 'efsane kart topla (round 9+ şans artar)' };
+    },
   },
   {
     id: 'synergy_savasci_ruhu', name: 'GERİDEN GEL', icon: '⚔️', hidden: true,
@@ -179,23 +223,42 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_altin_defans', name: 'ÇELİK STOP', icon: '🔒', hidden: true,
-    description: '2 GÜÇLÜ stoper — savunma bonusu',
+    description: '2 GÜÇLÜ stoper — savunma bonusu, +12/round',
     check: (s) => s.filter((p) => p.position === 'STP' && p.tags.includes('GÜÇLÜ')).length >= 2,
     cleanSheetDefenseBonus: 0.15, perRoundBonus: 12,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const n = combined.filter((p) => p.position === 'STP' && p.tags.includes('GÜÇLÜ')).length;
+      if (n >= 2) return null;
+      return { current: n, required: 2, icon: '🔒', note: 'GÜÇLÜ stoper topla' };
+    },
   },
   {
     id: 'synergy_yildiz_hucum', name: 'YILDIZ HATT', icon: '⭐', hidden: true,
-    description: '2+ güçlü kanat/forvet — gol başına +40',
+    description: 'Hücumda 2+ GÜÇLÜ/EFSANE kart (rarity) — gol başına +40',
     check: (s) =>
       s.filter((p) => (p.position === 'SF' || p.position === 'SLK' || p.position === 'SÖK') &&
         (p.rarity === 'güçlü' || p.rarity === 'efsane')).length >= 2,
     perGoalBonus: 40,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const n = combined.filter((p) => (p.position === 'SF' || p.position === 'SLK' || p.position === 'SÖK') &&
+        (p.rarity === 'güçlü' || p.rarity === 'efsane')).length;
+      if (n >= 2) return null;
+      return { current: n, required: 2, icon: '⭐', note: 'hücumda yüksek nadirlikli kart' };
+    },
   },
   {
     id: 'synergy_pas_motoru', name: 'PAS AĞI', icon: '🔗', hidden: true,
     description: '2+ ASİSTÇİ + 2+ TEKNİK — +22/round',
     check: (s) => countTag(s, 'ASİSTÇİ') >= 2 && countTag(s, 'TEKNİK') >= 2,
     perRoundBonus: 22,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const have = (countTag(combined, 'ASİSTÇİ') >= 2 ? 1 : 0) + (countTag(combined, 'TEKNİK') >= 2 ? 1 : 0);
+      if (have >= 2) return null;
+      return { current: have, required: 2, icon: '🔗', note: '2 ASİSTÇİ + 2 TEKNİK' };
+    },
   },
   {
     id: 'synergy_demir_form', name: 'DEMİR FORM', icon: '🛡️', hidden: false,
@@ -209,14 +272,29 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_ucuz_kadro', name: 'UCUZ KADRO', icon: '📉', hidden: true,
-    description: '3+ GERİLEYEN — galibiyet +65 (ucuz ama tecrübeli)',
-    check: (s) => countTag(s, 'GERİLEYEN') >= 3, perWinBonus: 65,
+    description: '3+ GERİLEYEN — galibiyet +90 (ucuz ama tecrübeli)',
+    check: (s) => countTag(s, 'GERİLEYEN') >= 3, perWinBonus: 90, perRoundBonus: 10,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const n = countTag(combined, 'GERİLEYEN');
+      if (n >= 3) return null;
+      // İpucu: niş sinerji — fark edilmesi için kasıtlı "kötü" kart toplama ipucu
+      if (n === 0) return null;
+      return { current: n, required: 3, icon: '📉', note: 'GERİLEYEN kartları topla (dezavantajı ödüle çevir)' };
+    },
   },
   {
     id: 'synergy_rotasyon_ustasi', name: 'ROTASYON USTASI', icon: '🔄', hidden: true,
-    description: '2+ PERFORMANS DÜŞÜŞÜ + 1 DAYANIKLI — +14/round',
+    description: '2+ PERFORMANS DÜŞÜŞÜ + 1 DAYANIKLI — +28/round',
     check: (s) => countTag(s, 'PERFORMANS DÜŞÜŞÜ') >= 2 && countTag(s, 'DAYANIKLI') >= 1,
-    perRoundBonus: 14,
+    perRoundBonus: 28,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const have = (countTag(combined, 'PERFORMANS DÜŞÜŞÜ') >= 2 ? 1 : 0) + (countTag(combined, 'DAYANIKLI') >= 1 ? 1 : 0);
+      if (have >= 2) return null;
+      if (countTag(combined, 'PERFORMANS DÜŞÜŞÜ') === 0 && countTag(combined, 'DAYANIKLI') === 0) return null;
+      return { current: have, required: 2, icon: '🔄', note: '2 PERFORMANS DÜŞÜŞÜ + 1 DAYANIKLI' };
+    },
   },
   {
     id: 'synergy_tartismali_guc', name: 'TARTIŞMALI GÜÇ', icon: '💥', hidden: true,
@@ -232,6 +310,18 @@ export const SYNERGIES: SynergyDefinition[] = [
     id: 'synergy_yenisezon_patlama', name: 'YENİ SEZON PATLAMASI', icon: '🌱', hidden: true,
     description: '2+ YENİ SEZON + 1 MENTOR — +20/round',
     check: (s) => countTag(s, 'YENİ SEZON') >= 2 && countTag(s, 'MENTOR') >= 1, perRoundBonus: 20,
+  },
+  {
+    id: 'synergy_imza_kadrosu', name: 'İMZA KADROSU', icon: '✒️', hidden: true,
+    description: '2+ imza kartı (efsane ikon) — gol ×1.2, galibiyet +120',
+    check: (s) => s.filter((p) => p.signature).length >= 2, goalMultiplier: 1.2, perWinBonus: 120,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const n = combined.filter((p) => p.signature).length;
+      if (n >= 2) return null;
+      if (n === 0) return null;
+      return { current: n, required: 2, icon: '✒️', note: 'imza (ikon) kartları topla' };
+    },
   },
 ];
 

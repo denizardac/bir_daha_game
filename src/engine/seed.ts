@@ -3,8 +3,8 @@ import type { Rarity } from '@/types';
 
 const ISTANBUL_TZ = 'Europe/Istanbul';
 
-/** null = İstanbul takvimi; manuel günlük rotasyon için YYYY-MM-DD */
-export const DAILY_DAY_OVERRIDE: string | null = '2026-06-09';
+/** null = İstanbul takvimi (production); manuel günlük rotasyon için YYYY-MM-DD ata */
+export const DAILY_DAY_OVERRIDE: string | null = null;
 
 const DAILY_SLUG_WORDS = [
   'ruzgar', 'yildiz', 'simsek', 'kanat', 'kale', 'pas', 'gol', 'altin', 'demir', 'volkan', 'deniz', 'kuzgun',
@@ -67,16 +67,6 @@ export function pickOne<T>(rng: () => number, items: T[]): T {
   return items[index]!;
 }
 
-export function pickN<T>(rng: () => number, items: T[], count: number): T[] {
-  const copy = [...items];
-  const result: T[] = [];
-  for (let i = 0; i < count && copy.length > 0; i++) {
-    const index = Math.floor(rng() * copy.length);
-    result.push(copy.splice(index, 1)[0]!);
-  }
-  return result;
-}
-
 export function weightedPick(rng: () => number, weights: Record<Rarity, number>): Rarity {
   const entries = Object.entries(weights) as [Rarity, number][];
   const total = entries.reduce((sum, [, w]) => sum + w, 0);
@@ -93,6 +83,23 @@ export function getRarityWeights(round: number): Record<Rarity, number> {
   if (round <= 8) return { normal: 30, iyi: 45, güçlü: 22, efsane: 3 };
   if (round <= 12) return { normal: 10, iyi: 30, güçlü: 40, efsane: 20 };
   return { normal: 0, iyi: 15, güçlü: 45, efsane: 40 };
+}
+
+/** Efsane çekme şansının yüzdesi (UI feedback'i için) */
+export function getLegendaryChance(round: number): number {
+  return getRarityWeights(round).efsane;
+}
+
+/**
+ * Bu round'da "efsane şansı arttı" rozetinin gösterilip gösterilmeyeceği + etiket.
+ * Eşik geçişlerinde (round 9 → %20, round 13 → %40) güçlü vurgu yapılır.
+ */
+export function getLegendaryChanceTier(round: number): { boosted: boolean; chance: number; label: string } {
+  const chance = getLegendaryChance(round);
+  if (round >= 13) return { boosted: true, chance, label: 'EFSANE ŞANSI ZİRVEDE' };
+  if (round >= 9) return { boosted: true, chance, label: 'EFSANE ŞANSI ARTTI' };
+  if (round >= 5) return { boosted: false, chance, label: 'Efsane şansı düşük' };
+  return { boosted: false, chance, label: 'Efsane çıkmaz' };
 }
 
 export function getOpponentRatingRange(round: number): [number, number] {

@@ -5,9 +5,9 @@ import { PlayerCard, PlayerCardMini } from '@/components/PlayerCard';
 import { TacticCard } from '@/components/TacticCard';
 import { PickMoraleBanner } from '@/components/PickMoraleBanner';
 import { SquadPanel } from '@/components/SquadPanel';
-import { getCardPickHeaderSubtitle } from '@/data/biteTips';
 import { LineupPreviewCenterTrigger, LineupPreviewExpanded, LineupPreviewModal } from '@/components/LineupPreview';
 import { isFinaleRound, isTacticBonusRound } from '@/engine/roundFlow';
+import { getLegendaryChanceTier } from '@/engine/seed';
 import { canPassCardPick } from '@/engine/cardPass';
 import { getEventSubjects } from '@/engine/eventSubjects';
 import { SynergyRevealOverlay } from '@/components/SynergyRevealOverlay';
@@ -15,7 +15,8 @@ import { SidePanel } from '@/components/SidePanel';
 import { MoralePanel } from '@/components/MoralePanel';
 import { PlayerHeroMini } from '@/components/PlayerHero';
 import { MatchTeamCard } from '@/components/MatchPickPanel';
-import { getSynergyById, SYNERGIES } from '@/data/synergies';
+import { getActiveSynergies, getSynergyById, SYNERGIES } from '@/data/synergies';
+import { getTacticCategory } from '@/data/tactics';
 import { BITE, EVENT_CATEGORY_BITE } from '@/data/biteTips';
 import { getEventPresentation } from '@/data/eventVisuals';
 import { EventChoiceVisual, EventSceneVisual } from '@/components/EventSceneVisual';
@@ -24,10 +25,11 @@ import { calculateRoundPoints, formatScore } from '@/engine/scoring';
 import { getSquadLineupSummary, lineupSlotToMatchPitch } from '@/engine/lineupPreview';
 import { getPersistedStats, TOTAL_SYNERGIES, useGameStore } from '@/store/gameStore';
 import { isPlayerCard, isSkipCard, isTacticCard, isTrainingCard } from '@/types';
+import type { ActiveTactic, GameCard, PlayerCard as PlayerCardModel } from '@/types';
+import type { TacticDraft } from '@/engine/runPersistence';
 import { MatchAnimation } from '@/components/MatchAnimation';
 import { MatchMoraleBanner } from '@/components/MatchMoraleBanner';
 import { MatchLeftPanel, MatchRightPanel } from '@/components/MatchLivePanels';
-import { TrainingCard } from '@/components/TrainingCard';
 import { TrainingPickModal } from '@/components/TrainingPickModal';
 import { buildMatchAnimSchedule, type MatchAnimState } from '@/engine/matchAnimSchedule';
 import { FirstWinCelebration } from '@/components/FirstWinCelebration';
@@ -40,6 +42,23 @@ import { getEventChoiceTones, eventChoiceClass, formatMatchRiskDelta, MATCH_RISK
 import { formatMatchPowerBonusLabel } from '@/engine/matchPower';
 import { sortSquadByRating } from '@/engine/squadLogic';
 import type { EventOutcome } from '@/engine/events';
+
+type EventResultBadge = { icon: string; text: string; positive: boolean };
+
+/** Seçim sonrası animasyonlu "sonuç rozeti" listesi — sayısal etkiyi vurgular */
+function getEventResultBadges(o: EventOutcome): EventResultBadge[] {
+  const badges: EventResultBadge[] = [];
+  if (o.moraleDelta) badges.push({ icon: '❤️', text: `Moral ${o.moraleDelta > 0 ? '+' : ''}${o.moraleDelta}`, positive: o.moraleDelta > 0 });
+  if (o.scoreDelta) badges.push({ icon: '⭐', text: `${o.scoreDelta > 0 ? '+' : ''}${o.scoreDelta} puan`, positive: o.scoreDelta > 0 });
+  if (o.nextMatchBonus) badges.push({ icon: '💪', text: `Sonraki maç +${o.nextMatchBonus}`, positive: true });
+  if (o.grantRerolls) badges.push({ icon: '🔄', text: `+${o.grantRerolls} çek hakkı`, positive: true });
+  if (o.addYouth) badges.push({ icon: '🌱', text: 'Yeni oyuncu katıldı', positive: true });
+  if (o.grantTag) badges.push({ icon: '🏷️', text: `${o.grantTag} kazandırıldı`, positive: true });
+  if (o.removeWeakest) badges.push({ icon: '➖', text: o.sellPlayerName ? `${o.sellPlayerName} ayrıldı` : 'Oyuncu kadrodan çıktı', positive: false });
+  if (o.tempRatingDelta) badges.push({ icon: '📉', text: `Rating ${o.tempRatingDelta > 0 ? '+' : ''}${o.tempRatingDelta} (1 maç)`, positive: o.tempRatingDelta > 0 });
+  if (o.nextMatchRisk) badges.push({ icon: '⚠️', text: `Maç riski +%${Math.round(o.nextMatchRisk * 100)}`, positive: false });
+  return badges;
+}
 
 function formatEventOutcome(o: EventOutcome, eventId?: string) {
   const parts: string[] = [];
@@ -62,6 +81,76 @@ function formatEventOutcome(o: EventOutcome, eventId?: string) {
   return parts.length ? parts.join(' · ') : '';
 }
 
+function TacticPickRows({
+  offers,
+  squad,
+  activeTactics,
+  draft,
+  sound,
+  onSelect,
+  onConfirm,
+}: {
+  offers: GameCard[];
+  squad: PlayerCardModel[];
+  activeTactics: ActiveTactic[];
+  draft: TacticDraft;
+  sound: boolean;
+  onSelect: (card: GameCard) => void;
+  onConfirm: () => void;
+}) {
+  const tactics = offers.filter(isTacticCard);
+  const formations = tactics.filter((o) => getTacticCategory(o.id) === 'formasyon');
+  const systems = tactics.filter((o) => getTacticCategory(o.id) === 'sistem');
+  const ready = Boolean(draft.formationId && draft.systemId);
+
+  const renderRow = (
+    cards: typeof tactics,
+    step: number,
+    title: string,
+    selectedId: string | null,
+  ) => (
+    <div className="tactic-pick-row">
+      <p className="tactic-pick-row-title">
+        <span className={`tactic-pick-step ${selectedId ? 'tactic-pick-step--done' : ''}`}>{selectedId ? '✓' : step}</span>
+        {title}
+      </p>
+      <div className="tactic-pick-cards">
+        {cards.map((card) => (
+          <div key={card.id} className="tactic-pick-card-slot">
+            <TacticCard
+              card={card}
+              squad={squad}
+              activeTactics={activeTactics}
+              selected={selectedId === card.id}
+              onSelect={() => { playSound('tick', sound); onSelect(card); }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="tactic-pick-rows">
+      {renderRow(formations, 1, 'Formasyon seç', draft.formationId)}
+      {renderRow(systems, 2, 'Oyun sistemi seç', draft.systemId)}
+      <div className="tactic-pick-confirm-row">
+        <button
+          type="button"
+          className="btn-primary tactic-pick-confirm"
+          disabled={!ready}
+          onClick={() => { playSound('tick', sound); onConfirm(); }}
+        >
+          {ready ? 'Onayla ve devam et' : 'Önce formasyon ve sistem seç'}
+          <span className="tactic-pick-confirm-hint">
+            {ready ? 'İkisi de slota yerleşir · +35 puan · +8 moral' : 'Her satırdan bir kart seçmelisin'}
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function CardSelectScreen() {
   const [lineupOpen, setLineupOpen] = useState(false);
   const state = useGameStore();
@@ -71,7 +160,8 @@ export function CardSelectScreen() {
     dangerMode, isFirstRun, discoveredSynergies, activeTactics, usedEventIds,
     extraDrawAvailable, extraDrawUsed, redrawOffers,
     rerollsRemaining, rerollSingleOffer, rerollAllOffers, offersRerollIndex,
-    trainingFlow, pickTrainingPlayer, completeTraining, cancelTraining, backTrainingPlayer,
+    trainingFlow, beginTraining, pickTrainingPlayer, completeTraining, cancelTraining, backTrainingPlayer,
+    tacticDraft, confirmTacticRound,
   } = state;
   const sound = getPersistedStats().soundEnabled;
 
@@ -91,7 +181,7 @@ export function CardSelectScreen() {
   const pickSubtitle = finaleMatch
     ? 'Şampiyonluk maçı — son kartını seç, büyük puan için kazan'
     : tacticBonus
-      ? getCardPickHeaderSubtitle(currentOffers, empty, round)
+      ? 'Antrenman günü — maç yok · bir formasyon ve bir oyun sistemi seç, sonra onayla'
       : empty > 0
         ? `3 oyuncu teklifi · Kadroya eklenir (${empty} boş slot)`
         : emptyField > 0
@@ -196,90 +286,113 @@ export function CardSelectScreen() {
               <div className="card-pick-bonus-banner">
                 <span className="card-pick-bonus-icon" aria-hidden>📋</span>
                 <div>
-                  <p className="card-pick-bonus-title">Antrenman günü — maç yok</p>
-                  <p className="card-pick-bonus-desc">2 taktik/formasyon + 1 antrenman kartı. Taktik slota yerleşir; antrenman ile oyuncuya nitelik eklersin. +35 puan · +8 moral.</p>
+                  <p className="card-pick-bonus-title">Taktik günü — maç yok</p>
+                  <p className="card-pick-bonus-desc">Bir formasyon ve bir oyun sistemi seç; ikisi de slota yerleşir ve sonraki maçlarda aktif kalır. +35 puan · +8 moral.</p>
                 </div>
               </div>
             )}
 
-            <div className="cards-pick-grid">
-              {currentOffers.map((offer, slotIndex) => {
-                const tipPlacement = slotIndex === 0 ? 'right' : slotIndex === currentOffers.length - 1 ? 'left' : 'auto';
-                const inner = isPlayerCard(offer) ? (
-                  <PlayerCard
-                    key={`${offer.id}-r${offersRerollIndex}`}
-                    card={offer}
-                    squad={squad}
-                    discovered={discoveredSynergies}
-                    maxSquadSize={maxSquadSize}
-                    activeTactics={activeTactics}
-                    morale={morale}
-                    tipPlacement={tipPlacement}
-                    onSelect={() => { playSound('tick', sound); selectOffer(offer); }}
-                    showTagHint={isFirstRun && round === 1}
-                  />
-                ) : isTrainingCard(offer) ? (
-                  <TrainingCard
-                    key={`${offer.id}-r${offersRerollIndex}`}
-                    card={offer}
-                    onSelect={() => { playSound('tick', sound); selectOffer(offer); }}
-                  />
-                ) : isTacticCard(offer) ? (
-                  <TacticCard key={`${offer.id}-r${offersRerollIndex}`} card={offer} squad={squad} activeTactics={activeTactics} onSelect={() => selectOffer(offer)} />
-                ) : null;
-                const label = isTrainingCard(offer)
-                  ? 'Antrenman kartı'
-                  : isPlayerCard(offer)
-                    ? 'Oyuncu kartı'
-                    : 'Taktik kartı';
-                return (
-                  <div key={`${offer.id}-slot-r${offersRerollIndex}-i${slotIndex}`} className="card-pick-slot">
-                    <div className="card-pick-slot-head">
-                      <span className={`card-pick-slot-label ${
-                        isTrainingCard(offer)
-                          ? 'card-pick-slot-label--training'
-                          : isPlayerCard(offer)
-                            ? 'card-pick-slot-label--player'
-                            : 'card-pick-slot-label--tactic'
-                      }`}>
-                        {label}
-                      </span>
-                      {!tacticBonus && isPlayerCard(offer) && (
-                        <button
-                          type="button"
-                          className="btn-reroll-slot"
-                          disabled={rerollsRemaining <= 0}
-                          title={rerollsRemaining > 0 ? 'Bu kartı yenile (−1 hak)' : 'Yenileme hakkın kalmadı'}
-                          aria-label={`${offer.name} kartını yenile`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (rerollsRemaining <= 0) return;
-                            playSound('tick', sound);
-                            rerollSingleOffer(slotIndex);
-                          }}
-                        >
-                          {rerollsRemaining > 0 ? '🔄' : '0'}
-                        </button>
-                      )}
-                    </div>
-                    <div className="card-pick-slot-anchor">{inner}</div>
-                  </div>
-                );
-              })}
-            </div>
+            {!tacticBonus && (() => {
+              const tier = getLegendaryChanceTier(round);
+              if (!tier.boosted) return null;
+              return (
+                <div className={`legendary-chance-banner ${round >= 13 ? 'legendary-chance-banner--peak' : ''}`}>
+                  <span aria-hidden>{round >= 13 ? '🌟' : '✨'}</span>
+                  <span>{tier.label} — efsane kart ihtimali %{Math.round(tier.chance * 100)}</span>
+                </div>
+              );
+            })()}
 
-            {canPass && (
-              <div className="card-pick-pass-row">
-                <button
-                  type="button"
-                  className="btn-pass-pick"
-                  onClick={() => { playSound('tick', sound); passCardPick(); }}
-                >
-                  Pas geç
-                  <span className="btn-pass-pick-hint">Kadro aynı kalır · doğrudan maça</span>
-                </button>
-              </div>
+            {tacticBonus ? (
+              <TacticPickRows
+                offers={currentOffers}
+                squad={squad}
+                activeTactics={activeTactics}
+                draft={tacticDraft}
+                sound={sound}
+                onSelect={selectOffer}
+                onConfirm={confirmTacticRound}
+              />
+            ) : (
+              <>
+                <div className="cards-pick-grid">
+                  {currentOffers.map((offer, slotIndex) => {
+                    const tipPlacement = slotIndex === 0 ? 'right' : slotIndex === currentOffers.length - 1 ? 'left' : 'auto';
+                    const inner = isPlayerCard(offer) ? (
+                      <PlayerCard
+                        key={`${offer.id}-r${offersRerollIndex}`}
+                        card={offer}
+                        squad={squad}
+                        discovered={discoveredSynergies}
+                        maxSquadSize={maxSquadSize}
+                        activeTactics={activeTactics}
+                        morale={morale}
+                        tipPlacement={tipPlacement}
+                        onSelect={() => { playSound('tick', sound); selectOffer(offer); }}
+                        showTagHint={isFirstRun && round === 1}
+                      />
+                    ) : isTacticCard(offer) ? (
+                      <TacticCard key={`${offer.id}-r${offersRerollIndex}`} card={offer} squad={squad} activeTactics={activeTactics} onSelect={() => selectOffer(offer)} />
+                    ) : null;
+                    const label = isPlayerCard(offer) ? 'Oyuncu kartı' : 'Taktik kartı';
+                    return (
+                      <div key={`${offer.id}-slot-r${offersRerollIndex}-i${slotIndex}`} className="card-pick-slot">
+                        <div className="card-pick-slot-head">
+                          <span className={`card-pick-slot-label ${
+                            isPlayerCard(offer)
+                              ? 'card-pick-slot-label--player'
+                              : 'card-pick-slot-label--tactic'
+                          }`}>
+                            {label}
+                          </span>
+                          {isPlayerCard(offer) && (
+                            <button
+                              type="button"
+                              className="btn-reroll-slot"
+                              disabled={rerollsRemaining <= 0}
+                              title={rerollsRemaining > 0 ? 'Bu kartı yenile (−1 hak)' : 'Yenileme hakkın kalmadı'}
+                              aria-label={`${offer.name} kartını yenile`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (rerollsRemaining <= 0) return;
+                                playSound('tick', sound);
+                                rerollSingleOffer(slotIndex);
+                              }}
+                            >
+                              {rerollsRemaining > 0 ? '🔄' : '0'}
+                            </button>
+                          )}
+                        </div>
+                        <div className="card-pick-slot-anchor">{inner}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {!finaleMatch && (
+                  <div className="card-pick-alt-row">
+                    <button
+                      type="button"
+                      className="btn-train-pick"
+                      onClick={() => { playSound('tick', sound); beginTraining(); }}
+                    >
+                      🎓 Bunun yerine özel antrenman
+                      <span className="btn-train-pick-hint">Kart yerine bir oyuncuya kalıcı nitelik ekle · sonra maça çık</span>
+                    </button>
+                    {canPass && (
+                      <button
+                        type="button"
+                        className="btn-pass-pick"
+                        onClick={() => { playSound('tick', sound); passCardPick(); }}
+                      >
+                        Pas geç
+                        <span className="btn-pass-pick-hint">Kadro aynı kalır · doğrudan maça</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -314,6 +427,13 @@ export function CardSelectScreen() {
 export function EventScreen() {
   const { currentEvent, resolveEventChoice, round, maxRounds, score, streak, squad, morale, isFirstRun, seed, discoveredSynergies, activeTactics, maxSquadSize } = useGameStore();
   const [picked, setPicked] = useState<'A' | 'B' | null>(null);
+  const pickTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pickTimeout.current) clearTimeout(pickTimeout.current);
+    };
+  }, []);
 
   if (!currentEvent) return null;
 
@@ -335,7 +455,7 @@ export function EventScreen() {
     if (picked) return;
     setPicked(choice);
     playSound('tick', getPersistedStats().soundEnabled);
-    setTimeout(() => resolveEventChoice(choice), 850);
+    pickTimeout.current = setTimeout(() => resolveEventChoice(choice), 850);
   };
 
   const renderChoice = (
@@ -452,6 +572,30 @@ export function EventScreen() {
               {renderChoice('A', currentEvent.optionA.label, currentEvent.optionA.description, previews.a, tones.a, presentation.choiceA)}
               {renderChoice('B', currentEvent.optionB.label, currentEvent.optionB.description, previews.b, tones.b, presentation.choiceB)}
             </div>
+
+            <AnimatePresence>
+              {picked && (
+                <motion.div
+                  className="event-result-badges"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {getEventResultBadges(picked === 'A' ? previews.a : previews.b).map((b, i) => (
+                    <motion.span
+                      key={`${b.text}-${i}`}
+                      className={`event-result-badge ${b.positive ? 'event-result-badge--good' : 'event-result-badge--bad'}`}
+                      initial={{ opacity: 0, y: 18, scale: 0.7 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ delay: 0.08 * i, type: 'spring', stiffness: 320, damping: 18 }}
+                    >
+                      <span className="event-result-badge-icon">{b.icon}</span>
+                      {b.text}
+                    </motion.span>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
       </div>
@@ -475,9 +619,16 @@ export function MatchScreen() {
     showResult: false,
     showHighlights: false,
   });
+  const [speed, setSpeed] = useState(1);
+  const [microToasts, setMicroToasts] = useState<{ id: number; text: string; kind: 'synergy' | 'tag' }[]>([]);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const prevGoalsRef = useRef(0);
+  const toastIdRef = useRef(0);
 
   useEffect(() => {
     if (!currentMatch) return;
+    prevGoalsRef.current = 0;
+    setMicroToasts([]);
     setAnim({
       minute: 0,
       goalsFor: 0,
@@ -497,14 +648,56 @@ export function MatchScreen() {
       (partial) => setAnim((prev) => ({ ...prev, ...partial })),
       () => playSound('goal', getPersistedStats().soundEnabled),
       () => playSound('whistle', getPersistedStats().soundEnabled),
+      speed,
     );
+    timersRef.current = timers;
     return () => timers.forEach(clearTimeout);
-  }, [currentMatch]);
+  }, [currentMatch, speed]);
+
+  // Maçı atla — animasyonu kapatıp doğrudan sonuca git
+  const skipMatch = () => {
+    if (!currentMatch) return;
+    timersRef.current.forEach(clearTimeout);
+    playSound('whistle', getPersistedStats().soundEnabled);
+    setAnim({
+      minute: 90,
+      goalsFor: currentMatch.goalsFor,
+      goalsAgainst: currentMatch.goalsAgainst,
+      eventFeed: currentMatch.events,
+      latestEvent: null,
+      playing: false,
+      halftime: false,
+      showResult: true,
+      showHighlights: true,
+    });
+  };
 
   useEffect(() => {
     if (!anim.showResult || !currentMatch?.newlyDiscoveredSynergies.length) return;
     useGameStore.setState({ pendingSynergyReveal: currentMatch.newlyDiscoveredSynergies });
   }, [anim.showResult, currentMatch]);
+
+  // Gol anında "anlık tetiklenen" sinerji/tag bonusu mikro-bildirimi (ör. "HIZLI KONTRA +55!")
+  useEffect(() => {
+    if (anim.goalsFor <= prevGoalsRef.current) {
+      prevGoalsRef.current = anim.goalsFor;
+      return;
+    }
+    const newGoals = anim.goalsFor - prevGoalsRef.current;
+    prevGoalsRef.current = anim.goalsFor;
+    const goalSynergies = getActiveSynergies(squad, morale, { activeTactics, behindInMatch: anim.goalsFor <= anim.goalsAgainst })
+      .filter((s) => s.perGoalBonus || s.goalMultiplier);
+    if (!goalSynergies.length) return;
+    for (let g = 0; g < newGoals; g++) {
+      const syn = goalSynergies[(anim.goalsFor - newGoals + g) % goalSynergies.length]!;
+      const amount = syn.perGoalBonus
+        ? `+${syn.perGoalBonus}`
+        : `×${syn.goalMultiplier}`;
+      const id = ++toastIdRef.current;
+      setMicroToasts((prev) => [...prev, { id, text: `${syn.icon} ${syn.name} ${amount}!`, kind: 'synergy' }]);
+      setTimeout(() => setMicroToasts((prev) => prev.filter((t) => t.id !== id)), 1900);
+    }
+  }, [anim.goalsFor, anim.goalsAgainst, squad, morale, activeTactics]);
 
   if (!currentMatch || !pendingSelected) {
     return (
@@ -603,6 +796,44 @@ export function MatchScreen() {
                 opponentStyle={currentMatch.opponent.style}
               />
             </div>
+
+            {(() => {
+              const diff = squadAvg - currentMatch.opponent.rating;
+              const cls = diff >= 5 ? 'favorite' : diff <= -5 ? 'underdog' : 'even';
+              const label = diff >= 5 ? `★ Favori (+${diff})` : diff <= -5 ? `⚔ Underdog (${diff})` : '≈ Başa baş';
+              return (
+                <div className="flex items-center justify-center gap-2 my-2">
+                  <span className={`match-odds-badge match-odds-badge--${cls}`}>{label}</span>
+                  {anim.playing && !anim.showResult && (
+                    <span className="match-speed-control">
+                      <button type="button" className={`match-speed-btn ${speed === 1 ? 'match-speed-btn--active' : ''}`} onClick={() => setSpeed(1)}>1x</button>
+                      <button type="button" className={`match-speed-btn ${speed === 2 ? 'match-speed-btn--active' : ''}`} onClick={() => setSpeed(2)}>2x</button>
+                      <button type="button" className="match-speed-btn" onClick={skipMatch}>Atla ⏭</button>
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+
+            <div className="relative">
+              <AnimatePresence>
+                {microToasts.length > 0 && (
+                  <div className="match-microfeed">
+                    {microToasts.map((toast) => (
+                      <motion.span
+                        key={toast.id}
+                        className={`match-micro-toast match-micro-toast--${toast.kind}`}
+                        initial={{ opacity: 0, x: 40, scale: 0.8 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: 40 }}
+                        transition={{ type: 'spring', stiffness: 320, damping: 20 }}
+                      >
+                        {toast.text}
+                      </motion.span>
+                    ))}
+                  </div>
+                )}
+              </AnimatePresence>
             <MatchAnimation
               wide
               minute={anim.minute}
@@ -618,6 +849,7 @@ export function MatchScreen() {
               opponentStyle={currentMatch.opponent.style}
               round={round}
             />
+            </div>
           </div>
 
           <div className="match-col match-col--result">
@@ -994,7 +1226,9 @@ export function RunEndScreen() {
                             ? 'Pas geç'
                             : isPlayerCard(r.cardSelected)
                               ? r.cardSelected.name
-                              : `📋 ${r.cardSelected.name}`}
+                              : isTrainingCard(r.cardSelected)
+                                ? `🎓 ${r.cardSelected.description}`
+                                : `📋 ${r.cardSelected.name}`}
                       </span>
                       <span className={r.pointsEarned > 0 ? 'text-amber-400' : 'text-neutral-600'}>
                         {r.pointsEarned > 0 ? `+${r.pointsEarned}` : '0'}

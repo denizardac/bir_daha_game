@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { formatScore } from '@/engine/scoring';
 import { getDailyList, getWeekKey } from '@/engine/leaderboard';
-import { getPersistedStats } from '@/store/gameStore';
+import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { getAnonymousId } from '@/utils/storage';
 import type { LeaderboardEntry } from '@/types';
 
@@ -66,6 +66,7 @@ function rowName(entry: LeaderboardEntry, isMe: boolean) {
 export function MenuLeaderboardWidget() {
   const stats = getPersistedStats();
   const myId = getAnonymousId();
+  const setScreen = useGameStore((s) => s.setScreen);
   const [tab, setTab] = useState<Tab>('daily');
   const [expanded, setExpanded] = useState(false);
 
@@ -182,6 +183,14 @@ export function MenuLeaderboardWidget() {
           )}
         </div>
       )}
+
+      <button
+        type="button"
+        className="menu-lb-fullbtn"
+        onClick={() => setScreen('leaderboard')}
+      >
+        Tüm sıralamayı gör →
+      </button>
     </div>
   );
 }
