@@ -86,7 +86,7 @@ export function CardSelectCommandBar({
               nearSynergies.map(({ synergy, progress }) => (
                 <HoverTip
                   key={synergy.id}
-                  tip={`${synergy.description}\nİlerleme: ${progress.current}/${progress.required}`}
+                  tip={`${synergy.description}\nİlerleme: ${progress.current}/${progress.required}${progress.note ? `\n${progress.note}` : ''}`}
                   className="card-select-synergy-wrap"
                   placement="bottom"
                 >

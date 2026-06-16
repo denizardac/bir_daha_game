@@ -47,7 +47,15 @@ export type TacticCardInsight = {
 };
 
 function contributionLabel(synergyId: string, card: PlayerCard): string {
-    if (synergyId === 'synergy_kanatlar') {
+  if (synergyId === 'synergy_firtina') {
+    const parts: string[] = [];
+    if (card.tags.includes('HIZLI')) parts.push('HIZLI');
+    if (card.tags.includes('TEKNİK')) parts.push('TEKNİK');
+    if (card.tags.includes('ASİSTÇİ')) parts.push('ASİSTÇİ');
+    if (parts.length) return `+1 ${parts.join(' · ')} (4/4 · 2/2 · 1/1 hedef)`;
+    return 'Tag katkısı yok';
+  }
+  if (synergyId === 'synergy_kanatlar') {
     if (card.position === 'SLK' && card.tags.includes('HIZLI')) return 'Sol Kanat HIZLI';
     if (card.position === 'SÖK' && card.tags.includes('HIZLI')) return 'Sağ Kanat HIZLI';
   }
@@ -97,7 +105,7 @@ function resolveSynergyProgress(
   return {
     icon: before?.icon ?? after?.icon ?? synergy.icon,
     name: synergy.name,
-    description: synergy.description,
+    description: after?.note ?? before?.note ?? synergy.description,
     before: beforeCount,
     after: afterCount,
     required,
@@ -143,7 +151,7 @@ function getPlayerTacticContributions(
 export function getPlayerCardInsight(
   card: PlayerCard,
   squad: PlayerCard[],
-  _discovered: string[],
+  discovered: string[],
   maxSquadSize: number,
   activeTactics: ActiveTactic[] = [],
   morale = 50,
@@ -152,6 +160,7 @@ export function getPlayerCardInsight(
   const positionHints = getPositionHints(card, squad, activeTactics, maxSquadSize, morale);
 
   const synergies = SYNERGIES
+    .filter((s) => !s.hidden || discovered.includes(s.id))
     .map((s) => resolveSynergyProgress(s, squad, card, morale))
     .filter((x): x is PlayerSynergyHint => x !== null)
     .sort((a, b) => {

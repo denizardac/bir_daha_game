@@ -68,18 +68,20 @@ function NearSynergyTile({
   synergy,
   current,
   required,
+  note,
   offerHint,
 }: {
   synergy: SynergyDefinition;
   current: number;
   required: number;
+  note?: string;
   offerHint?: string | null;
 }) {
   const pct = (current / required) * 100;
   const almost = pct >= 66;
 
   const need = required - current;
-  const tip = `${synergy.description}\n\n${getSynergyBenefitText(synergy)}${need > 0 ? `\n\nAçmak için: ${need} eksik` : ''}${offerHint ? `\n\n${offerHint}` : ''}`;
+  const tip = `${synergy.description}\n\n${getSynergyBenefitText(synergy)}${note ? `\n\n${note}` : ''}${need > 0 ? `\n\nAçmak için: ${need} eksik` : ''}${offerHint ? `\n\n${offerHint}` : ''}`;
 
   return (
     <HoverTip tip={tip} className="syn-tile-wrap" placement="left">
@@ -91,6 +93,7 @@ function NearSynergyTile({
             <span className="syn-tile-count">{current}/{required}</span>
           </div>
           <DotProgress current={current} required={required} />
+          {note && <p className="syn-tile-note">{note}</p>}
           {offerHint ? (
             <p className="syn-tile-offer-hint">{offerHint}</p>
           ) : (
@@ -157,6 +160,7 @@ export function SynergySideSection({ squad, morale, discoveredSynergies, current
                 synergy={synergy}
                 current={progress.current}
                 required={progress.required}
+                note={progress.note}
                 offerHint={offerHint}
               />
             ))}

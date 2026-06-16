@@ -1,5 +1,5 @@
 import { getStartingEleven } from '@/engine/lineupPreview';
-import type { ActiveTactic, MatchContext, PlayerCard, SynergyDefinition } from '@/types';
+import type { ActiveTactic, MatchContext, PlayerCard, SynergyDefinition, SynergyProgress } from '@/types';
 
 function effectiveSquad(squad: PlayerCard[], activeTactics?: ActiveTactic[]): PlayerCard[] {
   if (!activeTactics?.length) return squad;
@@ -24,6 +24,22 @@ function countMidfieldWithTrait(squad: PlayerCard[], tags: string[]): number {
   return squad.filter(
     (p) => mids.has(p.position) && tags.some((t) => p.tags.includes(t as never)),
   ).length;
+}
+
+/** 4 HIZLI + 2 TEKNİK + 1 ASİSTÇİ — parça parça ilerleme (7 puan) */
+export function getKarmaFirtinaProgress(squad: PlayerCard[]): SynergyProgress | null {
+  const hizli = countTag(squad, 'HIZLI');
+  const teknik = countTag(squad, 'TEKNİK');
+  const asist = countTag(squad, 'ASİSTÇİ');
+  const current = Math.min(hizli, 4) + Math.min(teknik, 2) + Math.min(asist, 1);
+  const required = 7;
+  if (current >= required) return null;
+  return {
+    current,
+    required,
+    icon: '🌪️',
+    note: `HIZLI ${Math.min(hizli, 4)}/4 · TEKNİK ${Math.min(teknik, 2)}/2 · ASİSTÇİ ${Math.min(asist, 1)}/1`,
+  };
 }
 
 export const SYNERGIES: SynergyDefinition[] = [
@@ -197,12 +213,7 @@ export const SYNERGIES: SynergyDefinition[] = [
     description: '4 HIZLI + 2 TEKNİK + 1 ASİSTÇİ — galibiyet +130',
     check: (s) => countTag(s, 'HIZLI') >= 4 && countTag(s, 'TEKNİK') >= 2 && countTag(s, 'ASİSTÇİ') >= 1,
     perWinBonus: 130, goalMultiplier: 1.15,
-    getProgress: (s, c) => {
-      const combined = c ? [...s, c] : s;
-      const have = (countTag(combined, 'HIZLI') >= 4 ? 1 : 0) + (countTag(combined, 'TEKNİK') >= 2 ? 1 : 0) + (countTag(combined, 'ASİSTÇİ') >= 1 ? 1 : 0);
-      if (have >= 3) return null;
-      return { current: have, required: 3, icon: '🌪️', note: '4 HIZLI · 2 TEKNİK · 1 ASİSTÇİ' };
-    },
+    getProgress: (s, c) => getKarmaFirtinaProgress(c ? [...s, c] : s),
   },
   {
     id: 'synergy_efsaneler', name: 'EFSANE 11', icon: '🏆', hidden: true,

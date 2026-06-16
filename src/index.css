@@ -2891,6 +2891,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border: 1px solid rgba(251, 191, 36, 0.28);
 }
 
+.syn-tile-note {
+  margin: 0.2rem 0 0;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #7dd3fc;
+}
+
 .syn-tile-hint--sub {
   margin-top: 0.2rem;
   font-size: 0.64rem;

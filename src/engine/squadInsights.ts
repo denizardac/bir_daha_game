@@ -6,7 +6,7 @@ import { isPlayerCard } from '@/types';
 
 export type NearSynergyProgress = {
   synergy: SynergyDefinition;
-  progress: { current: number; required: number; icon: string };
+  progress: { current: number; required: number; icon: string; note?: string };
   offerHint?: string | null;
 };
 
