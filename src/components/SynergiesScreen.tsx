@@ -1,4 +1,5 @@
 import { SYNERGIES, TOTAL_SYNERGIES } from '@/data/synergies';
+import { getSynergyBenefitText } from '@/engine/squadInsights';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 
 export function SynergiesScreen() {
@@ -6,22 +7,40 @@ export function SynergiesScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
 
   return (
-    <div className="game-shell min-h-screen p-6">
-      <div className="mx-auto max-w-2xl">
-        <button type="button" className="btn-secondary mb-6" onClick={() => setScreen('menu')}>← Ana Menü</button>
-        <h1 className="text-4xl font-extrabold uppercase">Sinerjiler</h1>
-        <p className="mb-6 text-neutral-400">Keşfedilen: {discovered.length}/{TOTAL_SYNERGIES}</p>
-        <div className="space-y-3">
+    <div className="game-shell page-screen">
+      <div className="page-screen-inner page-screen-inner--wide">
+        <button type="button" className="btn-secondary page-screen-back" onClick={() => setScreen('menu')}>
+          ← Ana Menü
+        </button>
+
+        <header className="page-screen-header">
+          <h1>Sinerjiler</h1>
+          <p>Keşfedilen: {discovered.length}/{TOTAL_SYNERGIES} — tag ve mevki kombinasyonlarıyla maç bonusu kazan.</p>
+        </header>
+
+        <div className="synergies-catalog">
           {SYNERGIES.map((s) => {
             const ok = discovered.includes(s.id);
             return (
-              <div key={s.id} className={`synergy-list-item ${ok ? 'synergy-list-item--discovered' : 'synergy-list-item--hidden'}`}>
-                <p className="text-xl font-bold">
-                  <span className="synergy-list-icon">{ok ? s.icon : '?'}</span>
-                  {ok ? s.name : '???'}
-                </p>
-                {ok && <p className="text-sm text-neutral-400">{s.description}</p>}
-              </div>
+              <article
+                key={s.id}
+                className={`synergies-catalog-item ${ok ? 'synergies-catalog-item--open' : 'synergies-catalog-item--locked'}`}
+              >
+                <span className="synergies-catalog-icon" aria-hidden>{ok ? s.icon : '🔒'}</span>
+                <div className="synergies-catalog-body">
+                  <h2>{ok ? s.name : (s.hidden ? 'Gizli sinerji' : '???')}</h2>
+                  {ok ? (
+                    <>
+                      <p>{s.description}</p>
+                      <span className="synergies-catalog-reward">{getSynergyBenefitText(s)}</span>
+                    </>
+                  ) : (
+                    <p className="synergies-catalog-teaser">
+                      {s.hidden ? 'Run sırasında keşfet — ipucu kart seçiminde görünür' : 'Henüz açılmadı — ilk keşifte koleksiyona eklenir'}
+                    </p>
+                  )}
+                </div>
+              </article>
             );
           })}
         </div>

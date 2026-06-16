@@ -27,11 +27,16 @@ export function HallOfFameScreen() {
   const archivePlaceholders = getPlaceholderMonths(activeKey).filter((m) => !months.includes(m));
 
   return (
-    <div className="game-shell min-h-screen p-6">
-      <div className="mx-auto max-w-lg">
-        <button type="button" className="btn-secondary mb-6" onClick={() => setScreen('menu')}>← Ana Menü</button>
-        <h1 className="mb-1 text-4xl font-extrabold uppercase">Hall of Fame</h1>
-        <p className="mb-6 text-neutral-400">Aylık sezon — her ay sıfırlanır, geçmiş aylar arşivde kalır.</p>
+    <div className="game-shell page-screen">
+      <div className="page-screen-inner page-screen-inner--medium">
+        <button type="button" className="btn-secondary page-screen-back" onClick={() => setScreen('menu')}>
+          ← Ana Menü
+        </button>
+
+        <header className="page-screen-header">
+          <h1>Hall of Fame</h1>
+          <p>Aylık sezon — her ay sıfırlanır, geçmiş aylar arşivde kalır.</p>
+        </header>
 
         {isActive && entries.length === 0 && (
           <div className="panel mb-4 border-amber-500/30 bg-amber-950/20">
@@ -40,46 +45,51 @@ export function HallOfFameScreen() {
           </div>
         )}
 
-        <div className="mb-4 flex flex-wrap gap-2">
-          {months.map((m) => (
-            <button
-              key={m}
-              type="button"
-              className={`btn-secondary text-sm ${month === m ? 'border-amber-500 text-amber-300' : ''}`}
-              onClick={() => setMonth(m)}
-            >
-              {getSeasonLabel(m)}{m === activeKey ? ' · Aktif' : ''}
-            </button>
-          ))}
-        </div>
-
-        <div className="panel space-y-2">
-          <p className="text-sm text-neutral-500">{getSeasonLabel(month)} — Top 50</p>
-          {entries.length === 0 && (
-            <p className="text-neutral-500">Bu ay henüz kayıt yok. İlk sen ol!</p>
-          )}
-          {entries.map((e, idx) => (
-            <div key={`${e.id}-${e.timestamp}`} className="flex justify-between border-b border-neutral-800 py-2 text-sm last:border-0">
-              <span>
-                #{idx + 1} {e.displayName}
-                {e.flawless ? ' 🛡️' : ''}
-                <span className="ml-2 text-neutral-600">{e.roundsCompleted}R</span>
-              </span>
-              <span className="font-bold text-amber-400">{formatScore(e.totalScore)}</span>
+        <div className="hof-layout">
+          <div>
+            <div className="page-screen-tabs mb-4">
+              {months.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  className={`btn-secondary text-sm ${month === m ? 'btn-secondary--active' : ''}`}
+                  onClick={() => setMonth(m)}
+                >
+                  {getSeasonLabel(m)}{m === activeKey ? ' · Aktif' : ''}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {archivePlaceholders.length > 0 && (
-          <div className="panel mt-4 space-y-2 opacity-70">
-            <p className="text-xs font-bold uppercase text-neutral-500">Geçmiş sezonlar</p>
-            {archivePlaceholders.map((m) => (
-              <p key={m} className="text-sm text-neutral-500">
-                {getSeasonLabel(m)} — Kazanan: —
-              </p>
-            ))}
+            <div className="panel hof-entries-panel space-y-2">
+              <p className="text-sm text-neutral-500">{getSeasonLabel(month)} — Top 50</p>
+              {entries.length === 0 && (
+                <p className="text-neutral-500">Bu ay henüz kayıt yok. İlk sen ol!</p>
+              )}
+              {entries.map((e, idx) => (
+                <div key={`${e.id}-${e.timestamp}`} className="flex justify-between gap-3 border-b border-neutral-800 py-2.5 text-sm last:border-0">
+                  <span className="min-w-0">
+                    <span className="font-bold text-amber-300">#{idx + 1}</span>{' '}
+                    {e.displayName}
+                    {e.flawless ? ' 🛡️' : ''}
+                    <span className="ml-2 text-neutral-600">{e.roundsCompleted}R</span>
+                  </span>
+                  <span className="shrink-0 font-bold text-amber-400">{formatScore(e.totalScore)}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
+
+          {archivePlaceholders.length > 0 && (
+            <div className="panel hof-archive-panel space-y-2">
+              <p className="text-xs font-bold uppercase text-neutral-500">Geçmiş sezonlar</p>
+              {archivePlaceholders.map((m) => (
+                <p key={m} className="text-sm text-neutral-500">
+                  {getSeasonLabel(m)} — Kazanan: —
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

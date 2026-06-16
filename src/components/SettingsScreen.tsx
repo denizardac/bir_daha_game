@@ -13,12 +13,19 @@ export function SettingsScreen() {
   };
 
   return (
-    <div className="game-shell min-h-screen p-6">
-      <div className="mx-auto max-w-md">
-        <button type="button" className="btn-secondary mb-6" onClick={() => setScreen('menu')}>← Ana Menü</button>
-        <h1 className="mb-6 text-4xl font-extrabold uppercase">Ayarlar</h1>
-        <div className="panel space-y-4">
-          <label className="flex items-center gap-2">
+    <div className="game-shell page-screen">
+      <div className="page-screen-inner page-screen-inner--narrow">
+        <button type="button" className="btn-secondary page-screen-back" onClick={() => setScreen('menu')}>
+          ← Ana Menü
+        </button>
+
+        <header className="page-screen-header">
+          <h1>Ayarlar</h1>
+          <p>Oyun tercihlerini buradan yönet.</p>
+        </header>
+
+        <div className="panel settings-panel space-y-4">
+          <label>
             <input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} />
             <span>Ses efektleri</span>
           </label>

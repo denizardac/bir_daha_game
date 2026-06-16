@@ -34,11 +34,14 @@ export function CollectionScreen() {
   const eventOpen = EVENT_CARDS.filter((e) => seenEvents.has(e.id)).length;
 
   return (
-    <div className="game-shell min-h-screen p-6">
-      <div className="mx-auto max-w-3xl">
-        <button type="button" className="btn-secondary mb-6" onClick={() => setScreen('menu')}>← Ana Menü</button>
-        <h1 className="text-4xl font-extrabold uppercase">Koleksiyon</h1>
-        <p className="mb-4 text-neutral-400">Açtıklarını topla — keşfettikçe dolar.</p>
+    <div className="game-shell page-screen">
+      <div className="page-screen-inner page-screen-inner--wide">
+        <button type="button" className="btn-secondary page-screen-back" onClick={() => setScreen('menu')}>← Ana Menü</button>
+
+        <header className="page-screen-header">
+          <h1>Koleksiyon</h1>
+          <p>Açtıklarını topla — keşfettikçe dolar.</p>
+        </header>
 
         <div className="collection-progress-head">
           <div className="collection-stat">
@@ -55,7 +58,7 @@ export function CollectionScreen() {
           </div>
         </div>
 
-        <div className="flex gap-2 mb-4">
+        <div className="page-screen-tabs">
           {([['sinerji', '⚡ Sinerjiler'], ['efsane', '🏆 Efsaneler'], ['olay', '🎭 Olaylar']] as [Tab, string][]).map(([id, label]) => (
             <button
               key={id}

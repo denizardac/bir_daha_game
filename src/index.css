@@ -1322,21 +1322,21 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 @media (min-width: 1024px) {
   .card-select-inner .game-layout {
-    grid-template-columns: minmax(168px, 200px) minmax(0, 1fr) minmax(168px, 200px);
+    grid-template-columns: minmax(148px, 172px) minmax(0, 1fr) minmax(148px, 172px);
     gap: 0.75rem;
   }
 }
 
 @media (min-width: 1280px) {
   .card-select-inner .game-layout {
-    grid-template-columns: minmax(190px, 220px) minmax(0, 1fr) minmax(190px, 220px);
+    grid-template-columns: minmax(168px, 195px) minmax(0, 1fr) minmax(168px, 195px);
     gap: 0.85rem;
   }
 }
 
 @media (min-width: 1600px) {
   .card-select-inner .game-layout {
-    grid-template-columns: 220px 1fr 230px;
+    grid-template-columns: minmax(190px, 210px) minmax(0, 1fr) minmax(190px, 210px);
     gap: 1rem;
   }
 }
@@ -3777,8 +3777,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .cards-pick-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.65rem;
-    align-content: stretch;
-    grid-auto-rows: minmax(0, 1fr);
+    align-content: start;
+    grid-auto-rows: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
   }
 
   .card-select-inner .cards-pick-grid {
@@ -3787,9 +3791,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   }
 
   .card-select-inner .card-pick-slot-anchor {
-    min-height: 0;
+    min-height: min(460px, calc(100dvh - 260px));
     max-height: none;
-    height: 100%;
+    height: auto;
   }
 }
 
@@ -4903,6 +4907,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   gap: 0.75rem;
 }
 
+@media (min-width: 1200px) {
+  .menu-footer {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
   .menu-footer {
     grid-template-columns: repeat(2, 1fr);
@@ -5411,16 +5421,26 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(3, minmax(0, 1fr));
-  gap: 0.4rem 0.5rem;
-  align-items: stretch;
-  overflow: visible;
-  padding-right: 0;
+  grid-template-columns: 1fr;
+  grid-auto-rows: auto;
+  gap: 0.35rem;
+  align-content: start;
+  align-items: start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 0.1rem;
+}
+
+@media (min-width: 1600px) {
+  .menu-howto-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem 0.5rem;
+  }
 }
 
 .menu-howto-item {
-  height: 100%;
+  height: auto;
   min-height: 0;
   display: flex;
   align-items: flex-start;
@@ -7696,8 +7716,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .guide-shell {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .guide-header {
@@ -10371,8 +10392,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* ===== Koleksiyon ekranı ===== */
 .collection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 0.7rem;
+}
+
+@media (min-width: 900px) {
+  .collection-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.85rem;
+  }
 }
 .collection-tile {
   padding: 0.7rem;
@@ -10572,4 +10600,188 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 600;
   opacity: 0.82;
   letter-spacing: 0.01em;
+}
+
+/* ===== Secondary screens — desktop polish ===== */
+.page-screen {
+  padding: 1.5rem 1.75rem;
+  min-height: 100dvh;
+}
+
+.page-screen-inner {
+  margin: 0 auto;
+  width: 100%;
+}
+
+.page-screen-inner--narrow { max-width: 30rem; }
+.page-screen-inner--medium { max-width: 44rem; }
+.page-screen-inner--wide { max-width: 72rem; }
+
+.page-screen-back {
+  margin-bottom: 1.25rem;
+}
+
+.page-screen-header {
+  margin-bottom: 1.35rem;
+}
+
+.page-screen-header h1 {
+  font-size: clamp(1.85rem, 3vw, 2.6rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+}
+
+.page-screen-header p {
+  margin-top: 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.page-screen-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.settings-panel {
+  padding: 1.25rem 1.35rem;
+}
+
+.settings-panel label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.35rem 0;
+}
+
+.settings-panel input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--accent);
+}
+
+.hof-layout {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 960px) {
+  .hof-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+    align-items: start;
+  }
+}
+
+.hof-entries-panel {
+  min-height: 12rem;
+}
+
+.hof-archive-panel {
+  opacity: 0.85;
+}
+
+.synergies-catalog {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.synergies-catalog-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(17, 17, 17, 0.85);
+  min-height: 5.5rem;
+}
+
+.synergies-catalog-item--open {
+  border-left: 4px solid #fbbf24;
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.14) 0%, rgba(17, 17, 17, 0.9) 100%);
+}
+
+.synergies-catalog-item--locked {
+  opacity: 0.62;
+}
+
+.synergies-catalog-icon {
+  flex-shrink: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  width: 2rem;
+  text-align: center;
+}
+
+.synergies-catalog-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.synergies-catalog-body h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fafafa;
+}
+
+.synergies-catalog-body p {
+  margin: 0.3rem 0 0;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.synergies-catalog-teaser {
+  font-style: italic;
+  color: var(--text-muted) !important;
+}
+
+.synergies-catalog-reward {
+  display: inline-block;
+  margin-top: 0.45rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fde68a;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+/* Kart seçim / maç — kompakt moral bandı (desktop) */
+@media (min-width: 900px) {
+  .card-select-inner .pick-morale-banner,
+  .match-screen-inner .pick-morale-banner {
+    padding: 0.4rem 0.7rem;
+    gap: 0.45rem 0.65rem;
+  }
+
+  .card-select-inner .pick-morale-tip,
+  .match-screen-inner .pick-morale-tip {
+    padding: 0.32rem 0.55rem;
+    font-size: 0.8rem;
+  }
+
+  .card-select-inner .pick-morale-detail {
+    display: none;
+  }
+}
+
+/* Taktik seçici — geniş ekranda kartlara daha fazla yükseklik */
+@media (min-width: 900px) {
+  .tactic-pick-card-slot {
+    min-height: min(340px, calc(100dvh - 340px));
+  }
 }
