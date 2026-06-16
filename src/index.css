@@ -3704,16 +3704,59 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 @media (max-width: 899px) {
-  .cards-pick-grid {
+  /* Mobil: tüm card-select ekranını sabit 100dvh/overflow:hidden yerine
+     doğal sayfa kaydırmasına çevir; aksi halde kartlara erişilemiyor. */
+  .card-select-screen {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow-x: hidden;
     overflow-y: auto;
+  }
+
+  .card-select-inner {
+    height: auto;
+    overflow: visible;
+  }
+
+  .card-select-inner .game-layout {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    min-height: 0;
+    gap: 0.75rem;
+  }
+
+  /* Kartlar asıl aksiyon: mobilde kadro/sinerji panellerinin üstüne al */
+  .card-pick-center {
+    order: -1;
+    overflow: visible;
+    flex: none;
+    min-height: 0;
+  }
+
+  .cards-pick-grid {
+    overflow: visible;
     grid-auto-rows: auto;
     align-content: start;
-    overscroll-behavior: contain;
+    flex: none;
   }
 
   .card-select-inner .card-pick-slot-anchor {
-    min-height: min(380px, 46dvh);
-    max-height: min(420px, 50dvh);
+    min-height: 0;
+    max-height: none;
+    height: auto;
+  }
+
+  /* Moral bandı: yatay yerine dikey istiflensin, boşluk kalmasın */
+  .pick-morale-main {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .pick-morale-tips {
+    justify-content: flex-start;
+    flex: 1 1 100%;
   }
 }
 
@@ -5486,13 +5529,59 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 @media (max-width: 1199px) {
+  /* Mobil/tablet: sabit 100dvh + overflow:hidden zincirini doğal kaydırmaya çevir.
+     Aksi halde flex/grid çocukları sıfır yüksekliğe çöküp üst üste biniyor. */
+  .menu-shell {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: block;
+  }
+
+  .menu-dashboard {
+    height: auto;
+    min-height: 100dvh;
+    max-width: none;
+  }
+
+  .menu-main {
+    flex: none;
+    min-height: 0;
+  }
+
+  .menu-play-panel {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .menu-play-panel-inner {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 0;
+  }
+
+  .menu-play-content {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
   .menu-body {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    min-height: 0;
   }
 
   .menu-side-stack {
     overflow: visible;
+    height: auto;
+    flex: none;
   }
 
   .menu-widget--howto {
@@ -6645,14 +6734,33 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 @media (max-width: 959px) {
-  .match-layout {
-    grid-template-rows: auto 1fr auto;
+  /* Mobil: maç ekranını sabit 100dvh/overflow:hidden yerine doğal kaydırmaya
+     çevir; kolonlar tek sütunda istiflenir, örtüşme olmaz. */
+  .match-screen {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow-x: hidden;
     overflow-y: auto;
-    scrollbar-width: none;
   }
 
-  .match-layout::-webkit-scrollbar {
-    display: none;
+  .match-screen-inner {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .match-layout {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    overflow: visible;
+    grid-template-rows: none;
+  }
+
+  .match-col,
+  .match-col--pick,
+  .match-col--result {
+    overflow: visible;
   }
 
   .match-col--arena {
@@ -9053,11 +9161,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .tutorial-coach {
   position: fixed;
-  left: 50%;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
   bottom: max(1.25rem, env(safe-area-inset-bottom));
   z-index: 590;
   width: min(520px, calc(100% - 2rem));
-  transform: translateX(-50%);
   padding: 1.15rem 1.25rem 1.2rem;
   border-radius: 16px;
   border: 2px solid rgba(96, 165, 250, 0.55);

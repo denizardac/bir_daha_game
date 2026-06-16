@@ -46,8 +46,11 @@ function useCenterModalStyle(open: boolean) {
     }
 
     const place = () => {
-      const width = Math.min(920, Math.max(440, window.innerWidth * 0.88));
-      const maxHeight = Math.min(900, window.innerHeight - 32);
+      const width =
+        window.innerWidth <= 520
+          ? window.innerWidth - 20
+          : Math.min(920, Math.max(440, window.innerWidth * 0.88));
+      const maxHeight = Math.min(900, window.innerHeight - 24);
       setStyle({
         position: 'fixed',
         top: '50%',
