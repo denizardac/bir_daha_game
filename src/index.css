@@ -1389,7 +1389,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .squad-panel-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.5rem;
   margin-bottom: 0.4rem;
@@ -1399,19 +1399,21 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .squad-panel-head-main {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
   min-width: 0;
+  flex: 1;
+}
+
+.squad-panel-stat {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.35;
 }
 
 .round-progress--inline {
   margin-top: 0;
   max-width: 9rem;
-}
-
-.squad-panel-stat {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-muted);
 }
 
 .squad-panel-scroll {
@@ -3382,8 +3384,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.4rem;
-  flex: 0 1 auto;
+  gap: 0.35rem;
+  flex: 1 1 280px;
+  max-width: 100%;
 }
 
 .card-pick-title {
@@ -3791,7 +3794,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   }
 
   .card-select-inner .card-pick-slot-anchor {
-    min-height: min(460px, calc(100dvh - 260px));
+    min-height: min(480px, calc(100dvh - 230px));
     max-height: none;
     height: auto;
   }
@@ -4439,6 +4442,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .menu-body > .menu-bite-panel {
   min-height: 0;
   height: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .menu-body > .menu-bite-panel {
@@ -4468,9 +4473,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .menu-play-content {
   min-height: 0;
   overflow: hidden;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+.menu-play-hint {
+  flex-shrink: 0;
 }
 
 .menu-top {
@@ -4584,6 +4594,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .menu-daily-stats {
+  flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 1.25rem;
@@ -4612,13 +4623,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .menu-score-chart {
-  min-height: 0;
+  flex: 1 1 auto;
+  min-height: 7rem;
   display: flex;
   flex-direction: column;
   padding: 1rem 1.15rem;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
 }
 
 .menu-score-chart-title {
@@ -4966,9 +4979,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .menu-widget--howto {
   flex: 1 1 auto;
-  min-height: 8.5rem;
+  min-height: 0;
   gap: 0.35rem;
-  overflow: visible;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   padding: 0.85rem 0.95rem;
@@ -5420,26 +5433,49 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .menu-howto-grid {
   flex: 1 1 auto;
   min-height: 0;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-auto-rows: auto;
-  gap: 0.35rem;
-  align-content: start;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: thin;
   padding-right: 0.1rem;
 }
 
-@media (min-width: 1600px) {
+@media (min-width: 1100px) {
   .menu-howto-grid {
+    display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.4rem 0.5rem;
+    grid-auto-rows: min-content;
+    align-content: start;
+    gap: 0.38rem 0.5rem;
+  }
+
+  .menu-howto-item {
+    padding: 0.42rem 0.5rem;
+    gap: 0.42rem;
+  }
+
+  .menu-howto-item-icon {
+    width: 2.15rem;
+    height: 2.15rem;
+    font-size: 1rem;
+  }
+
+  .menu-howto-item-title {
+    font-size: 0.8rem;
+    line-height: 1.2;
+  }
+
+  .menu-howto-item-text {
+    font-size: 0.74rem;
+    line-height: 1.35;
+    margin-top: 0.12rem;
   }
 }
 
 .menu-howto-item {
+  flex-shrink: 0;
   height: auto;
   min-height: 0;
   display: flex;
@@ -5959,7 +5995,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-width: 1280px;
+  max-width: min(100%, 1440px);
   margin: 0 auto;
   padding: 0.65rem 1rem 0.75rem;
   min-height: 0;
@@ -8616,6 +8652,175 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-variant-numeric: tabular-nums;
 }
 
+/* Kompakt moral bandı — kart seçim üst şerit */
+.pick-morale-banner--compact {
+  padding: 0.45rem 0.7rem;
+}
+
+.pick-morale-compact-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+}
+
+.pick-morale-compact-core {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.65rem;
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.pick-morale-compact-stats {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.pick-morale-compact-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.5rem;
+}
+
+.pick-morale-compact-tier {
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fde68a;
+}
+
+.pick-morale-bar--compact {
+  margin-top: 0.25rem;
+  height: 0.35rem;
+}
+
+.pick-morale-compact-bridge {
+  flex-shrink: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: rgba(251, 191, 36, 0.55);
+  line-height: 1;
+}
+
+.pick-morale-compact-fx {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.pick-morale-compact-fx-label {
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.3;
+  max-width: 14rem;
+}
+
+.pick-morale-compact-mult {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #fde68a;
+  line-height: 1.1;
+}
+
+.pick-morale-compact-tips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+  flex: 1 1 16rem;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.pick-morale-tip--compact {
+  padding: 0.24rem 0.5rem;
+  font-size: 0.72rem;
+  min-height: 0;
+  border-radius: 999px;
+}
+
+.card-select-inner .pick-morale-banner--compact {
+  margin-bottom: 0.3rem;
+}
+
+@media (min-width: 1200px) {
+  .pick-morale-compact-row {
+    flex-wrap: nowrap;
+  }
+
+  .pick-morale-compact-tips {
+    flex: 1 1 auto;
+  }
+}
+
+.card-pick-synergy-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  flex-shrink: 0;
+  padding: 0.4rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(192, 132, 252, 0.22);
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.18) 0%, rgba(12, 12, 14, 0.85) 100%);
+}
+
+.card-pick-synergy-strip-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c084fc;
+  flex-shrink: 0;
+}
+
+.card-pick-synergy-strip-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.card-pick-synergy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #e9d5ff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(192, 132, 252, 0.25);
+}
+
+.btn-train-pick--toolbar,
+.btn-pass-pick--toolbar {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.65rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.btn-train-pick--toolbar {
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+.btn-pass-pick--toolbar {
+  border-color: rgba(163, 163, 163, 0.4);
+}
+
 @media (max-width: 900px) {
   .pick-morale-banner {
     flex-direction: column;
@@ -8767,6 +8972,154 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border: 1px solid rgba(251, 191, 36, 0.28);
   background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(8, 8, 12, 0.95) 55%);
   box-shadow: 0 0 24px rgba(251, 191, 36, 0.06);
+}
+
+.match-morale-banner--unified {
+  padding: 0.5rem 0.85rem;
+}
+
+.match-morale-unified-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+}
+
+.match-morale-unified-moral {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 11rem;
+  min-width: 0;
+}
+
+.match-morale-unified-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.match-morale-unified-moral-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.match-morale-unified-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.45rem;
+}
+
+.match-morale-unified-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fbbf24;
+}
+
+.match-morale-unified-value {
+  font-size: 1.1rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #fafafa;
+}
+
+.match-morale-unified-tier {
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fde68a;
+}
+
+.match-morale-unified-bar {
+  margin-top: 0.28rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.match-morale-unified-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #dc2626, #fbbf24, #22c55e);
+}
+
+.match-morale-unified-bridge {
+  flex-shrink: 0;
+}
+
+.match-morale-unified-bridge-text {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(251, 191, 36, 0.7);
+  white-space: nowrap;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  background: rgba(251, 191, 36, 0.06);
+}
+
+.match-morale-unified-fx {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.match-morale-unified-fx-mult {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fde68a;
+  line-height: 1.15;
+}
+
+.match-morale-unified-fx-desc {
+  margin: 0.1rem 0 0;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.match-morale-unified-tips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  flex: 1 1 18rem;
+  justify-content: flex-end;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.match-morale-tip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: help;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.match-morale-tip-chip:hover,
+.match-morale-tip-chip:focus-visible {
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.match-morale-tip-chip-delta {
+  color: #fbbf24;
+  font-variant-numeric: tabular-nums;
 }
 
 .match-morale-banner-main {
@@ -8970,6 +9323,27 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   inset: 0;
   background: rgba(0, 0, 0, 0.62);
   z-index: 399;
+}
+
+.lineup-preview-popover--center.lineup-preview-popover--modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  right: auto;
+  transform: translate(-50%, -50%);
+  width: min(920px, calc(100vw - 48px));
+  max-height: min(900px, calc(100dvh - 48px));
+  z-index: 420;
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+}
+
+.lineup-preview-popover--modal .lineup-preview-popover-head--v2 {
+  flex-shrink: 0;
 }
 
 .lineup-preview-popover--center {
@@ -10762,8 +11136,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* Kart seçim / maç — kompakt moral bandı (desktop) */
 @media (min-width: 900px) {
-  .card-select-inner .pick-morale-banner,
-  .match-screen-inner .pick-morale-banner {
+  .card-select-inner .pick-morale-banner:not(.pick-morale-banner--compact),
+  .match-screen-inner .pick-morale-banner:not(.pick-morale-banner--compact) {
     padding: 0.4rem 0.7rem;
     gap: 0.45rem 0.65rem;
   }
@@ -10776,6 +11150,131 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
   .card-select-inner .pick-morale-detail {
     display: none;
+  }
+
+  .match-side-block--morale-mini {
+    display: none;
+  }
+}
+
+/* ── Desktop 1440px ── */
+@media (min-width: 1440px) {
+  .menu-body {
+    grid-template-columns: 1.08fr 0.92fr 0.78fr;
+    gap: 1rem;
+  }
+
+  .menu-play-panel-inner {
+    padding: 1.35rem 1.6rem;
+  }
+
+  .menu-howto-item-text {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .card-select-inner {
+    padding-left: 1.25rem !important;
+    padding-right: 1.25rem !important;
+  }
+
+  .card-select-inner .game-layout {
+    grid-template-columns: minmax(180px, 200px) minmax(0, 1fr) minmax(180px, 200px);
+    gap: 1rem;
+  }
+
+  .card-select-inner .card-pick-slot-anchor {
+    min-height: min(500px, calc(100dvh - 210px));
+  }
+
+  .card-pick-toolbar {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .match-screen-inner {
+    max-width: 1380px;
+    padding: 0.75rem 1.25rem 0.85rem;
+  }
+
+  .match-layout {
+    gap: 0.85rem;
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(250px, 300px);
+  }
+
+  .match-morale-unified-row {
+    flex-wrap: nowrap;
+  }
+
+  .match-morale-unified-tips {
+    flex: 1 1 auto;
+  }
+
+  .match-team-rating {
+    font-size: 2rem;
+  }
+
+  .match-vs-badge {
+    font-size: 0.78rem;
+  }
+}
+
+/* ── Desktop 1920px ── */
+@media (min-width: 1920px) {
+  .menu-dashboard {
+    max-width: 1840px;
+  }
+
+  .menu-hero-title {
+    font-size: 4rem;
+  }
+
+  .menu-body {
+    grid-template-columns: 1.1fr 0.9fr 0.75fr;
+    gap: 1.15rem;
+  }
+
+  .card-select-inner .game-layout {
+    grid-template-columns: minmax(200px, 220px) minmax(0, 1fr) minmax(200px, 220px);
+    gap: 1.15rem;
+  }
+
+  .card-select-inner .card-pick-slot-anchor {
+    min-height: min(560px, calc(100dvh - 195px));
+  }
+
+  .card-pick-title {
+    font-size: 1.85rem;
+  }
+
+  .card-pick-subtitle {
+    font-size: 0.92rem;
+  }
+
+  .match-screen-inner {
+    max-width: 1560px;
+    padding: 0.85rem 1.5rem 1rem;
+  }
+
+  .match-layout {
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(270px, 320px);
+    gap: 1rem;
+  }
+
+  .match-morale-banner--unified {
+    padding: 0.75rem 1.1rem;
+  }
+
+  .match-morale-unified-fx-mult {
+    font-size: 1.35rem;
+  }
+
+  .lineup-preview-popover--center.lineup-preview-popover--modal {
+    width: min(980px, calc(100vw - 64px));
+    max-height: min(920px, calc(100dvh - 64px));
+  }
+
+  .lineup-pitch--center-modal {
+    min-height: 420px;
   }
 }
 

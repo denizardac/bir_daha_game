@@ -167,6 +167,7 @@ export function CardSelectScreen() {
 
   const empty = maxSquadSize - squad.length;
   const lineupSummary = getSquadLineupSummary(squad, activeTactics);
+  const activeSynergies = getActiveSynergies(squad, morale, { activeTactics });
   const emptyField = 11 - lineupSummary.filled;
   const tacticBonus = isTacticBonusRound(round, maxRounds);
   const finaleMatch = isFinaleRound(round, maxRounds);
@@ -195,7 +196,7 @@ export function CardSelectScreen() {
       <div className="card-select-inner w-full max-w-none px-3 py-2 md:px-4 md:py-3">
         <GameHeader round={round} maxRounds={maxRounds} score={score} streak={streak} />
 
-        <PickMoraleBanner morale={morale} />
+        <PickMoraleBanner morale={morale} compact />
 
         {dangerMode && (
           <p className="card-select-danger-banner">
@@ -263,6 +264,28 @@ export function CardSelectScreen() {
                     🎯 Ekstra çek (Round 10)
                   </button>
                 )}
+                {!finaleMatch && !tacticBonus && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn-train-pick btn-train-pick--toolbar"
+                      title="Kart yerine bir oyuncuya kalıcı nitelik ekle · sonra maça çık"
+                      onClick={() => { playSound('tick', sound); beginTraining(); }}
+                    >
+                      🎓 Özel antrenman
+                    </button>
+                    {canPass && (
+                      <button
+                        type="button"
+                        className="btn-pass-pick btn-pass-pick--toolbar"
+                        title="Kadro aynı kalır · doğrudan maça"
+                        onClick={() => { playSound('tick', sound); passCardPick(); }}
+                      >
+                        Pas geç
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
             <LineupPreviewModal
@@ -302,6 +325,19 @@ export function CardSelectScreen() {
                 </div>
               );
             })()}
+
+            {!tacticBonus && activeSynergies.length > 0 && (
+              <div className="card-pick-synergy-strip">
+                <span className="card-pick-synergy-strip-label">Aktif sinerjiler</span>
+                <div className="card-pick-synergy-strip-chips">
+                  {activeSynergies.map((s) => (
+                    <span key={s.id} className="card-pick-synergy-chip" title={s.description}>
+                      <span aria-hidden>{s.icon}</span> {s.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {tacticBonus ? (
               <TacticPickRows
@@ -369,29 +405,6 @@ export function CardSelectScreen() {
                     );
                   })}
                 </div>
-
-                {!finaleMatch && (
-                  <div className="card-pick-alt-row">
-                    <button
-                      type="button"
-                      className="btn-train-pick"
-                      onClick={() => { playSound('tick', sound); beginTraining(); }}
-                    >
-                      🎓 Bunun yerine özel antrenman
-                      <span className="btn-train-pick-hint">Kart yerine bir oyuncuya kalıcı nitelik ekle · sonra maça çık</span>
-                    </button>
-                    {canPass && (
-                      <button
-                        type="button"
-                        className="btn-pass-pick"
-                        onClick={() => { playSound('tick', sound); passCardPick(); }}
-                      >
-                        Pas geç
-                        <span className="btn-pass-pick-hint">Kadro aynı kalır · doğrudan maça</span>
-                      </button>
-                    )}
-                  </div>
-                )}
               </>
             )}
           </div>

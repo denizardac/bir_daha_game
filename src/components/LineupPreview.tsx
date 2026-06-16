@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { HoverTip } from '@/components/HoverTip';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
@@ -34,40 +34,6 @@ function lineupMetaParts(summary: ReturnType<typeof getSquadLineupSummary>) {
     summary.bench > 0 ? `${summary.bench} yedek` : '',
     summary.extraGoalkeepers > 0 ? `${summary.extraGoalkeepers} yedek KL` : '',
   ].filter(Boolean);
-}
-
-function useCenterModalStyle(open: boolean) {
-  const [style, setStyle] = useState<CSSProperties>({});
-
-  useEffect(() => {
-    if (!open) {
-      setStyle({});
-      return;
-    }
-
-    const place = () => {
-      const width =
-        window.innerWidth <= 520
-          ? window.innerWidth - 20
-          : Math.min(920, Math.max(440, window.innerWidth * 0.88));
-      const maxHeight = Math.min(900, window.innerHeight - 24);
-      setStyle({
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width,
-        maxHeight,
-        zIndex: 420,
-      });
-    };
-
-    place();
-    window.addEventListener('resize', place);
-    return () => window.removeEventListener('resize', place);
-  }, [open]);
-
-  return style;
 }
 
 function LineupPitchContent({
@@ -197,9 +163,21 @@ export function LineupPreviewModal({
   activeTactics,
 }: Props & { open: boolean; onClose: () => void }) {
   const summary = getSquadLineupSummary(squad, activeTactics);
-  const modalStyle = useCenterModalStyle(open);
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, open, onClose);
+
+  useEffect(() => {
+    if (!open) return;
+    const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+    const prevOverflow = document.body.style.overflow;
+    const prevPad = document.body.style.paddingRight;
+    document.body.style.overflow = 'hidden';
+    if (scrollbar > 0) document.body.style.paddingRight = `${scrollbar}px`;
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPad;
+    };
+  }, [open]);
 
   if (!open) return null;
 
@@ -208,8 +186,7 @@ export function LineupPreviewModal({
       <div className="lineup-preview-backdrop" onClick={onClose} aria-hidden />
       <div
         ref={modalRef}
-        className="lineup-preview-popover lineup-preview-popover--center lineup-preview-popover--hero lineup-preview-popover--v2"
-        style={modalStyle}
+        className="lineup-preview-popover lineup-preview-popover--center lineup-preview-popover--hero lineup-preview-popover--v2 lineup-preview-popover--modal"
         role="dialog"
         aria-modal="true"
         aria-label="Diziliş önizlemesi"

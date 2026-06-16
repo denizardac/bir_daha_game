@@ -62,7 +62,7 @@ const run = async () => {
   await page.locator('.lineup-preview-close').click({ timeout: 2000 }).catch(() => {});
 
   // training modal
-  await page.locator('.btn-train-pick').click({ timeout: 3000 }).catch(() => {});
+  await page.locator('.btn-train-pick, .btn-train-pick--toolbar').first().click({ timeout: 3000 }).catch(() => {});
   await page.waitForTimeout(400);
   await shot(page, '10-training-modal');
   await page.locator('.training-modal-close').click({ timeout: 2000 }).catch(() => {});

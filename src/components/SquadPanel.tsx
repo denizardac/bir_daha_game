@@ -40,6 +40,9 @@ export function SquadPanel({ squad, maxSquadSize, round, maxRounds, activeTactic
       <div className="squad-panel-head">
         <div className="squad-panel-head-main">
           <h2 className="text-lg font-extrabold uppercase tracking-wide">Kadro</h2>
+          <span className="squad-panel-stat">
+            {summary.squadSize}/{maxSquadSize} kadro · {summary.filled}/11 saha · Ort. {avg}
+          </span>
           <div className="round-progress round-progress--inline">
             {Array.from({ length: maxRounds }, (_, i) => (
               <div
@@ -49,9 +52,6 @@ export function SquadPanel({ squad, maxSquadSize, round, maxRounds, activeTactic
             ))}
           </div>
         </div>
-        <span className="squad-panel-stat">
-          {summary.squadSize}/{maxSquadSize} kadro · {summary.filled}/11 saha · Ort. {avg}
-        </span>
       </div>
 
       <LineupPreviewSidebar squad={squad} activeTactics={activeTactics} onShow={onShowLineup} />
