@@ -194,7 +194,7 @@
 .event-scene--offside-line .event-scene-sky { background: linear-gradient(160deg, #dc2626 0%, #991b1b 40%, #1c1917 100%); }
 .event-scene--counter-sprint .event-scene-sky { background: linear-gradient(160deg, #ea580c 0%, #c2410c 50%, #292524 100%); }
 .event-scene--red-card .event-scene-sky { background: linear-gradient(160deg, #dc2626 0%, #7f1d1d 55%, #18181b 100%); }
-.event-scene--sun-blaze .event-scene-sky { background: linear-gradient(160deg, #fbbf24 0%, #d97706 40%, #78350f 100%); }
+.event-scene--sun-blaze .event-scene-sky { background: linear-gradient(160deg, #e8b53e 0%, #d97706 40%, #78350f 100%); }
 .event-scene--snow-flake .event-scene-sky { background: linear-gradient(160deg, #e0f2fe 0%, #7dd3fc 35%, #0c4a6e 100%); }
 .event-scene--bus-travel .event-scene-sky { background: linear-gradient(160deg, #57534e 0%, #44403c 50%, #1c1917 100%); }
 .event-scene--clinic .event-scene-sky { background: linear-gradient(160deg, #ecfdf5 0%, #6ee7b7 30%, #064e3b 100%); }
@@ -205,19 +205,19 @@
 .event-scene--phone-social .event-scene-sky { background: linear-gradient(160deg, #8b5cf6 0%, #6d28d9 50%, #1e1b4b 100%); }
 .event-scene--tv-lights .event-scene-sky { background: linear-gradient(160deg, #fde68a 0%, #f59e0b 35%, #1c1917 100%); }
 .event-scene--brain-calm .event-scene-sky { background: linear-gradient(160deg, #c4b5fd 0%, #7c3aed 45%, #312e81 100%); }
-.event-scene--family-door .event-scene-sky { background: linear-gradient(160deg, #fda4af 0%, #e11d48 40%, #4c0519 100%); }
+.event-scene--family-door .event-scene-sky { background: linear-gradient(160deg, #fda4af 0%, #e23150 40%, #4c0519 100%); }
 .event-scene--cake-party .event-scene-sky { background: linear-gradient(160deg, #fbcfe8 0%, #ec4899 40%, #831843 100%); }
 .event-scene--fan-banner .event-scene-sky { background: linear-gradient(160deg, #f87171 0%, #dc2626 50%, #7f1d1d 100%); }
 .event-scene--empty-stands .event-scene-sky { background: linear-gradient(160deg, #71717a 0%, #52525b 50%, #27272a 100%); }
 .event-scene--gavel-fine .event-scene-sky { background: linear-gradient(160deg, #78716c 0%, #57534e 50%, #292524 100%); }
 .event-scene--money-bonus .event-scene-sky { background: linear-gradient(160deg, #fde047 0%, #ca8a04 45%, #422006 100%); }
-.event-scene--cup-draw .event-scene-sky { background: linear-gradient(160deg, #fcd34d 0%, #b45309 45%, #292524 100%); }
+.event-scene--cup-draw .event-scene-sky { background: linear-gradient(160deg, #f6cf6a 0%, #b45309 45%, #292524 100%); }
 .event-scene--file-spy .event-scene-sky { background: linear-gradient(160deg, #374151 0%, #1f2937 50%, #111827 100%); }
 .event-scene--ref-whistle .event-scene-sky { background: linear-gradient(160deg, #facc15 0%, #ca8a04 40%, #292524 100%); }
 .event-scene--empty-roster .event-scene-sky { background: linear-gradient(160deg, #f97316 0%, #c2410c 45%, #292524 100%); }
 .event-scene--overtime-clock .event-scene-sky { background: linear-gradient(160deg, #38bdf8 0%, #0284c7 50%, #0c4a6e 100%); }
 .event-scene--box-defense .event-scene-sky { background: linear-gradient(160deg, #4ade80 0%, #16a34a 45%, #14532d 100%); }
-.event-scene--crown-pressure .event-scene-sky { background: linear-gradient(160deg, #fbbf24 0%, #b45309 50%, #451a03 100%); }
+.event-scene--crown-pressure .event-scene-sky { background: linear-gradient(160deg, #e8b53e 0%, #b45309 50%, #451a03 100%); }
 .event-scene--stadium-new .event-scene-sky { background: linear-gradient(160deg, #34d399 0%, #059669 45%, #064e3b 100%); }
 .event-scene--star-visit .event-scene-sky { background: linear-gradient(160deg, #fde68a 0%, #d97706 40%, #1e1b4b 100%); }
 
@@ -298,7 +298,7 @@
 .event-choice-visual-glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 25%, rgba(251, 191, 36, 0.22), transparent 68%);
+  background: radial-gradient(circle at 50% 25%, rgba(232, 181, 62, 0.22), transparent 68%);
 }
 
 .event-choice-visual--pick-a { border-left: 3px solid rgba(52, 211, 153, 0.45); }
@@ -419,7 +419,7 @@
 .event-choice-visual--choice-swap,
 .event-choice-visual--choice-fresh,
 .event-choice-visual--choice-gk {
-  background: linear-gradient(145deg, rgba(29, 78, 216, 0.7), rgba(59, 130, 246, 0.35));
+  background: linear-gradient(145deg, rgba(29, 78, 216, 0.7), rgba(91, 155, 232, 0.35));
 }
 
 .event-choice-visual--choice-listen,
@@ -441,5 +441,5 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(251, 191, 36, 0.75);
+  color: rgba(232, 181, 62, 0.75);
 }

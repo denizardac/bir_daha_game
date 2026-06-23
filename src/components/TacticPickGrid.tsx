@@ -122,7 +122,7 @@ function TacticPickCard({
   const isFormation = getTacticCategory(card.id) === 'formasyon';
 
   return (
-    <article className={`tactic-pick-card ${selected ? 'tactic-pick-card--selected' : ''}`}>
+    <article className={`tactic-pick-card ${isFormation ? 'tactic-pick-card--formation' : 'tactic-pick-card--system'} ${selected ? 'tactic-pick-card--selected' : ''}`}>
       <button
         type="button"
         className="tactic-pick-card-hero"
@@ -190,18 +190,29 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onS
   const tactics = offers.filter(isTacticCard);
   const formations = tactics.filter((o) => getTacticCategory(o.id) === 'formasyon');
   const systems = tactics.filter((o) => getTacticCategory(o.id) === 'sistem');
-  const ready = Boolean(draft.formationId && draft.systemId);
+  // İlk taktik turu değilse (zaten aktif formasyon + sistem varsa) seçim zorunlu değil.
+  const hasActiveFormation = activeTactics.some((t) => getTacticCategory(t.id) === 'formasyon');
+  const hasActiveSystem = activeTactics.some((t) => getTacticCategory(t.id) === 'sistem');
+  const optional = hasActiveFormation && hasActiveSystem;
+  const effectiveFormation = Boolean(draft.formationId) || hasActiveFormation;
+  const effectiveSystem = Boolean(draft.systemId) || hasActiveSystem;
+  const ready = optional ? true : Boolean(draft.formationId && draft.systemId);
+  const changed = Boolean(draft.formationId || draft.systemId);
   const expanded = expandedId ? tactics.find((t) => t.id === expandedId) : undefined;
 
   return (
     <div className="tactic-pick-stage">
       <header className="tactic-pick-stage-head">
         <p className="tactic-pick-stage-kicker">Taktik günü · maç yok</p>
-        <p className="tactic-pick-stage-sub">Üstten bir formasyon, alttan bir oyun sistemi seç · +35 puan · +8 moral</p>
+        <p className="tactic-pick-stage-sub">
+          {optional
+            ? 'İstersen formasyon/sistem değiştir — değiştirmezsen mevcut taktiğin kalır · +35 puan · +8 moral'
+            : 'Üstten bir formasyon, alttan bir oyun sistemi seç · +35 puan · +8 moral'}
+        </p>
       </header>
 
       <div className="tactic-pick-stage-grid">
-        <TacticPickRow label="Formasyon seç" step="1" done={Boolean(draft.formationId)}>
+        <TacticPickRow label="Formasyon seç" step="1" done={effectiveFormation}>
           {formations.map((card) => (
             <TacticPickCard
               key={card.id}
@@ -213,7 +224,7 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onS
           ))}
         </TacticPickRow>
 
-        <TacticPickRow label="Oyun sistemi seç" step="2" done={Boolean(draft.systemId)}>
+        <TacticPickRow label="Oyun sistemi seç" step="2" done={effectiveSystem}>
           {systems.map((card) => (
             <TacticPickCard
               key={card.id}
@@ -234,12 +245,18 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onS
           onClick={() => { playSound('tick', sound); onConfirm(); }}
         >
           <span className="tactic-pick-confirm-label">
-            {ready ? 'Onayla ve devam et' : 'Önce formasyon ve sistem seç'}
+            {optional && !changed
+              ? 'Geç · mevcut taktik kalsın'
+              : ready
+                ? 'Onayla ve devam et'
+                : 'Önce formasyon ve sistem seç'}
           </span>
           <span className="tactic-pick-confirm-hint">
-            {ready
-              ? 'İkisi de slota yerleşir · sonraki maçlarda aktif'
-              : `${draft.formationId ? '✓ Formasyon' : '○ Formasyon'} · ${draft.systemId ? '✓ Sistem' : '○ Sistem'}`}
+            {optional && !changed
+              ? 'Aktif formasyon ve sistemin korunur · sonraki maçlarda geçerli'
+              : ready
+                ? 'Seçtiklerin slota yerleşir · sonraki maçlarda aktif'
+                : `${effectiveFormation ? '✓ Formasyon' : '○ Formasyon'} · ${effectiveSystem ? '✓ Sistem' : '○ Sistem'}`}
           </span>
         </button>
       </footer>

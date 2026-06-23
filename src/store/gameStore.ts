@@ -652,7 +652,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   confirmTacticRound: () => {
     const state = get();
     if (state.phase !== 'cardSelect' || !isTacticBonusRound(state.round, state.maxRounds)) return;
-    const { formationId, systemId } = state.tacticDraft;
+    // Mevcut aktif formasyon/sistem varsa (ilk taktik turu değilse) seçim zorunlu değil:
+    // taslakta yenisi seçilmediyse aktif olanı koru — oyuncu her turda değiştirmek zorunda kalmasın.
+    const existingFormationId = state.activeTactics.find((t) => getTacticCategory(t.id) === 'formasyon')?.id ?? null;
+    const existingSystemId = state.activeTactics.find((t) => getTacticCategory(t.id) === 'sistem')?.id ?? null;
+    const formationId = state.tacticDraft.formationId ?? existingFormationId;
+    const systemId = state.tacticDraft.systemId ?? existingSystemId;
     if (!formationId || !systemId) return;
 
     // Aynı kategorideki aktif taktikleri çıkar, seçilen formasyon + sistemi ekle.

@@ -1,17 +1,87 @@
 @import 'tailwindcss';
 
+/* ============================================================
+   BIR DAHA — Design Tokens (UI yenileme)
+   Koyu, premium "şampiyonluk" estetiği.
+   Eski değişken isimleri yeni token'lara map'lendi; mevcut
+   kurallar kırılmaz.
+   ============================================================ */
 :root {
-  --bg: #050505;
-  --surface: #111;
-  --border: #2a2a2a;
-  --accent: #e11d48;
-  --gold: #fbbf24;
-  /* İkincil metin — koyu zemin üzerinde okunabilir kontrast */
-  --text-muted: #c2cad6;
-  --text-secondary: #e8edf2;
-  --text-dim: #b0bac8;
-  --text-body: #dce2ea;
+  /* ---- Zemin & yüzey (elevation) ---- */
+  --bg:        #070910;  /* sayfa tabanı (koyu lacivert-siyah) */
+  --surface-1: #0d111a;  /* en alt yüzey / iç kutular */
+  --surface-2: #141a26;  /* standart kart/panel */
+  --surface-3: #1c2331;  /* yükseltilmiş / aktif segment, ikon kutusu */
+  --surface-inset: #10141d; /* kart içindeki satır/kutular */
+
+  /* Geriye dönük uyumluluk (eski isimler) */
+  --surface:   var(--surface-2);
+
+  /* ---- Çizgi / kenarlık ---- */
+  --line:      rgba(255,255,255,.07);  /* ince ayraç — varsayılan kart kenarı */
+  --line-2:    rgba(255,255,255,.12);  /* belirgin kenar / interaktif */
+  --border:    var(--line);            /* eski isim */
+
+  /* ---- Metin (koyu zemin üzerinde kontrol) ---- */
+  --tx:        #f2f5fa;  /* birincil metin / başlık */
+  --tx-2:      #aab3c2;  /* ikincil / gövde */
+  --tx-3:      #717b8d;  /* üçüncül / etiket / muted */
+  /* Eski isimler -> yeni hiyerarşi */
+  --text-secondary: var(--tx);
+  --text-body:      var(--tx-2);
+  --text-muted:     var(--tx-2);
+  --text-dim:       var(--tx-3);
+
+  /* ---- Aksan renkleri (DİSİPLİNLİ KULLANIM) ----
+     altın: yalnızca önemli sayılar + vurgu
+     crimson: yalnızca birincil CTA
+     yeşil: saha + olumlu durum
+     mavi: ikincil/bilgi (mevki, oyun sistemi)
+     mor: SADECE kart-detay modal'ları
+     kırmızı: olumsuz/risk değerleri */
+  --gold:      #e8b53e;
+  --gold-2:    #f6cf6a;   /* parlak altın — büyük sayılar */
+  --gold-deep: #a07d2c;
+  --accent:    var(--crimson);   /* eski isim CTA'ya bağlandı */
+
+  --crimson:   #e23150;   /* birincil CTA */
+  --crimson-2: #f0476a;   /* CTA gradyan üst */
+
+  --green:     #41b86c;
+  --green-2:   #7fe0a4;   /* açık yeşil — galibiyet/olumlu metin */
+  --blue:      #5b9be8;   /* bilgi / mevki / oyun sistemi */
+  --red:       #ef5466;   /* risk / olumsuz */
+  --purple:    #a855f7;   /* yalnızca kart-detay modal */
+  --purple-2:  #c084fc;
+
+  /* ---- Radius ölçeği ---- */
+  --r-sm:  8px;
+  --r-md:  11px;
+  --r-lg:  14px;
+  --r-xl:  16px;
+  --r-2xl: 18px;
+  --r-pill: 99px;
+
+  /* ---- Gölge / elevation ---- */
+  --sh-1: 0 1px 3px rgba(0,0,0,.45);     /* hafif — chip/satır */
+  --sh-2: 0 10px 28px rgba(0,0,0,.45);   /* kart/panel */
+  --sh-3: 0 24px 60px rgba(0,0,0,.55);   /* hero/modal */
+  --glow-crimson: 0 12px 30px rgba(226,49,80,.35);
+  --glow-gold:    0 0 24px rgba(232,181,62,.22);
+
+  /* ---- Spacing (4/8 tabanlı) ---- */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
 }
+
+/* ---- Tipografi yardımcı sınıfları ---- */
+.t-display { font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:74px; line-height:.86; letter-spacing:.005em; text-transform:uppercase; }
+.t-h1      { font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:32px; line-height:1;   }
+.t-h2      { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:20px; line-height:1.1; }
+.t-section { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:15px; letter-spacing:.14em; text-transform:uppercase; color:var(--tx); }
+.t-label   { font-size:10.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--tx-3); }
+.t-stat    { font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:34px; line-height:.85; font-variant-numeric:tabular-nums; color:var(--gold-2); }
+.t-body    { font-family:'Barlow',sans-serif; font-weight:500; font-size:14px; line-height:1.5; color:var(--tx-2); }
 
 * { box-sizing: border-box; }
 
@@ -66,16 +136,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .game-viewport {
   min-height: 100dvh;
   background:
-    radial-gradient(ellipse 100% 60% at 50% -10%, rgba(225, 29, 72, 0.12), transparent 55%),
-    linear-gradient(180deg, #050505, #0a0a0a 40%, #050505);
+    radial-gradient(ellipse 100% 60% at 50% -10%, rgba(226, 49, 80, 0.12), transparent 55%),
+    linear-gradient(180deg, #070910, #0c1019 40%, #070910);
 }
 
 .game-shell {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 100% 60% at 50% -10%, rgba(225, 29, 72, 0.12), transparent 55%),
-    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(251, 191, 36, 0.06), transparent),
-    linear-gradient(180deg, #050505, #0a0a0a 40%, #050505);
+    radial-gradient(ellipse 100% 60% at 50% -10%, rgba(226, 49, 80, 0.12), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(232, 181, 62, 0.06), transparent),
+    linear-gradient(180deg, #070910, #0c1019 40%, #070910);
 }
 
 /* Oyun içi — Tailwind nötr tonları daha okunaklı */
@@ -121,15 +191,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background-size: 48px 48px;
 }
 
-.gold-glow { box-shadow: 0 0 28px rgba(251, 191, 36, 0.35); }
+.gold-glow { box-shadow: 0 0 28px rgba(232, 181, 62, 0.35); }
 
 .danger-pulse {
   animation: dangerPulse 1.4s ease-in-out infinite;
 }
 
 @keyframes dangerPulse {
-  0%, 100% { box-shadow: inset 0 0 0 2px rgba(225, 29, 72, 0.35); }
-  50% { box-shadow: inset 0 0 0 4px rgba(225, 29, 72, 0.85); }
+  0%, 100% { box-shadow: inset 0 0 0 2px rgba(226, 49, 80, 0.35); }
+  50% { box-shadow: inset 0 0 0 4px rgba(226, 49, 80, 0.85); }
 }
 
 /* GDD Kart Anatomisi */
@@ -337,12 +407,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: 50%;
   background: #fde68a;
   border: 1.5px solid #78350f;
-  box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+  box-shadow: 0 0 6px rgba(232, 181, 62, 0.5);
   z-index: 2;
 }
 
 .tactic-board-dot--gk {
-  background: #fbbf24;
+  background: #e8b53e;
   width: 10px;
   height: 10px;
   border-color: #fff;
@@ -547,8 +617,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-left: auto;
   padding: 0.35rem 0.55rem;
   border-radius: 8px;
-  background: rgba(251, 191, 36, 0.12);
-  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: rgba(232, 181, 62, 0.12);
+  border: 1px solid rgba(232, 181, 62, 0.25);
   font-size: 0.72rem;
   font-weight: 800;
   color: #fde68a;
@@ -558,8 +628,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--tag-accent, #fbbf24);
-  box-shadow: 0 0 5px color-mix(in srgb, var(--tag-accent, #fbbf24) 70%, transparent);
+  background: var(--tag-accent, #e8b53e);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--tag-accent, #e8b53e) 70%, transparent);
   flex-shrink: 0;
 }
 
@@ -571,8 +641,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 700;
   line-height: 1.35;
   color: #fecaca;
-  background: rgba(225, 29, 72, 0.12);
-  border: 1px solid rgba(225, 29, 72, 0.28);
+  background: rgba(226, 49, 80, 0.12);
+  border: 1px solid rgba(226, 49, 80, 0.28);
 }
 
 .tactic-card .select-cta {
@@ -632,7 +702,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border: 2px solid color-mix(in srgb, var(--portrait-zone, #6366f1) 55%, rgba(255,255,255,0.12));
   background:
     radial-gradient(circle at 50% 88%, color-mix(in srgb, var(--portrait-zone) 35%, transparent) 0%, transparent 62%),
-    linear-gradient(165deg, #1a1a1a 0%, #0a0a0a 100%);
+    linear-gradient(165deg, #1a1a1a 0%, #0c1019 100%);
   box-shadow:
     0 4px 14px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
@@ -742,7 +812,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   flex-shrink: 0;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  border: 1px solid rgba(65, 184, 108, 0.35);
   background: #14532d;
 }
 
@@ -812,8 +882,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .card-insight--why {
-  border-color: rgba(34, 197, 94, 0.25);
-  background: rgba(34, 197, 94, 0.06);
+  border-color: rgba(65, 184, 108, 0.25);
+  background: rgba(65, 184, 108, 0.06);
 }
 
 .card-insight-line--bullet {
@@ -840,8 +910,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   width: 0.45rem;
   height: 0.45rem;
   border-radius: 50%;
-  background: #fbbf24;
-  box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+  background: #e8b53e;
+  box-shadow: 0 0 6px rgba(232, 181, 62, 0.5);
   margin-right: 0.35rem;
   vertical-align: middle;
 }
@@ -849,8 +919,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .tag-chip--HIZLI { border-color: rgba(249, 115, 22, 0.45); background: rgba(249, 115, 22, 0.12); }
 .tag-chip--GÜÇLÜ { border-color: rgba(239, 68, 68, 0.45); background: rgba(239, 68, 68, 0.12); }
 .tag-chip--TEKNİK { border-color: rgba(6, 182, 212, 0.45); background: rgba(6, 182, 212, 0.12); }
-.tag-chip--FİNİŞÖR { border-color: rgba(225, 29, 72, 0.45); background: rgba(225, 29, 72, 0.12); }
-.tag-chip--YERLİ { border-color: rgba(34, 197, 94, 0.45); background: rgba(34, 197, 94, 0.12); }
+.tag-chip--FİNİŞÖR { border-color: rgba(226, 49, 80, 0.45); background: rgba(226, 49, 80, 0.12); }
+.tag-chip--YERLİ { border-color: rgba(65, 184, 108, 0.45); background: rgba(65, 184, 108, 0.12); }
 
 .player-pick-card .card-insight--player {
   flex: 0 0 auto;
@@ -1031,7 +1101,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   height: 1.75rem;
   flex-shrink: 0;
   border-radius: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.4);
+  border: 1px solid rgba(232, 181, 62, 0.4);
   background: rgba(0, 0, 0, 0.45);
 }
 
@@ -1054,7 +1124,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .rarity-badge--güçlü {
   color: #fde68a;
-  text-shadow: 0 0 16px rgba(251, 191, 36, 0.45);
+  text-shadow: 0 0 16px rgba(232, 181, 62, 0.45);
 }
 
 .rarity-badge--efsane {
@@ -1065,14 +1135,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .rarity-spark {
   font-size: 0.85rem;
-  color: #fbbf24;
+  color: #e8b53e;
   animation: rarity-spark-spin 3s linear infinite;
-  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.7));
+  filter: drop-shadow(0 0 6px rgba(232, 181, 62, 0.7));
 }
 
 @keyframes rarity-legendary-pulse {
   0%, 100% { opacity: 1; text-shadow: 0 0 18px rgba(239, 68, 68, 0.55); }
-  50% { opacity: 0.88; text-shadow: 0 0 28px rgba(251, 191, 36, 0.75); }
+  50% { opacity: 0.88; text-shadow: 0 0 28px rgba(232, 181, 62, 0.75); }
 }
 
 @keyframes rarity-spark-spin {
@@ -1093,7 +1163,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: linear-gradient(
     125deg,
     transparent 30%,
-    rgba(251, 191, 36, 0.12) 45%,
+    rgba(232, 181, 62, 0.12) 45%,
     rgba(239, 68, 68, 0.18) 55%,
     transparent 70%
   );
@@ -1108,8 +1178,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .player-pick-card .select-cta {
-  background: color-mix(in srgb, var(--pc-accent) 18%, rgba(225, 29, 72, 0.22));
-  border-color: color-mix(in srgb, var(--pc-accent) 35%, rgba(225, 29, 72, 0.45));
+  background: color-mix(in srgb, var(--pc-accent) 18%, rgba(226, 49, 80, 0.22));
+  border-color: color-mix(in srgb, var(--pc-accent) 35%, rgba(226, 49, 80, 0.45));
 }
 
 .card-pick-footer .select-cta {
@@ -1248,7 +1318,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-top: 0.75rem;
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
-  background: rgba(251, 191, 36, 0.12);
+  background: rgba(232, 181, 62, 0.12);
   color: #fde68a;
   font-size: 0.95rem;
   animation: flash 0.6s ease;
@@ -1269,7 +1339,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .synergy-preview {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--line-2);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -1284,8 +1354,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: #fff;
   padding: 0.65rem;
   border-radius: 10px;
-  background: rgba(225, 29, 72, 0.25);
-  border: 1px solid rgba(225, 29, 72, 0.5);
+  background: rgba(226, 49, 80, 0.25);
+  border: 1px solid rgba(226, 49, 80, 0.5);
 }
 
 /* Layout */
@@ -1524,8 +1594,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 600;
   line-height: 1.4;
   color: rgba(147, 197, 253, 0.9);
-  background: rgba(59, 130, 246, 0.08);
-  border: 1px solid rgba(59, 130, 246, 0.18);
+  background: rgba(91, 155, 232, 0.08);
+  border: 1px solid rgba(91, 155, 232, 0.18);
 }
 
 .squad-row-alt-wrap {
@@ -1609,7 +1679,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   z-index: 80;
   padding: 0.65rem;
   border-radius: 14px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  border: 1px solid rgba(232, 181, 62, 0.35);
   background: rgba(8, 8, 8, 0.98);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.85);
   max-height: min(68vh, 400px);
@@ -1624,7 +1694,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: 16px;
   box-shadow:
     0 28px 64px rgba(0, 0, 0, 0.9),
-    0 0 0 1px rgba(251, 191, 36, 0.15);
+    0 0 0 1px rgba(232, 181, 62, 0.15);
   overflow-y: auto;
   scrollbar-width: thin;
 }
@@ -1753,8 +1823,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .lineup-preview--collapsed:hover,
 .lineup-preview--active {
-  border-color: rgba(251, 191, 36, 0.25);
-  background: rgba(251, 191, 36, 0.04);
+  border-color: rgba(232, 181, 62, 0.25);
+  background: rgba(232, 181, 62, 0.04);
 }
 
 .lineup-preview-toggle {
@@ -1803,7 +1873,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   max-height: 11.5rem;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(34, 197, 94, 0.25);
+  border: 1px solid rgba(65, 184, 108, 0.25);
 }
 
 .lineup-preview--open .lineup-pitch {
@@ -1876,7 +1946,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .lineup-dot--mismatch {
-  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.55);
+  box-shadow: 0 0 0 2px rgba(232, 181, 62, 0.55);
 }
 
 .lineup-dot-rating {
@@ -1946,21 +2016,21 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .lineup-gap-item--warn {
-  color: #fcd34d;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  color: #f6cf6a;
+  background: rgba(232, 181, 62, 0.1);
+  border: 1px solid rgba(232, 181, 62, 0.2);
 }
 
 .lineup-gap-item--info {
   color: #93c5fd;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: rgba(91, 155, 232, 0.1);
+  border: 1px solid rgba(91, 155, 232, 0.2);
 }
 
 .lineup-gap-item--good {
   color: #86efac;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(65, 184, 108, 0.1);
+  border: 1px solid rgba(65, 184, 108, 0.2);
 }
 
 /* Kart seçim — mevki ipuçları */
@@ -1990,8 +2060,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .card-position-hint--good {
   color: #86efac;
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.25);
+  background: rgba(65, 184, 108, 0.12);
+  border: 1px solid rgba(65, 184, 108, 0.25);
 }
 
 .card-position-hint--warn {
@@ -2029,7 +2099,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-family: 'Barlow', sans-serif;
 }
 
-.bite-tip--gold { color: #fcd34d; }
+.bite-tip--gold { color: #f6cf6a; }
 .bite-tip--cyan { color: #67e8f9; }
 .bite-tip--purple { color: #e9d5ff; }
 
@@ -2053,8 +2123,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-bottom: 0.65rem;
   padding: 0.55rem 0.65rem;
   border-radius: 10px;
-  border: 1px solid rgba(251, 191, 36, 0.22);
-  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(232, 181, 62, 0.22);
+  background: rgba(232, 181, 62, 0.06);
 }
 
 .pick-context-tip {
@@ -2163,9 +2233,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #fcd34d;
-  background: rgba(251, 191, 36, 0.12);
-  border: 1px solid rgba(251, 191, 36, 0.25);
+  color: #f6cf6a;
+  background: rgba(232, 181, 62, 0.12);
+  border: 1px solid rgba(232, 181, 62, 0.25);
 }
 
 .match-pick-tag-bites {
@@ -2293,11 +2363,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-size: 0.68rem;
   padding: 0.15rem 0.4rem;
   border-radius: 999px;
-  background: rgba(251, 191, 36, 0.1);
+  background: rgba(232, 181, 62, 0.1);
   color: #d4d4d4;
 }
 
-.squad-tag-chip strong { color: #fbbf24; }
+.squad-tag-chip strong { color: #e8b53e; }
 
 .squad-panel-morale {
   flex-shrink: 0;
@@ -2342,7 +2412,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-size: 0.72rem;
   font-weight: 600;
   font-family: 'Barlow', sans-serif;
-  color: #fcd34d;
+  color: #f6cf6a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2444,13 +2514,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .morale-panel-bar-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #dc2626, #fbbf24);
+  background: linear-gradient(90deg, #dc2626, #e8b53e);
 }
 
 .morale-panel-effect {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #fcd34d;
+  color: #f6cf6a;
 }
 
 .morale-panel-detail {
@@ -2462,17 +2532,20 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .side-panel-title {
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.82rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.14em;
+  color: var(--tx);
   margin-bottom: 0.45rem;
 }
 
-.side-panel-title--gold { color: #fbbf24; }
-.side-panel-title--purple { color: #c084fc; }
-.side-panel-title--cyan { color: #22d3ee; }
-.side-panel-title--orange { color: #fb923c; }
+/* Panel başlıkları nötr (README: tek baskın aksan değerlerde kalsın) */
+.side-panel-title--gold { color: var(--gold); }
+.side-panel-title--purple { color: var(--purple-2); }
+.side-panel-title--cyan { color: var(--tx); }
+.side-panel-title--orange { color: var(--tx); }
 
 .side-panel-slot-hint {
   font-size: 0.8125rem;
@@ -2512,9 +2585,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .tactic-slot--preview {
-  border-color: rgba(251, 191, 36, 0.45);
-  background: rgba(251, 191, 36, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.15);
+  border-color: rgba(232, 181, 62, 0.45);
+  background: rgba(232, 181, 62, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(232, 181, 62, 0.15);
 }
 
 .tactic-slot-body,
@@ -2566,8 +2639,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .event-slot--current {
-  border-color: rgba(251, 191, 36, 0.5);
-  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.2);
+  border-color: rgba(232, 181, 62, 0.5);
+  box-shadow: 0 0 0 1px rgba(232, 181, 62, 0.2);
 }
 
 .event-slot-icon-wrap {
@@ -2607,8 +2680,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .side-tag-badge--HIZLI { border-color: rgba(249, 115, 22, 0.45); color: #fdba74; }
 .side-tag-badge--GÜÇLÜ { border-color: rgba(239, 68, 68, 0.45); color: #fca5a5; }
 .side-tag-badge--TEKNİK { border-color: rgba(6, 182, 212, 0.45); color: #67e8f9; }
-.side-tag-badge--FİNİŞÖR { border-color: rgba(225, 29, 72, 0.45); color: #fda4af; }
-.side-tag-badge--YERLİ { border-color: rgba(34, 197, 94, 0.45); color: #86efac; }
+.side-tag-badge--FİNİŞÖR { border-color: rgba(226, 49, 80, 0.45); color: #fda4af; }
+.side-tag-badge--YERLİ { border-color: rgba(65, 184, 108, 0.45); color: #86efac; }
 
 .side-panel-subtitle {
   font-size: 0.68rem;
@@ -2652,9 +2725,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-bottom: 0.45rem;
   padding: 0.55rem 0.65rem;
   border-radius: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  border-left: 3px solid #fbbf24;
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(232, 181, 62, 0.35);
+  border-left: 3px solid #e8b53e;
+  background: rgba(232, 181, 62, 0.08);
 }
 
 .synergy-active-name {
@@ -2687,7 +2760,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .side-synergy-near-count {
-  color: #fbbf24;
+  color: #e8b53e;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2702,7 +2775,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .side-synergy-bar-fill {
   height: 100%;
   border-radius: 2px;
-  background: linear-gradient(90deg, #d97706, #fbbf24);
+  background: linear-gradient(90deg, #d97706, #e8b53e);
 }
 
 .side-synergy-near-hint {
@@ -2749,8 +2822,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .syn-stat--near {
   color: #fde68a;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: rgba(232, 181, 62, 0.1);
+  border: 1px solid rgba(232, 181, 62, 0.25);
 }
 
 .syn-panel-bite {
@@ -2795,7 +2868,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .syn-tile--almost {
-  border-color: rgba(251, 191, 36, 0.35);
+  border-color: rgba(232, 181, 62, 0.35);
   background: linear-gradient(135deg, rgba(120, 53, 15, 0.2) 0%, rgba(0, 0, 0, 0.3) 100%);
 }
 
@@ -2851,7 +2924,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-size: 0.72rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: #fbbf24;
+  color: #e8b53e;
   flex-shrink: 0;
 }
 
@@ -2887,8 +2960,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: #fde68a;
   padding: 0.25rem 0.4rem;
   border-radius: 6px;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.28);
+  background: rgba(232, 181, 62, 0.1);
+  border: 1px solid rgba(232, 181, 62, 0.28);
 }
 
 .syn-tile-note {
@@ -2913,7 +2986,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   height: 42px;
   border-radius: 50%;
   background: conic-gradient(
-    #fbbf24 calc(var(--syn-pct) * 1%),
+    #e8b53e calc(var(--syn-pct) * 1%),
     rgba(255, 255, 255, 0.08) 0
   );
   display: flex;
@@ -2934,7 +3007,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: #111;
+  background: var(--surface-1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2960,9 +3033,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .syn-dot--on {
-  background: #fbbf24;
-  border-color: #fcd34d;
-  box-shadow: 0 0 6px rgba(251, 191, 36, 0.55);
+  background: #e8b53e;
+  border-color: #f6cf6a;
+  box-shadow: 0 0 6px rgba(232, 181, 62, 0.55);
 }
 
 .syn-dots-more {
@@ -3036,7 +3109,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .syn-tag-chip:hover {
   background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(251, 191, 36, 0.3);
+  border-color: rgba(232, 181, 62, 0.3);
 }
 
 .syn-tag-icon {
@@ -3054,8 +3127,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .syn-tag-count {
   font-size: 0.58rem;
   font-weight: 800;
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.15);
+  color: #e8b53e;
+  background: rgba(232, 181, 62, 0.15);
   padding: 0.05rem 0.3rem;
   border-radius: 999px;
 }
@@ -3160,8 +3233,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .tag-trait-badge--HIZLI {
-  border-color: rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(232, 181, 62, 0.4);
+  background: rgba(232, 181, 62, 0.12);
 }
 
 .tag-trait-badge--GÜÇLÜ {
@@ -3197,13 +3270,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .tag-trait-badge--LİDER {
-  border-color: rgba(251, 191, 36, 0.45);
-  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(232, 181, 62, 0.45);
+  background: rgba(232, 181, 62, 0.12);
 }
 
 .tag-trait-badge--YERLİ {
-  border-color: rgba(34, 197, 94, 0.45);
-  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(65, 184, 108, 0.45);
+  background: rgba(65, 184, 108, 0.12);
 }
 
 .card-tag-bites--compact .tag-trait-name {
@@ -3275,11 +3348,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .run-end-understrength-note {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #fbbf24;
+  color: #e8b53e;
   padding: 0.55rem 0.75rem;
   border-radius: 10px;
-  background: rgba(251, 191, 36, 0.08);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  background: rgba(232, 181, 62, 0.08);
+  border: 1px solid rgba(232, 181, 62, 0.2);
 }
 
 .run-end-synergy-grid {
@@ -3299,8 +3372,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .run-end-synergy-chip--active {
-  border-color: rgba(251, 191, 36, 0.35);
-  background: rgba(251, 191, 36, 0.06);
+  border-color: rgba(232, 181, 62, 0.35);
+  background: rgba(232, 181, 62, 0.06);
 }
 
 .run-end-synergy-chip--idle {
@@ -3350,7 +3423,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .side-tag-guide-count {
   font-weight: 800;
-  color: #fbbf24;
+  color: #e8b53e;
 }
 
 .side-tag-guide-desc {
@@ -3449,7 +3522,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .card-pick-title--tactic {
-  color: #fcd34d;
+  color: #f6cf6a;
 }
 
 .card-pick-header {
@@ -3479,9 +3552,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-variant-numeric: tabular-nums;
   padding: 0.25rem 0.5rem;
   border-radius: 999px;
-  background: rgba(251, 191, 36, 0.1);
+  background: rgba(232, 181, 62, 0.1);
   color: #fde68a;
-  border: 1px solid rgba(251, 191, 36, 0.28);
+  border: 1px solid rgba(232, 181, 62, 0.28);
   white-space: nowrap;
 }
 
@@ -3491,7 +3564,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   gap: 0.35rem;
   padding: 0.28rem 0.55rem;
   border-radius: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  border: 1px solid rgba(232, 181, 62, 0.35);
   background: rgba(120, 53, 15, 0.25);
   color: #fde68a;
   font-size: 0.68rem;
@@ -3503,7 +3576,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .btn-reroll-all:hover:not(:disabled) {
-  border-color: rgba(251, 191, 36, 0.6);
+  border-color: rgba(232, 181, 62, 0.6);
   background: rgba(120, 53, 15, 0.4);
 }
 
@@ -3556,8 +3629,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(232, 181, 62, 0.35);
+  background: rgba(232, 181, 62, 0.08);
   color: #fde68a;
   font-size: 0.75rem;
   line-height: 1;
@@ -3566,8 +3639,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .btn-reroll-slot:hover:not(:disabled) {
-  border-color: rgba(251, 191, 36, 0.65);
-  background: rgba(251, 191, 36, 0.16);
+  border-color: rgba(232, 181, 62, 0.65);
+  background: rgba(232, 181, 62, 0.16);
   transform: scale(1.06);
 }
 
@@ -3598,7 +3671,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   gap: 0.55rem;
   padding: 0.5rem 0.85rem;
   border-radius: 10px;
-  border: 1px solid rgba(251, 191, 36, 0.45);
+  border: 1px solid rgba(232, 181, 62, 0.45);
   background: linear-gradient(135deg, rgba(120, 53, 15, 0.35) 0%, rgba(23, 23, 23, 0.95) 100%);
   color: #fde68a;
   font-size: 0.85rem;
@@ -3608,8 +3681,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .btn-reroll:hover {
-  border-color: rgba(251, 191, 36, 0.75);
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.12);
+  border-color: rgba(232, 181, 62, 0.75);
+  box-shadow: 0 0 20px rgba(232, 181, 62, 0.12);
   transform: translateY(-1px);
 }
 
@@ -3623,9 +3696,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-variant-numeric: tabular-nums;
   padding: 0.15rem 0.45rem;
   border-radius: 999px;
-  background: rgba(251, 191, 36, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  background: rgba(232, 181, 62, 0.15);
+  color: #e8b53e;
+  border: 1px solid rgba(232, 181, 62, 0.3);
 }
 
 .btn-reroll-extra {
@@ -3701,7 +3774,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-bottom: 0.5rem;
   flex-shrink: 0;
   border-radius: 12px;
-  border: 1px solid rgba(251, 191, 36, 0.4);
+  border: 1px solid rgba(232, 181, 62, 0.4);
   background: linear-gradient(135deg, rgba(120, 53, 15, 0.28) 0%, rgba(17, 17, 17, 0.85) 100%);
 }
 
@@ -4009,8 +4082,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: #fafafa;
   padding: 0.22rem 0.45rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  box-shadow: inset 0 0 12px rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(232, 181, 62, 0.35);
+  box-shadow: inset 0 0 12px rgba(232, 181, 62, 0.08);
 }
 
 .card-pick-stat--pos {
@@ -4018,7 +4091,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   letter-spacing: 0.04em;
   color: #fff;
   padding: 0.22rem 0.4rem;
-  background: rgba(59, 130, 246, 0.35);
+  background: rgba(91, 155, 232, 0.35);
   border: 1px solid rgba(96, 165, 250, 0.45);
 }
 
@@ -4337,8 +4410,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .card-synergy-row--complete {
-  border-color: rgba(251, 191, 36, 0.35);
-  background: rgba(251, 191, 36, 0.06);
+  border-color: rgba(232, 181, 62, 0.35);
+  background: rgba(232, 181, 62, 0.06);
 }
 
 .card-synergy-name {
@@ -4356,7 +4429,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   letter-spacing: 0.06em;
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
-  background: rgba(251, 191, 36, 0.25);
+  background: rgba(232, 181, 62, 0.25);
   color: #fde68a;
 }
 
@@ -4380,7 +4453,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .card-synergy-count--after {
-  color: #fbbf24;
+  color: #e8b53e;
 }
 
 .card-synergy-arrow {
@@ -4418,7 +4491,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   top: 0;
   height: 100%;
   border-radius: 3px;
-  background: linear-gradient(90deg, #d97706, #fbbf24);
+  background: linear-gradient(90deg, #d97706, #e8b53e);
   opacity: 0.85;
 }
 
@@ -4452,8 +4525,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   white-space: nowrap;
 }
 
-.tactic-fit--good { background: rgba(34, 197, 94, 0.2); color: #86efac; }
-.tactic-fit--ok { background: rgba(251, 191, 36, 0.15); color: #fde68a; }
+.tactic-fit--good { background: rgba(65, 184, 108, 0.2); color: #86efac; }
+.tactic-fit--ok { background: rgba(232, 181, 62, 0.15); color: #fde68a; }
 .tactic-fit--weak { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
 
 .tactic-base-effects {
@@ -4506,7 +4579,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .side-panel-near strong {
-  color: #fbbf24;
+  color: #e8b53e;
   font-variant-numeric: tabular-nums;
 }
 
@@ -4531,6 +4604,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   display: flex;
   align-items: stretch;
   justify-content: center;
+  background:
+    radial-gradient(120% 75% at 50% -18%, rgba(232, 181, 62, 0.08), transparent 48%),
+    radial-gradient(80% 50% at 50% 118%, rgba(226, 49, 80, 0.05), transparent 60%),
+    linear-gradient(180deg, #070910, #090c14 46%, #070910);
 }
 
 .menu-pitch-deco {
@@ -4617,9 +4694,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .menu-play-panel {
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: linear-gradient(160deg, rgba(22, 22, 22, 0.95) 0%, rgba(8, 8, 8, 0.98) 100%);
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #161c28, #10141d);
+  box-shadow: var(--sh-3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   min-height: 0;
   min-width: 0;
   display: flex;
@@ -4660,12 +4738,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .menu-brand { flex: 1; min-width: 200px; }
 
 .menu-hero-badge {
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.22em;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 0.25rem;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
 }
 
 .menu-hero-title {
@@ -4676,12 +4755,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   line-height: 0.92;
   text-transform: uppercase;
-  text-shadow: 0 0 48px rgba(225, 29, 72, 0.4);
+  color: #fff;
+  text-shadow: 0 2px 36px rgba(232, 181, 62, 0.2);
 }
 
 .menu-hero-ball {
   font-size: 0.7em;
-  filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.55));
+  filter: drop-shadow(0 0 16px rgba(232, 181, 62, 0.55));
   animation: menuBallFloat 3s ease-in-out infinite;
 }
 
@@ -4691,9 +4771,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .menu-hero-tagline {
-  margin-top: 0.35rem;
-  font-size: 1.15rem;
-  color: #a3a3a3;
+  margin-top: 0.85rem;
+  font-size: 1.05rem;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  color: var(--tx-2);
 }
 
 .menu-streak {
@@ -4716,27 +4798,29 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   align-items: center;
   gap: 0.65rem;
   padding: 0.75rem 1rem;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(15, 15, 15, 0.9);
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #141a26, #0f131c);
+  box-shadow: var(--sh-2);
   flex: 1;
   max-width: 220px;
   min-width: 0;
 }
 
 .menu-stat-card--gold {
-  border-color: rgba(251, 191, 36, 0.45);
-  background: linear-gradient(145deg, rgba(251, 191, 36, 0.12), rgba(15, 15, 15, 0.95));
+  border-color: rgba(232, 181, 62, 0.3);
+  background: linear-gradient(180deg, rgba(232, 181, 62, 0.12), rgba(232, 181, 62, 0.03));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(232, 181, 62, 0.06);
 }
 
 .menu-stat-icon { font-size: 1.75rem; flex-shrink: 0; }
 
 .menu-stat-label {
   font-size: 0.7rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #737373;
+  letter-spacing: 0.16em;
+  color: var(--tx-3);
 }
 
 .menu-stat-value {
@@ -4783,7 +4867,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .menu-daily-stat-num {
   font-size: 1.35rem;
   font-weight: 800;
-  color: #fbbf24;
+  color: #e8b53e;
   font-variant-numeric: tabular-nums;
 }
 
@@ -4823,7 +4907,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-top: 0.6rem;
   font-size: 0.82rem;
   font-weight: 700;
-  color: #fbbf24;
+  color: #e8b53e;
 }
 
 .menu-score-bar-col {
@@ -4861,8 +4945,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .menu-score-bar-fill--you {
-  background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
-  box-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+  background: linear-gradient(180deg, #e8b53e 0%, #d97706 100%);
+  box-shadow: 0 0 12px rgba(232, 181, 62, 0.35);
 }
 
 .menu-score-bar-label {
@@ -4873,13 +4957,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .menu-score-bar-label--you {
-  color: #fbbf24;
+  color: #e8b53e;
 }
 
 .menu-score-chart-you {
   margin-top: 0.65rem;
   font-size: 0.8rem;
-  color: #fbbf24;
+  color: #e8b53e;
   font-weight: 700;
 }
 
@@ -4888,7 +4972,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-bottom: 1rem;
   overflow: hidden;
   border-radius: 14px;
-  border: 2px solid rgba(251, 191, 36, 0.5);
+  border: 2px solid rgba(232, 181, 62, 0.5);
   background: linear-gradient(135deg, rgba(120, 53, 15, 0.45) 0%, rgba(23, 23, 23, 0.9) 100%);
   padding: 1.25rem;
   text-align: center;
@@ -4905,7 +4989,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-size: 1.5rem;
   font-weight: 900;
   letter-spacing: 0.08em;
-  color: #fcd34d;
+  color: #f6cf6a;
 }
 
 .first-win-celebration-sub {
@@ -4938,8 +5022,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 @keyframes milestoneEpicPulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.25); }
-  50% { box-shadow: 0 0 36px rgba(251, 191, 36, 0.55); }
+  0%, 100% { box-shadow: 0 0 20px rgba(232, 181, 62, 0.25); }
+  50% { box-shadow: 0 0 36px rgba(232, 181, 62, 0.55); }
 }
 
 @keyframes milestoneSparkle {
@@ -4969,8 +5053,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   gap: 0.75rem;
   padding: 0.9rem 1.1rem;
   border-radius: 12px;
-  border: 1px solid rgba(251, 191, 36, 0.45);
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(232, 181, 62, 0.45);
+  background: rgba(232, 181, 62, 0.08);
 }
 
 .menu-continue-title {
@@ -5012,7 +5096,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   width: 100%;
   padding: 1rem 1.25rem !important;
   text-align: left;
-  box-shadow: 0 10px 40px rgba(225, 29, 72, 0.4);
+  box-shadow: 0 10px 40px rgba(226, 49, 80, 0.4);
 }
 
 .menu-play-btn-icon {
@@ -5348,10 +5432,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .menu-bite-list--panel .menu-bite-label {
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.8125rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   line-height: 1.2;
+  color: var(--gold-2);
 }
 
 .menu-bite-list--panel .menu-bite-text {
@@ -5371,20 +5457,22 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   width: 100%;
   margin: 0;
   padding: 0.45rem 0.6rem;
-  border-radius: 8px;
-  border: 1px solid rgba(192, 132, 252, 0.35);
-  background: rgba(88, 28, 135, 0.2);
-  color: #e9d5ff;
-  font-family: 'Barlow', sans-serif;
-  font-size: 0.8125rem;
+  border-radius: 11px;
+  border: 1px solid rgba(232, 181, 62, 0.28);
+  background: rgba(232, 181, 62, 0.07);
+  color: var(--gold-2);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.875rem;
   font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   text-align: left;
   transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 
 .menu-widget--bite .menu-bite-guide-btn:hover {
-  background: rgba(88, 28, 135, 0.35);
-  border-color: rgba(192, 132, 252, 0.55);
+  background: rgba(232, 181, 62, 0.14);
+  border-color: rgba(232, 181, 62, 0.5);
   transform: translateY(-1px);
 }
 
@@ -5420,11 +5508,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .menu-bite-label {
-  font-size: 0.875rem;
-  font-weight: 800;
-  color: #fafafa;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--gold-2);
   line-height: 1.25;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
 }
 
 .menu-bite-text {
@@ -5476,8 +5565,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .menu-tab--active {
   color: var(--gold);
-  border-color: rgba(251, 191, 36, 0.45);
-  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(232, 181, 62, 0.45);
+  background: rgba(232, 181, 62, 0.1);
 }
 
 .menu-lb-rows {
@@ -5511,8 +5600,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .menu-lb-row--me {
-  background: rgba(225, 29, 72, 0.14);
-  border: 1px solid rgba(225, 29, 72, 0.3);
+  background: rgba(226, 49, 80, 0.14);
+  border: 1px solid rgba(226, 49, 80, 0.3);
 }
 
 .menu-lb-row--gold .menu-lb-rank { color: var(--gold); font-size: 1.05rem; }
@@ -5550,8 +5639,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   padding: 0.12rem 0.35rem;
   border-radius: 4px;
   color: #fecaca;
-  background: rgba(225, 29, 72, 0.25);
-  border: 1px solid rgba(225, 29, 72, 0.4);
+  background: rgba(226, 49, 80, 0.25);
+  border: 1px solid rgba(226, 49, 80, 0.4);
 }
 
 .menu-lb-flawless {
@@ -5583,7 +5672,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: 0.6rem;
   border: 1px solid rgba(245, 158, 11, 0.35);
   background: rgba(245, 158, 11, 0.08);
-  color: #fbbf24;
+  color: #e8b53e;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
@@ -5962,14 +6051,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   gap: 0.35rem;
   padding: 0.55rem 0.95rem;
   border-radius: 10px;
-  border: 1px solid rgba(251, 191, 36, 0.55);
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.22) 0%, rgba(217, 119, 6, 0.12) 100%);
+  border: 1px solid rgba(232, 181, 62, 0.55);
+  background: linear-gradient(135deg, rgba(232, 181, 62, 0.22) 0%, rgba(217, 119, 6, 0.12) 100%);
   color: #fde68a;
   font-size: 0.88rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  box-shadow: 0 0 14px rgba(251, 191, 36, 0.2);
+  box-shadow: 0 0 14px rgba(232, 181, 62, 0.2);
   animation: gameHeaderMenuPulse 2.4s ease-in-out infinite;
   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
@@ -5983,10 +6072,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .game-header-menu-btn:hover {
   transform: translateY(-1px);
-  border-color: rgba(251, 191, 36, 0.85);
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.32) 0%, rgba(217, 119, 6, 0.2) 100%);
+  border-color: rgba(232, 181, 62, 0.85);
+  background: linear-gradient(135deg, rgba(232, 181, 62, 0.32) 0%, rgba(217, 119, 6, 0.2) 100%);
   color: #fff7d6;
-  box-shadow: 0 0 22px rgba(251, 191, 36, 0.38);
+  box-shadow: 0 0 22px rgba(232, 181, 62, 0.38);
   animation: none;
 }
 
@@ -6037,14 +6126,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .match-history-dot--win {
   color: #86efac;
-  background: rgba(34, 197, 94, 0.18);
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: rgba(65, 184, 108, 0.18);
+  border: 1px solid rgba(65, 184, 108, 0.35);
 }
 
 .match-history-dot--draw {
   color: #fde68a;
-  background: rgba(251, 191, 36, 0.15);
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  background: rgba(232, 181, 62, 0.15);
+  border: 1px solid rgba(232, 181, 62, 0.3);
 }
 
 .match-history-dot--loss {
@@ -6079,12 +6168,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 @keyframes gameHeaderMenuPulse {
   0%, 100% {
-    box-shadow: 0 0 10px rgba(251, 191, 36, 0.15);
-    border-color: rgba(251, 191, 36, 0.45);
+    box-shadow: 0 0 10px rgba(232, 181, 62, 0.15);
+    border-color: rgba(232, 181, 62, 0.45);
   }
   50% {
-    box-shadow: 0 0 20px rgba(251, 191, 36, 0.32);
-    border-color: rgba(251, 191, 36, 0.7);
+    box-shadow: 0 0 20px rgba(232, 181, 62, 0.32);
+    border-color: rgba(232, 181, 62, 0.7);
   }
 }
 
@@ -6296,8 +6385,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 700;
   padding: 0.15rem 0.4rem;
   border-radius: 6px;
-  background: rgba(251, 191, 36, 0.12);
-  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: rgba(232, 181, 62, 0.12);
+  border: 1px solid rgba(232, 181, 62, 0.25);
   color: #fde68a;
 }
 
@@ -6347,7 +6436,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .match-team-card--home {
   background: linear-gradient(145deg, rgba(20, 83, 45, 0.35) 0%, rgba(17, 17, 17, 0.9) 100%);
-  border-color: rgba(34, 197, 94, 0.25);
+  border-color: rgba(65, 184, 108, 0.25);
 }
 
 .match-team-card--away {
@@ -6382,7 +6471,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .match-team-bar-fill {
   height: 100%;
   border-radius: 3px;
-  background: linear-gradient(90deg, #d97706, #fbbf24);
+  background: linear-gradient(90deg, #d97706, #e8b53e);
 }
 
 .match-team-card--home .match-team-bar-fill {
@@ -6408,7 +6497,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .match-team-squad-size--warn {
-  color: #fbbf24;
+  color: #e8b53e;
 }
 
 .opponent-style-badge {
@@ -6552,7 +6641,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .match-power-fill--home {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #22c55e, #86efac);
+  background: linear-gradient(90deg, #41b86c, #86efac);
   transition: width 0.45s ease;
 }
 
@@ -6622,7 +6711,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #22c55e;
+  background: #41b86c;
   animation: matchLivePulse 1.2s ease-in-out infinite;
 }
 
@@ -6668,7 +6757,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: 999px;
   background: linear-gradient(90deg, #16a34a, #4ade80);
   transition: width 0.4s ease;
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.35);
+  box-shadow: 0 0 12px rgba(65, 184, 108, 0.35);
 }
 
 .match-live-banner {
@@ -6684,8 +6773,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .match-live-banner--goal {
-  background: rgba(34, 197, 94, 0.2);
-  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(65, 184, 108, 0.2);
+  border-color: rgba(65, 184, 108, 0.45);
   color: #bbf7d0;
 }
 
@@ -6726,7 +6815,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   padding: 0.65rem 0.75rem;
   border-radius: 10px;
   background: linear-gradient(135deg, rgba(120, 53, 15, 0.25) 0%, rgba(0, 0, 0, 0.4) 100%);
-  border: 1px solid rgba(251, 191, 36, 0.25);
+  border: 1px solid rgba(232, 181, 62, 0.25);
 }
 
 .match-tip-kicker {
@@ -6761,9 +6850,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .match-halftime-chip {
-  background: rgba(251, 191, 36, 0.12);
+  background: rgba(232, 181, 62, 0.12);
   color: #fde68a;
-  border: 1px solid rgba(251, 191, 36, 0.28);
+  border: 1px solid rgba(232, 181, 62, 0.28);
 }
 
 .match-result-panel {
@@ -6816,16 +6905,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .match-bonus-chip--gold {
-  background: rgba(251, 191, 36, 0.15);
-  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(232, 181, 62, 0.15);
+  border-color: rgba(232, 181, 62, 0.35);
   color: #fde68a;
 }
 
 .match-synergy-reveal {
   padding: 0.65rem 0.75rem;
   border-radius: 10px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(232, 181, 62, 0.35);
+  background: rgba(232, 181, 62, 0.08);
 }
 
 .match-synergy-name {
@@ -6837,7 +6926,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .match-wow {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #fcd34d;
+  color: #f6cf6a;
 }
 
 .match-footer-panel {
@@ -6858,7 +6947,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .match-highlight-line span {
-  color: #fbbf24;
+  color: #e8b53e;
   font-weight: 800;
 }
 
@@ -7045,7 +7134,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .event-player-offer--pair .event-player-offer-label {
-  color: rgba(251, 191, 36, 0.85);
+  color: rgba(232, 181, 62, 0.85);
 }
 
 .event-player-offer--join .event-player-offer-label {
@@ -7067,8 +7156,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-size: 0.9rem;
   line-height: 1.5;
   color: rgba(212, 212, 216, 0.92);
-  background: rgba(251, 191, 36, 0.06);
-  border: 1px solid rgba(251, 191, 36, 0.14);
+  background: rgba(232, 181, 62, 0.06);
+  border: 1px solid rgba(232, 181, 62, 0.14);
 }
 
 .event-hero-scene {
@@ -7118,7 +7207,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   position: absolute;
   inset: 0;
   opacity: 0.55;
-  background: radial-gradient(circle at 50% 40%, rgba(251, 191, 36, 0.35), transparent 65%);
+  background: radial-gradient(circle at 50% 40%, rgba(232, 181, 62, 0.35), transparent 65%);
 }
 
 .event-hero--transfer {
@@ -7196,7 +7285,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .event-choice-visual-glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 30%, rgba(251, 191, 36, 0.2), transparent 70%);
+  background: radial-gradient(circle at 50% 30%, rgba(232, 181, 62, 0.2), transparent 70%);
 }
 
 .event-choice-body {
@@ -7254,7 +7343,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .event-choice-btn--risky {
   background: linear-gradient(135deg, rgba(180, 83, 9, 0.45) 0%, rgba(120, 53, 15, 0.6) 100%);
-  border-color: rgba(251, 191, 36, 0.55);
+  border-color: rgba(232, 181, 62, 0.55);
   color: #fef3c7;
 }
 
@@ -7283,7 +7372,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .event-choice-btn--selected {
-  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.55), 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 3px rgba(232, 181, 62, 0.55), 0 8px 24px rgba(0, 0, 0, 0.35);
   transform: scale(1.02);
 }
 
@@ -7301,7 +7390,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .synergy-list-item--discovered {
-  border-left: 4px solid #fbbf24;
+  border-left: 4px solid #e8b53e;
   background: rgba(120, 53, 15, 0.12);
 }
 
@@ -7327,9 +7416,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-bottom: 0.5rem;
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  border-left: 3px solid #fbbf24;
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(232, 181, 62, 0.35);
+  border-left: 3px solid #e8b53e;
+  background: rgba(232, 181, 62, 0.08);
 }
 
 .event-outcome-preview {
@@ -7359,7 +7448,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   position: relative;
   height: 200px;
   border-radius: 14px;
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  border: 1px solid rgba(65, 184, 108, 0.35);
   background: linear-gradient(180deg, #14532d 0%, #0a3d0a 100%);
   overflow: hidden;
   margin-bottom: 1rem;
@@ -7489,7 +7578,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .match-pitch-wave--home {
   right: 0;
-  background: linear-gradient(270deg, rgba(34, 197, 94, 0.35) 0%, transparent 100%);
+  background: linear-gradient(270deg, rgba(65, 184, 108, 0.35) 0%, transparent 100%);
 }
 
 .match-pitch-wave--away {
@@ -7511,7 +7600,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .match-pitch-player--highlight {
   transform: translate(-50%, -50%) scale(1.35);
-  box-shadow: 0 0 14px rgba(34, 197, 94, 0.9);
+  box-shadow: 0 0 14px rgba(65, 184, 108, 0.9);
   animation: matchPlayerPulse 0.6s ease infinite alternate;
 }
 
@@ -7520,8 +7609,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 @keyframes matchPlayerPulse {
-  from { box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
-  to { box-shadow: 0 0 18px rgba(34, 197, 94, 1); }
+  from { box-shadow: 0 0 8px rgba(65, 184, 108, 0.6); }
+  to { box-shadow: 0 0 18px rgba(65, 184, 108, 1); }
 }
 
 @keyframes matchPlayerBob {
@@ -7593,7 +7682,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   animation: matchPopupIn 0.35s ease;
 }
 
-.match-event--goal-for { background: rgba(34, 197, 94, 0.25); color: #bbf7d0; border: 1px solid rgba(34, 197, 94, 0.45); }
+.match-event--goal-for { background: rgba(65, 184, 108, 0.25); color: #bbf7d0; border: 1px solid rgba(65, 184, 108, 0.45); }
 .match-event--goal-against { background: rgba(239, 68, 68, 0.22); color: #fecaca; border: 1px solid rgba(239, 68, 68, 0.4); }
 .match-event--yellow { background: rgba(234, 179, 8, 0.22); color: #fef08a; border: 1px solid rgba(234, 179, 8, 0.45); }
 .match-event--red { background: rgba(220, 38, 38, 0.28); color: #fecaca; border: 1px solid rgba(220, 38, 38, 0.5); }
@@ -7670,9 +7759,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 @keyframes matchFlashWin {
-  0% { box-shadow: inset 0 0 0 0 rgba(34, 197, 94, 0); }
-  40% { box-shadow: inset 0 0 80px rgba(34, 197, 94, 0.45); }
-  100% { box-shadow: inset 0 0 0 0 rgba(34, 197, 94, 0); }
+  0% { box-shadow: inset 0 0 0 0 rgba(65, 184, 108, 0); }
+  40% { box-shadow: inset 0 0 80px rgba(65, 184, 108, 0.45); }
+  100% { box-shadow: inset 0 0 0 0 rgba(65, 184, 108, 0); }
 }
 
 @keyframes matchFlashLoss {
@@ -7779,8 +7868,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .select-cta--training {
-  background: rgba(34, 197, 94, 0.22) !important;
-  border-color: rgba(34, 197, 94, 0.45) !important;
+  background: rgba(65, 184, 108, 0.22) !important;
+  border-color: rgba(65, 184, 108, 0.45) !important;
 }
 
 /* Antrenman seçim modalı */
@@ -8014,8 +8103,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .guide-nav-btn--active {
-  background: rgba(251, 191, 36, 0.12);
-  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(232, 181, 62, 0.12);
+  border-color: rgba(232, 181, 62, 0.4);
   color: #fde68a;
 }
 
@@ -8152,9 +8241,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   padding: 0.25rem 0.4rem;
   border-radius: 6px;
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(91, 155, 232, 0.2);
   color: #93c5fd;
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  border: 1px solid rgba(91, 155, 232, 0.35);
 }
 
 .guide-pos-name {
@@ -8318,8 +8407,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .guide-synergy-legend-item--open {
   color: #fde68a;
-  border-color: rgba(251, 191, 36, 0.35);
-  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(232, 181, 62, 0.35);
+  background: rgba(232, 181, 62, 0.08);
 }
 
 .guide-synergy-legend-item--hidden {
@@ -8346,8 +8435,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-size: 0.82rem;
   line-height: 1.45;
   color: rgba(212, 212, 216, 0.92);
-  background: rgba(251, 191, 36, 0.06);
-  border: 1px solid rgba(251, 191, 36, 0.15);
+  background: rgba(232, 181, 62, 0.06);
+  border: 1px solid rgba(232, 181, 62, 0.15);
 }
 
 .guide-synergy-note strong {
@@ -8369,7 +8458,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .guide-synergy-item--open {
-  border-color: rgba(251, 191, 36, 0.2);
+  border-color: rgba(232, 181, 62, 0.2);
 }
 
 .guide-synergy-item--hidden {
@@ -8438,8 +8527,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #fcd34d;
-  background: rgba(251, 191, 36, 0.15);
+  color: #f6cf6a;
+  background: rgba(232, 181, 62, 0.15);
   vertical-align: middle;
 }
 
@@ -8473,7 +8562,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .guide-badge--open {
-  background: rgba(251, 191, 36, 0.15);
+  background: rgba(232, 181, 62, 0.15);
   color: #fde68a;
 }
 
@@ -8578,7 +8667,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   width: 100%;
   max-width: 420px;
   padding: 1.35rem 1.4rem 1.25rem;
-  border-color: rgba(251, 191, 36, 0.35);
+  border-color: rgba(232, 181, 62, 0.35);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
 }
 
@@ -8591,8 +8680,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: #fde68a;
   padding: 0.2rem 0.5rem;
   border-radius: 6px;
-  background: rgba(251, 191, 36, 0.12);
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  background: rgba(232, 181, 62, 0.12);
+  border: 1px solid rgba(232, 181, 62, 0.3);
   margin-bottom: 0.65rem;
 }
 
@@ -8631,7 +8720,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   padding: 0.65rem 0.85rem;
   border-radius: 10px;
   border: 1px solid #404040;
-  background: #0a0a0a;
+  background: #0c1019;
   font-size: 1.05rem;
   font-weight: 700;
   color: #fafafa;
@@ -8639,8 +8728,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .start-run-input:focus {
   outline: none;
-  border-color: rgba(251, 191, 36, 0.55);
-  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.15);
+  border-color: rgba(232, 181, 62, 0.55);
+  box-shadow: 0 0 0 2px rgba(232, 181, 62, 0.15);
 }
 
 .start-run-actions {
@@ -8674,7 +8763,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   line-height: 1.4;
   color: #f1f5f9;
   background: rgba(15, 15, 20, 0.98);
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  border: 1px solid rgba(232, 181, 62, 0.35);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
   text-align: center;
   white-space: normal;
@@ -8716,8 +8805,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-bottom: 0.5rem;
   padding: 0.6rem 0.85rem;
   border-radius: 12px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(8, 8, 12, 0.92) 50%);
+  border: 1px solid rgba(232, 181, 62, 0.35);
+  background: linear-gradient(135deg, rgba(232, 181, 62, 0.12) 0%, rgba(8, 8, 12, 0.92) 50%);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -8755,7 +8844,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #fbbf24;
+  color: #e8b53e;
 }
 
 .pick-morale-value {
@@ -8783,7 +8872,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .pick-morale-bar-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #dc2626, #fbbf24, #22c55e);
+  background: linear-gradient(90deg, #dc2626, #e8b53e, #41b86c);
 }
 
 .pick-morale-detail {
@@ -8814,7 +8903,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 700;
   color: #f5f5f5;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(251, 191, 36, 0.22);
+  border: 1px solid rgba(232, 181, 62, 0.22);
   cursor: help;
   transition: border-color 0.15s, background 0.15s;
   min-height: 2.5rem;
@@ -8822,12 +8911,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .pick-morale-tip:hover,
 .pick-morale-tip:focus-visible {
-  border-color: rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(232, 181, 62, 0.4);
+  background: rgba(232, 181, 62, 0.08);
 }
 
 .pick-morale-tip-delta {
-  color: #fbbf24;
+  color: #e8b53e;
   font-size: 0.95rem;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
@@ -8882,7 +8971,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   flex-shrink: 0;
   font-size: 1rem;
   font-weight: 800;
-  color: rgba(251, 191, 36, 0.55);
+  color: rgba(232, 181, 62, 0.55);
   line-height: 1;
 }
 
@@ -9052,8 +9141,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .confirm-modal--menu {
-  border-color: rgba(251, 191, 36, 0.35);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 40px rgba(251, 191, 36, 0.08);
+  border-color: rgba(232, 181, 62, 0.35);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 40px rgba(232, 181, 62, 0.08);
 }
 
 .confirm-modal--danger {
@@ -9113,26 +9202,26 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .confirm-modal-btn--confirm {
-  border: 1px solid rgba(251, 191, 36, 0.5);
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.35) 0%, rgba(217, 119, 6, 0.25) 100%);
+  border: 1px solid rgba(232, 181, 62, 0.5);
+  background: linear-gradient(135deg, rgba(232, 181, 62, 0.35) 0%, rgba(217, 119, 6, 0.25) 100%);
   color: #fff7d6;
   text-transform: uppercase;
 }
 
 .confirm-modal-btn--confirm:hover {
-  border-color: rgba(251, 191, 36, 0.8);
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.25);
+  border-color: rgba(232, 181, 62, 0.8);
+  box-shadow: 0 0 20px rgba(232, 181, 62, 0.25);
   transform: translateY(-1px);
 }
 
 .confirm-modal-btn--menu {
-  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  background: linear-gradient(135deg, #e8b53e 0%, #d97706 100%);
   color: #1a1000;
   border-color: transparent;
 }
 
 .confirm-modal-btn--menu:hover {
-  box-shadow: 0 0 24px rgba(251, 191, 36, 0.45);
+  box-shadow: 0 0 24px rgba(232, 181, 62, 0.45);
 }
 
 .confirm-modal-btn--danger {
@@ -9150,9 +9239,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-bottom: 0.65rem;
   padding: 0.75rem 1rem;
   border-radius: 14px;
-  border: 1px solid rgba(251, 191, 36, 0.28);
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(8, 8, 12, 0.95) 55%);
-  box-shadow: 0 0 24px rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(232, 181, 62, 0.28);
+  background: linear-gradient(135deg, rgba(232, 181, 62, 0.1) 0%, rgba(8, 8, 12, 0.95) 55%);
+  box-shadow: 0 0 24px rgba(232, 181, 62, 0.06);
 }
 
 .match-morale-banner--unified {
@@ -9197,7 +9286,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #fbbf24;
+  color: #e8b53e;
 }
 
 .match-morale-unified-value {
@@ -9225,7 +9314,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .match-morale-unified-bar-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #dc2626, #fbbf24, #22c55e);
+  background: linear-gradient(90deg, #dc2626, #e8b53e, #41b86c);
 }
 
 .match-morale-unified-bridge {
@@ -9237,12 +9326,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(251, 191, 36, 0.7);
+  color: rgba(232, 181, 62, 0.7);
   white-space: nowrap;
   padding: 0.2rem 0.45rem;
   border-radius: 999px;
-  border: 1px solid rgba(251, 191, 36, 0.22);
-  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(232, 181, 62, 0.22);
+  background: rgba(232, 181, 62, 0.06);
 }
 
 .match-morale-unified-fx {
@@ -9294,12 +9383,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .match-morale-tip-chip:hover,
 .match-morale-tip-chip:focus-visible {
-  border-color: rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(232, 181, 62, 0.4);
+  background: rgba(232, 181, 62, 0.08);
 }
 
 .match-morale-tip-chip-delta {
-  color: #fbbf24;
+  color: #e8b53e;
   font-variant-numeric: tabular-nums;
 }
 
@@ -9327,7 +9416,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #fbbf24;
+  color: #e8b53e;
 }
 
 .match-morale-banner-mult {
@@ -9387,12 +9476,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .match-morale-tip:hover .match-morale-tip-inner,
 .match-morale-tip:focus-visible .match-morale-tip-inner {
-  border-color: rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(232, 181, 62, 0.4);
+  background: rgba(232, 181, 62, 0.08);
 }
 
 .match-morale-tip-delta {
-  color: #fbbf24;
+  color: #e8b53e;
   font-variant-numeric: tabular-nums;
 }
 
@@ -9502,7 +9591,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .lineup-preview-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.62);
+  background: rgba(4, 6, 11, 0.72);
+  backdrop-filter: blur(3px);
   z-index: 399;
 }
 
@@ -9528,8 +9618,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .lineup-preview-popover--center {
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 20px;
+  border: 1px solid var(--line-2);
+  background: linear-gradient(180deg, #141a26, #0e121b);
+  box-shadow: var(--sh-3);
 }
 
 .lineup-pitch--center-modal {
@@ -9596,7 +9688,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .squad-row--bench-gk {
-  border-color: rgba(251, 191, 36, 0.35);
+  border-color: rgba(232, 181, 62, 0.35);
 }
 
 .squad-row-bench-badge {
@@ -9604,7 +9696,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(251, 191, 36, 0.9);
+  color: rgba(232, 181, 62, 0.9);
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
   background: rgba(120, 53, 15, 0.35);
@@ -9622,7 +9714,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* Player card extras */
 .card-insight-line--hoverable {
-  text-decoration: underline dotted rgba(251, 191, 36, 0.55);
+  text-decoration: underline dotted rgba(232, 181, 62, 0.55);
   text-underline-offset: 3px;
   cursor: help;
 }
@@ -9680,9 +9772,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   width: min(480px, 100%);
   padding: 1.25rem 1.35rem;
   border-radius: 16px;
-  border: 2px solid rgba(251, 191, 36, 0.55);
+  border: 2px solid rgba(232, 181, 62, 0.55);
   background: linear-gradient(165deg, rgba(120, 53, 15, 0.45) 0%, rgba(10, 10, 12, 0.96) 55%);
-  box-shadow: 0 0 60px rgba(251, 191, 36, 0.2);
+  box-shadow: 0 0 60px rgba(232, 181, 62, 0.2);
 }
 
 .synergy-reveal-kicker {
@@ -9745,14 +9837,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   height: 8px;
   border-radius: 50%;
   background: radial-gradient(circle, #fde68a 0%, #f59e0b 55%, transparent 70%);
-  box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+  box-shadow: 0 0 12px rgba(232, 181, 62, 0.8);
 }
 
 .synergy-reveal-why {
   margin: 0.15rem 0 0;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #fcd34d;
+  color: #f6cf6a;
 }
 
 .tutorial-coach-backdrop {
@@ -9784,7 +9876,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   position: absolute;
   inset: -1px;
   border-radius: inherit;
-  background: radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.25) 0%, transparent 55%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(91, 155, 232, 0.25) 0%, transparent 55%);
   pointer-events: none;
 }
 
@@ -9823,8 +9915,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 700;
   line-height: 1.4;
   color: #fde68a;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: rgba(232, 181, 62, 0.1);
+  border: 1px solid rgba(232, 181, 62, 0.35);
 }
 
 .tutorial-coach-highlight-dot {
@@ -9833,8 +9925,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   height: 8px;
   margin-top: 0.35rem;
   border-radius: 50%;
-  background: #fbbf24;
-  box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+  background: #e8b53e;
+  box-shadow: 0 0 10px rgba(232, 181, 62, 0.8);
   animation: tutorialPulse 1.4s ease-in-out infinite;
 }
 
@@ -9852,7 +9944,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(180deg, #5b9be8 0%, #2563eb 100%);
   color: #fff;
   cursor: pointer;
   transition: transform 0.12s, box-shadow 0.12s;
@@ -9928,7 +10020,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   width: 100%;
   padding: 0.65rem 0.85rem;
   border-radius: 12px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  border: 1px solid rgba(232, 181, 62, 0.35);
   background: linear-gradient(135deg, rgba(120, 53, 15, 0.35) 0%, rgba(23, 23, 23, 0.92) 55%);
   color: #fafafa;
   text-align: left;
@@ -9937,7 +10029,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .lineup-center-trigger:hover {
-  border-color: rgba(251, 191, 36, 0.65);
+  border-color: rgba(232, 181, 62, 0.65);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
   transform: translateY(-1px);
 }
@@ -9975,10 +10067,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #fbbf24;
+  color: #e8b53e;
   padding: 0.25rem 0.55rem;
   border-radius: 999px;
-  border: 1px solid rgba(251, 191, 36, 0.45);
+  border: 1px solid rgba(232, 181, 62, 0.45);
   background: rgba(0, 0, 0, 0.25);
   flex-shrink: 0;
 }
@@ -10028,7 +10120,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(251, 191, 36, 0.9);
+  color: rgba(232, 181, 62, 0.9);
 }
 
 .lineup-bench-list {
@@ -10132,7 +10224,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .squad-row--bench {
   opacity: 1;
   background: rgba(23, 23, 23, 0.55);
-  border-left: 3px solid rgba(251, 191, 36, 0.45);
+  border-left: 3px solid rgba(232, 181, 62, 0.45);
 }
 
 .squad-row--bench .squad-row-name {
@@ -10222,7 +10314,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   min-height: 0;
   overflow: visible;
   scrollbar-width: thin;
-  scrollbar-color: rgba(251, 191, 36, 0.45) rgba(255, 255, 255, 0.06);
+  scrollbar-color: rgba(232, 181, 62, 0.45) rgba(255, 255, 255, 0.06);
 }
 
 .loss-screen-lineup::-webkit-scrollbar {
@@ -10230,7 +10322,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .loss-screen-lineup::-webkit-scrollbar-thumb {
-  background: rgba(251, 191, 36, 0.4);
+  background: rgba(232, 181, 62, 0.4);
   border-radius: 999px;
 }
 
@@ -10241,7 +10333,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   flex-direction: column;
   gap: 0.75rem;
   background: rgba(12, 12, 14, 0.92);
-  border: 1px solid rgba(251, 191, 36, 0.18);
+  border: 1px solid rgba(232, 181, 62, 0.18);
 }
 
 .loss-risk-block {
@@ -10280,7 +10372,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(251, 191, 36, 0.9);
+  color: rgba(232, 181, 62, 0.9);
 }
 
 .loss-risk-list {
@@ -10359,7 +10451,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .match-left-stack::-webkit-scrollbar-thumb {
-  background: rgba(251, 191, 36, 0.4);
+  background: rgba(232, 181, 62, 0.4);
   border-radius: 999px;
 }
 
@@ -10372,8 +10464,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .lineup-preview-sidebar--v2 {
   padding: 0.5rem 0.55rem;
   border-radius: 10px;
-  background: rgba(251, 191, 36, 0.06);
-  border: 1px solid rgba(251, 191, 36, 0.22);
+  background: rgba(232, 181, 62, 0.06);
+  border: 1px solid rgba(232, 181, 62, 0.22);
   margin-bottom: 0.35rem;
 }
 
@@ -10439,7 +10531,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   flex-shrink: 0;
   padding: 0.35rem 0.7rem;
   border-radius: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.45);
+  border: 1px solid rgba(232, 181, 62, 0.45);
   background: rgba(0, 0, 0, 0.35);
   color: #fde68a;
   font-size: 0.75rem;
@@ -10451,8 +10543,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .lineup-show-btn:hover {
-  background: rgba(251, 191, 36, 0.12);
-  border-color: rgba(251, 191, 36, 0.65);
+  background: rgba(232, 181, 62, 0.12);
+  border-color: rgba(232, 181, 62, 0.65);
 }
 
 .lineup-center-trigger--v2:hover {
@@ -10465,7 +10557,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   gap: 0.45rem;
   padding: 0.38rem 0.65rem;
   border-radius: 10px;
-  border: 1px solid rgba(251, 191, 36, 0.4);
+  border: 1px solid rgba(232, 181, 62, 0.4);
   background: rgba(120, 53, 15, 0.28);
   color: #fafafa;
   cursor: pointer;
@@ -10474,7 +10566,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .lineup-compact-btn:hover {
-  border-color: rgba(251, 191, 36, 0.65);
+  border-color: rgba(232, 181, 62, 0.65);
   background: rgba(120, 53, 15, 0.42);
 }
 
@@ -10512,10 +10604,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #fbbf24;
+  color: #e8b53e;
   padding: 0.2rem 0.45rem;
   border-radius: 999px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  border: 1px solid rgba(232, 181, 62, 0.35);
   background: rgba(0, 0, 0, 0.25);
 }
 
@@ -10703,16 +10795,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .lineup-dot--v3.lineup-dot--gk.lineup-dot--filled {
   border-color: #fde047;
-  background: linear-gradient(165deg, #fbbf24 0%, #d97706 100%);
+  background: linear-gradient(165deg, #e8b53e 0%, #d97706 100%);
   color: #1c1917;
-  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.45);
+  box-shadow: 0 4px 16px rgba(232, 181, 62, 0.45);
 }
 
 .lineup-dot--v3.lineup-dot--gk.lineup-dot--empty {
   border-color: #fde047;
-  background: rgba(251, 191, 36, 0.14);
+  background: rgba(232, 181, 62, 0.14);
   color: #fde68a;
-  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.2);
+  box-shadow: 0 0 0 1px rgba(232, 181, 62, 0.2);
 }
 
 .lineup-dot--v3.lineup-dot--gk .lineup-dot-rating,
@@ -10747,8 +10839,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .lineup-modal-meta-card {
   padding: 0.7rem 0.85rem;
   border-radius: 10px;
-  background: rgba(251, 191, 36, 0.06);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  background: rgba(232, 181, 62, 0.06);
+  border: 1px solid rgba(232, 181, 62, 0.2);
 }
 
 .lineup-modal-meta-title {
@@ -10833,7 +10925,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 .event-result-badge--good {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(16, 185, 129, 0.18));
+  background: linear-gradient(135deg, rgba(65, 184, 108, 0.25), rgba(16, 185, 129, 0.18));
   color: #4ade80;
   border: 1px solid rgba(74, 222, 128, 0.4);
 }
@@ -10848,7 +10940,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-top: 0.35rem;
   font-size: 0.72rem;
   line-height: 1.3;
-  color: #fbbf24;
+  color: #e8b53e;
   opacity: 0.92;
 }
 
@@ -10873,8 +10965,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   font-size: 0.85rem;
   color: #fde68a;
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.28), rgba(245, 158, 11, 0.18));
-  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: linear-gradient(135deg, rgba(232, 181, 62, 0.28), rgba(245, 158, 11, 0.18));
+  border: 1px solid rgba(232, 181, 62, 0.45);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   white-space: nowrap;
 }
@@ -10921,7 +11013,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   letter-spacing: 0.02em;
 }
 .match-odds-badge--favorite {
-  background: rgba(34, 197, 94, 0.18);
+  background: rgba(65, 184, 108, 0.18);
   color: #4ade80;
   border: 1px solid rgba(74, 222, 128, 0.4);
 }
@@ -10956,7 +11048,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-style: italic;
   font-size: 0.8rem;
   line-height: 1.35;
-  color: #fcd34d;
+  color: #f6cf6a;
   border-left: 2px solid currentColor;
   padding-left: 0.55rem;
 }
@@ -10985,17 +11077,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-size: 0.85rem;
   color: #fde68a;
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.14));
-  border: 1px solid rgba(251, 191, 36, 0.4);
+  border: 1px solid rgba(232, 181, 62, 0.4);
 }
 .legendary-chance-banner--peak {
-  color: #fcd34d;
+  color: #f6cf6a;
   background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(245, 158, 11, 0.2));
   border-color: rgba(196, 181, 253, 0.5);
   animation: legendaryPulse 1.6s ease-in-out infinite;
 }
 @keyframes legendaryPulse {
-  0%, 100% { box-shadow: 0 0 0 rgba(251, 191, 36, 0); }
-  50% { box-shadow: 0 0 16px rgba(251, 191, 36, 0.45); }
+  0%, 100% { box-shadow: 0 0 0 rgba(232, 181, 62, 0); }
+  50% { box-shadow: 0 0 16px rgba(232, 181, 62, 0.45); }
 }
 
 /* ===== Mobil oyuncu kartı özet/detay katlanır ===== */
@@ -11148,8 +11240,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: #e2e8f0;
 }
 .tactic-pick-step--done {
-  background: rgba(34, 197, 94, 0.25);
-  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(65, 184, 108, 0.25);
+  border-color: rgba(65, 184, 108, 0.6);
   color: #4ade80;
 }
 .tactic-pick-cards {
@@ -11338,7 +11430,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .synergies-catalog-item--open {
-  border-left: 4px solid #fbbf24;
+  border-left: 4px solid #e8b53e;
   background: linear-gradient(135deg, rgba(120, 53, 15, 0.14) 0%, rgba(17, 17, 17, 0.9) 100%);
 }
 
@@ -11389,8 +11481,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-size: 0.75rem;
   font-weight: 700;
   color: #fde68a;
-  background: rgba(251, 191, 36, 0.12);
-  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: rgba(232, 181, 62, 0.12);
+  border: 1px solid rgba(232, 181, 62, 0.25);
 }
 
 /* Kart seçim / maç — kompakt moral bandı (desktop) */
@@ -11634,8 +11726,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   margin-bottom: 0.35rem;
   padding: 0;
   border-radius: 12px;
-  border: 1px solid rgba(251, 191, 36, 0.32);
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.11) 0%, rgba(8, 8, 12, 0.97) 48%);
+  border: 1px solid rgba(232, 181, 62, 0.32);
+  background: linear-gradient(135deg, rgba(232, 181, 62, 0.11) 0%, rgba(8, 8, 12, 0.97) 48%);
   overflow: hidden;
 }
 
@@ -11688,7 +11780,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   flex-shrink: 0;
   gap: 0.05rem;
   padding-left: 0.35rem;
-  border-left: 1px solid rgba(251, 191, 36, 0.2);
+  border-left: 1px solid rgba(232, 181, 62, 0.2);
 }
 
 .card-select-moral-fx-label {
@@ -11728,6 +11820,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   min-height: 3.1rem;
 }
 
+/* Outcome chip'leri: tek nötr yüzey, yalnızca değer renklendirilir
+   (README renk disiplini — çok renkli tile yerine sakin chip). */
 .card-select-tip-chip {
   flex: 1 1 0;
   min-width: 0;
@@ -11737,49 +11831,34 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   justify-content: center;
   gap: 0.12rem;
   padding: 0.38rem 0.2rem !important;
-  border-radius: 9px !important;
+  border-radius: 10px !important;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: var(--surface-inset) !important;
+  border: 1px solid var(--line) !important;
 }
 
-.card-select-tip-chip--win {
-  background: linear-gradient(165deg, rgba(34, 197, 94, 0.42), rgba(20, 83, 45, 0.75)) !important;
-  border-color: rgba(74, 222, 128, 0.45) !important;
-}
-
-.card-select-tip-chip--draw {
-  background: linear-gradient(165deg, rgba(245, 158, 11, 0.38), rgba(120, 53, 15, 0.72)) !important;
-  border-color: rgba(251, 191, 36, 0.42) !important;
-}
-
-.card-select-tip-chip--loss {
-  background: linear-gradient(165deg, rgba(239, 68, 68, 0.4), rgba(127, 29, 29, 0.78)) !important;
-  border-color: rgba(248, 113, 113, 0.42) !important;
-}
-
-.card-select-tip-chip--tactic {
-  background: linear-gradient(165deg, rgba(59, 130, 246, 0.4), rgba(30, 58, 138, 0.78)) !important;
-  border-color: rgba(96, 165, 250, 0.42) !important;
-}
-
+.card-select-tip-chip--win,
+.card-select-tip-chip--draw,
+.card-select-tip-chip--loss,
+.card-select-tip-chip--tactic,
 .card-select-tip-chip--event {
-  background: linear-gradient(165deg, rgba(168, 85, 247, 0.4), rgba(88, 28, 135, 0.78)) !important;
-  border-color: rgba(192, 132, 252, 0.42) !important;
+  background: var(--surface-inset) !important;
+  border-color: var(--line) !important;
 }
 
 .card-select-tip-icon {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   line-height: 1;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+  opacity: 0.92;
 }
 
 .card-select-tip-label {
   display: block;
   font-size: 0.54rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: rgba(255, 255, 255, 0.88);
+  letter-spacing: 0.1em;
+  color: var(--tx-3);
   line-height: 1.1;
   white-space: nowrap;
   overflow: hidden;
@@ -11789,11 +11868,24 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .card-select-tip-chip .pick-morale-tip-delta,
 .card-select-tip-delta {
-  font-size: 0.92rem;
-  font-weight: 900;
-  color: #fafafa;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
 }
+
+/* yalnızca değer renkli — sonuç türüne göre */
+.card-select-tip-chip--win .pick-morale-tip-delta,
+.card-select-tip-chip--win .card-select-tip-delta { color: var(--green-2); }
+.card-select-tip-chip--draw .pick-morale-tip-delta,
+.card-select-tip-chip--draw .card-select-tip-delta { color: var(--gold-2); }
+.card-select-tip-chip--loss .pick-morale-tip-delta,
+.card-select-tip-chip--loss .card-select-tip-delta { color: var(--red); }
+.card-select-tip-chip--tactic .pick-morale-tip-delta,
+.card-select-tip-chip--tactic .card-select-tip-delta { color: var(--blue); }
+.card-select-tip-chip--event .pick-morale-tip-delta,
+.card-select-tip-chip--event .card-select-tip-delta { color: var(--tx-2); }
 
 .card-select-synergy-row {
   display: flex;
@@ -11801,15 +11893,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   gap: 0.22rem;
   width: 100%;
   padding-top: 0.15rem;
-  border-top: 1px solid rgba(251, 191, 36, 0.15);
+  border-top: 1px solid rgba(232, 181, 62, 0.15);
 }
 
 .card-select-synergy-label {
   font-size: 0.58rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #7dd3fc;
+  letter-spacing: 0.16em;
+  color: var(--tx-3);
 }
 
 .card-select-synergy-chips {
@@ -11829,36 +11921,38 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   padding: 0.22rem 0.42rem;
   border-radius: 999px;
   font-size: 0.64rem;
-  font-weight: 800;
-  color: #e0f2fe;
-  background: linear-gradient(135deg, rgba(14, 116, 144, 0.45), rgba(8, 47, 73, 0.85));
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
   white-space: nowrap;
 }
 
 .card-select-synergy-chip--active {
-  color: #fef9c3;
-  background: linear-gradient(135deg, rgba(180, 83, 9, 0.55), rgba(69, 26, 3, 0.9));
-  border-color: rgba(251, 191, 36, 0.55);
+  color: var(--gold-2);
+  background: rgba(232, 181, 62, 0.12);
+  border-color: rgba(232, 181, 62, 0.35);
 }
 
 .card-select-synergy-chip--near {
-  color: #dbeafe;
-  background: linear-gradient(135deg, rgba(30, 64, 175, 0.4), rgba(15, 23, 42, 0.88));
-  border-color: rgba(96, 165, 250, 0.35);
+  color: var(--gold);
+  background: rgba(232, 181, 62, 0.07);
+  border-color: rgba(232, 181, 62, 0.24);
 }
 
 .card-select-synergy-progress {
   font-size: 0.58rem;
-  font-weight: 900;
-  color: #93c5fd;
-  opacity: 0.95;
+  font-weight: 800;
+  color: inherit;
+  opacity: 0.7;
 }
 
 .card-select-synergy-empty {
   font-size: 0.62rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--tx-3);
   line-height: 1.35;
 }
 
@@ -11898,13 +11992,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .menu-score-chart-meta strong {
-  color: #fbbf24;
+  color: #e8b53e;
   font-weight: 800;
 }
 
 .card-select-command-divider {
   width: 1px;
-  background: linear-gradient(180deg, transparent, rgba(251, 191, 36, 0.4), transparent);
+  background: linear-gradient(180deg, transparent, rgba(232, 181, 62, 0.4), transparent);
   align-self: stretch;
 }
 
@@ -11961,7 +12055,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .card-select-command-bar--training .card-pick-mode-btn--active {
   border-color: rgba(74, 222, 128, 0.65);
-  background: linear-gradient(135deg, #4ade80, #22c55e);
+  background: linear-gradient(135deg, #4ade80, #41b86c);
   box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.25);
 }
 
@@ -12004,8 +12098,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .card-pick-mode-banner--training {
   color: #bbf7d0;
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.28);
+  background: rgba(65, 184, 108, 0.12);
+  border: 1px solid rgba(65, 184, 108, 0.28);
 }
 
 .card-select-command-actions {
@@ -12097,7 +12191,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   flex-shrink: 0;
   padding: 0.45rem 0.6rem;
   border-radius: 10px;
-  border: 1px solid rgba(251, 191, 36, 0.28);
+  border: 1px solid rgba(232, 181, 62, 0.28);
   background: linear-gradient(135deg, rgba(120, 53, 15, 0.35) 0%, rgba(12, 10, 8, 0.92) 100%);
   text-align: center;
 }
@@ -12108,7 +12202,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 900;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #fbbf24;
+  color: #e8b53e;
 }
 
 .tactic-pick-stage-sub {
@@ -12165,23 +12259,32 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   min-height: 0;
   min-width: 0;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(180deg, rgba(18, 18, 22, 0.98) 0%, rgba(8, 8, 10, 0.98) 100%);
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #161c28 0%, #0f131c 100%);
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--sh-2);
   transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
 }
 
 .tactic-pick-card:hover {
-  border-color: rgba(56, 189, 248, 0.35);
   transform: translateY(-1px);
 }
 
-.tactic-pick-card--selected {
-  border-color: rgba(56, 189, 248, 0.65);
-  box-shadow:
-    0 0 0 1px rgba(56, 189, 248, 0.3),
-    0 8px 28px rgba(14, 116, 144, 0.28);
+/* Formasyon = yeşil aksan, oyun sistemi = mavi aksan (README) */
+.tactic-pick-card--formation:hover {
+  border-color: rgba(65, 184, 108, 0.4);
+}
+.tactic-pick-card--system:hover {
+  border-color: rgba(91, 155, 232, 0.4);
+}
+
+.tactic-pick-card--formation.tactic-pick-card--selected {
+  border-color: rgba(65, 184, 108, 0.65);
+  box-shadow: 0 0 0 1px rgba(65, 184, 108, 0.3), 0 8px 28px rgba(65, 184, 108, 0.22);
+}
+.tactic-pick-card--system.tactic-pick-card--selected {
+  border-color: rgba(91, 155, 232, 0.65);
+  box-shadow: 0 0 0 1px rgba(91, 155, 232, 0.3), 0 8px 28px rgba(91, 155, 232, 0.22);
 }
 
 .tactic-pick-card-hero {
@@ -12255,12 +12358,23 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   padding: 0.12rem 0.38rem;
   border-radius: 999px;
   font-size: 0.56rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #e0f2fe;
-  background: rgba(14, 116, 144, 0.55);
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: var(--tx-2);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line-2);
+}
+
+.tactic-pick-card--formation .tactic-pick-card-cat {
+  color: var(--green-2);
+  background: rgba(65, 184, 108, 0.16);
+  border-color: rgba(65, 184, 108, 0.4);
+}
+.tactic-pick-card--system .tactic-pick-card-cat {
+  color: #bcd6f5;
+  background: rgba(91, 155, 232, 0.16);
+  border-color: rgba(91, 155, 232, 0.4);
 }
 
 .tactic-pick-card-name {
@@ -12275,9 +12389,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .tactic-pick-card-effect {
   margin: 0.18rem 0 0;
   font-size: 0.64rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.3;
-  color: #a5f3fc;
+  color: var(--tx-2);
   opacity: 0.95;
 }
 
@@ -12294,7 +12408,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   text-transform: uppercase;
   color: #fde68a;
   background: rgba(120, 53, 15, 0.72);
-  border: 1px solid rgba(251, 191, 36, 0.42);
+  border: 1px solid rgba(232, 181, 62, 0.42);
   width: fit-content;
   pointer-events: none;
 }
@@ -12334,15 +12448,24 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   transition: background 0.15s, color 0.15s;
 }
 
-.tactic-pick-card-select:hover {
-  background: rgba(56, 189, 248, 0.12);
-  color: #7dd3fc;
+.tactic-pick-card--formation .tactic-pick-card-select:hover {
+  background: rgba(65, 184, 108, 0.14);
+  color: var(--green-2);
+}
+.tactic-pick-card--system .tactic-pick-card-select:hover {
+  background: rgba(91, 155, 232, 0.14);
+  color: #bcd6f5;
 }
 
-.tactic-pick-card-select--on {
-  background: rgba(22, 101, 52, 0.45);
-  color: #86efac;
-  border-top-color: rgba(74, 222, 128, 0.35);
+.tactic-pick-card--formation .tactic-pick-card-select--on {
+  background: rgba(65, 184, 108, 0.18);
+  color: var(--green-2);
+  border-top-color: rgba(65, 184, 108, 0.35);
+}
+.tactic-pick-card--system .tactic-pick-card-select--on {
+  background: rgba(91, 155, 232, 0.18);
+  color: #bcd6f5;
+  border-top-color: rgba(91, 155, 232, 0.35);
 }
 
 .tactic-pick-stage-foot {
@@ -12390,10 +12513,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .tactic-expand-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(4, 6, 11, 0.74);
+  backdrop-filter: blur(3px);
   z-index: 430;
 }
 
+/* Kart-detay modalı — morun meşru olduğu tek yer (README). */
 .tactic-expand-modal {
   position: fixed;
   top: 50%;
@@ -12404,11 +12529,20 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   z-index: 431;
   display: flex;
   flex-direction: column;
-  border-radius: 16px;
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  background: rgba(8, 8, 10, 0.98);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.75);
+  border-radius: 20px;
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  background: linear-gradient(180deg, #141320, #0e0c16);
+  box-shadow: var(--sh-3), 0 0 60px rgba(168, 85, 247, 0.12);
   overflow: hidden;
+}
+
+/* üst mor aksan şeridi */
+.tactic-expand-modal::before {
+  content: '';
+  display: block;
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(90deg, #7c3aed, #c084fc, #7c3aed);
 }
 
 .tactic-expand-modal-head {
@@ -12422,11 +12556,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .tactic-expand-modal-kicker {
   margin: 0;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #7dd3fc;
+  color: var(--purple-2);
 }
 
 .tactic-expand-modal-body {
@@ -12485,7 +12620,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .hof-hero-main {
   padding: 1.35rem 1.5rem;
   border-radius: 16px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  border: 1px solid rgba(232, 181, 62, 0.35);
   background: linear-gradient(145deg, rgba(120, 53, 15, 0.35), rgba(12, 12, 12, 0.95));
 }
 
@@ -12495,7 +12630,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #fbbf24;
+  color: #e8b53e;
 }
 
 .hof-hero-name {
@@ -12546,8 +12681,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .hof-tab--active {
-  border-color: rgba(251, 191, 36, 0.45);
-  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(232, 181, 62, 0.45);
+  background: rgba(232, 181, 62, 0.12);
   color: #fde68a;
 }
 
@@ -12590,13 +12725,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .hof-entry-row--first {
-  border-color: rgba(251, 191, 36, 0.35);
-  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(232, 181, 62, 0.35);
+  background: rgba(232, 181, 62, 0.08);
 }
 
 .hof-entry-rank {
   font-weight: 900;
-  color: #fbbf24;
+  color: #e8b53e;
 }
 
 .hof-entry-name {
@@ -12745,7 +12880,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   }
 
   .card-select-command-right {
-    border-top: 1px solid rgba(251, 191, 36, 0.2);
+    border-top: 1px solid rgba(232, 181, 62, 0.2);
   }
 
   .card-pick-mode-btn-text {
