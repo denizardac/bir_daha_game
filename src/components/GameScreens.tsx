@@ -30,6 +30,7 @@ import { MatchAnimation } from '@/components/MatchAnimation';
 import { MatchMoraleBanner } from '@/components/MatchMoraleBanner';
 import { MatchLeftPanel, MatchRightPanel } from '@/components/MatchLivePanels';
 import { LineupPreviewCenterTrigger, LineupPreviewExpanded, LineupPreviewModal } from '@/components/LineupPreview';
+import { LineupEditorModal } from '@/components/LineupEditorModal';
 import { TrainingPickModal } from '@/components/TrainingPickModal';
 import { FirstWinCelebration } from '@/components/FirstWinCelebration';
 import { downloadShareCard, copyShareCardImage, getShareTier, renderShareCardToCanvas } from '@/utils/shareCard';
@@ -313,6 +314,18 @@ export function CardSelectScreen() {
           />
         </div>
       </div>
+      {state.lineupEditorOpen && (
+        <LineupEditorModal
+          open
+          squad={squad}
+          activeTactics={activeTactics}
+          manualLineup={state.manualLineup}
+          highlightId={state.lineupEditorHighlightId}
+          onChange={state.setManualLineup}
+          onReset={state.resetManualLineup}
+          onConfirm={state.confirmLineupAndPlay}
+        />
+      )}
     </div>
   );
 }

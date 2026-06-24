@@ -806,6 +806,69 @@ export function reconcileManualLineup(
   return result;
 }
 
+export type LineupDropSource = { playerId: string; from: number | 'bench' };
+export type LineupDropTarget = { kind: 'slot'; index: number } | { kind: 'bench' };
+
+/** Editör sürükle-bırak: slotun bu oyuncuyu kabul edip etmediği (KL kuralı + ideal/flex). */
+export function slotAcceptsForEditor(player: PlayerCard, slot: FormationSlotDef): boolean {
+  if (slot.zone === 'kaleci') return player.position === 'KL';
+  if (player.position === 'KL') return false;
+  return slotAcceptsPlayer(player, slot);
+}
+
+/**
+ * Bir sürükle-bırak'ın yeni manualLineup'ını hesaplar (saf). Geçersiz/uyumsuz
+ * bırakmada `null` döner (değişiklik yok). UI bu sonucu setManualLineup'a verir.
+ */
+export function resolveLineupDrop(
+  manualLineup: ManualLineup,
+  lineup: LineupSlot[],
+  bench: PlayerCard[],
+  source: LineupDropSource,
+  target: LineupDropTarget,
+): ManualLineup | null {
+  const { playerId, from } = source;
+  const player = lineup.find((s) => s.player?.id === playerId)?.player
+    ?? bench.find((b) => b.id === playerId);
+  if (!player) return null;
+  const next: ManualLineup = { ...manualLineup };
+
+  if (target.kind === 'bench') {
+    if (from === 'bench') return null;
+    const swapIn = bench
+      .filter((b) => slotAcceptsForEditor(b, lineup[from]!.slot))
+      .sort((a, b) => b.currentRating - a.currentRating)[0];
+    if (swapIn) next[from] = swapIn.id;
+    else delete next[from];
+    return next;
+  }
+
+  const toIdx = target.index;
+  const toSlot = lineup[toIdx]?.slot;
+  if (!toSlot || !slotAcceptsForEditor(player, toSlot)) return null;
+  const occupant = lineup[toIdx]?.player ?? null;
+
+  if (from === 'bench') {
+    next[toIdx] = playerId;
+    if (occupant && occupant.id !== playerId) {
+      for (const [k, v] of Object.entries(next)) {
+        if (v === occupant.id && Number(k) !== toIdx) delete next[Number(k)];
+      }
+    }
+    return next;
+  }
+
+  if (from === toIdx) return null;
+  next[toIdx] = playerId;
+  if (occupant) {
+    if (!slotAcceptsForEditor(occupant, lineup[from]!.slot)) return null; // ters takas uyumsuz
+    next[from] = occupant.id;
+  } else {
+    delete next[from];
+  }
+  return next;
+}
+
 export function getReplacementPreview(
   squad: PlayerCard[],
   card: PlayerCard,

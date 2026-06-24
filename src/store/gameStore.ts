@@ -91,12 +91,18 @@ interface GameStore extends GameState {
   pendingMilestones: Milestone[];
   lastLossBrokenSynergies: string[];
   pendingSynergyReveal: string[];
+  /** Oyuncu seçildikten sonra İlk 11 düzenleme modalı açık mı (maç onaydan sonra). */
+  lineupEditorOpen: boolean;
+  /** Editörde vurgulanacak yeni oyuncu id'si. */
+  lineupEditorHighlightId: string | null;
   init: () => void;
   startRun: (daily?: boolean, displayName?: string) => void;
   continueRun: () => void;
   abandonRun: () => void;
   selectOffer: (card: GameCard) => void;
   confirmTacticRound: () => void;
+  /** İlk 11 editörü onaylanınca maçı oynatır. */
+  confirmLineupAndPlay: () => void;
   /** Manuel ilk 11 override'ını günceller (editör sürükle-bırak sonrası). */
   setManualLineup: (manualLineup: Record<number, string>) => void;
   /** Manuel override'ı temizler — saf otomatik yerleşime döner. */
@@ -428,6 +434,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   pendingMilestones: [],
   lastLossBrokenSynergies: [],
   pendingSynergyReveal: [],
+  lineupEditorOpen: false,
+  lineupEditorHighlightId: null,
 
   init: () => {
     getAnonymousId();
@@ -617,6 +625,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
           savePartial({ collectedLegends: [...persisted.collectedLegends, card.name] });
         }
       }
+      // Yeni oyuncu otomatik yerleşti; pin'leri yeni kadroya göre temizle ve
+      // İlk 11 düzenleme modalını aç — maç ancak onaylanınca oynanır.
+      const formationKey = getActiveFormationKey(state.activeTactics);
+      const manualLineup = reconcileManualLineup(state.manualLineup, squad, formationKey);
+      set({
+        squad,
+        manualLineup,
+        pendingSelected: card,
+        pendingOffersShown: [...state.currentOffers],
+        lineupEditorOpen: true,
+        lineupEditorHighlightId: card.id,
+      });
+      persistRun({ ...get(), squad, manualLineup });
+      return;
     } else if (isSkipCard(card)) {
       if (!canPassCardPick({
         phase: state.phase,
@@ -663,6 +685,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentMatch: match,
       phase: 'match',
     });
+  },
+
+  confirmLineupAndPlay: () => {
+    const state = get();
+    if (!state.lineupEditorOpen || state.phase !== 'cardSelect') return;
+    const match = simulateMatch(
+      state.seed,
+      state.round,
+      state.squad,
+      state.morale,
+      state.maxSquadSize,
+      state.discoveredSynergies,
+      state.activeTactics,
+      state.nextMatchRisk,
+      state.nextMatchBonus,
+      state.lossesCount,
+      state.isDailySeed,
+      state.manualLineup,
+    );
+    set({
+      currentMatch: match,
+      phase: 'match',
+      currentOffers: [],
+      nextMatchRisk: 0,
+      nextMatchBonus: 0,
+      lineupEditorOpen: false,
+      lineupEditorHighlightId: null,
+    });
+    persistRun({ ...get(), currentMatch: match, phase: 'match', currentOffers: [] });
   },
 
   confirmTacticRound: () => {
@@ -837,6 +888,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
     get().selectOffer(pickAutoOffer(s.currentOffers, s.squad.length, s.maxSquadSize));
+    // Oyuncu kartı editörü açtıysa (zaman aşımı oto-seçimi) otomatik onayla → maç oynanır.
+    if (get().lineupEditorOpen) get().confirmLineupAndPlay();
   },
 
   resolveEventChoice: (choice) => {

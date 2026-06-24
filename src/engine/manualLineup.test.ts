@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignSquadToFormation, getStartingEleven, reconcileManualLineup } from '@/engine/lineupPreview';
+import { assignSquadToFormation, getStartingEleven, reconcileManualLineup, resolveLineupDrop } from '@/engine/lineupPreview';
 import type { PlayerCard } from '@/types';
 
 function p(overrides: Partial<PlayerCard> & Pick<PlayerCard, 'id' | 'name' | 'position'>): PlayerCard {
@@ -61,5 +61,45 @@ describe('reconcileManualLineup', () => {
 
   it('bos override aynen bos doner', () => {
     expect(reconcileManualLineup({}, squad, '442')).toEqual({});
+  });
+});
+
+describe('resolveLineupDrop (surukle-birak takas matematigi)', () => {
+  // 442: slot 1 SLB (bos), slot 2/3 STP (a/b). STP, SLB oynayabilir (flex).
+  const lineup = assignSquadToFormation(twoStp, '442');
+
+  it('slot -> bos slot: oyuncuyu tasir (eski slot otomatige kalir)', () => {
+    const next = resolveLineupDrop({}, lineup, [], { playerId: 'a', from: 2 }, { kind: 'slot', index: 1 });
+    expect(next).toEqual({ 1: 'a' });
+  });
+
+  it('slot -> dolu slot: takas (iki pin)', () => {
+    const next = resolveLineupDrop({}, lineup, [], { playerId: 'a', from: 2 }, { kind: 'slot', index: 3 });
+    expect(next).toEqual({ 3: 'a', 2: 'b' });
+  });
+
+  it('uyumsuz slota birakma iptal (STP, SF slotuna konamaz)', () => {
+    const next = resolveLineupDrop({}, lineup, [], { playerId: 'a', from: 2 }, { kind: 'slot', index: 9 });
+    expect(next).toBeNull();
+  });
+
+  it('ayni slota birakma iptal', () => {
+    const next = resolveLineupDrop({}, lineup, [], { playerId: 'a', from: 2 }, { kind: 'slot', index: 2 });
+    expect(next).toBeNull();
+  });
+
+  it('yedek -> bos slot: pinler', () => {
+    const next = resolveLineupDrop({}, lineup, [stpC], { playerId: 'c', from: 'bench' }, { kind: 'slot', index: 1 });
+    expect(next).toEqual({ 1: 'c' });
+  });
+
+  it('yedek -> dolu slot: pinler (starter dusurur)', () => {
+    const next = resolveLineupDrop({}, lineup, [stpC], { playerId: 'c', from: 'bench' }, { kind: 'slot', index: 2 });
+    expect(next).toEqual({ 2: 'c' });
+  });
+
+  it('starter -> yedek: en guclu uygun yedekle takas', () => {
+    const next = resolveLineupDrop({}, lineup, [stpC], { playerId: 'a', from: 2 }, { kind: 'bench' });
+    expect(next).toEqual({ 2: 'c' });
   });
 });
