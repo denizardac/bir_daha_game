@@ -595,6 +595,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   selectOffer: (card) => {
     const state = get();
     if (state.phase !== 'cardSelect') return;
+    // İlk 11 editörü açıkken tekrar seçim engellenir (çift ekleme/çift oyuncu olmasın).
+    if (state.lineupEditorOpen) return;
 
     let squad = [...state.squad];
     let activeTactics = [...state.activeTactics];
@@ -867,6 +869,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   autoSelectOffer: () => {
     const s = get();
     if (s.phase !== 'cardSelect' || !s.currentOffers.length) return;
+    // Editör açıkken zaman aşımı yeni oyuncu seçmez — mevcut dizilişi onaylar.
+    if (s.lineupEditorOpen) { get().confirmLineupAndPlay(); return; }
     if (isTacticBonusRound(s.round, s.maxRounds)) {
       // Taktik round: ilk formasyon + ilk sistemi otomatik seç ve onayla.
       const formation = s.currentOffers.find((c) => isTacticCard(c) && getTacticCategory(c.id) === 'formasyon');
