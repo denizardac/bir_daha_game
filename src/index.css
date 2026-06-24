@@ -12577,8 +12577,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   max-width: 100%;
 }
 
+/* Modalda kart doğal boyuna büyüsün ve kırpma kalksın —
+   böylece tüm detaylar görünür ve modal gövdesi kayar. */
 .tactic-expand-modal-card-wrap .tactic-card {
+  height: auto;
   max-height: none;
+  overflow: visible;
+}
+
+.tactic-expand-modal-card-wrap .tactic-card-body {
+  flex: none;
+  overflow: visible;
 }
 
 .tactic-expand-modal-card-wrap .tactic-board {
