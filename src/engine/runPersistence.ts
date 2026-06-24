@@ -47,7 +47,7 @@ const GAME_STATE_KEYS: (keyof GameState)[] = [
   'currentEvent', 'activeTactics', 'lastLossPlayer', 'discoveredSynergies', 'lossesCount',
   'dangerMode', 'isFirstRun', 'timerSeconds', 'eventResolvedThisRound', 'flawless',
   'runEndAnalysis', 'extraDrawUsed', 'extraDrawAvailable', 'rerollsRemaining',
-  'offersRerollIndex', 'recoveryGuaranteed',
+  'offersRerollIndex', 'recoveryGuaranteed', 'manualLineup',
 ];
 
 export function mergeRunSnapshot(

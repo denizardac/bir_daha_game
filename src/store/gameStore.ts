@@ -31,7 +31,7 @@ import {
   getRank,
   getRankPercent,
 } from '@/engine/leaderboard';
-import { applyPlayerToSquad, normalizeSquadGoalkeepers } from '@/engine/lineupPreview';
+import { applyPlayerToSquad, getActiveFormationKey, normalizeSquadGoalkeepers, reconcileManualLineup } from '@/engine/lineupPreview';
 import {
   applyGerileyen,
   applyInjuryRisk,
@@ -97,6 +97,10 @@ interface GameStore extends GameState {
   abandonRun: () => void;
   selectOffer: (card: GameCard) => void;
   confirmTacticRound: () => void;
+  /** Manuel ilk 11 override'ını günceller (editör sürükle-bırak sonrası). */
+  setManualLineup: (manualLineup: Record<number, string>) => void;
+  /** Manuel override'ı temizler — saf otomatik yerleşime döner. */
+  resetManualLineup: () => void;
   passCardPick: () => void;
   beginTraining: () => void;
   pickTrainingPlayer: (playerId: string) => void;
@@ -160,6 +164,7 @@ function initialRun(
     rerollsRemaining: REROLLS_PER_RUN + streakBonus.extraRerolls,
     offersRerollIndex: 0,
     recoveryGuaranteed: false,
+    manualLineup: {},
   };
 }
 
@@ -266,6 +271,14 @@ function finalizeBonusRound(
   const roundHistory = [...state.roundHistory, historyEntry];
   const dangerMode = squad.length <= 5;
 
+  // Formasyon değiştiyse manuel diziliş sıfırlanır (slot index'leri yeni
+  // formasyonda farklı pozisyona denk gelir); aksi halde geçersiz pin'ler temizlenir.
+  const newFormationKey = getActiveFormationKey(activeTactics);
+  const formationChanged = newFormationKey !== getActiveFormationKey(state.activeTactics);
+  const manualLineup = formationChanged
+    ? {}
+    : reconcileManualLineup(state.manualLineup, squad, newFormationKey);
+
   if (squad.length <= 4 || state.round >= state.maxRounds) {
     const analysis = buildRunEndAnalysis({
       ...state,
@@ -336,6 +349,7 @@ function finalizeBonusRound(
     pendingSelected: null,
     trainingFlow: null,
     tacticDraft: { formationId: null, systemId: null } as TacticDraft,
+    manualLineup,
     ...next,
   };
   playSound('tick', loadPersisted().soundEnabled);
@@ -468,6 +482,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastLossPlayer: saved.lastLossPlayer ?? null,
       rerollsRemaining: saved.rerollsRemaining ?? REROLLS_PER_RUN,
       offersRerollIndex: saved.offersRerollIndex ?? 0,
+      manualLineup: saved.manualLineup ?? {},
       timerSeconds: 0,
       usedEventIds: saved.usedEventIds ?? [],
       trainingFlow: saved.trainingFlow ?? null,
@@ -627,6 +642,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.nextMatchBonus,
       state.lossesCount,
       state.isDailySeed,
+      state.manualLineup,
     );
 
     set({
@@ -672,6 +688,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Round geçmişinde gösterim için formasyon kartını birincil seçim olarak kullan.
     const primaryCard = getTacticCard(formationId) ?? getTacticCard(systemId)!;
     finalizeBonusRound(state, [...state.squad], activeTactics, primaryCard, set);
+  },
+
+  setManualLineup: (manualLineup) => {
+    const state = get();
+    const formationKey = getActiveFormationKey(state.activeTactics);
+    const clean = reconcileManualLineup(manualLineup, state.squad, formationKey);
+    set({ manualLineup: clean });
+    persistRun({ ...get(), manualLineup: clean });
+  },
+
+  resetManualLineup: () => {
+    set({ manualLineup: {} });
+    persistRun({ ...get(), manualLineup: {} });
   },
 
   beginTraining: () => {
@@ -731,6 +760,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.nextMatchBonus,
       state.lossesCount,
       state.isDailySeed,
+      state.manualLineup,
     );
 
     set({
@@ -942,6 +972,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.activeTactics,
       state.timerSeconds,
       flawless,
+      state.manualLineup,
     );
     score += points;
     match.roundPoints = points;

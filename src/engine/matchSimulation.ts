@@ -19,8 +19,12 @@ import {
 import { createRng, generateOpponent, seedVariation } from '@/engine/seed';
 import type { ActiveTactic, MatchHighlight, MatchResult, PlayerCard } from '@/types';
 
-function matchSquad(squad: PlayerCard[], activeTactics: ActiveTactic[]): PlayerCard[] {
-  const starters = getStartingEleven(squad, activeTactics);
+function matchSquad(
+  squad: PlayerCard[],
+  activeTactics: ActiveTactic[],
+  manualLineup: Record<number, string> = {},
+): PlayerCard[] {
+  const starters = getStartingEleven(squad, activeTactics, manualLineup);
   return starters.length ? starters : squad;
 }
 
@@ -145,12 +149,13 @@ export function simulateMatch(
   matchBonus = 0,
   lossesCount = 0,
   isDailySeed = true,
+  manualLineup: Record<number, string> = {},
 ): MatchResult {
   const rng = createRng(seed, 'match', round);
   const opponent = generateOpponent(rng, round === 15 ? round + 2 : round, !isDailySeed);
   const variation = seedVariation(rng);
 
-  const starters = matchSquad(squad, activeTactics);
+  const starters = matchSquad(squad, activeTactics, manualLineup);
   const behindPreview = false;
   const synergiesPreview = getActiveSynergies(starters, morale, { activeTactics, behindInMatch: behindPreview });
 

@@ -268,6 +268,13 @@ export interface GameState {
   offersRerollIndex: number;
   recoveryGuaranteed: boolean;
   displayName: string;
+  /**
+   * Manuel ilk 11 override'ı: formasyon slot index'i → oyuncu id.
+   * Boş = saf otomatik yerleşim (varsayılan davranış). Pin'lenen oyuncular
+   * o slota sabitlenir; kalan slotlar otomatik doldurulur. Formasyon değişince
+   * veya oyuncu kadrodan çıkınca ilgili pin'ler temizlenir (reconcile).
+   */
+  manualLineup: Record<number, string>;
 }
 
 export interface LeaderboardEntry {

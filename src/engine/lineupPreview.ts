@@ -1,6 +1,9 @@
 import { clonePlayer } from '@/data/players';
 import { getPlayablePositions, getSlotFitTier, playerPlaysPosition, slotFitIndex } from '@/data/positionFlexibility';
-import { assignPlayersByRules, canBeatOccupant, slotAcceptsPlayerForPlacement } from '@/engine/lineupPlacement';
+import { assignPlayersByRules, assignPlayersByRulesWithPins, canBeatOccupant, slotAcceptsPlayerForPlacement } from '@/engine/lineupPlacement';
+
+export type ManualLineup = Record<number, string>;
+const EMPTY_MANUAL_LINEUP: ManualLineup = {};
 import { getTacticCategory } from '@/data/tactics';
 import { getFormationDotsByKey, getFormationKey } from '@/engine/tacticVisual';
 import { getDepartureScore, selectDepartingPlayer } from '@/engine/squadLogic';
@@ -255,20 +258,34 @@ function isOutOfPosition(player: PlayerCard, slot: FormationSlotDef): boolean {
   return tier === 'flex' || tier === 'forced';
 }
 
-function assignPlayersToSlots(slots: FormationSlotDef[], squad: PlayerCard[]): (PlayerCard | null)[] {
-  return assignPlayersByRules(slots, squad);
+function assignPlayersToSlots(
+  slots: FormationSlotDef[],
+  squad: PlayerCard[],
+  manualLineup: ManualLineup = EMPTY_MANUAL_LINEUP,
+): (PlayerCard | null)[] {
+  return Object.keys(manualLineup).length
+    ? assignPlayersByRulesWithPins(slots, squad, manualLineup)
+    : assignPlayersByRules(slots, squad);
 }
 
-export function getStartingEleven(squad: PlayerCard[], activeTactics: ActiveTactic[]): PlayerCard[] {
+export function getStartingEleven(
+  squad: PlayerCard[],
+  activeTactics: ActiveTactic[],
+  manualLineup: ManualLineup = EMPTY_MANUAL_LINEUP,
+): PlayerCard[] {
   const formationKey = getActiveFormationKey(activeTactics);
-  const lineup = assignSquadToFormation(squad, formationKey);
+  const lineup = assignSquadToFormation(squad, formationKey, manualLineup);
   return lineup.filter((s) => s.player).map((s) => s.player!);
 }
 
-export function assignSquadToFormation(squad: PlayerCard[], formationKey: string): LineupSlot[] {
+export function assignSquadToFormation(
+  squad: PlayerCard[],
+  formationKey: string,
+  manualLineup: ManualLineup = EMPTY_MANUAL_LINEUP,
+): LineupSlot[] {
   const dots = getFormationDotsByKey(formationKey) ?? getFormationDotsByKey('442')!;
   const slots = FORMATION_SLOTS[formationKey] ?? FORMATION_SLOTS['442']!;
-  const assigned = assignPlayersToSlots(slots, squad);
+  const assigned = assignPlayersToSlots(slots, squad, manualLineup);
 
   return dots.map((dot, index) => {
     const slot = slots[index]!;
@@ -515,9 +532,13 @@ export function getFilledSlotAfterPick(
   return null;
 }
 
-export function getLineupPlayerIds(squad: PlayerCard[], activeTactics: ActiveTactic[]): Set<string> {
+export function getLineupPlayerIds(
+  squad: PlayerCard[],
+  activeTactics: ActiveTactic[],
+  manualLineup: ManualLineup = EMPTY_MANUAL_LINEUP,
+): Set<string> {
   const formationKey = getActiveFormationKey(activeTactics);
-  const lineup = assignSquadToFormation(squad, formationKey);
+  const lineup = assignSquadToFormation(squad, formationKey, manualLineup);
   return new Set(lineup.filter((s) => s.player).map((s) => s.player!.id));
 }
 
@@ -727,9 +748,13 @@ export function lineupSlotToMatchPitch(slot: LineupSlot): { x: number; y: number
   };
 }
 
-export function getSquadLineupSummary(squad: PlayerCard[], activeTactics: ActiveTactic[]) {
+export function getSquadLineupSummary(
+  squad: PlayerCard[],
+  activeTactics: ActiveTactic[],
+  manualLineup: ManualLineup = EMPTY_MANUAL_LINEUP,
+) {
   const formationKey = getActiveFormationKey(activeTactics);
-  const lineup = assignSquadToFormation(squad, formationKey);
+  const lineup = assignSquadToFormation(squad, formationKey, manualLineup);
   const filled = lineup.filter((s) => s.player).length;
   const mismatches = lineup.filter((s) => s.player && s.outOfPosition).length;
   const lineupIds = new Set(lineup.filter((s) => s.player).map((s) => s.player!.id));
@@ -749,6 +774,36 @@ export function getSquadLineupSummary(squad: PlayerCard[], activeTactics: Active
     extraGoalkeepers,
     squadSize: squad.length,
   };
+}
+
+/**
+ * Geçersiz pin'leri at: kadroda olmayan oyuncu, slot index'i formasyon dışı,
+ * mevki uyumsuz veya çift atama. Formasyon/kadro değişince çağrılır.
+ */
+export function reconcileManualLineup(
+  manualLineup: ManualLineup,
+  squad: PlayerCard[],
+  formationKey: string,
+): ManualLineup {
+  if (!Object.keys(manualLineup).length) return manualLineup;
+  const slots = FORMATION_SLOTS[formationKey] ?? FORMATION_SLOTS['442']!;
+  const byId = new Map(squad.map((p) => [p.id, p] as const));
+  const result: ManualLineup = {};
+  const usedPlayers = new Set<string>();
+  for (const [k, pid] of Object.entries(manualLineup)) {
+    const slotIdx = Number(k);
+    if (!Number.isInteger(slotIdx) || slotIdx < 0 || slotIdx >= slots.length) continue;
+    const player = byId.get(pid);
+    if (!player || usedPlayers.has(pid)) continue;
+    const slot = slots[slotIdx]!;
+    const ok = slot.zone === 'kaleci'
+      ? player.position === 'KL'
+      : player.position !== 'KL' && slotAcceptsPlayer(player, slot);
+    if (!ok) continue;
+    result[slotIdx] = pid;
+    usedPlayers.add(pid);
+  }
+  return result;
 }
 
 export function getReplacementPreview(

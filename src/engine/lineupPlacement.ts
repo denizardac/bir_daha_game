@@ -18,7 +18,13 @@ export type PlacementCtx = {
   slots: PlacementSlotDef[];
   assigned: (PlayerCard | null)[];
   fieldIndices: number[];
+  /** Manuel pin'lenmiş slotlar — otomatik yerleşim bunları asla boşaltmaz/değiştirmez. */
+  lockedSlots?: Set<number>;
 };
+
+function isLockedSlot(ctx: PlacementCtx, index: number): boolean {
+  return ctx.lockedSlots?.has(index) ?? false;
+}
 
 function assignedIds(assigned: (PlayerCard | null)[]): Set<string> {
   return new Set(assigned.filter(Boolean).map((p) => p!.id));
@@ -133,7 +139,7 @@ export function tryRelocatePlayer(
     ctx,
     player,
     playableSlotIndices(ctx, player)
-      .filter((i) => !blockedSlots.has(i) && ctx.assigned[i])
+      .filter((i) => !blockedSlots.has(i) && !isLockedSlot(ctx, i) && ctx.assigned[i])
       .filter((i) => canBeatOccupant(player, ctx.assigned[i]!)),
   );
 
@@ -217,7 +223,7 @@ function emptySlotIndicesOrdered(player: PlayerCard, ctx: PlacementCtx): number[
 function tryDisplaceNativeOs(player: PlayerCard, ctx: PlacementCtx): boolean {
   if (player.position !== 'OOS') return false;
   const osIdx = osSlotIndex(ctx);
-  if (osIdx === null || !ctx.assigned[osIdx]) return false;
+  if (osIdx === null || !ctx.assigned[osIdx] || isLockedSlot(ctx, osIdx)) return false;
   const occupant = ctx.assigned[osIdx]!;
   if (occupant.position !== 'OS' || !canBeatOccupant(player, occupant)) return false;
   ctx.assigned[osIdx] = player;
@@ -229,7 +235,7 @@ function tryDisplaceNativeOs(player: PlayerCard, ctx: PlacementCtx): boolean {
 function tryOosOsChainUpgrade(player: PlayerCard, ctx: PlacementCtx): boolean {
   if (player.position !== 'OOS') return false;
   const osIdx = osSlotIndex(ctx);
-  if (osIdx === null || !ctx.assigned[osIdx]) return false;
+  if (osIdx === null || !ctx.assigned[osIdx] || isLockedSlot(ctx, osIdx)) return false;
   if (isNativeOsOccupant(ctx)) return false;
 
   const occupant = ctx.assigned[osIdx]!;
@@ -264,7 +270,7 @@ export function placePlayerOnPitch(player: PlayerCard, ctx: PlacementCtx): boole
     ctx,
     player,
     playable
-      .filter((i) => ctx.assigned[i] && canBeatOccupant(player, ctx.assigned[i]!)),
+      .filter((i) => !isLockedSlot(ctx, i) && ctx.assigned[i] && canBeatOccupant(player, ctx.assigned[i]!)),
   );
 
   // A) Boş ana mevki — OS/SÖK/SLK kendi boş slot sırasını kullanır
@@ -382,6 +388,55 @@ export function assignPlayersByRules(
   }
 
   assignFieldPlayers(ctx, squad);
+  return assigned;
+}
+
+/**
+ * Manuel pin'lerle yerleştirme: pin'lenen oyuncular slotlarına sabitlenir (locked),
+ * kalan slotlar mevcut otomatik kurallarla doldurulur. Pin yoksa saf otomatik döner
+ * (davranış birebir korunur). Geçersiz pin'ler (oyuncu kadroda yok / slot uyumsuz /
+ * çift atama) sessizce yok sayılır — çağıran taraf reconcile ile temizler.
+ */
+export function assignPlayersByRulesWithPins(
+  slots: PlacementSlotDef[],
+  squad: PlayerCard[],
+  pins: Record<number, string>,
+): (PlayerCard | null)[] {
+  const squadById = new Map(squad.map((p) => [p.id, p] as const));
+  const pinEntries = Object.entries(pins)
+    .map(([k, v]) => [Number(k), v] as const)
+    .filter(([slotIdx, pid]) => Number.isInteger(slotIdx) && slotIdx >= 0 && slotIdx < slots.length && squadById.has(pid));
+
+  if (!pinEntries.length) return assignPlayersByRules(slots, squad);
+
+  const assigned: (PlayerCard | null)[] = Array(slots.length).fill(null);
+  const lockedSlots = new Set<number>();
+  const pinnedIds = new Set<string>();
+
+  for (const [slotIdx, pid] of pinEntries) {
+    if (assigned[slotIdx] || pinnedIds.has(pid)) continue;
+    const player = squadById.get(pid)!;
+    const slot = slots[slotIdx]!;
+    const ok = slot.zone === 'kaleci'
+      ? player.position === 'KL'
+      : player.position !== 'KL' && slotAcceptsPlayerForPlacement(player, slot);
+    if (!ok) continue;
+    assigned[slotIdx] = player;
+    lockedSlots.add(slotIdx);
+    pinnedIds.add(pid);
+  }
+
+  const fieldIndices = slots.map((_, i) => i).filter((i) => slots[i]!.zone !== 'kaleci');
+  const ctx: PlacementCtx = { slots, assigned, fieldIndices, lockedSlots };
+
+  const klIdx = slots.findIndex((s) => s.zone === 'kaleci');
+  if (klIdx >= 0 && !assigned[klIdx]) {
+    const gks = squad.filter((p) => p.position === 'KL' && !pinnedIds.has(p.id));
+    if (gks.length) assigned[klIdx] = [...gks].sort((a, b) => b.currentRating - a.currentRating)[0]!;
+  }
+
+  const remaining = squad.filter((p) => !pinnedIds.has(p.id));
+  assignFieldPlayers(ctx, remaining);
   return assigned;
 }
 

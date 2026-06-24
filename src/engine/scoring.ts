@@ -25,10 +25,11 @@ export function calculateRoundPoints(
   activeTactics: ActiveTactic[] = [],
   timerSecondsLeft = 0,
   flawless = true,
+  manualLineup: Record<number, string> = {},
 ): number {
   if (match.outcome === 'loss') return 0;
 
-  const starters = getStartingEleven(squad, activeTactics);
+  const starters = getStartingEleven(squad, activeTactics, manualLineup);
   const scoringSquad = starters.length ? starters : squad;
   const opponentRating = match.opponent.rating;
   let points = 0;
