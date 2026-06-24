@@ -192,6 +192,39 @@ function drawTacticBonusOffers(
   return [...formations, ...systems];
 }
 
+/**
+ * Kadroda kaleci yoksa (örn. kaybedilince) tekliflerden en az biri kaleci
+ * olsun — en zayıf kart yerine bir kaleci konur. Oyuncu yine de başka kart
+ * seçebilir; bu yalnızca kaleci SEÇENEĞİNİ garanti eder.
+ */
+function ensureGoalkeeperOffer(
+  cards: PlayerCard[],
+  squad: SquadRef[],
+  rawPool: PlayerCard[],
+  rng: () => number,
+): PlayerCard[] {
+  if (squad.some((p) => p.position === 'KL')) return cards;
+  if (cards.some((c) => c.position === 'KL')) return cards;
+
+  const offerIds = new Set(cards.map((c) => c.id));
+  const offerNames = new Set(cards.map((c) => c.name.trim().toLowerCase()));
+  const isFreeGk = (p: PlayerCard) =>
+    p.position === 'KL' && !offerIds.has(p.id) && !offerNames.has(p.name.trim().toLowerCase());
+
+  let gkPool = rawPool.filter(isFreeGk);
+  if (!gkPool.length) gkPool = PLAYER_POOL.filter(isFreeGk);
+  if (!gkPool.length) return cards;
+
+  const gk = clonePlayer(gkPool[Math.floor(rng() * gkPool.length)]!);
+  const result = [...cards];
+  const weakestIdx = result.reduce(
+    (minI, c, i, arr) => (c.currentRating < arr[minI]!.currentRating ? i : minI),
+    0,
+  );
+  result[weakestIdx] = gk;
+  return result;
+}
+
 export function drawOffers(
   seed: string,
   round: number,
@@ -217,7 +250,10 @@ export function drawOffers(
     rerollIndex,
     variant,
   );
-  return players.slice(0, 3);
+  const rawPool = getPoolForRound(round, seed, lossesCount, recoveryGuaranteed);
+  const gkRng = createRng(seed, 'gk-guarantee', round, rerollIndex);
+  const withGk = ensureGoalkeeperOffer(players, squad, rawPool, gkRng);
+  return withGk.slice(0, 3);
 }
 
 /** Tek slot için yeni oyuncu çek — diğer teklifler ve kadro hariç */

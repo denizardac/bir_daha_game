@@ -3881,6 +3881,46 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   }
 }
 
+/* Geniş ama KISA ekranlar (örn. 1366x768 dizüstü / %100 zoom):
+   masaüstü tek-ekran layout'u sığmaz, alttaki Seç/Onayla butonları
+   kesilir. Mobil fallback'in aynısını kısa yükseklikte de uygula —
+   ekran dikey kaydırılsın, butonlar her zaman erişilebilir olsun. */
+@media (min-width: 900px) and (max-height: 860px) {
+  .card-select-screen {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .card-select-inner {
+    height: auto;
+    overflow: visible;
+  }
+
+  .card-select-inner .game-layout {
+    overflow: visible;
+    min-height: 0;
+  }
+
+  .card-pick-center {
+    overflow: visible;
+    min-height: 0;
+  }
+
+  .cards-pick-grid {
+    overflow: visible;
+    flex: none;
+  }
+
+  .card-select-inner .card-pick-slot-anchor {
+    min-height: 0;
+    max-height: none;
+    height: auto;
+  }
+}
+
 .card-pick-slot-anchor .tactic-card-head,
 .card-pick-slot-anchor .training-card-head {
   margin-bottom: 0.35rem;
@@ -6880,6 +6920,63 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Maç sonrası moral değişimi — ekranda net belli olsun (kazanç yeşil / kayıp kırmızı). */
+.match-morale-delta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--r-lg);
+  font-family: 'Barlow Condensed', sans-serif;
+  border: 1px solid;
+  margin-bottom: 0.5rem;
+  animation: moraleDeltaPop 0.4s ease;
+}
+
+.match-morale-delta--up {
+  background: linear-gradient(180deg, rgba(65, 184, 108, 0.18), rgba(65, 184, 108, 0.06));
+  border-color: rgba(65, 184, 108, 0.4);
+}
+
+.match-morale-delta--down {
+  background: linear-gradient(180deg, rgba(239, 84, 102, 0.18), rgba(239, 84, 102, 0.06));
+  border-color: rgba(239, 84, 102, 0.42);
+}
+
+.match-morale-delta-icon { font-size: 1.05rem; line-height: 1; }
+
+.match-morale-delta-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+}
+
+.match-morale-delta-value {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-morale-delta--up .match-morale-delta-value { color: var(--green-2); }
+.match-morale-delta--down .match-morale-delta-value { color: var(--red); }
+
+.match-morale-delta-after {
+  margin-left: auto;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--tx-2);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes moraleDeltaPop {
+  0% { transform: scale(0.92); opacity: 0; }
+  60% { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .match-bonus-row {

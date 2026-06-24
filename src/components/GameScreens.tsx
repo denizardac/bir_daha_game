@@ -651,6 +651,7 @@ export function MatchScreen() {
 
   const outcome = currentMatch.outcome === 'win' ? 'GALİBİYET' : currentMatch.outcome === 'draw' ? 'BERABERLİK' : 'MAĞLUBİYET';
   const outcomeColor = currentMatch.outcome === 'win' ? 'text-green-400' : currentMatch.outcome === 'draw' ? 'text-amber-400' : 'text-red-400';
+  const moraleOutcomeDelta = currentMatch.outcome === 'win' ? 10 : currentMatch.outcome === 'draw' ? -5 : -20;
   const lineupSummary = getSquadLineupSummary(squad, activeTactics);
   const pitchDots = lineupSummary.lineup
     .filter((slot) => slot.player)
@@ -805,6 +806,12 @@ export function MatchScreen() {
 
             {anim.showResult && (
               <div className="match-result-extras">
+                <div className={`match-morale-delta match-morale-delta--${moraleOutcomeDelta >= 0 ? 'up' : 'down'}`}>
+                  <span className="match-morale-delta-icon" aria-hidden>{moraleOutcomeDelta >= 0 ? '❤️' : '💔'}</span>
+                  <span className="match-morale-delta-label">Moral</span>
+                  <span className="match-morale-delta-value">{moraleOutcomeDelta > 0 ? `+${moraleOutcomeDelta}` : moraleOutcomeDelta}</span>
+                  <span className="match-morale-delta-after">{currentMatch.outcome === 'win' ? 'galibiyet' : currentMatch.outcome === 'draw' ? 'beraberlik' : 'mağlubiyet'}</span>
+                </div>
                 <div className="match-bonus-row">
                   {currentMatch.outcome === 'win' && currentMatch.cleanSheet && (
                     <span className="match-bonus-chip">🛡️ Clean sheet +100</span>
