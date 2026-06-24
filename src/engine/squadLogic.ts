@@ -14,9 +14,19 @@ export function getDepartureScore(player: PlayerCard, morale: number): number {
   return formatStat(player.currentRating * tagMultiplier * moraleContribution * (0.8 + morale / 200) + protectionBonus);
 }
 
-export function selectDepartingPlayer(squad: PlayerCard[], morale: number): PlayerCard {
-  const candidates = squad.filter((p) => !(p.tags.includes('SAVAŞÇI') && !p.warriorProtected));
-  const pool = candidates.length ? candidates : squad;
+export function selectDepartingPlayer(
+  squad: PlayerCard[],
+  morale: number,
+  activeTactics: ActiveTactic[] = [],
+  manualLineup: Record<number, string> = {},
+): PlayerCard {
+  // Önce yedeklerden düşür — yedek = kadro derinliği; manuel/otomatik ilk 11
+  // korunur (örn. tek kaleci, bilerek başlatılan zayıf oyuncu sahada kalır).
+  const starterIds = new Set(getStartingEleven(squad, activeTactics, manualLineup).map((p) => p.id));
+  const bench = squad.filter((p) => !starterIds.has(p.id));
+  const fromPool = bench.length ? bench : squad;
+  const candidates = fromPool.filter((p) => !(p.tags.includes('SAVAŞÇI') && !p.warriorProtected));
+  const pool = candidates.length ? candidates : fromPool;
   const sorted = [...pool].sort((a, b) => getDepartureScore(a, morale) - getDepartureScore(b, morale));
   const pick = sorted[0]!;
   if (pick.tags.includes('SAVAŞÇI')) pick.warriorProtected = true;

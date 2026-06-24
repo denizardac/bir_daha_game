@@ -617,7 +617,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     playSound('select', loadPersisted().soundEnabled);
 
     if (isPlayerCard(card)) {
-      squad = applyPlayerToSquad(squad, card, state.maxSquadSize, state.morale, state.activeTactics);
+      squad = applyPlayerToSquad(squad, card, state.maxSquadSize, state.morale, state.activeTactics, state.manualLineup);
       // Koleksiyon: efsane kart çekildiyse kaydet
       if (card.rarity === 'efsane') {
         const persisted = loadPersisted();
@@ -1051,7 +1051,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       morale = Math.max(0, morale - 20);
       flawless = false;
       const squadBeforeLoss = squad;
-      const departing = selectDepartingPlayer(squad, morale);
+      const departing = selectDepartingPlayer(squad, morale, state.activeTactics, state.manualLineup);
       squad = squad.filter((p) => p.id !== departing.id);
       const brokenSynergies = getBrokenSynergies(squadBeforeLoss, squad, morale, state.activeTactics).map((s) => s.id);
       if (squad.length <= 5) morale = Math.max(DANGER_MORALE_FLOOR, morale);

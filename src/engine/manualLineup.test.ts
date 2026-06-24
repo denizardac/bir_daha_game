@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assignSquadToFormation, getStartingEleven, reconcileManualLineup, resolveLineupDrop } from '@/engine/lineupPreview';
+import { selectDepartingPlayer } from '@/engine/squadLogic';
 import type { PlayerCard } from '@/types';
 
 function p(overrides: Partial<PlayerCard> & Pick<PlayerCard, 'id' | 'name' | 'position'>): PlayerCard {
@@ -101,5 +102,23 @@ describe('resolveLineupDrop (surukle-birak takas matematigi)', () => {
   it('starter -> yedek: en guclu uygun yedekle takas', () => {
     const next = resolveLineupDrop({}, lineup, [stpC], { playerId: 'a', from: 2 }, { kind: 'bench' });
     expect(next).toEqual({ 2: 'c' });
+  });
+});
+
+describe('selectDepartingPlayer override-aware (yedege dusme)', () => {
+  // 2 kaleci, 1 KL slotu → biri yedek. Diğerleri sahada.
+  const g1 = p({ id: 'g1', name: 'KL Bir', position: 'KL', currentRating: 75, rating: 75 });
+  const g2 = p({ id: 'g2', name: 'KL Iki', position: 'KL', currentRating: 70, rating: 70 });
+  const a = p({ id: 'a', name: 'STP A', position: 'STP', currentRating: 80, rating: 80 });
+  const b = p({ id: 'b', name: 'STP B', position: 'STP', currentRating: 78, rating: 78 });
+  const sq = [g1, g2, a, b];
+
+  it('otomatik: yedek kalan (zayif) kaleci duser', () => {
+    expect(selectDepartingPlayer(sq, 50).id).toBe('g2');
+  });
+
+  it('manuel: zayif kaleci pinlenince guclu kaleci yedektedir ve o duser', () => {
+    // slot 0 (KL) -> g2 pin: g2 sahada, g1 yedekte. Kayipta yedek g1 duser.
+    expect(selectDepartingPlayer(sq, 50, [], { 0: 'g2' }).id).toBe('g1');
   });
 });

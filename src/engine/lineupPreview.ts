@@ -329,10 +329,14 @@ function squadWithIncomingPreview(squad: PlayerCard[], incoming: PlayerCard): Pl
   return [...squad, { ...clonePlayer(incoming), id: INCOMING_PREVIEW_ID }];
 }
 
-/** 12 kişilik kadroda ilk 11'e girmeyenler (gelen oyuncu dahil) */
-function playersOutsideLineup(squad: PlayerCard[], activeTactics: ActiveTactic[]): PlayerCard[] {
+/** İlk 11'e girmeyenler (gelen oyuncu dahil) — override-aware */
+function playersOutsideLineup(
+  squad: PlayerCard[],
+  activeTactics: ActiveTactic[],
+  manualLineup: ManualLineup = EMPTY_MANUAL_LINEUP,
+): PlayerCard[] {
   const formationKey = getActiveFormationKey(activeTactics);
-  const lineup = assignSquadToFormation(squad, formationKey);
+  const lineup = assignSquadToFormation(squad, formationKey, manualLineup);
   const xiIds = new Set(lineup.filter((s) => s.player).map((s) => s.player!.id));
   return squad.filter((p) => !xiIds.has(p.id));
 }
@@ -343,6 +347,7 @@ export function getReplacementPlayer(
   incoming: PlayerCard,
   morale = 50,
   activeTactics: ActiveTactic[] = [],
+  manualLineup: ManualLineup = EMPTY_MANUAL_LINEUP,
 ): PlayerCard {
   if (incoming.position === 'KL') {
     const gks = squad.filter((p) => p.position === 'KL');
@@ -352,11 +357,11 @@ export function getReplacementPlayer(
   }
 
   const hypothetical = squadWithIncomingPreview(squad, incoming);
-  const previewInXi = assignSquadToFormation(hypothetical, getActiveFormationKey(activeTactics))
+  const previewInXi = assignSquadToFormation(hypothetical, getActiveFormationKey(activeTactics), manualLineup)
     .some((s) => s.player?.id === INCOMING_PREVIEW_ID);
 
   if (previewInXi) {
-    const dropped = playersOutsideLineup(hypothetical, activeTactics)
+    const dropped = playersOutsideLineup(hypothetical, activeTactics, manualLineup)
       .filter((p) => p.id !== INCOMING_PREVIEW_ID);
     if (dropped.length) {
       const samePos = dropped.filter((p) => p.position === incoming.position);
@@ -369,7 +374,7 @@ export function getReplacementPlayer(
     }
   }
 
-  const lineupIds = getLineupPlayerIds(squad, activeTactics);
+  const lineupIds = getLineupPlayerIds(squad, activeTactics, manualLineup);
   const bench = squad.filter((p) => !lineupIds.has(p.id));
 
   if (bench.length > 0) {
@@ -380,14 +385,14 @@ export function getReplacementPlayer(
     return [...bench].sort((a, b) => getDepartureScore(a, morale) - getDepartureScore(b, morale))[0]!;
   }
 
-  const samePosStarters = getStartingEleven(squad, activeTactics)
+  const samePosStarters = getStartingEleven(squad, activeTactics, manualLineup)
     .filter((p) => p.position === incoming.position)
     .sort((a, b) => a.currentRating - b.currentRating);
   if (samePosStarters.length && incoming.currentRating > samePosStarters[0]!.currentRating) {
     return samePosStarters[0]!;
   }
 
-  return selectDepartingPlayer(squad, morale);
+  return selectDepartingPlayer(squad, morale, activeTactics, manualLineup);
 }
 
 /** Kadroda en fazla bir kaleci — fazlası düşük ratingli olarak çıkar */
@@ -404,6 +409,7 @@ export function applyPlayerToSquad(
   maxSquadSize: number,
   morale = 50,
   activeTactics: ActiveTactic[] = [],
+  manualLineup: ManualLineup = EMPTY_MANUAL_LINEUP,
 ): PlayerCard[] {
   const cloned = clonePlayer(incoming);
 
@@ -417,7 +423,7 @@ export function applyPlayerToSquad(
   }
 
   if (squad.length < maxSquadSize) return [...squad, cloned];
-  const out = getReplacementPlayer(squad, incoming, morale, activeTactics);
+  const out = getReplacementPlayer(squad, incoming, morale, activeTactics, manualLineup);
   return [...squad.filter((p) => p.id !== out.id), cloned];
 }
 
