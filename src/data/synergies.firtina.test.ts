@@ -37,7 +37,7 @@ describe('KARMA FIRTINA ilerleme', () => {
       player(['ASİSTÇİ'], 'a1'),
     ];
     expect(getKarmaFirtinaProgress(squad)).toBeNull();
-    expect(getSynergyById('synergy_firtina')!.check(squad)).toBe(true);
+    expect(getSynergyById('synergy_firtina')!.check(squad, 100)).toBe(true);
   });
 
   it('kart eklenince ilerleme artar', () => {
