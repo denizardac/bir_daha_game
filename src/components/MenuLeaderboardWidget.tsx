@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { formatScore } from '@/engine/scoring';
 import { getDailyList, getWeekKey } from '@/engine/leaderboard';
+import { fetchRemoteLeaderboard, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
+import { getDailySeed } from '@/engine/seed';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { getAnonymousId } from '@/utils/storage';
 import type { LeaderboardEntry } from '@/types';
 
-type Tab = 'daily' | 'weekly';
+type Tab = 'daily' | 'weekly' | 'allTime';
 
-const TAB_LABELS: Record<Tab, string> = { daily: 'Günlük', weekly: 'Haftalık' };
+const TAB_LABELS: Record<Tab, string> = { daily: 'Günlük', weekly: 'Haftalık', allTime: 'Tüm Zamanlar' };
 
 type DisplayRow =
   | { kind: 'entry'; entry: LeaderboardEntry; rank: number; isMe: boolean }
@@ -63,24 +65,41 @@ function rowName(entry: LeaderboardEntry, isMe: boolean) {
   return entry.displayName?.trim() || 'Anonim';
 }
 
-export function MenuLeaderboardWidget() {
+export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpanded?: boolean } = {}) {
   const stats = getPersistedStats();
   const myId = getAnonymousId();
   const setScreen = useGameStore((s) => s.setScreen);
-  const [tab, setTab] = useState<Tab>('daily');
-  const [expanded, setExpanded] = useState(false);
+  const [tab, setTab] = useState<Tab>('allTime');
+  const [expanded, setExpanded] = useState(initialExpanded);
+  const remote = isRemoteLeaderboardEnabled();
+  const [remoteList, setRemoteList] = useState<LeaderboardEntry[] | null>(null);
 
-  const fullList = useMemo(
+  // Canlı sıralama: full leaderboard ekranıyla aynı kaynaktan çek — aksi halde
+  // menüde yalnızca yerel (sen) görünüyordu.
+  useEffect(() => {
+    if (!remote) { setRemoteList(null); return; }
+    let cancelled = false;
+    fetchRemoteLeaderboard(tab, tab === 'daily' ? getDailySeed() : undefined)
+      .then((rows) => { if (!cancelled) setRemoteList(rows); })
+      .catch(() => { if (!cancelled) setRemoteList(null); });
+    return () => { cancelled = true; };
+  }, [tab, remote]);
+
+  const localList = useMemo(
     () =>
       sortByScore(
         tab === 'daily'
           ? getDailyList(stats)
-          : stats.weeklyLeaderboard.filter((e: LeaderboardEntry) => e.weekKey === getWeekKey()),
+          : tab === 'allTime'
+            ? stats.allTimeLeaderboard
+            : stats.weeklyLeaderboard.filter((e: LeaderboardEntry) => e.weekKey === getWeekKey()),
       ),
     [tab, stats],
   );
 
-  const rows = useMemo(() => buildDisplayRows(fullList, myId), [fullList, myId]);
+  const fullList = remote && remoteList !== null ? sortByScore(remoteList) : localList;
+
+  const rows = useMemo(() => buildDisplayRows(fullList, myId, expanded ? 8 : 5), [fullList, myId, expanded]);
 
   const myIndex = fullList.findIndex((e) => e.id === myId);
   const myRank = myIndex >= 0 ? myIndex + 1 : null;
@@ -96,8 +115,9 @@ export function MenuLeaderboardWidget() {
         aria-expanded={expanded}
         aria-label={expanded ? 'Leaderboard daralt' : 'Leaderboard genişlet'}
       >
-        <span className="menu-widget-icon" aria-hidden>🏅</span>
+        <span className="menu-widget-icon" aria-hidden>🏆</span>
         <span className="menu-widget-title">Leaderboard</span>
+        {remote && <span className="menu-lb-live-badge">Canlı</span>}
         <span className="menu-lb-toggle-hint">{expanded ? 'Daralt' : 'Genişlet'}</span>
         <span className={`menu-lb-chevron ${expanded ? 'menu-lb-chevron--up' : ''}`} aria-hidden>▼</span>
       </button>

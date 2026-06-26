@@ -4,7 +4,7 @@ import {
   REROLLS_PER_RUN,
 } from '@/constants/game';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
-import { isRemoteLeaderboardEnabled, submitRunToLeaderboard } from '@/api/leaderboardRemote';
+import { isRemoteLeaderboardEnabled, recordRunStart, submitRunToLeaderboard } from '@/api/leaderboardRemote';
 import { buildSignedRunPayload } from '@/engine/runIntegrity';
 import { validateRunSubmission } from '@/engine/runValidation';
 import { getEventRatingTarget, resolveEventRemoval } from '@/engine/eventRemoval';
@@ -14,9 +14,9 @@ import { canAddTag } from '@/data/tagConflicts';
 import { createTrainingCard, MAX_PLAYER_TAGS } from '@/data/training';
 import { getActiveSynergies, SYNERGIES, TOTAL_SYNERGIES } from '@/data/synergies';
 import { getStartingSquad } from '@/data/players';
-import { drawEvent, createLoanPlayer, createYouthPlayer, resolveEvent } from '@/engine/events';
-import { drawOffers, getOfferDrawModeForRound, pickAutoOffer, rerollSinglePlayerOffer } from '@/engine/cardDraw';
-import { canPassCardPick, createSkipCard } from '@/engine/cardPass';
+import { drawEvent, previewEventPlayer, resolveEvent } from '@/engine/events';
+import { drawOffers, drawTacticCategoryOffers, getOfferDrawModeForRound, pickAutoOffer, rerollSinglePlayerOffer } from '@/engine/cardDraw';
+import { canPassCardPick } from '@/engine/cardPass';
 import { isTacticBonusRound, TACTIC_BONUS_MORALE, TACTIC_BONUS_SCORE } from '@/engine/roundFlow';
 import { simulateMatch } from '@/engine/matchSimulation';
 import { calculateRoundPoints } from '@/engine/scoring';
@@ -30,6 +30,7 @@ import {
   getNearRivals,
   getRank,
   getRankPercent,
+  getTodayKey,
 } from '@/engine/leaderboard';
 import { applyPlayerToSquad, getActiveFormationKey, normalizeSquadGoalkeepers, reconcileManualLineup } from '@/engine/lineupPreview';
 import {
@@ -95,6 +96,9 @@ interface GameStore extends GameState {
   lineupEditorOpen: boolean;
   /** Editörde vurgulanacak yeni oyuncu id'si. */
   lineupEditorHighlightId: string | null;
+  /** Editör açılmadan önceki kadro/diziliş — iptal edilince geri yüklenir. */
+  lineupEditorPrevSquad: GameState['squad'] | null;
+  lineupEditorPrevManual: Record<number, string> | null;
   init: () => void;
   startRun: (daily?: boolean, displayName?: string) => void;
   continueRun: () => void;
@@ -103,11 +107,12 @@ interface GameStore extends GameState {
   confirmTacticRound: () => void;
   /** İlk 11 editörü onaylanınca maçı oynatır. */
   confirmLineupAndPlay: () => void;
+  /** İlk 11 editörünü iptal eder — seçilen oyuncu geri alınır, kart seçimine dönülür. */
+  cancelLineupEditor: () => void;
   /** Manuel ilk 11 override'ını günceller (editör sürükle-bırak sonrası). */
   setManualLineup: (manualLineup: Record<number, string>) => void;
   /** Manuel override'ı temizler — saf otomatik yerleşime döner. */
   resetManualLineup: () => void;
-  passCardPick: () => void;
   beginTraining: () => void;
   pickTrainingPlayer: (playerId: string) => void;
   completeTraining: (tag: Tag) => void;
@@ -121,9 +126,12 @@ interface GameStore extends GameState {
   goToMenu: () => void;
   exitToMenu: () => void;
   resetRun: () => void;
-  redrawOffers: () => void;
   rerollSingleOffer: (slotIndex: number) => void;
   rerollAllOffers: () => void;
+  /** Taktik turunda formasyon tekliflerini yeniler — oyun-boyu tek hak. */
+  rerollFormationOffers: () => void;
+  /** Taktik turunda oyun sistemi tekliflerini yeniler — oyun-boyu tek hak. */
+  rerollSystemOffers: () => void;
   dismissMilestone: (id: string) => void;
   dismissSynergyReveal: () => void;
   tickTimer: () => void;
@@ -165,9 +173,9 @@ function initialRun(
     eventResolvedThisRound: false,
     flawless: true,
     runEndAnalysis: null,
-    extraDrawUsed: false,
-    extraDrawAvailable: false,
     rerollsRemaining: REROLLS_PER_RUN + streakBonus.extraRerolls,
+    formationRerollUsed: false,
+    systemRerollUsed: false,
     offersRerollIndex: 0,
     recoveryGuaranteed: false,
     manualLineup: {},
@@ -219,7 +227,7 @@ function clearRun() {
   savePersisted({ ...loadPersisted(), currentRun: null });
 }
 
-function drawRoundOffers(state: Pick<GameState, 'seed' | 'round' | 'lossesCount' | 'squad' | 'activeTactics' | 'recoveryGuaranteed' | 'offersRerollIndex' | 'maxRounds'>, variant: 'normal' | 'extradraw' = 'normal') {
+function drawRoundOffers(state: Pick<GameState, 'seed' | 'round' | 'lossesCount' | 'squad' | 'activeTactics' | 'recoveryGuaranteed' | 'offersRerollIndex' | 'maxRounds'>) {
   const mode = getOfferDrawModeForRound(state.round, state.maxRounds ?? MAX_ROUNDS);
   return drawOffers(
     state.seed,
@@ -229,7 +237,7 @@ function drawRoundOffers(state: Pick<GameState, 'seed' | 'round' | 'lossesCount'
     state.activeTactics.map((t) => t.id),
     state.recoveryGuaranteed,
     state.offersRerollIndex ?? 0,
-    variant,
+    'normal',
     mode,
   );
 }
@@ -317,17 +325,7 @@ function finalizeBonusRound(
   }
 
   const round = state.round + 1;
-  let extraDrawAvailable = state.extraDrawAvailable;
-  let pendingMilestones = state.pendingMilestones;
-  if (round === 10) {
-    extraDrawAvailable = true;
-    pendingMilestones = mergeMilestones(pendingMilestones, [{
-      id: 'cift_haneli',
-      icon: '🎯',
-      title: 'ÇİFT HANELİ',
-      subtitle: 'Round 10! Ekstra kart çek hakkı kazandın',
-    }]);
-  }
+  const pendingMilestones = state.pendingMilestones;
 
   const next = startRound({
     ...state,
@@ -348,7 +346,6 @@ function finalizeBonusRound(
     round,
     roundHistory,
     dangerMode,
-    extraDrawAvailable,
     pendingMilestones,
     currentMatch: null,
     pendingOffersShown: [],
@@ -436,6 +433,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   pendingSynergyReveal: [],
   lineupEditorOpen: false,
   lineupEditorHighlightId: null,
+  lineupEditorPrevSquad: null,
+  lineupEditorPrevManual: null,
 
   init: () => {
     getAnonymousId();
@@ -452,7 +451,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const run = initialRun(seed, daily, p.isFirstRun, name, streakBonus);
     clearRun();
     persistRun(run);
-    savePersisted({ ...loadPersisted(), lastPlayerName: name });
+    {
+      const p2 = loadPersisted();
+      const today = getTodayKey();
+      const todayRuns = (p2.todayRunsDate === today ? p2.todayRuns : 0) + 1;
+      savePersisted({ ...p2, lastPlayerName: name, todayRuns, todayRunsDate: today });
+    }
+    if (isRemoteLeaderboardEnabled()) {
+      void recordRunStart({
+        playerId: getAnonymousId(),
+        displayName: name,
+        seed,
+        isDaily: daily,
+      }).then((result) => {
+        if (!result.ok) console.warn('[run-start] Başlangıç kaydedilemedi:', result.error);
+      });
+    }
     set({ ...run, screen: 'game', showContinuePrompt: false, pendingOffersShown: [], pendingSelected: null, trainingFlow: null, tacticDraft: { formationId: null, systemId: null }, usedEventIds: [], runEndStep: 0, pendingMilestones: [], lastLossBrokenSynergies: [], pendingSynergyReveal: [], nextMatchRisk: 0, nextMatchBonus: 0 });
   },
 
@@ -489,6 +503,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentEvent: saved.currentEvent ?? null,
       lastLossPlayer: saved.lastLossPlayer ?? null,
       rerollsRemaining: saved.rerollsRemaining ?? REROLLS_PER_RUN,
+      formationRerollUsed: saved.formationRerollUsed ?? false,
+      systemRerollUsed: saved.systemRerollUsed ?? false,
       offersRerollIndex: saved.offersRerollIndex ?? 0,
       manualLineup: saved.manualLineup ?? {},
       timerSeconds: 0,
@@ -514,15 +530,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   dismissMilestone: (id) => set((s) => ({ pendingMilestones: s.pendingMilestones.filter((m) => m.id !== id) })),
   dismissSynergyReveal: () => set({ pendingSynergyReveal: [] }),
-
-  redrawOffers: () => {
-    const state = get();
-    if (state.phase !== 'cardSelect' || !state.extraDrawAvailable || state.extraDrawUsed) return;
-    playSound('tick', loadPersisted().soundEnabled);
-    const offers = drawRoundOffers(state, 'extradraw');
-    set({ currentOffers: offers, extraDrawUsed: true, timerSeconds: cardTimerSeconds() });
-    persistRun({ ...get(), currentOffers: offers, extraDrawUsed: true, timerSeconds: cardTimerSeconds() });
-  },
 
   rerollSingleOffer: (slotIndex) => {
     const state = get();
@@ -587,6 +594,45 @@ export const useGameStore = create<GameStore>((set, get) => ({
     persistRun({ ...get(), ...next });
   },
 
+  rerollFormationOffers: () => {
+    const state = get();
+    if (state.phase !== 'cardSelect' || !isTacticBonusRound(state.round, state.maxRounds)) return;
+    if (state.formationRerollUsed) return;
+    playSound('tick', loadPersisted().soundEnabled);
+    const newIndex = state.offersRerollIndex + 1;
+    const fresh = drawTacticCategoryOffers(state.seed, state.round, state.activeTactics.map((t) => t.id), 'formasyon', newIndex);
+    const systems = state.currentOffers.filter((c) => isTacticCard(c) && getTacticCategory(c.id) === 'sistem');
+    const next = {
+      currentOffers: [...fresh, ...systems],
+      formationRerollUsed: true,
+      offersRerollIndex: newIndex,
+      // İptal edilen formasyon seçimini temizle (yeni kartlar geldi)
+      tacticDraft: { ...state.tacticDraft, formationId: null } as TacticDraft,
+      timerSeconds: cardTimerSeconds(),
+    };
+    set(next);
+    persistRun({ ...get(), ...next });
+  },
+
+  rerollSystemOffers: () => {
+    const state = get();
+    if (state.phase !== 'cardSelect' || !isTacticBonusRound(state.round, state.maxRounds)) return;
+    if (state.systemRerollUsed) return;
+    playSound('tick', loadPersisted().soundEnabled);
+    const newIndex = state.offersRerollIndex + 1;
+    const fresh = drawTacticCategoryOffers(state.seed, state.round, state.activeTactics.map((t) => t.id), 'sistem', newIndex);
+    const formations = state.currentOffers.filter((c) => isTacticCard(c) && getTacticCategory(c.id) === 'formasyon');
+    const next = {
+      currentOffers: [...formations, ...fresh],
+      systemRerollUsed: true,
+      offersRerollIndex: newIndex,
+      tacticDraft: { ...state.tacticDraft, systemId: null } as TacticDraft,
+      timerSeconds: cardTimerSeconds(),
+    };
+    set(next);
+    persistRun({ ...get(), ...next });
+  },
+
   abandonRun: () => {
     clearRun();
     set({ showContinuePrompt: false });
@@ -638,6 +684,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pendingOffersShown: [...state.currentOffers],
         lineupEditorOpen: true,
         lineupEditorHighlightId: card.id,
+        // İptal edilirse bu kadroya/dizilişe dönülür.
+        lineupEditorPrevSquad: state.squad,
+        lineupEditorPrevManual: state.manualLineup,
       });
       persistRun({ ...get(), squad, manualLineup });
       return;
@@ -714,8 +763,29 @@ export const useGameStore = create<GameStore>((set, get) => ({
       nextMatchBonus: 0,
       lineupEditorOpen: false,
       lineupEditorHighlightId: null,
+      lineupEditorPrevSquad: null,
+      lineupEditorPrevManual: null,
     });
     persistRun({ ...get(), currentMatch: match, phase: 'match', currentOffers: [] });
+  },
+
+  cancelLineupEditor: () => {
+    const state = get();
+    if (!state.lineupEditorOpen) return;
+    // Seçimi geri al: editör açılmadan önceki kadro ve dizilişe dön, kart seçim
+    // ekranında kal (oyuncu yanlışlıkla eklenmiş sayılmaz).
+    const squad = state.lineupEditorPrevSquad ?? state.squad;
+    const manualLineup = state.lineupEditorPrevManual ?? state.manualLineup;
+    set({
+      squad,
+      manualLineup,
+      lineupEditorOpen: false,
+      lineupEditorHighlightId: null,
+      lineupEditorPrevSquad: null,
+      lineupEditorPrevManual: null,
+      pendingSelected: null,
+    });
+    persistRun({ ...get(), squad, manualLineup });
   },
 
   confirmTacticRound: () => {
@@ -853,19 +923,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     persistRun(get());
   },
 
-  passCardPick: () => {
-    const state = get();
-    if (!canPassCardPick({
-      phase: state.phase,
-      round: state.round,
-      maxRounds: state.maxRounds,
-      squadLength: state.squad.length,
-      maxSquadSize: state.maxSquadSize,
-      currentOffers: state.currentOffers,
-    })) return;
-    get().selectOffer(createSkipCard(state.round));
-  },
-
   autoSelectOffer: () => {
     const s = get();
     if (s.phase !== 'cardSelect' || !s.currentOffers.length) return;
@@ -878,17 +935,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (formation) get().selectOffer(formation);
       if (system) get().selectOffer(system);
       get().confirmTacticRound();
-      return;
-    }
-    if (canPassCardPick({
-      phase: s.phase,
-      round: s.round,
-      maxRounds: s.maxRounds,
-      squadLength: s.squad.length,
-      maxSquadSize: s.maxSquadSize,
-      currentOffers: s.currentOffers,
-    })) {
-      get().passCardPick();
       return;
     }
     get().selectOffer(pickAutoOffer(s.currentOffers, s.squad.length, s.maxSquadSize));
@@ -934,15 +980,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       rerollsRemaining = Math.min(REROLLS_PER_RUN + 2, rerollsRemaining + outcome.grantRerolls);
     }
     if (outcome.addYouth && squad.length < state.maxSquadSize) {
-      const player = state.currentEvent?.id === 'evt_kiralik'
-        ? createLoanPlayer(state.seed, state.round)
-        : createYouthPlayer(state.seed, state.round);
+      // Önizlemede gösterilen oyuncuyla birebir aynı kart eklenir (mevki dahil).
+      // previewEventPlayer aynı seed+round ile deterministik aynı sonucu verir.
+      const player = previewEventPlayer(state.seed, state.round, state.currentEvent.id);
       squad = [...squad, player];
     }
     if (outcome.grantTag) {
       const tag = outcome.grantTag;
-      // Tag'i taşımayan, en yüksek ratingli oyuncuya ver (efsanenin gençlere aktardığı buff)
-      const candidates = squad.filter((p) => !p.tags.includes(tag));
+      // Tag'i taşımayan VE çelişmeyen (ör. MENTOR'u POTANSİYEL oyuncuya verme),
+      // en yüksek ratingli oyuncuya ver (efsanenin gençlere aktardığı buff)
+      const candidates = squad.filter((p) => canAddTag(tag, p.tags));
       if (candidates.length) {
         const target = [...candidates].sort((a, b) => b.currentRating - a.currentRating)[0]!;
         squad = squad.map((p) =>
@@ -1052,7 +1099,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       morale = Math.max(0, morale - 5);
     } else {
       streak = 0;
-      morale = Math.max(0, morale - 20);
+      // Mağlubiyet momentumunu (snowball) yumuşat: -20 yerine -16. Kayıpta zaten
+      // bir oyuncu da gidiyor; çift ceza üst üste yenilgiyi kaçınılmaz yapıyordu.
+      morale = Math.max(0, morale - 16);
       flawless = false;
       const squadBeforeLoss = squad;
       const departing = selectDepartingPlayer(squad, morale, state.activeTactics, state.manualLineup);
@@ -1097,7 +1146,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         currentMatch: match,
         lastLossPlayer: departing,
         lastLossBrokenSynergies: brokenSynergies,
-        pendingSynergyReveal: match.newlyDiscoveredSynergies,
+        // Sinerji açılışı maç ekranında (sonuç anında) zaten gösterildi —
+        // kayıp ekranında ikinci kez gösterme.
+        pendingSynergyReveal: [],
         recoveryGuaranteed: lossesCount <= 2,
         pendingOffersShown: [],
         pendingSelected: null,
@@ -1108,7 +1159,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     const dangerMode = squad.length <= 5;
-    let extraDrawAvailable = state.extraDrawAvailable;
     let pendingMilestones = mergeMilestones(state.pendingMilestones, detectMatchMilestones({
       round: state.round,
       streak,
@@ -1144,22 +1194,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pendingOffersShown: [],
         pendingSelected: null,
         pendingMilestones,
-        extraDrawAvailable,
       });
       clearRun();
       return;
     }
 
     const round = state.round + 1;
-    if (round === 10) {
-      extraDrawAvailable = true;
-      pendingMilestones = mergeMilestones(pendingMilestones, [{
-        id: 'cift_haneli',
-        icon: '🎯',
-        title: 'ÇİFT HANELİ',
-        subtitle: 'Round 10! Ekstra kart çek hakkı kazandın',
-      }]);
-    }
     const next = startRound({
       ...state,
       squad,
@@ -1179,7 +1219,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       dangerMode, currentMatch: null, lastLossPlayer: null, lastLossBrokenSynergies: [],
       pendingSynergyReveal: [],
       pendingOffersShown: [], pendingSelected: null,
-      isFirstRun: false, extraDrawAvailable, pendingMilestones, ...next,
+      isFirstRun: false, pendingMilestones, ...next,
     };
     persistRun({ ...state, ...nextState });
     set(nextState);

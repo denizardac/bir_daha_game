@@ -82,7 +82,10 @@ export function renderShareCardToCanvas(opts: ShareCardOptions): HTMLCanvasEleme
   if (analysis) {
     ctx.fillText(`Sıra: #${analysis.rank} / ${analysis.totalPlayers}`, 40, 172);
     if (score > 0) {
-      ctx.fillText(`Bugünkü oyuncuların %${analysis.rankPercent}'ini geçtin`, 40, 200);
+      const rankLine = analysis.totalPlayers > 1
+        ? `Listedeki skorların %${analysis.rankPercent}'ini geçtin`
+        : 'Yerel kayıt · canlı sıralama yok';
+      ctx.fillText(rankLine, 40, 200);
     } else {
       ctx.fillText(`${roundsCompleted} round hayatta kaldın`, 40, 200);
     }

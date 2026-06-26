@@ -261,9 +261,10 @@ export interface GameState {
   eventResolvedThisRound: boolean;
   flawless: boolean;
   runEndAnalysis: RunEndAnalysis | null;
-  extraDrawUsed: boolean;
-  extraDrawAvailable: boolean;
   rerollsRemaining: number;
+  /** Taktik turunda kategori başına oyun-boyu tek reroll hakkı */
+  formationRerollUsed: boolean;
+  systemRerollUsed: boolean;
   /** Bu round'da kaç kez reroll yapıldı — seed çeşitliliği için */
   offersRerollIndex: number;
   recoveryGuaranteed: boolean;
@@ -322,6 +323,9 @@ export interface PersistedData {
   cardTimerEnabled: boolean;
   tutorialCompleted: boolean;
   totalRuns: number;
+  /** Bugün (bu cihazda) başlatılan run sayısı — topluluk sayacının yerel kısmı */
+  todayRuns: number;
+  todayRunsDate: string;
   seasonKey: string;
   hallOfFame: HallOfFameEntry[];
   seasonArchive: Record<string, HallOfFameEntry[]>;

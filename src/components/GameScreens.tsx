@@ -6,13 +6,13 @@ import { TacticCard } from '@/components/TacticCard';
 import { CardSelectCommandBar, type CardPickMode } from '@/components/CardSelectCommandBar';
 import { TacticPickGrid } from '@/components/TacticPickGrid';
 import { buildMatchAnimSchedule, buildMatchAnimScheduleResume, type MatchAnimState } from '@/engine/matchAnimSchedule';
-import { SquadPanel } from '@/components/SquadPanel';
 import { isFinaleRound, isTacticBonusRound } from '@/engine/roundFlow';
-import { getLegendaryChanceTier } from '@/engine/seed';
-import { canPassCardPick } from '@/engine/cardPass';
+import { getLegendaryChanceTier, getDailySeed } from '@/engine/seed';
 import { getEventSubjects } from '@/engine/eventSubjects';
+import { fetchRemoteLeaderboard, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { SynergyRevealOverlay } from '@/components/SynergyRevealOverlay';
 import { SidePanel } from '@/components/SidePanel';
+import { SynergySideSection } from '@/components/SynergySideSection';
 import { MoralePanel } from '@/components/MoralePanel';
 import { PlayerHeroMini } from '@/components/PlayerHero';
 import { MatchTeamCard } from '@/components/MatchPickPanel';
@@ -26,6 +26,7 @@ import { calculateRoundPoints, formatScore } from '@/engine/scoring';
 import { getSquadLineupSummary, lineupSlotToMatchPitch } from '@/engine/lineupPreview';
 import { getPersistedStats, TOTAL_SYNERGIES, useGameStore } from '@/store/gameStore';
 import { isPlayerCard, isSkipCard, isTacticCard, isTrainingCard } from '@/types';
+import type { GameCard, PlayerCard as PlayerCardType } from '@/types';
 import { MatchAnimation } from '@/components/MatchAnimation';
 import { MatchMoraleBanner } from '@/components/MatchMoraleBanner';
 import { MatchLeftPanel, MatchRightPanel } from '@/components/MatchLivePanels';
@@ -44,6 +45,29 @@ import { sortSquadByRating } from '@/engine/squadLogic';
 import type { EventOutcome } from '@/engine/events';
 
 type EventResultBadge = { icon: string; text: string; positive: boolean };
+
+function CardSelectInsightRail({
+  squad,
+  morale,
+  discoveredSynergies,
+  currentOffers,
+}: {
+  squad: PlayerCardType[];
+  morale: number;
+  discoveredSynergies: string[];
+  currentOffers: GameCard[];
+}) {
+  return (
+    <aside className="card-select-insight-rail" aria-label="Sinerji ve tag özeti">
+      <SynergySideSection
+        squad={squad}
+        morale={morale}
+        discoveredSynergies={discoveredSynergies}
+        currentOffers={currentOffers}
+      />
+    </aside>
+  );
+}
 
 /** Seçim sonrası animasyonlu "sonuç rozeti" listesi — sayısal etkiyi vurgular */
 function getEventResultBadges(o: EventOutcome): EventResultBadge[] {
@@ -87,12 +111,12 @@ export function CardSelectScreen() {
   const state = useGameStore();
   const {
     round, maxRounds, squad, maxSquadSize, morale, score, streak,
-    currentOffers, selectOffer, passCardPick,
+    currentOffers, selectOffer,
     dangerMode, isFirstRun, discoveredSynergies, activeTactics, usedEventIds,
-    extraDrawAvailable, extraDrawUsed, redrawOffers,
     rerollsRemaining, rerollSingleOffer, offersRerollIndex,
     trainingFlow, beginTraining, pickTrainingPlayer, completeTraining, cancelTraining, backTrainingPlayer,
-    tacticDraft, confirmTacticRound,
+    tacticDraft, confirmTacticRound, rerollFormationOffers, rerollSystemOffers,
+    formationRerollUsed, systemRerollUsed,
   } = state;
   const sound = getPersistedStats().soundEnabled;
 
@@ -103,14 +127,6 @@ export function CardSelectScreen() {
   const emptyField = 11 - lineupSummary.filled;
   const tacticBonus = isTacticBonusRound(round, maxRounds);
   const finaleMatch = isFinaleRound(round, maxRounds);
-  const canPass = canPassCardPick({
-    phase: 'cardSelect',
-    round,
-    maxRounds,
-    squadLength: squad.length,
-    maxSquadSize,
-    currentOffers,
-  });
   const pickSubtitle = finaleMatch
     ? 'Şampiyonluk maçı — son kartını seç, büyük puan için kazan'
     : tacticBonus
@@ -119,15 +135,13 @@ export function CardSelectScreen() {
         ? `3 oyuncu teklifi · Kadroya eklenir (${empty} boş slot)`
         : emptyField > 0
           ? `3 oyuncu teklifi · Sahada ${emptyField} boş slot — yedek çıkar, slota yerleşir`
-          : canPass
-            ? '3 oyuncu teklifi · Kadro dolu — istersen pas geç, mevcut kadroyla maça çık'
-            : '3 oyuncu teklifi · Kadro dolu — en riskli oyuncunun yerine geçer';
+          : 'Kadro dolu — kart al (en riskli oyuncunun yerine) ya da 🎓 Özel antrenman yap';
 
   const pickTitle = finaleMatch
     ? 'Şampiyonluk Maçı'
     : tacticBonus
       ? 'Taktik Bonusu'
-      : 'Bir Kart Seç';
+      : 'İkisinden Birini Seç';
 
   const cardsLocked = pickMode === 'training' || Boolean(trainingFlow);
 
@@ -163,28 +177,6 @@ export function CardSelectScreen() {
                   compact
                   onOpen={() => setLineupOpen(true)}
                 />
-                {extraDrawAvailable && !extraDrawUsed && (
-                  <button
-                    type="button"
-                    className="btn-secondary btn-reroll-extra"
-                    title="Round 10 ödülü — 3 yeni oyuncu teklifi"
-                    onClick={redrawOffers}
-                    disabled={cardsLocked}
-                  >
-                    🎯 Ekstra çek
-                  </button>
-                )}
-                {canPass && (
-                  <button
-                    type="button"
-                    className="btn-pass-pick btn-pass-pick--toolbar"
-                    title="Kadro aynı kalır · doğrudan maça"
-                    disabled={cardsLocked}
-                    onClick={() => { playSound('tick', sound); passCardPick(); }}
-                  >
-                    Pas geç
-                  </button>
-                )}
               </>
             )}
           />
@@ -198,15 +190,15 @@ export function CardSelectScreen() {
           </p>
         )}
 
-        <div className="game-layout card-select-layout">
-          <SquadPanel
-            squad={squad}
-            maxSquadSize={maxSquadSize}
-            round={round}
-            maxRounds={maxRounds}
-            activeTactics={activeTactics}
-            onShowLineup={() => setLineupOpen(true)}
-          />
+        <div className={`game-layout card-select-layout ${tacticBonus ? 'card-select-layout--tactic' : 'card-select-layout--pick'}`}>
+          {!tacticBonus && (
+            <CardSelectInsightRail
+              squad={squad}
+              morale={morale}
+              discoveredSynergies={discoveredSynergies}
+              currentOffers={currentOffers}
+            />
+          )}
 
           <div className={`card-pick-center min-w-0 ${cardsLocked ? 'card-pick-center--training' : ''} ${tacticBonus ? 'card-pick-center--tactic' : ''}`}>
             <LineupPreviewModal
@@ -246,6 +238,10 @@ export function CardSelectScreen() {
                 sound={sound}
                 onSelect={selectOffer}
                 onConfirm={confirmTacticRound}
+                onRerollFormation={rerollFormationOffers}
+                onRerollSystem={rerollSystemOffers}
+                formationRerollUsed={formationRerollUsed}
+                systemRerollUsed={systemRerollUsed}
               />
             ) : (
               <>
@@ -304,12 +300,10 @@ export function CardSelectScreen() {
 
           <SidePanel
             squad={squad}
-            morale={morale}
             activeTactics={activeTactics}
             usedEventIds={usedEventIds}
             round={round}
             currentOffers={currentOffers}
-            discoveredSynergies={discoveredSynergies}
             tacticDraft={tacticBonus ? tacticDraft : undefined}
           />
         </div>
@@ -324,6 +318,7 @@ export function CardSelectScreen() {
           onChange={state.setManualLineup}
           onReset={state.resetManualLineup}
           onConfirm={state.confirmLineupAndPlay}
+          onCancel={state.cancelLineupEditor}
         />
       )}
     </div>
@@ -1026,21 +1021,42 @@ export function RunEndScreen() {
   const playerName = displayName || 'Anonim';
   const [shareMsg, setShareMsg] = useState('');
   const wins = roundHistory.filter((r) => r.matchResult?.outcome === 'win').length;
+  const matchesPlayed = roundHistory.filter((r) => r.matchResult).length;
+  const draws = roundHistory.filter((r) => r.matchResult?.outcome === 'draw').length;
   const allLoss = lossesCount > 0 && wins === 0;
 
+  // Gerçek sıralama: bot-dolgulu yerel liste yerine canlı remote leaderboard'dan
+  // hesapla (varsa). Yoksa yerel analiz değerlerine düşer.
+  const [liveRank, setLiveRank] = useState<{ rank: number; total: number; percent: number } | null>(null);
+  useEffect(() => {
+    if (!isRemoteLeaderboardEnabled() || score <= 0) return;
+    let cancelled = false;
+    fetchRemoteLeaderboard(isDailySeed ? 'daily' : 'allTime', isDailySeed ? getDailySeed() : undefined)
+      .then((rows) => {
+        if (cancelled || !rows.length) return;
+        const better = rows.filter((r) => r.totalScore > score).length;
+        const total = Math.max(rows.length, better + 1);
+        const rank = better + 1;
+        const percent = Math.max(1, Math.round(((total - better) / total) * 100));
+        setLiveRank({ rank, total, percent });
+      })
+      .catch(() => { /* sessiz: yerel değerlere düşer */ });
+    return () => { cancelled = true; };
+  }, [score, isDailySeed]);
+
   const shareText = analysis
-    ? `BİR DAHA\nSkor: ${formatScore(score)}\nSıra: #${analysis.rank}/${analysis.totalPlayers}\n${analysis.bestDecision ? `En iyi karar: R${analysis.bestDecision.round} ${analysis.bestDecision.cardName}` : ''}\nBugünkü oyuncuların %${analysis.rankPercent}'ini geçtim`
+    ? `BİR DAHA\nSkor: ${formatScore(score)}\nSıra: #${analysis.rank}/${analysis.totalPlayers}${analysis.rankPercent >= 50 ? ` (en iyi %${Math.max(1, 100 - analysis.rankPercent)})` : ''}\n${analysis.bestDecision ? `En iyi karar: R${analysis.bestDecision.round} ${analysis.bestDecision.cardName}` : ''}`
     : formatScore(score);
 
   return (
     <div className="game-shell min-h-screen p-4">
-      <div className="mx-auto max-w-xl space-y-3">
+      <div className="mx-auto max-w-5xl run-end-shell">
         <AnimatePresence mode="wait">
           {runEndStep === 0 && (
-            <motion.div key="score" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="panel text-center">
+            <motion.div key="score" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="panel text-center run-end-hero-panel">
               <p className="text-sm uppercase text-neutral-500">Run Bitti</p>
               <p className="text-6xl font-extrabold text-amber-400">{formatScore(score)}</p>
-              <p className="text-neutral-400">{round} round · {lossesCount} kayıp · {wins} galibiyet {flawless && lossesCount === 0 ? '· NAMAĞLUP' : ''}</p>
+              <p className="text-neutral-400">{round} round · {matchesPlayed} maç · {wins}G {draws}B {lossesCount}M {flawless && lossesCount === 0 ? '· NAMAĞLUP' : ''}</p>
               {allLoss && (
                 <p className="mt-3 rounded-lg bg-neutral-900 px-3 py-2 text-sm text-neutral-400">
                   Hiç galip gelmedin — kayıp roundlar puan vermez. Bir sonraki run&apos;da ilk galibiyeti hedefle.
@@ -1063,19 +1079,31 @@ export function RunEndScreen() {
           )}
 
           {runEndStep === 1 && (
-            <motion.div key="rank" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="panel text-center">
+            <motion.div key="rank" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="panel text-center run-end-rank-panel">
               {analysis ? (
                 <>
                   <p className="text-lg text-neutral-400">
                     {isDailySeed ? 'Günlük sıralama' : 'Tüm zamanlar sıralaması'}
+                    {liveRank && <span className="ml-2 text-xs text-emerald-400">· canlı</span>}
                   </p>
-                  <p className="mt-4 text-4xl font-extrabold">#{analysis.rank} / {analysis.totalPlayers}</p>
-                  <p className="mt-2 text-xl">
-                    {score > 0
-                      ? `Bugünkü oyuncuların %${analysis.rankPercent}'ini geçtin`
-                      : `${round} round hayatta kaldın — bir dahaki sefer farklı olabilir`}
-                  </p>
-                  {analysis.nearRivalBefore && (
+                  <p className="mt-4 text-4xl font-extrabold">#{(liveRank?.rank ?? analysis.rank)} / {(liveRank?.total ?? analysis.totalPlayers)}</p>
+                  {(() => {
+                    const percent = liveRank?.percent ?? analysis.rankPercent;
+                    const rank = liveRank?.rank ?? analysis.rank;
+                    const total = liveRank?.total ?? analysis.totalPlayers;
+                    return (
+                      <p className="mt-2 text-xl">
+                        {score <= 0
+                          ? `${round} round hayatta kaldın — bir dahaki sefer farklı olabilir`
+                          : total <= 1 && !liveRank
+                            ? 'Skorun yerel kayda işlendi; canlı sıralama verisi yok'
+                          : percent >= 50
+                            ? `En iyi %${Math.max(1, 100 - percent)} içindesin 🔥`
+                            : `Sıralaman #${rank} — bir dahaki run'da yüksel`}
+                      </p>
+                    );
+                  })()}
+                  {!liveRank && analysis.nearRivalBefore && (
                     <p className="mt-3 text-sm text-neutral-400">Önünde: {analysis.nearRivalBefore.name} (+{analysis.nearRivalBefore.gap})</p>
                   )}
                 </>
@@ -1088,14 +1116,29 @@ export function RunEndScreen() {
 
           {runEndStep >= 2 && (
             <motion.div key="summary" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="panel run-end-summary space-y-4">
+              <div className="run-end-summary-hero">
+                <div>
+                  <p className="run-end-summary-kicker">Run özeti</p>
+                  <p className="run-end-summary-title">{playerName}</p>
+                </div>
+                <strong>{formatScore(score)}</strong>
+              </div>
               <div className="run-end-stats-row">
                 <div className="run-end-stat">
                   <span className="run-end-stat-label">Round</span>
                   <span className="run-end-stat-value">{round}</span>
                 </div>
                 <div className="run-end-stat">
+                  <span className="run-end-stat-label">Maç</span>
+                  <span className="run-end-stat-value">{matchesPlayed}</span>
+                </div>
+                <div className="run-end-stat">
                   <span className="run-end-stat-label">Galibiyet</span>
                   <span className="run-end-stat-value run-end-stat-value--win">{wins}</span>
+                </div>
+                <div className="run-end-stat">
+                  <span className="run-end-stat-label">Beraberlik</span>
+                  <span className="run-end-stat-value">{draws}</span>
                 </div>
                 <div className="run-end-stat">
                   <span className="run-end-stat-label">Kayıp</span>

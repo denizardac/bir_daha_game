@@ -43,6 +43,8 @@ export function calculateRoundPoints(
     if (opponentRating - avg >= 15) points += 500;
   } else {
     points += Math.floor(opponentRating * 2.5);
+    // Beraberlikte gol yememe ödülü — savunma taktiklerini değerli kılar (highlight ile birebir)
+    if (match.cleanSheet) points += 30;
   }
 
   const synergies = matchSynergies(match);

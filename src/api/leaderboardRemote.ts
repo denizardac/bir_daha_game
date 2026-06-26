@@ -20,6 +20,13 @@ export type RemoteLeaderboardRow = {
 
 export type LeaderboardPeriod = 'daily' | 'weekly' | 'allTime' | 'flawless';
 
+export type RunStartPayload = {
+  playerId: string;
+  displayName: string;
+  seed: string;
+  isDaily: boolean;
+};
+
 function rowToEntry(row: RemoteLeaderboardRow): LeaderboardEntry {
   return {
     id: row.player_id,
@@ -67,6 +74,33 @@ export async function submitRunToLeaderboard(
   }
 
   return { ok: true };
+}
+
+export async function recordRunStart(payload: RunStartPayload): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: 'Supabase yapılandırılmamış' };
+
+  const { error } = await supabase.from('run_starts').insert({
+    player_id: payload.playerId,
+    display_name: payload.displayName.slice(0, 32),
+    seed: payload.seed,
+    is_daily: payload.isDaily,
+    day_key: getTodayKey(),
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+export async function fetchTodayRunStartCount(): Promise<number | null> {
+  if (!supabase) return null;
+
+  const { count, error } = await supabase
+    .from('run_starts')
+    .select('id', { count: 'exact', head: true })
+    .eq('day_key', getTodayKey());
+
+  if (error || count === null) return null;
+  return count;
 }
 
 export async function fetchRemoteLeaderboard(

@@ -12,13 +12,9 @@ import {
   formatGuidePosition,
   type GuideSectionId,
 } from '@/data/gameGuide';
-import { getSynergyGuideTags, getSynergyGuideTeaser } from '@/data/synergyGuideHints';
-import { SYNERGIES, TOTAL_SYNERGIES } from '@/data/synergies';
 import { TACTIC_CARDS } from '@/data/tactics';
 import { ALL_TAGS, TAG_DESCRIPTIONS } from '@/data/tags';
-import { getSynergyBenefitText } from '@/engine/squadInsights';
 import { useGameStore } from '@/store/gameStore';
-import { loadPersisted } from '@/utils/storage';
 import { RARITY_COLORS } from '@/types';
 import { POSITION_BADGE } from '@/utils/positionStyle';
 
@@ -175,81 +171,6 @@ function TacticsSection() {
   );
 }
 
-function SynergiesSection() {
-  const discovered = loadPersisted().discoveredSynergies;
-  const hiddenCount = SYNERGIES.filter((s) => s.hidden).length;
-  const revealedCount = SYNERGIES.filter((s) => !s.hidden || discovered.includes(s.id)).length;
-
-  return (
-    <div className="guide-section">
-      <p className="guide-lead">
-        {TOTAL_SYNERGIES} sinerji kombinasyonu var. {hiddenCount} tanesi gizli — run sırasında keşfedilir.
-        Açık sinerjilerin tam koşulları burada; gizliler için sadece ipucu verilir.
-      </p>
-      <div className="guide-synergy-legend">
-        <span className="guide-synergy-legend-item guide-synergy-legend-item--open">Açık — tam koşul</span>
-        <span className="guide-synergy-legend-item guide-synergy-legend-item--hidden">Gizli — ipucu</span>
-        <span className="guide-synergy-legend-item guide-synergy-legend-item--found">Keşfedilen — tam detay</span>
-      </div>
-      <p className="guide-synergy-progress">
-        Rehberde görünen detay: <strong>{revealedCount}/{TOTAL_SYNERGIES}</strong>
-        {discovered.length > 0 && ` · Run’larda keşfettiklerin: ${discovered.length}`}
-      </p>
-      <p className="guide-synergy-note">
-        <strong>Açık</strong> sinerjiler tarayıcı geçmişinden gelmez — oyunda her zaman görünür olan {SYNERGIES.filter((s) => !s.hidden).length} kombinasyon.
-        <strong> Keşfedildi</strong> rozeti yalnızca run sırasında açtığın gizli sinerjiler içindir.
-      </p>
-      <div className="guide-synergy-list">
-        {SYNERGIES.map((s) => {
-          const isDiscovered = discovered.includes(s.id);
-          const showFull = !s.hidden || isDiscovered;
-
-          return (
-            <div
-              key={s.id}
-              className={`guide-synergy-item ${s.hidden ? 'guide-synergy-item--hidden' : 'guide-synergy-item--open'} ${isDiscovered ? 'guide-synergy-item--found' : ''}`}
-            >
-              <div className="guide-synergy-head">
-                <span className="guide-synergy-icon" aria-hidden>{showFull ? s.icon : '❓'}</span>
-                <div className="guide-synergy-head-text">
-                  <p className="guide-synergy-name">{showFull ? s.name : 'Gizli sinerji'}</p>
-                  <div className="guide-synergy-badges">
-                    {s.hidden && !isDiscovered && <span className="guide-badge guide-badge--hidden">Gizli</span>}
-                    {isDiscovered && <span className="guide-badge guide-badge--found">Keşfedildi</span>}
-                    {!s.hidden && <span className="guide-badge guide-badge--open">Açık</span>}
-                  </div>
-                </div>
-              </div>
-
-              {showFull ? (
-                <>
-                  <p className="guide-text">{s.description}</p>
-                  <p className="guide-synergy-reward">Bonus: {getSynergyBenefitText(s)}</p>
-                </>
-              ) : (
-                <>
-                  <p className="guide-synergy-hint">
-                    <span className="guide-synergy-hint-label">İpucu</span>
-                    {getSynergyGuideTeaser(s.id)}
-                  </p>
-                  {getSynergyGuideTags(s.id).length > 0 && (
-                    <div className="guide-synergy-tag-hints">
-                      {getSynergyGuideTags(s.id).map((tag) => (
-                        <span key={tag} className="guide-synergy-tag-hint">{tag}</span>
-                      ))}
-                    </div>
-                  )}
-                  <p className="guide-synergy-locked-note">Tam koşul ve bonus — run sırasında keşfedilince açılır.</p>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function EventsSection() {
   const samples = EVENT_CARDS.slice(0, 8);
 
@@ -304,7 +225,6 @@ const SECTION_CONTENT: Record<GuideSectionId, () => ReactNode> = {
   oyuncular: PlayersSection,
   tagler: TagsSection,
   taktikler: TacticsSection,
-  sinerjiler: SynergiesSection,
   olaylar: EventsSection,
 };
 

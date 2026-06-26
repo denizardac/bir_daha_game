@@ -46,7 +46,7 @@ const GAME_STATE_KEYS: (keyof GameState)[] = [
   'morale', 'score', 'streak', 'phase', 'roundHistory', 'currentOffers', 'currentMatch',
   'currentEvent', 'activeTactics', 'lastLossPlayer', 'discoveredSynergies', 'lossesCount',
   'dangerMode', 'isFirstRun', 'timerSeconds', 'eventResolvedThisRound', 'flawless',
-  'runEndAnalysis', 'extraDrawUsed', 'extraDrawAvailable', 'rerollsRemaining',
+  'runEndAnalysis', 'rerollsRemaining', 'formationRerollUsed', 'systemRerollUsed',
   'offersRerollIndex', 'recoveryGuaranteed', 'manualLineup',
 ];
 

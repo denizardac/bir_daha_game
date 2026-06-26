@@ -7,6 +7,10 @@ export const TAG_EXCLUSION_GROUPS: Tag[][] = [
   ['POTANSİYEL', 'GERİLEYEN'],
   ['YENİ SEZON', 'GERİLEYEN'],
   ['YENİ SEZON', 'PİK DÖNEM'],
+  // Genç yetenek (gelişecek) ile tecrübeli mentor/zirve aynı oyuncuda olmaz
+  ['POTANSİYEL', 'MENTOR'],
+  ['YENİ SEZON', 'MENTOR'],
+  ['POTANSİYEL', 'PİK DÖNEM'],
 ];
 
 const conflictPeers = new Map<Tag, Set<Tag>>();

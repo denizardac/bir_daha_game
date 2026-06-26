@@ -9,7 +9,7 @@ export function MilestoneToastStack() {
   const dismissMilestone = useGameStore((s) => s.dismissMilestone);
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-20 z-50 flex flex-col items-center gap-2 px-4">
+    <div className="pointer-events-none fixed bottom-5 right-4 z-50 flex flex-col items-end gap-2 px-2">
       <AnimatePresence>
         {milestones.map((m) => (
           <MilestoneToast key={m.id} milestone={m} onDone={() => dismissMilestone(m.id)} />

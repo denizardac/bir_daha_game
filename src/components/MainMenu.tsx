@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { fetchTodayRunStartCount, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { formatDailyDate } from '@/engine/seed';
 import { formatScore } from '@/engine/scoring';
+import { getTodayKey } from '@/engine/leaderboard';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
 import { MenuBiteTipsWidget } from '@/components/MenuBiteTipsWidget';
-import { MenuHowToWidget } from '@/components/MenuHowToWidget';
 import { MenuLeaderboardWidget } from '@/components/MenuLeaderboardWidget';
 import { MenuDailyScoreChart } from '@/components/MenuDailyScoreChart';
 import { StartRunModal } from '@/components/StartRunModal';
@@ -33,6 +34,18 @@ export function MainMenu() {
   };
 
   const savedRun = loadPersisted().currentRun;
+
+  const localTodayRuns = stats.todayRunsDate === getTodayKey() ? stats.todayRuns : 0;
+  const [remoteTodayRuns, setRemoteTodayRuns] = useState<number | null>(null);
+  useEffect(() => {
+    if (!isRemoteLeaderboardEnabled()) return;
+    let cancelled = false;
+    fetchTodayRunStartCount()
+      .then((count) => { if (!cancelled) setRemoteTodayRuns(count); })
+      .catch(() => { /* sessiz */ });
+    return () => { cancelled = true; };
+  }, []);
+  const todayRuns = remoteTodayRuns ?? localTodayRuns;
 
   const handleNewRunFromContinue = () => {
     openStart(savedRun?.isDailySeed ?? true, true);
@@ -71,22 +84,6 @@ export function MainMenu() {
               Bir Daha
             </h1>
             <p className="menu-hero-tagline">Aynı seed. Farklı sen.</p>
-
-            <div className="menu-hero-records">
-              <div className="menu-hero-record">
-                <span className="menu-hero-record-label">Senin en iyin</span>
-                <span className="menu-hero-record-value">{formatScore(stats.allTimeBest)}</span>
-              </div>
-              <div className="menu-hero-record menu-hero-record--today">
-                <span className="menu-hero-record-label">Günün rekoru</span>
-                <span className="menu-hero-record-value">{formatScore(stats.todayScore)}</span>
-              </div>
-              <div className={`menu-hero-record menu-hero-record--streak ${stats.dailyStreak > 1 ? 'is-hot' : ''}`}>
-                <span className="menu-hero-record-label">🔥 Seri</span>
-                <span className="menu-hero-record-value">{stats.dailyStreak} gün</span>
-              </div>
-            </div>
-
             {stats.dailyStreak > 1 && getDailyStreakBonus(stats.dailyStreak).label && (
               <p className="menu-streak">
                 <span className="menu-streak-bonus">{getDailyStreakBonus(stats.dailyStreak).label}</span>
@@ -96,25 +93,36 @@ export function MainMenu() {
 
           <div className="menu-top-stats">
             <div className="menu-stat-card">
-              <span className="menu-stat-icon">🎲</span>
-              <div>
-                <p className="menu-stat-label">Bugünkü seed</p>
-                <p className="menu-stat-value">{formatDailyDate()}</p>
+              <div className="menu-stat-icon-row">
+                <span className="menu-stat-icon">🏅</span>
+                <span className="menu-stat-label">Senin En İyin</span>
               </div>
-            </div>
-            <div className="menu-stat-card menu-stat-card--gold">
-              <span className="menu-stat-icon">🏃</span>
-              <div>
-                <p className="menu-stat-label">Toplam run</p>
-                <p className="menu-stat-value menu-stat-value--big">{stats.totalRuns}</p>
-              </div>
+              <p className="menu-stat-value menu-stat-value--big">{formatScore(stats.allTimeBest)}</p>
+              <p className="menu-stat-sub">kişisel rekor</p>
             </div>
             <div className="menu-stat-card">
-              <span className="menu-stat-icon">📅</span>
-              <div>
-                <p className="menu-stat-label">Bugünkü en iyi</p>
-                <p className="menu-stat-value menu-stat-value--big">{formatScore(stats.todayScore)}</p>
+              <div className="menu-stat-icon-row">
+                <span className="menu-stat-icon">🌍</span>
+                <span className="menu-stat-label">Bugün Oynanan</span>
               </div>
+              <p className="menu-stat-value menu-stat-value--big">{formatScore(todayRuns)}</p>
+              <p className="menu-stat-sub">{remoteTodayRuns !== null ? 'başlatılan run' : 'bu cihazda'}</p>
+            </div>
+            <div className={`menu-stat-card ${stats.dailyStreak > 1 ? 'menu-stat-card--gold' : ''}`}>
+              <div className="menu-stat-icon-row">
+                <span className="menu-stat-icon">🔥</span>
+                <span className="menu-stat-label">Seri</span>
+              </div>
+              <p className="menu-stat-value menu-stat-value--big menu-stat-value--gold">{stats.dailyStreak} gün</p>
+              <p className="menu-stat-sub">üst üste oyna</p>
+            </div>
+            <div className="menu-stat-card">
+              <div className="menu-stat-icon-row">
+                <span className="menu-stat-icon">🎲</span>
+                <span className="menu-stat-label">Bugünkü Seed</span>
+              </div>
+              <p className="menu-stat-value">{formatDailyDate()}</p>
+              <p className="menu-stat-sub">{new Date().getFullYear()}</p>
             </div>
           </div>
         </header>
@@ -156,21 +164,22 @@ export function MainMenu() {
                       <span className="menu-play-btn-label">Oyna — Günlük Seed</span>
                       <span className="menu-play-btn-sub">Herkes aynı kartları görür · skor kıyaslanır</span>
                     </span>
+                    <span className="menu-play-btn-arrow" aria-hidden>→</span>
                   </button>
                   <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" onClick={() => handlePlayClick(false)}>
                     <span className="menu-play-btn-icon">🎲</span>
                     <span>
-                      <span className="menu-play-btn-label">Serbest Mod — rastgele seed</span>
+                      <span className="menu-play-btn-label">Serbest Mod — Rastgele Seed</span>
                       <span className="menu-play-btn-sub">Her oyunda yeni kadro · pratik yap, sınır yok</span>
                     </span>
+                    <span className="menu-play-btn-arrow" aria-hidden>→</span>
                   </button>
                 </div>
               </div>
             </section>
 
             <aside className="menu-side-stack">
-              <MenuLeaderboardWidget />
-              <MenuHowToWidget />
+              <MenuLeaderboardWidget initialExpanded />
             </aside>
 
             <MenuBiteTipsWidget />

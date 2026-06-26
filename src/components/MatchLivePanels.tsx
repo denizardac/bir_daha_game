@@ -7,6 +7,7 @@ import {
   getMatchMomentum,
   getSquadSnapshotLines,
 } from '@/engine/matchLiveContent';
+import { formatScore } from '@/engine/scoring';
 import type { MatchAnimState } from '@/engine/matchAnimSchedule';
 import { HoverTip } from '@/components/HoverTip';
 import { MatchPickPanel } from '@/components/MatchPickPanel';
@@ -158,6 +159,17 @@ export function MatchRightPanel({
           <p className="match-live-final-score">
             Skor <strong>{anim.goalsFor} – {anim.goalsAgainst}</strong> · {anim.minute}&apos;
           </p>
+          {currentMatch.roundPoints > 0 && (
+            <motion.div
+              className="match-score-burst"
+              initial={{ opacity: 0, y: 14, scale: 0.86 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 18, delay: 0.12 }}
+            >
+              <span className="match-score-burst-label">Skor artışı</span>
+              <strong>+{formatScore(currentMatch.roundPoints)}</strong>
+            </motion.div>
+          )}
         </motion.div>
       ) : (
         <div className="match-live-header">

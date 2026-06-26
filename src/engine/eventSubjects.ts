@@ -63,6 +63,18 @@ function getFightPair(squad: PlayerCard[]): PlayerCard[] {
   return field.length ? [field[0]!] : squad.slice(0, 1);
 }
 
+/**
+ * "Birini uzaklaştır" seçilince gönderilecek kavgacı — gösterilen iki kavgacının
+ * DÜŞÜK ratingli olanı (daha değerli oyuncu kadroda kalır). Tek kaynak: hem
+ * olay öznesi gösterimi hem removeWeakest hedefi bunu kullanır → tutarlı.
+ */
+export function getFightLeaver(squad: PlayerCard[]): PlayerCard | null {
+  const pair = getFightPair(squad);
+  if (!pair.length) return null;
+  if (pair.length === 1) return pair[0]!;
+  return pair[0]!.currentRating <= pair[1]!.currentRating ? pair[0]! : pair[1]!;
+}
+
 function getYouthMistakePlayer(squad: PlayerCard[]): PlayerCard {
   const youth = squad.filter((p) => p.tags.includes('POTANSİYEL'));
   if (youth.length) return sortByRatingAsc(youth)[0]!;
@@ -131,11 +143,13 @@ export function getEventSubjects(
     }
     case 'evt_kavga': {
       const pair = getFightPair(squad);
-      pair.forEach((player, i) => {
+      const leaver = getFightLeaver(squad);
+      pair.forEach((player) => {
+        const leaves = leaver?.id === player.id;
         subjects.push({
           player,
-          label: pair.length > 1 ? `Kavga eden ${i + 1}` : 'Kavga eden oyuncu',
-          variant: 'pair',
+          label: leaves ? 'Kavgacı — "Birini uzaklaştır"da gider' : 'Kavgacı — kadroda kalır',
+          variant: leaves ? 'leave' : 'pair',
         });
       });
       break;
@@ -243,11 +257,7 @@ export function pickEventRemovalTarget(
   }
 
   if (eventId === 'evt_kavga' && choice === 'A') {
-    const argumentative = squad.filter((p) => p.tags.includes('TARTIŞMALI'));
-    if (argumentative.length) return sortByRatingDesc(argumentative)[0]!;
-    const field = squad.filter((p) => p.position !== 'KL');
-    if (field.length >= 2) return sortByRatingDesc(field)[1]!;
-    return getWeakestPlayer(squad);
+    return getFightLeaver(squad) ?? getWeakestPlayer(squad);
   }
 
   if (eventId === 'evt_sakatlik' && choice === 'B') {

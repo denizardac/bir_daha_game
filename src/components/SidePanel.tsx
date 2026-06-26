@@ -1,5 +1,4 @@
 import { MiniTacticBoard } from '@/components/MiniTacticBoard';
-import { SynergySideSection } from '@/components/SynergySideSection';
 import { EVENT_ROUNDS, getEventById } from '@/data/events';
 import { getTacticCategory } from '@/data/tactics';
 import { HoverTip } from '@/components/HoverTip';
@@ -12,12 +11,10 @@ import { TACTIC_CARDS } from '@/data/tactics';
 
 interface Props {
   squad: PlayerCard[];
-  morale: number;
   activeTactics: ActiveTactic[];
   usedEventIds: string[];
   round: number;
   currentOffers?: GameCard[];
-  discoveredSynergies: string[];
   tacticDraft?: TacticDraft;
 }
 
@@ -150,12 +147,10 @@ function draftTacticCard(draftId: string | null): TacticCard | undefined {
 
 export function SidePanel({
   squad,
-  morale,
   activeTactics,
   usedEventIds,
   round,
   currentOffers,
-  discoveredSynergies,
   tacticDraft,
 }: Props) {
   const formation = activeInCategory(activeTactics, 'formasyon');
@@ -172,7 +167,6 @@ export function SidePanel({
       <div className="side-panel-body">
         <div className="side-panel-section">
           <h2 className="side-panel-title side-panel-title--cyan">Taktik Slotları</h2>
-          <p className="side-panel-slot-hint">Formasyon + oyun sistemi ayrı slot — biri diğerini silmez</p>
           <div className="tactic-slots">
             <TacticSlot
               label="Formasyon"
@@ -208,12 +202,6 @@ export function SidePanel({
           </div>
         </div>
 
-        <SynergySideSection
-          squad={squad}
-          morale={morale}
-          discoveredSynergies={discoveredSynergies}
-          currentOffers={currentOffers}
-        />
       </div>
     </div>
   );

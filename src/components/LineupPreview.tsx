@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { HoverTip } from '@/components/HoverTip';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { getPlayablePositions } from '@/data/positionFlexibility';
-import { TAG_ICONS } from '@/data/tags';
+import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
 import { getBenchExplanations, getSquadLineupSummary } from '@/engine/lineupPreview';
 import type { ActiveTactic, PlayerCard } from '@/types';
 import { formatLineupPlayerTip, formationSlotLabel, POSITION_BADGE } from '@/utils/positionStyle';
@@ -34,6 +34,93 @@ function lineupMetaParts(summary: ReturnType<typeof getSquadLineupSummary>) {
     summary.bench > 0 ? `${summary.bench} yedek` : '',
     summary.extraGoalkeepers > 0 ? `${summary.extraGoalkeepers} yedek KL` : '',
   ].filter(Boolean);
+}
+
+function SecondaryPositionBadges({ player, className = '' }: { player: PlayerCard; className?: string }) {
+  const secondary = getPlayablePositions(player).filter((p) => p !== player.position);
+  if (secondary.length === 0) return null;
+  return (
+    <span className={`lineup-secondary-positions ${className}`}>
+      {secondary.slice(0, 3).map((pos) => (
+        <span key={pos} className="lineup-secondary-position">{POSITION_BADGE[pos]}</span>
+      ))}
+    </span>
+  );
+}
+
+function LineupSquadPopover({
+  squad,
+  summary,
+}: {
+  squad: PlayerCard[];
+  summary: ReturnType<typeof getSquadLineupSummary>;
+}) {
+  const slotByPlayer = new Map<string, { label: string; index: number; outOfPosition: boolean }>();
+  summary.lineup.forEach((slot) => {
+    if (slot.player) {
+      slotByPlayer.set(slot.player.id, {
+        label: slot.slot.label,
+        index: slot.index,
+        outOfPosition: slot.outOfPosition,
+      });
+    }
+  });
+
+  const ordered = [...squad].sort((a, b) => {
+    const aSlot = slotByPlayer.get(a.id);
+    const bSlot = slotByPlayer.get(b.id);
+    if (aSlot && bSlot) return aSlot.index - bSlot.index;
+    if (aSlot) return -1;
+    if (bSlot) return 1;
+    return b.currentRating - a.currentRating;
+  });
+
+  return (
+    <aside className="lineup-squad-popover" aria-label="Kadrodaki oyuncular">
+      <div className="lineup-squad-popover-head">
+        <p className="lineup-squad-popover-kicker">Kadro listesi</p>
+        <p className="lineup-squad-popover-title">Oyuncular <span>{summary.squadSize}/11</span></p>
+      </div>
+      <div className="lineup-squad-popover-list">
+        {ordered.map((player) => {
+          const slot = slotByPlayer.get(player.id);
+          return (
+            <div
+              key={player.id}
+              className={`lineup-squad-popover-row ${slot ? 'lineup-squad-popover-row--field' : 'lineup-squad-popover-row--bench'} ${slot?.outOfPosition ? 'lineup-squad-popover-row--warn' : ''}`}
+            >
+              <div className={`lineup-squad-popover-rating ${player.position === 'KL' ? 'lineup-squad-popover-rating--gk' : ''}`}>
+                <strong>{player.currentRating}</strong>
+                <span>{POSITION_BADGE[player.position]}</span>
+              </div>
+              <div className="lineup-squad-popover-body">
+                <div className="lineup-squad-popover-name-row">
+                  <span className="lineup-squad-popover-name">{player.name}</span>
+                  <span className="lineup-squad-popover-primary-pos">{POSITION_BADGE[player.position]}</span>
+                  <SecondaryPositionBadges player={player} />
+                  <span className={`lineup-squad-popover-slot ${slot ? 'lineup-squad-popover-slot--field' : 'lineup-squad-popover-slot--bench'}`}>
+                    {slot ? slot.label : 'Yedek'}
+                  </span>
+                </div>
+                {player.tags.length > 0 && (
+                  <div className="lineup-squad-popover-tags">
+                    {player.tags.slice(0, 3).map((tag) => (
+                      <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="lineup-squad-popover-tag-tip">
+                        <span className="lineup-squad-popover-tag">
+                          <span aria-hidden>{TAG_ICONS[tag]}</span>
+                          {tag}
+                        </span>
+                      </HoverTip>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </aside>
+  );
 }
 
 function LineupPitchContent({
@@ -184,6 +271,8 @@ export function LineupPreviewModal({
   return createPortal(
     <>
       <div className="lineup-preview-backdrop" onClick={onClose} aria-hidden />
+      <div className="lineup-preview-modal-shell">
+      <LineupSquadPopover squad={squad} summary={summary} />
       <div
         ref={modalRef}
         className="lineup-preview-popover lineup-preview-popover--center lineup-preview-popover--hero lineup-preview-popover--v2 lineup-preview-popover--modal"
@@ -202,6 +291,7 @@ export function LineupPreviewModal({
           </button>
         </div>
         <LineupPitchContent summary={summary} squad={squad} activeTactics={activeTactics} showBench />
+      </div>
       </div>
     </>,
     document.body,
@@ -260,12 +350,12 @@ export function LineupPreviewCenterTrigger({
       >
         <span className="lineup-compact-btn-icon" aria-hidden>⚽</span>
         <span className="lineup-compact-btn-text">
-          <span className="lineup-compact-btn-label">Diziliş</span>
+          <span className="lineup-compact-btn-label">Dizilişi Göster</span>
           <span className="lineup-compact-btn-meta">
-            {summary.filled}/11{emptyOnField > 0 ? ` · ${emptyOnField} boş` : ''}
+            Kadro {summary.squadSize}/11 · {emptyOnField > 0 ? `${emptyOnField} boş slot` : 'saha hazır'} — sahayı ve kadroyu gör
           </span>
         </span>
-        <span className="lineup-compact-btn-cta">Göster</span>
+        <span className="lineup-compact-btn-cta">→</span>
       </button>
     );
   }

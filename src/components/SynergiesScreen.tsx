@@ -1,4 +1,5 @@
 import { SYNERGIES, TOTAL_SYNERGIES } from '@/data/synergies';
+import { getSynergyGuideTags, getSynergyGuideTeaser } from '@/data/synergyGuideHints';
 import { getSynergyBenefitText } from '@/engine/squadInsights';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 
@@ -35,9 +36,19 @@ export function SynergiesScreen() {
                       <span className="synergies-catalog-reward">{getSynergyBenefitText(s)}</span>
                     </>
                   ) : (
-                    <p className="synergies-catalog-teaser">
-                      {s.hidden ? 'Run sırasında keşfet — ipucu kart seçiminde görünür' : 'Henüz açılmadı — ilk keşifte koleksiyona eklenir'}
-                    </p>
+                    <>
+                      <p className="synergies-catalog-teaser">
+                        <span className="synergies-catalog-hint-label">İpucu</span>
+                        {getSynergyGuideTeaser(s.id)}
+                      </p>
+                      {getSynergyGuideTags(s.id).length > 0 && (
+                        <div className="synergies-catalog-tag-hints">
+                          {getSynergyGuideTags(s.id).map((tag) => (
+                            <span key={tag} className="synergies-catalog-tag-hint">{tag}</span>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </article>

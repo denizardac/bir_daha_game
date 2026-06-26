@@ -17,6 +17,10 @@ interface Props {
   sound: boolean;
   onSelect: (card: GameCard) => void;
   onConfirm: () => void;
+  onRerollFormation?: () => void;
+  onRerollSystem?: () => void;
+  formationRerollUsed?: boolean;
+  systemRerollUsed?: boolean;
 }
 
 function TacticExpandModal({
@@ -163,11 +167,13 @@ function TacticPickRow({
   label,
   step,
   done,
+  reroll,
   children,
 }: {
   label: string;
   step: string;
   done: boolean;
+  reroll?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -177,6 +183,7 @@ function TacticPickRow({
           {done ? '✓' : step}
         </span>
         <h2 className="tactic-pick-row-title">{label}</h2>
+        {reroll}
       </header>
       <div className="tactic-pick-row-cards">
         {children}
@@ -185,7 +192,7 @@ function TacticPickRow({
   );
 }
 
-export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onSelect, onConfirm }: Props) {
+export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onSelect, onConfirm, onRerollFormation, onRerollSystem, formationRerollUsed = false, systemRerollUsed = false }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const tactics = offers.filter(isTacticCard);
   const formations = tactics.filter((o) => getTacticCategory(o.id) === 'formasyon');
@@ -203,16 +210,33 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onS
   return (
     <div className="tactic-pick-stage">
       <header className="tactic-pick-stage-head">
-        <p className="tactic-pick-stage-kicker">Taktik günü · maç yok</p>
-        <p className="tactic-pick-stage-sub">
-          {optional
-            ? 'İstersen formasyon/sistem değiştir — değiştirmezsen mevcut taktiğin kalır · +35 puan · +8 moral'
-            : 'Üstten bir formasyon, alttan bir oyun sistemi seç · +35 puan · +8 moral'}
-        </p>
+        <div className="tactic-pick-stage-head-text">
+          <p className="tactic-pick-stage-kicker">Taktik günü · maç yok</p>
+          <p className="tactic-pick-stage-sub">
+            {optional
+              ? 'İstersen formasyon/sistem değiştir — değiştirmezsen mevcut taktiğin kalır · +35 puan · +8 moral'
+              : 'Üstten bir formasyon, alttan bir oyun sistemi seç · +35 puan · +8 moral'}
+          </p>
+        </div>
       </header>
 
       <div className="tactic-pick-stage-grid">
-        <TacticPickRow label="Formasyon seç" step="1" done={effectiveFormation}>
+        <TacticPickRow
+          label="Formasyon seç"
+          step="1"
+          done={effectiveFormation}
+          reroll={onRerollFormation && (
+            <button
+              type="button"
+              className="btn-secondary tactic-pick-reroll"
+              disabled={formationRerollUsed}
+              title={formationRerollUsed ? 'Bu run formasyon yenileme hakkını kullandın' : 'Formasyon tekliflerini bir kez yenile (run boyu tek hak)'}
+              onClick={() => { playSound('tick', sound); onRerollFormation(); }}
+            >
+              {formationRerollUsed ? '🔄 Yenilendi' : '🔄 Yenile'}
+            </button>
+          )}
+        >
           {formations.map((card) => (
             <TacticPickCard
               key={card.id}
@@ -224,7 +248,22 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onS
           ))}
         </TacticPickRow>
 
-        <TacticPickRow label="Oyun sistemi seç" step="2" done={effectiveSystem}>
+        <TacticPickRow
+          label="Oyun sistemi seç"
+          step="2"
+          done={effectiveSystem}
+          reroll={onRerollSystem && (
+            <button
+              type="button"
+              className="btn-secondary tactic-pick-reroll"
+              disabled={systemRerollUsed}
+              title={systemRerollUsed ? 'Bu run oyun sistemi yenileme hakkını kullandın' : 'Oyun sistemi tekliflerini bir kez yenile (run boyu tek hak)'}
+              onClick={() => { playSound('tick', sound); onRerollSystem(); }}
+            >
+              {systemRerollUsed ? '🔄 Yenilendi' : '🔄 Yenile'}
+            </button>
+          )}
+        >
           {systems.map((card) => (
             <TacticPickCard
               key={card.id}

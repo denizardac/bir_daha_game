@@ -1,14 +1,15 @@
 import type { Position, Rarity } from '@/types';
 import { POSITION_BADGE, POSITION_LABELS } from '@/utils/positionStyle';
 
-export type GuideSectionId = 'genel' | 'oyuncular' | 'tagler' | 'taktikler' | 'sinerjiler' | 'olaylar';
+export type GuideSectionId = 'genel' | 'oyuncular' | 'tagler' | 'taktikler' | 'olaylar';
 
+// Not: Sinerji kataloğu ana menüdeki "Sinerjiler" ekranındadır (ipuçlarıyla birlikte).
+// Tek kaynak olması için rehberden çıkarıldı.
 export const GUIDE_SECTIONS: { id: GuideSectionId; label: string; icon: string }[] = [
   { id: 'genel', label: 'Genel Bakış', icon: '⚽' },
   { id: 'oyuncular', label: 'Oyuncular', icon: '👤' },
   { id: 'tagler', label: 'Tag\'ler', icon: '🏷️' },
   { id: 'taktikler', label: 'Taktikler', icon: '📋' },
-  { id: 'sinerjiler', label: 'Sinerjiler', icon: '⚡' },
   { id: 'olaylar', label: 'Olaylar', icon: '🎭' },
 ];
 

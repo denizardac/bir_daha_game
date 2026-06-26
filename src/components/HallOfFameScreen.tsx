@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { formatScore } from '@/engine/scoring';
 import { getSeasonLabel, listSeasonMonths, getHallOfFameForMonth, getSeasonKey } from '@/engine/hallOfFame';
+import { fetchRemoteLeaderboard, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
+import type { HallOfFameEntry, LeaderboardEntry } from '@/types';
 
 function getPlaceholderMonths(currentKey: string, count = 2): string[] {
   const [y, m] = currentKey.split('-').map(Number);
@@ -16,16 +18,42 @@ function getPlaceholderMonths(currentKey: string, count = 2): string[] {
   return placeholders;
 }
 
+function entryMonthKey(entry: LeaderboardEntry): string {
+  return getSeasonKey(new Date(entry.timestamp));
+}
+
 export function HallOfFameScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
   const stats = getPersistedStats();
   const activeKey = stats.seasonKey || getSeasonKey();
   const months = listSeasonMonths(stats);
   const [month, setMonth] = useState(activeKey);
-  const entries = getHallOfFameForMonth(stats, month);
   const isActive = month === activeKey;
+  const remote = isRemoteLeaderboardEnabled();
+  const [remoteEntries, setRemoteEntries] = useState<LeaderboardEntry[] | null>(null);
+
+  // Aktif sezonda gerçek oyuncuları göster (remote all-time). Geçmiş aylar yerel arşivden.
+  useEffect(() => {
+    if (!remote || !isActive) { setRemoteEntries(null); return; }
+    let cancelled = false;
+    fetchRemoteLeaderboard('allTime')
+      .then((rows) => {
+        if (!cancelled) {
+          setRemoteEntries(rows.filter((row) => entryMonthKey(row) === activeKey));
+        }
+      })
+      .catch(() => { if (!cancelled) setRemoteEntries(null); });
+    return () => { cancelled = true; };
+  }, [remote, isActive, month]);
+
+  const localEntries = getHallOfFameForMonth(stats, month);
+  const entries: (HallOfFameEntry | LeaderboardEntry)[] =
+    remote && isActive && remoteEntries !== null ? remoteEntries : localEntries;
   const archivePlaceholders = getPlaceholderMonths(activeKey).filter((m) => !months.includes(m));
   const champion = entries[0];
+  const podiumEntries = entries.slice(0, 3);
+  const tableEntries = entries.slice(3);
+  const pastMonths = months.filter((m) => m !== activeKey);
 
   return (
     <div className="game-shell page-screen hof-screen">
@@ -35,26 +63,27 @@ export function HallOfFameScreen() {
         </button>
 
         <header className="page-screen-header hof-screen-header">
-          <h1>Hall of Fame</h1>
-          <p>Aylık sezon — her ay sıfırlanır, geçmiş aylar arşivde kalır.</p>
-        </header>
-
-        <div className="hof-hero">
-          <div className="hof-hero-main">
-            <p className="hof-hero-kicker">{getSeasonLabel(month)}</p>
-            {champion ? (
-              <>
-                <p className="hof-hero-name">{champion.displayName}{champion.flawless ? ' 🛡️' : ''}</p>
-                <p className="hof-hero-score">{formatScore(champion.totalScore)}</p>
-                <p className="hof-hero-meta">{champion.roundsCompleted} round tamamlandı</p>
-              </>
-            ) : (
-              <>
-                <p className="hof-hero-name hof-hero-name--empty">Henüz şampiyon yok</p>
-                <p className="hof-hero-meta">İlk sırayı al — skorun burada kalıcı olur.</p>
-              </>
+          <div className="hof-header-content">
+            <div>
+              <h1>Hall of Fame</h1>
+              <p>Aylık sezon — her ay sıfırlanır, geçmiş şampiyonlar ebediyen arşivde kalır.</p>
+            </div>
+            {entries.length > 0 && (
+              <div className="hof-header-stats">
+                <div className="hof-header-stat">
+                  <p className="hof-header-stat-value">{entries.length}</p>
+                  <p className="hof-header-stat-label">Yarışmacı</p>
+                </div>
+                <div className="hof-header-stat hof-header-stat--sep">
+                  <p className="hof-header-stat-value">{champion?.roundsCompleted ?? 15}</p>
+                  <p className="hof-header-stat-label">Round / Run</p>
+                </div>
+              </div>
             )}
           </div>
+        </header>
+
+        <div className="hof-season-tabs-row">
           <div className="hof-hero-tabs">
             {months.map((m) => (
               <button
@@ -67,18 +96,81 @@ export function HallOfFameScreen() {
               </button>
             ))}
           </div>
+          {isActive && (
+            <div className="hof-active-badge">
+              <span className="hof-active-dot" aria-hidden />
+              <span>{getSeasonLabel(month)} · Sezon Aktif</span>
+            </div>
+          )}
         </div>
+
+        {/* PODIUM — top 3 */}
+        {entries.length > 0 && (
+          <div className="hof-podium">
+            {/* 2nd place */}
+            <div className="hof-podium-card hof-podium-card--silver">
+              {podiumEntries[1] ? (
+                <>
+                  <div className="hof-podium-header">
+                    <span className="hof-podium-rank">#2</span>
+                    <span className="hof-podium-medal">🥈</span>
+                  </div>
+                  <p className="hof-podium-name">{podiumEntries[1].displayName}{podiumEntries[1].flawless ? ' 🛡️' : ''}</p>
+                  <p className="hof-podium-score">{formatScore(podiumEntries[1].totalScore)}</p>
+                  <p className="hof-podium-meta">{podiumEntries[1].roundsCompleted} Round</p>
+                </>
+              ) : (
+                <p className="hof-podium-empty">Açık sıra</p>
+              )}
+            </div>
+
+            {/* 1st place — center/hero */}
+            <div className="hof-podium-card hof-podium-card--gold">
+              <div className="hof-podium-champ-pill">Aylık Şampiyon</div>
+              <div className="hof-podium-header">
+                <span className="hof-podium-medal">👑</span>
+              </div>
+              <p className="hof-podium-name hof-podium-name--champ">{champion!.displayName}{champion!.flawless ? ' 🛡️' : ''}</p>
+              <p className="hof-podium-kicker">{getSeasonLabel(month)} lideri</p>
+              <p className="hof-podium-score hof-podium-score--gold">{formatScore(champion!.totalScore)}</p>
+              <p className="hof-podium-meta">{champion!.roundsCompleted} round tamamlandı · sezonun en yükseği</p>
+            </div>
+
+            {/* 3rd place */}
+            <div className="hof-podium-card hof-podium-card--bronze">
+              {podiumEntries[2] ? (
+                <>
+                  <div className="hof-podium-header">
+                    <span className="hof-podium-rank">#3</span>
+                    <span className="hof-podium-medal">🥉</span>
+                  </div>
+                  <p className="hof-podium-name">{podiumEntries[2].displayName}{podiumEntries[2].flawless ? ' 🛡️' : ''}</p>
+                  <p className="hof-podium-score">{formatScore(podiumEntries[2].totalScore)}</p>
+                  <p className="hof-podium-meta">{podiumEntries[2].roundsCompleted} Round</p>
+                </>
+              ) : (
+                <p className="hof-podium-empty">Açık sıra</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {entries.length === 0 && (
+          <div className="hof-empty-state">
+            <p className="hof-empty">Bu sezon henüz kayıt yok. İlk sırayı al!</p>
+          </div>
+        )}
 
         <div className="hof-layout hof-layout--wide">
           <div className="panel hof-entries-panel">
             <p className="hof-panel-title">{getSeasonLabel(month)} — Top 50</p>
-            {entries.length === 0 ? (
-              <p className="hof-empty">Bu ay henüz kayıt yok. İlk sen ol!</p>
-            ) : (
+            {tableEntries.length === 0 && entries.length > 0 ? (
+              <p className="hof-empty">Podium dışı kayıt yok.</p>
+            ) : tableEntries.length === 0 ? null : (
               <div className="hof-entry-list">
-                {entries.map((e, idx) => (
-                  <div key={`${e.id}-${e.timestamp}`} className={`hof-entry-row ${idx === 0 ? 'hof-entry-row--first' : ''}`}>
-                    <span className="hof-entry-rank">#{idx + 1}</span>
+                {tableEntries.map((e, idx) => (
+                  <div key={`${e.id}-${e.timestamp}`} className="hof-entry-row">
+                    <span className="hof-entry-rank">#{idx + 4}</span>
                     <span className="hof-entry-name">
                       {e.displayName}
                       {e.flawless ? ' 🛡️' : ''}
@@ -91,23 +183,63 @@ export function HallOfFameScreen() {
             )}
           </div>
 
-          {archivePlaceholders.length > 0 && (
-            <div className="panel hof-archive-panel">
-              <p className="hof-panel-title">Geçmiş sezonlar</p>
+          <div className="panel hof-archive-panel">
+            <p className="hof-panel-title">Geçmiş Sezonlar</p>
+            {pastMonths.length > 0 ? (
               <div className="hof-archive-list">
+                {pastMonths.map((m) => {
+                  const champ = getHallOfFameForMonth(stats, m)[0];
+                  return (
+                    <div key={m} className="hof-archive-row">
+                      <span className="hof-archive-medal">🥇</span>
+                      <div className="hof-archive-info">
+                        <p className="hof-archive-month">{getSeasonLabel(m)}</p>
+                        <p className="hof-archive-item">
+                          {champ ? (
+                            <>Şampiyon: <strong>{champ.displayName}</strong></>
+                          ) : 'Kayıt yok'}
+                        </p>
+                        {champ && (
+                          <p className="hof-archive-score">{formatScore(champ.totalScore)}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
                 {archivePlaceholders.map((m) => (
-                  <p key={m} className="hof-archive-item">
-                    {getSeasonLabel(m)} — Kazanan: —
-                  </p>
+                  <div key={m} className="hof-archive-row hof-archive-row--empty">
+                    <span className="hof-archive-medal" style={{ opacity: 0.35 }}>🥇</span>
+                    <div className="hof-archive-info">
+                      <p className="hof-archive-month">{getSeasonLabel(m)}</p>
+                      <p className="hof-archive-item">Kayıt yok</p>
+                    </div>
+                  </div>
                 ))}
               </div>
+            ) : archivePlaceholders.length > 0 ? (
+              <div className="hof-archive-list">
+                {archivePlaceholders.map((m) => (
+                  <div key={m} className="hof-archive-row hof-archive-row--empty">
+                    <span className="hof-archive-medal" style={{ opacity: 0.35 }}>🥇</span>
+                    <div className="hof-archive-info">
+                      <p className="hof-archive-month">{getSeasonLabel(m)}</p>
+                      <p className="hof-archive-item">Kayıt yok</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="hof-empty">Geçmiş sezon kaydı yok.</p>
+            )}
+
+            <div className="hof-cta-card">
+              <p className="hof-cta-icon" aria-hidden>🔥</p>
+              <p className="hof-cta-title">Sıralamaya gir</p>
+              <p className="hof-cta-desc">15 round'u tamamla, en yüksek skorunla bu ayın Hall of Fame'inde yerini al.</p>
             </div>
-          )}
+          </div>
         </div>
 
-        {isActive && entries.length === 0 && (
-          <p className="hof-active-note">Sezon devam ediyor — skorunu yükselt ve listeye gir.</p>
-        )}
       </div>
     </div>
   );

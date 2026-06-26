@@ -1,5 +1,4 @@
 import type { PersistedData } from '@/types';
-import { ensureLeaderboardPopulation } from '@/engine/leaderboard';
 import { getSeasonKey } from '@/engine/hallOfFame';
 import { getDailySeed } from '@/engine/seed';
 import { getTodayKey } from '@/engine/leaderboard';
@@ -30,7 +29,7 @@ function sanitizePersisted(base: PersistedData, parsed: Record<string, unknown>)
     const v = merged[key];
     if (typeof v !== 'object' || v === null || Array.isArray(v)) merged[key] = base[key];
   }
-  const numberKeys: (keyof PersistedData)[] = ['todayScore', 'allTimeBest', 'dailyStreak', 'totalRuns'];
+  const numberKeys: (keyof PersistedData)[] = ['todayScore', 'allTimeBest', 'dailyStreak', 'totalRuns', 'todayRuns'];
   for (const key of numberKeys) {
     if (typeof merged[key] !== 'number' || Number.isNaN(merged[key])) merged[key] = base[key];
   }
@@ -46,7 +45,7 @@ export function loadPersisted(): PersistedData {
       return null;
     }
   })();
-  if (!raw) return ensureLeaderboardPopulation(base);
+  if (!raw) return base;
 
   let parsed: Record<string, unknown>;
   try {
@@ -60,7 +59,7 @@ export function loadPersisted(): PersistedData {
       /* yedek yazılamadı, yine de devam */
     }
     console.warn('[storage] Bozuk kayıt yedeklendi, varsayılanlara dönüldü.');
-    return ensureLeaderboardPopulation(base);
+    return base;
   }
 
   const merged = sanitizePersisted(base, parsed) as PersistedData & { displayName?: string };
@@ -77,7 +76,7 @@ export function loadPersisted(): PersistedData {
   }
   if (!merged.seasonKey) merged.seasonKey = getSeasonKey();
   if (merged.tutorialCompleted === undefined) merged.tutorialCompleted = false;
-  return ensureLeaderboardPopulation(merged);
+  return merged;
 }
 
 export function savePersisted(data: PersistedData) {
@@ -110,6 +109,8 @@ function defaultPersisted(): PersistedData {
     cardTimerEnabled: false,
     tutorialCompleted: false,
     totalRuns: 0,
+    todayRuns: 0,
+    todayRunsDate: '',
     seasonKey: getSeasonKey(),
     hallOfFame: [],
     seasonArchive: {},

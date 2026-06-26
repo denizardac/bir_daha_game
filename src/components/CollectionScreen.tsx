@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { SYNERGIES, TOTAL_SYNERGIES } from '@/data/synergies';
 import { EVENT_CARDS } from '@/data/events';
 import { PLAYER_POOL } from '@/data/players';
 import { getPlayerArchetype } from '@/data/archetypes';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 
-type Tab = 'sinerji' | 'efsane' | 'olay';
+type Tab = 'efsane' | 'olay';
 
 /** Havuzdaki benzersiz efsane kartlar (isim bazlı) */
 const LEGEND_POOL = (() => {
@@ -23,13 +22,11 @@ const LEGEND_POOL = (() => {
 export function CollectionScreen() {
   const stats = getPersistedStats();
   const setScreen = useGameStore((s) => s.setScreen);
-  const [tab, setTab] = useState<Tab>('sinerji');
+  const [tab, setTab] = useState<Tab>('efsane');
 
-  const discovered = new Set(stats.discoveredSynergies);
   const seenEvents = new Set(stats.seenEvents);
   const collectedLegends = new Set(stats.collectedLegends);
 
-  const synOpen = SYNERGIES.filter((s) => discovered.has(s.id)).length;
   const legendOpen = LEGEND_POOL.filter((p) => collectedLegends.has(p.name)).length;
   const eventOpen = EVENT_CARDS.filter((e) => seenEvents.has(e.id)).length;
 
@@ -45,10 +42,6 @@ export function CollectionScreen() {
 
         <div className="collection-progress-head">
           <div className="collection-stat">
-            <div className="collection-stat-value">{synOpen}/{TOTAL_SYNERGIES}</div>
-            <div className="collection-stat-label">Sinerji</div>
-          </div>
-          <div className="collection-stat">
             <div className="collection-stat-value">{legendOpen}/{LEGEND_POOL.length}</div>
             <div className="collection-stat-label">Efsane</div>
           </div>
@@ -59,7 +52,7 @@ export function CollectionScreen() {
         </div>
 
         <div className="page-screen-tabs">
-          {([['sinerji', '⚡ Sinerjiler'], ['efsane', '🏆 Efsaneler'], ['olay', '🎭 Olaylar']] as [Tab, string][]).map(([id, label]) => (
+          {([['efsane', '🏆 Efsaneler'], ['olay', '🎭 Olaylar']] as [Tab, string][]).map(([id, label]) => (
             <button
               key={id}
               type="button"
@@ -70,21 +63,6 @@ export function CollectionScreen() {
             </button>
           ))}
         </div>
-
-        {tab === 'sinerji' && (
-          <div className="collection-grid">
-            {SYNERGIES.map((s) => {
-              const ok = discovered.has(s.id);
-              return (
-                <div key={s.id} className={`collection-tile ${ok ? '' : 'collection-tile--locked'}`}>
-                  <div className="collection-tile-icon">{ok ? s.icon : '🔒'}</div>
-                  <div className="collection-tile-name">{ok ? s.name : '???'}</div>
-                  <div className="collection-tile-sub">{ok ? s.description : (s.hidden ? 'Gizli sinerji' : 'Henüz keşfedilmedi')}</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
 
         {tab === 'efsane' && (
           <div className="collection-grid">

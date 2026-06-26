@@ -7,6 +7,16 @@ import type { GameCard, PlayerCard, Rarity, TacticCard } from '@/types';
 
 export type SquadRef = Pick<PlayerCard, 'id' | 'name' | 'position'>;
 
+/**
+ * Oyuncu kimliği için isim anahtarı. Kiralık/klon kartlar " (Kiralık)" gibi
+ * parantezli ek taşır; bu ekleri ve büyük/küçük harf farkını yok sayarak
+ * "Diego Ramos (Kiralık)" ile havuzdaki "Diego Ramos"u aynı kişi sayarız —
+ * böylece aynı oyuncu hem kadroda hem teklifte gelmez.
+ */
+function nameKey(name: string): string {
+  return name.replace(/\s*\(.*?\)\s*/g, ' ').trim().toLowerCase();
+}
+
 export type OfferDrawVariant = 'normal' | 'extradraw';
 export type OfferDrawMode = 'players' | 'tacticBonus';
 
@@ -46,11 +56,11 @@ function upgradeWeakestCard(cards: PlayerCard[], pool: PlayerCard[], rng: () => 
     (minI, c, i, arr) => (c.currentRating < arr[minI]!.currentRating ? i : minI),
     0,
   );
-  const takenNames = new Set(result.map((c) => c.name.trim().toLowerCase()));
+  const takenNames = new Set(result.map((c) => nameKey(c.name)));
   const backup = pool.filter(
     (p) => p.currentRating >= minRating
       && !result.some((c) => c.id === p.id)
-      && !takenNames.has(p.name.trim().toLowerCase()),
+      && !takenNames.has(nameKey(p.name)),
   );
   if (backup.length) {
     const upgraded = clonePlayer(backup[Math.floor(rng() * Math.min(backup.length, 6))]!);
@@ -84,7 +94,7 @@ function drawSinglePlayer(rng: () => number, round: number, pool: PlayerCard[], 
 }
 
 function squadNameSet(squad: SquadRef[]): Set<string> {
-  return new Set(squad.map((p) => p.name.trim().toLowerCase()));
+  return new Set(squad.map((p) => nameKey(p.name)));
 }
 
 function filterDrawPool(pool: PlayerCard[], squad: SquadRef[], usedNames: Set<string>): PlayerCard[] {
@@ -92,8 +102,8 @@ function filterDrawPool(pool: PlayerCard[], squad: SquadRef[], usedNames: Set<st
   const squadIds = new Set(squad.map((p) => p.id));
   const hasGk = squad.some((p) => p.position === 'KL');
   return pool.filter((p) => {
-    const nameKey = p.name.trim().toLowerCase();
-    if (squadIds.has(p.id) || squadNames.has(nameKey) || usedNames.has(nameKey)) return false;
+    const key = nameKey(p.name);
+    if (squadIds.has(p.id) || squadNames.has(key) || usedNames.has(key)) return false;
     if (hasGk && p.position === 'KL') return false;
     return true;
   });
@@ -103,7 +113,7 @@ function dedupeOfferNames(cards: PlayerCard[]): PlayerCard[] {
   const seen = new Set<string>();
   const out: PlayerCard[] = [];
   for (const card of cards) {
-    const key = card.name.trim().toLowerCase();
+    const key = nameKey(card.name);
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(card);
@@ -131,10 +141,10 @@ function drawPlayers(
     const safe = pool.filter((p) => p.rating >= 65 && p.rating <= 78 && !p.tags.includes('GERİLEYEN') && !p.tags.includes('SAKATLIK RİSKİ') && !p.tags.includes('PERFORMANS DÜŞÜŞÜ') && !p.tags.includes('TARTIŞMALI'));
     const usePool = safe.length >= 3 ? safe : pool;
     for (let i = 0; i < 3; i++) {
-      const available = usePool.filter((p) => !usedNames.has(p.name.trim().toLowerCase()));
+      const available = usePool.filter((p) => !usedNames.has(nameKey(p.name)));
       if (!available.length) break;
       const p = available[Math.floor(rng() * available.length)]!;
-      usedNames.add(p.name.trim().toLowerCase());
+      usedNames.add(nameKey(p.name));
       cards.push(clonePlayer(p));
     }
     const upgraded = silentCardUpgrade(cards, pool, round, rng);
@@ -143,10 +153,13 @@ function drawPlayers(
   }
 
   for (let i = 0; i < count; i++) {
-    const pool = filterDrawPool(rawPool, squad, usedNames);
-    const available = pool;
-    const card = drawSinglePlayer(rng, round, available.length ? available : rawPool, rerollIndex);
-    usedNames.add(card.name.trim().toLowerCase());
+    const available = filterDrawPool(rawPool, squad, usedNames);
+    // Havuz tükenirse bile kadroyu hariç tut (yalnızca usedNames'i gevşet) —
+    // asla filtrelenmemiş rawPool'a düşme; aksi halde kadro üyesi tekrar gelebilir.
+    const fallback = available.length ? available : filterDrawPool(rawPool, squad, new Set());
+    if (!fallback.length) break;
+    const card = drawSinglePlayer(rng, round, fallback, rerollIndex);
+    usedNames.add(nameKey(card.name));
     cards.push(card);
   }
 
@@ -192,6 +205,26 @@ function drawTacticBonusOffers(
   return [...formations, ...systems];
 }
 
+/** Tek kategori (formasyon VEYA sistem) için 2 yeni taktik teklifi — kategori reroll'u */
+export function drawTacticCategoryOffers(
+  seed: string,
+  round: number,
+  activeTacticIds: string[],
+  category: 'formasyon' | 'sistem',
+  rerollIndex: number,
+): TacticCard[] {
+  const rng = createRng(seed, 'tactic-cat-reroll', round, category, rerollIndex);
+  let pool = TACTIC_CARDS.filter((t) => t.category === category && !activeTacticIds.includes(t.id));
+  if (pool.length < 2) pool = TACTIC_CARDS.filter((t) => t.category === category);
+  const picked: TacticCard[] = [];
+  while (picked.length < 2) {
+    const open = pool.filter((c) => !picked.some((p) => p.id === c.id));
+    if (!open.length) break;
+    picked.push(cloneTactic(pickOne(rng, open)));
+  }
+  return picked;
+}
+
 /**
  * Kadroda kaleci yoksa (örn. kaybedilince) tekliflerden en az biri kaleci
  * olsun — en zayıf kart yerine bir kaleci konur. Oyuncu yine de başka kart
@@ -207,9 +240,9 @@ function ensureGoalkeeperOffer(
   if (cards.some((c) => c.position === 'KL')) return cards;
 
   const offerIds = new Set(cards.map((c) => c.id));
-  const offerNames = new Set(cards.map((c) => c.name.trim().toLowerCase()));
+  const offerNames = new Set(cards.map((c) => nameKey(c.name)));
   const isFreeGk = (p: PlayerCard) =>
-    p.position === 'KL' && !offerIds.has(p.id) && !offerNames.has(p.name.trim().toLowerCase());
+    p.position === 'KL' && !offerIds.has(p.id) && !offerNames.has(nameKey(p.name));
 
   let gkPool = rawPool.filter(isFreeGk);
   if (!gkPool.length) gkPool = PLAYER_POOL.filter(isFreeGk);
@@ -270,7 +303,7 @@ export function rerollSinglePlayerOffer(
   const rng = createRng(seed, 'slot-reroll', round, slotIndex, rerollIndex);
   const excludeNames = new Set([
     ...squadNameSet(squad),
-    ...excludeOffers.map((p) => p.name.trim().toLowerCase()),
+    ...excludeOffers.map((p) => nameKey(p.name)),
   ]);
   let pool = filterDrawPool(getPoolForRound(round, seed, lossesCount, recoveryGuaranteed), squad, excludeNames);
   if (!pool.length) {
@@ -279,13 +312,15 @@ export function rerollSinglePlayerOffer(
 
   let card = drawSinglePlayer(rng, round, pool, rerollIndex);
   let guard = 0;
-  while (excludeNames.has(card.name.trim().toLowerCase()) && guard++ < 40) {
+  while (excludeNames.has(nameKey(card.name)) && guard++ < 40) {
     card = drawSinglePlayer(rng, round, pool.length ? pool : PLAYER_POOL, rerollIndex);
   }
 
-  if (rerollIndex > 0) {
-    const fullPool = getPoolForRound(round, seed, lossesCount, recoveryGuaranteed);
-    const upgraded = upgradeWeakestCard([card], fullPool, rng, 66 + rerollIndex * 2);
+  if (rerollIndex > 0 && pool.length) {
+    // Yükseltme havuzu da kadroyu VE diğer teklifleri hariç tutmalı — aksi halde
+    // reroll, yandaki teklifteki (ör. yüksek ratingli bir kaleci) veya kadrodaki
+    // bir oyuncuyu geri getirebilir. (filtrelenmemiş havuz kullanmak buydu.)
+    const upgraded = upgradeWeakestCard([card], pool, rng, 66 + rerollIndex * 2);
     card = upgraded[0]!;
   }
 

@@ -77,8 +77,8 @@ function tekForvetMultiplier(squad: PlayerCard[], tactics: ActiveTactic[]): numb
   if (!tactics.some((t) => t.id === 'tactic_tekli_forvet')) return 1;
   const sfPlayers = squad.filter((p) => p.position === 'SF');
   const hasFinisherSf = sfPlayers.some((p) => p.tags.includes('FİNİŞÖR'));
-  if (sfPlayers.length === 1 && hasFinisherSf) return 1.3;
-  return 0.85;
+  if (sfPlayers.length === 1 && hasFinisherSf) return 1.24;
+  return 0.92;
 }
 
 function attackPower(
@@ -218,6 +218,9 @@ export function simulateMatch(
     }
   }
   if (cleanSheet && outcome === 'win') highlights.push({ text: '🛡️ MÜKEMMEL SAVUNMA', points: 100 });
+  // Savunma odaklı taktikler kazanamasa bile değer üretsin: gol yemeden biten
+  // beraberlik/maç da puan verir (Catenaccio / Otobüsü Çek tuzak olmaktan çıkar).
+  else if (cleanSheet) highlights.push({ text: '🛡️ Gol yemedi', points: 30 });
   if (synergies.length >= 3 && outcome !== 'loss') highlights.push({ text: '🌪️ SİNERJİ FIRTINASI', points: 150 });
 
   let wowMoment: string | undefined;

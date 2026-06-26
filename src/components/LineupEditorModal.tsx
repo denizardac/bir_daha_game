@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { getSlotFitTier } from '@/data/positionFlexibility';
+import { HoverTip } from '@/components/HoverTip';
+import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
+import { getPlayablePositions, getSlotFitTier } from '@/data/positionFlexibility';
 import {
   assignSquadToFormation,
   getActiveFormationKey,
@@ -22,10 +24,13 @@ interface Props {
   onChange: (next: ManualLineup) => void;
   onReset: () => void;
   onConfirm: () => void;
+  /** X / dış tık / Esc — seçimi iptal eder. Verilmezse onConfirm kullanılır. */
+  onCancel?: () => void;
 }
 
 type DropTarget = { kind: 'slot'; index: number } | { kind: 'bench' };
 type DragSource = { player: PlayerCard; from: number | 'bench' };
+type DragGhost = { player: PlayerCard; x: number; y: number } | null;
 
 function clampPct(value: number, min = 8, max = 92) {
   return Math.min(max, Math.max(min, value));
@@ -54,7 +59,9 @@ export function LineupEditorModal({
   onChange,
   onReset,
   onConfirm,
+  onCancel,
 }: Props) {
+  const dismiss = onCancel ?? onConfirm;
   const formationKey = getActiveFormationKey(activeTactics);
   const lineup = useMemo(
     () => assignSquadToFormation(squad, formationKey, manualLineup),
@@ -62,8 +69,13 @@ export function LineupEditorModal({
   );
   const lineupIds = new Set(lineup.filter((s) => s.player).map((s) => s.player!.id));
   const bench = squad.filter((p) => !lineupIds.has(p.id));
+  // Bu formasyon kadronun mevkileriyle tam dolmuyorsa: boş slot + yedek oyuncu.
+  // Oyuncuyu sürükleyip yerleştirmezse eksik kadroyla oynar (güç + sinerji düşer).
+  const emptySlotCount = lineup.filter((s) => !s.player).length;
+  const underfielded = emptySlotCount > 0 && bench.length > 0;
 
   const [dragSource, setDragSource] = useState<DragSource | null>(null);
+  const [dragGhost, setDragGhost] = useState<DragGhost>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -75,10 +87,10 @@ export function LineupEditorModal({
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onConfirm(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') dismiss(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onConfirm]);
+  }, [open, dismiss]);
 
   if (!open) return null;
 
@@ -100,6 +112,7 @@ export function LineupEditorModal({
 
   function handleDragEnd(e: MouseEvent | TouchEvent | PointerEvent, source: DragSource) {
     setDragSource(null);
+    setDragGhost(null);
     const [x, y] = pointerXY(e);
     const el = document.elementFromPoint(x, y)?.closest('[data-drop]') as HTMLElement | null;
     if (!el) return;
@@ -111,20 +124,52 @@ export function LineupEditorModal({
 
   const dragPlayer = dragSource?.player ?? null;
 
+  function updateDragGhost(e: MouseEvent | TouchEvent | PointerEvent, player: PlayerCard) {
+    const [x, y] = pointerXY(e);
+    setDragGhost({ player, x, y });
+  }
+
+  function SecondaryPositions({ player }: { player: PlayerCard }) {
+    const secondary = getPlayablePositions(player).filter((p) => p !== player.position);
+    if (secondary.length === 0) return null;
+    return (
+      <span className="le-squad-secondary-positions">
+        {secondary.slice(0, 3).map((pos) => (
+          <span key={pos} className="le-squad-secondary-pos">{POSITION_BADGE[pos]}</span>
+        ))}
+      </span>
+    );
+  }
+
   function PlayerChip({ player, from }: { player: PlayerCard; from: number | 'bench' }) {
     const isGk = player.position === 'KL';
     const onField = from !== 'bench';
     const slot = onField ? lineup[from as number]?.slot : undefined;
     const tier = slot ? fitClass(player, slot) : 'ideal';
+    const traitLine = player.tags.length ? player.tags.join(' · ') : 'Özel nitelik yok';
+    const fitLabel = !onField ? 'Yedek' : tier === 'ideal' ? 'Ana mevki' : tier === 'flex' ? 'Yan mevki' : 'Zorlama mevki';
+    const tipText = `${player.name} · ${player.position} · ${player.currentRating}\n${fitLabel}\nNitelikler: ${traitLine}`;
+    const dragging = dragSource?.player.id === player.id;
     return (
       <motion.div
-        className={`le-chip le-chip--${onField ? `fit-${tier}` : 'bench'} ${isGk ? 'le-chip--gk' : ''} ${highlightId === player.id ? 'le-chip--highlight' : ''}`}
+        title={tipText}
+        className={`le-chip le-chip--${onField ? `fit-${tier}` : 'bench'} ${isGk ? 'le-chip--gk' : ''} ${highlightId === player.id ? 'le-chip--highlight' : ''} ${dragging ? 'le-chip--dragging' : ''}`}
         drag
         dragSnapToOrigin
         dragMomentum={false}
-        onDragStart={() => setDragSource({ player, from })}
+        onDragStart={(e) => {
+          setDragSource({ player, from });
+          updateDragGhost(e as PointerEvent, player);
+        }}
+        onDrag={(e) => updateDragGhost(e as PointerEvent, player)}
         onDragEnd={(e) => handleDragEnd(e as PointerEvent, { player, from })}
-        whileDrag={{ scale: 1.12, zIndex: 60, pointerEvents: 'none', cursor: 'grabbing' }}
+        whileDrag={{
+          scale: 1.02,
+          zIndex: 10,
+          opacity: 0.25,
+          pointerEvents: 'none',
+          cursor: 'grabbing',
+        }}
         style={{ touchAction: 'none', cursor: 'grab' }}
       >
         <span className="le-chip-rating">{player.currentRating}</span>
@@ -134,9 +179,110 @@ export function LineupEditorModal({
     );
   }
 
+  const squadAvg = squad.length
+    ? Math.round(squad.reduce((s, p) => s + p.currentRating, 0) / squad.length)
+    : 0;
+
+  // Sahada olan oyuncular ve slot bilgileri
+  const playerSlotMap = useMemo(() => {
+    const map = new Map<string, { label: string; fit: 'ideal' | 'flex' | 'forced' }>();
+    lineup.forEach((s) => {
+      if (s.player) {
+        map.set(s.player.id, { label: s.slot.label, fit: fitClass(s.player, s.slot) });
+      }
+    });
+    return map;
+  }, [lineup]);
+
+  const onFieldPlayers = lineup.filter((s) => s.player).map((s) => s.player!);
+  const fieldCount = onFieldPlayers.length;
+  const posStats = {
+    kaleci: onFieldPlayers.filter((p) => p.position === 'KL').length,
+    savunma: onFieldPlayers.filter((p) => ['STP', 'SLB', 'SĞB'].includes(p.position)).length,
+    ortaSaha: onFieldPlayers.filter((p) => ['DOS', 'OS', 'OOS', 'SLK', 'SĞK'].includes(p.position)).length,
+    hucum: onFieldPlayers.filter((p) => p.position === 'SF').length,
+  };
+
+  const formationDisplay = formationKey.replace(/(\d)(\d)(\d)/, '$1-$2-$3');
+
+  function ratingBadgeClass(position: string): string {
+    if (position === 'KL') return 'le-squad-rating-badge--gk';
+    if (position === 'SF') return 'le-squad-rating-badge--fw';
+    if (['SLK', 'SÖK', 'SĞK'].includes(position)) return 'le-squad-rating-badge--wng';
+    return '';
+  }
+
   return createPortal(
     <>
-      <div className="lineup-preview-backdrop" onClick={onConfirm} aria-hidden />
+      <div className="lineup-preview-backdrop" onClick={dismiss} aria-hidden />
+      <div className="le-modal-group">
+
+      {/* LEFT PANEL: squad list */}
+      <div className="le-squad-panel">
+        <div className="le-squad-panel-head">
+          <p className="le-squad-panel-kicker">Kadro Listesi</p>
+          <div className="le-squad-panel-title-row">
+            <span className="le-squad-panel-title">Oyuncular</span>
+            <span className="le-squad-panel-count">{squad.length} / 11</span>
+          </div>
+        </div>
+        <div className="le-squad-panel-list">
+          {squad.map((player) => {
+            const onField = lineupIds.has(player.id);
+            const isGk = player.position === 'KL';
+            return (
+              <div
+                key={player.id}
+                className={`le-squad-row ${onField ? 'le-squad-row--field' : 'le-squad-row--bench'} ${highlightId === player.id ? 'le-squad-row--highlight' : ''}`}
+              >
+                <div className={`le-squad-rating-badge ${ratingBadgeClass(player.position)}`}>
+                  <span className="le-squad-rating">{player.currentRating}</span>
+                  <span className="le-squad-pos">{player.position}</span>
+                </div>
+                <div className="le-squad-info">
+                  {(() => {
+                    const si = playerSlotMap.get(player.id);
+                    const slotBadgeClass = !onField
+                      ? 'le-squad-slot-badge--bench'
+                      : si?.fit === 'ideal'
+                        ? (isGk ? 'le-squad-slot-badge--gk' : 'le-squad-slot-badge--ideal')
+                        : si?.fit === 'flex'
+                          ? 'le-squad-slot-badge--flex'
+                          : 'le-squad-slot-badge--forced';
+                    return (
+                      <div className="le-squad-name-row">
+                        <span className="le-squad-name">{player.name}</span>
+                        <span className="le-squad-primary-pos">{POSITION_BADGE[player.position]}</span>
+                        <SecondaryPositions player={player} />
+                        <span className={`le-squad-slot-badge ${slotBadgeClass}`}>
+                          {onField ? (si?.label ?? 'Saha') : 'Yedek'}
+                        </span>
+                      </div>
+                    );
+                  })()}
+                  {player.tags.length > 0 && (
+                    <div className="le-squad-tags">
+                      {player.tags.slice(0, 2).map((tag) => (
+                        <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="le-squad-tag-tip">
+                          <span className="le-squad-tag">
+                            <span aria-hidden>{TAG_ICONS[tag]}</span>
+                            {tag}
+                          </span>
+                        </HoverTip>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="le-squad-panel-foot">
+          <span>Yedek: <strong>{bench.length}</strong></span>
+          <span>Ø Ort: <strong className="le-squad-avg">{squadAvg}</strong></span>
+        </div>
+      </div>
+
       <div
         ref={containerRef}
         className="le-modal"
@@ -146,11 +292,37 @@ export function LineupEditorModal({
       >
         <div className="le-head">
           <div>
-            <p className="le-kicker">İlk 11'i düzenle</p>
-            <p className="le-sub">Oyuncuları sürükleyip yerleştir · <span className="le-legend le-legend--ideal">ana mevki</span> <span className="le-legend le-legend--flex">yan mevki</span></p>
+            <p className="le-kicker-small">İlk 11 Önizleme</p>
+            <p className="le-kicker">{formationDisplay} (varsayılan)</p>
+            <p className="le-sub">{fieldCount}/11 saha dolu · {squad.length}/11 kadro · <span className="le-legend le-legend--ideal">ana mevki</span> <span className="le-legend le-legend--flex">yan mevki</span></p>
           </div>
-          <button type="button" className="lineup-preview-close" onClick={onConfirm} aria-label="Kapat">✕</button>
+          <button type="button" className="lineup-preview-close" onClick={dismiss} aria-label="İptal et — kart seçimine dön">✕</button>
         </div>
+
+        {/* Pozisyon istatistik satırı */}
+        <div className="le-pos-stats">
+          {[
+            { label: 'Kaleci', value: posStats.kaleci },
+            { label: 'Savunma', value: posStats.savunma },
+            { label: 'Orta Saha', value: posStats.ortaSaha },
+            { label: 'Hücum', value: posStats.hucum },
+          ].map(({ label, value }) => (
+            <div key={label} className="le-pos-stat-card">
+              <p className="le-pos-stat-label">{label}</p>
+              <p className="le-pos-stat-value">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        {underfielded && (
+          <div className="le-underfield-warn" role="alert">
+            <span className="le-underfield-warn-icon" aria-hidden>⚠️</span>
+            <span>
+              Bu formasyon kadrona tam oturmuyor: <strong>{emptySlotCount} slot boş</strong>, {bench.length} oyuncu yedekte.
+              Eksik kadroyla oynarsın — maç gücü ve sinerjiler düşer. Kadrona daha uygun bir formasyon seçmeyi düşün.
+            </span>
+          </div>
+        )}
 
         <div className="le-body">
           <div className="le-pitch">
@@ -193,6 +365,24 @@ export function LineupEditorModal({
           <button type="button" className="btn-primary le-confirm" onClick={onConfirm}>Onayla ve devam</button>
         </div>
       </div>
+
+      </div>{/* end le-modal-group */}
+
+      {dragGhost && (
+        <motion.div
+          className="le-drag-ghost"
+          style={{ left: dragGhost.x, top: dragGhost.y }}
+          initial={{ opacity: 0, scale: 0.86 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+        >
+          <span className="le-drag-ghost-rating">{dragGhost.player.currentRating}</span>
+          <span className="le-drag-ghost-body">
+            <span className="le-drag-ghost-name">{dragGhost.player.name.split(' ').pop()}</span>
+            <span className="le-drag-ghost-pos">{POSITION_BADGE[dragGhost.player.position]}</span>
+          </span>
+        </motion.div>
+      )}
     </>,
     document.body,
   );

@@ -130,7 +130,7 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
   evt_scout: {
     scene: 'scout-binocular',
     atmosphere: 'Tribün üstü · scout not alıyor',
-    narrative: 'Scout defterinde yeni bir isim var: hızlı, genç, ucuz. “Alırsan şimdi kâr edersin” diyor — beklersen belki daha pahalıya mal olur.',
+    narrative: 'Scout defterinde yeni bir isim var: hızlı, genç, ucuz. İmzalarsan kadroya hemen katılır; beklersen alternatif isimler ve küçük bir gelir gelir.',
     props: ['🔍', '📓', '👤'],
     choiceA: { icon: '✅', flavor: 'İmzayı at', scene: 'choice-sign' },
     choiceB: { icon: '⏳', flavor: 'Biraz daha bekle', scene: 'choice-wait' },
@@ -138,7 +138,7 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
   evt_yildiz_sozlesme: {
     scene: 'contract-sign',
     atmosphere: 'Kulüp ofisi · prim masada',
-    narrative: 'Yıldızın avukatı masaya prim talebini koydu. Ödemezsen gerginlik artar; pazarlık edersen ilişki onarılır ama zaman geçer.',
+    narrative: 'Yıldızın avukatı masaya prim talebini koydu. Ödersen yıldız mutlu olur ama kasa boşalır; pazarlıkta direnir, parayı korursun ama yıldız küser.',
     props: ['📝', '💵', '⭐'],
     choiceA: { icon: '💳', flavor: 'Prim öde', scene: 'choice-pay' },
     choiceB: { icon: '🤝', flavor: 'Pazarlık et', scene: 'choice-deal' },
@@ -146,7 +146,7 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
   evt_diger_kulup: {
     scene: 'spy-glass',
     atmosphere: 'Antrenman · uzaktan gözlem',
-    narrative: 'Kale arkasında bilinmeyen bir scout not alıyor. Kadrodaki zayıf halka radarında — satarsan gizli kalır, tutarsan takım moral bulur.',
+    narrative: 'Kale arkasında bilinmeyen bir scout not alıyor. Kadrodaki zayıf halka radarında — satarsan kasaya gelir ama kadro incelir, korursan takım motive olur ve sonraki maç güçlenir.',
     props: ['👀', '📋', '🕵️'],
     choiceA: { icon: '📤', flavor: 'Oyuncuyu bırak', scene: 'choice-release' },
     choiceB: { icon: '🔒', flavor: 'Kadroyu koru', scene: 'choice-lock' },
@@ -178,7 +178,7 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
   evt_sponsor: {
     scene: 'sponsor-brand',
     atmosphere: 'Sponsor etkinliği · flaşlar',
-    narrative: 'Ana sponsor fotoğraf çekimi istiyor; oyuncular smokin giymiş gibi duruyor. Katılırsan kasa güler, reddedersen antrenman kaçar.',
+    narrative: 'Ana sponsor reklam çekimi istiyor; setteki ışıklar ve kameralar hazır. Katılırsan kasaya gelir ama antrenman bölünür; reddedersen sahada kalıp formu korursun.',
     props: ['💼', '📸', '🏷️'],
     choiceA: { icon: '🤳', flavor: 'Etkinliğe katıl', scene: 'choice-photo' },
     choiceB: { icon: '⛔', flavor: 'Reddet', scene: 'choice-skip' },
@@ -266,7 +266,7 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
   evt_soguk_hava: {
     scene: 'snow-flake',
     atmosphere: 'Buz gibi rüzgâr · nefes buharı',
-    narrative: 'Soğuk hava kemikleri işliyor. Isınma programı atlarsan kaslar kilitlenir; devam edersen moral düşer.',
+    narrative: 'Saha buz tutmuş, nefesler buhar oluyor. Soğukta oynamayı sürdürürsen tempo zorlaşır ama anlık odak puanı gelir; ekstra ısınmaya zaman ayırırsan sonraki maça hazır çıkarsın.',
     props: ['❄️', '🧣', '🥶'],
     choiceA: { icon: '🏃', flavor: 'Soğuğa rağmen devam', scene: 'choice-cold' },
     choiceB: { icon: '🔥', flavor: 'Ekstra ısınma', scene: 'choice-warm' },
@@ -274,10 +274,10 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
   evt_deplasman: {
     scene: 'bus-travel',
     atmosphere: 'Otobüs · 12 saat yol',
-    narrative: 'Deplasman otobüsü motoru çalıştı. Haritada 12 saat var — hemen gidersen yorgunluk, erken gidersen dinlenme.',
+    narrative: 'Deplasman otobüsü hazır — haritada 12 saat var. Erken çıkıp sahaya alışırsan yorulursun ama hazır olursun; konforlu planlarsan takım dinç ama hazırlık zayıf.',
     props: ['🚌', '🗺️', '💤'],
-    choiceA: { icon: '⏰', flavor: 'Hemen yola çık', scene: 'choice-rush' },
-    choiceB: { icon: '🏨', flavor: 'Erken git, dinlen', scene: 'choice-rest' },
+    choiceA: { icon: '⏰', flavor: 'Erken çık, sahaya alış', scene: 'choice-rush' },
+    choiceB: { icon: '🏨', flavor: 'Konforlu yolculuk', scene: 'choice-rest' },
   },
   evt_doktor: {
     scene: 'clinic',
@@ -298,17 +298,17 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
   evt_yedek_kaleci: {
     scene: 'gk-sub',
     atmosphere: 'Kaleci odası · iki eldiven',
-    narrative: 'Asıl kaleci dizini tutuyor. Yedek kaleci ısınıyor ama tecrübesiz — risk alırsan moral düşer, hazırlık güven verir.',
+    narrative: 'Asıl kaleci dizini tutuyor. Sakat haliyle oynatırsan tecrübesi işe yarar ama sakatlık riski büyür; yedeği hazırlarsan güvenli ve takım sakin kalır.',
     props: ['🥅', '🧤', '🩹'],
-    choiceA: { icon: '🎲', flavor: 'Asıl kaleciyle devam', scene: 'choice-gamble' },
+    choiceA: { icon: '🎲', flavor: 'Sakat kaleciyle devam', scene: 'choice-gamble' },
     choiceB: { icon: '🧤', flavor: 'Yedek kaleci hazırla', scene: 'choice-gk' },
   },
   evt_havaalanı: {
     scene: 'plane-delay',
     atmosphere: 'Havaalanı · kalkış iptali',
-    narrative: 'Tabela yanıp sönüyor: uçuş gecikti. Takım yorgun bekliyor — özel uçak pahalı ama dinlenme sağlar.',
+    narrative: 'Tabela yanıp sönüyor: uçuş gecikti. Beklerken otelde taktik çalışırsın — sıkıcı ama hazırlık sağlar; özel uçak pahalı ama takımı dinlendirir.',
     props: ['✈️', '⏳', '🛄'],
-    choiceA: { icon: '😤', flavor: 'Bekle', scene: 'choice-wait' },
+    choiceA: { icon: '😤', flavor: 'Bekle, taktik çalış', scene: 'choice-wait' },
     choiceB: { icon: '🛩️', flavor: 'Özel uçak kirala', scene: 'choice-vip' },
   },
   evt_derbi: {
@@ -410,9 +410,9 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
   evt_hakem_korkusu: {
     scene: 'ref-whistle',
     atmosphere: 'Hakem odası · sert kart geçmişi',
-    narrative: 'Maçın hakemi kart rekoruyla ünlü. Oyuncular düdük sesinden çekiniyor — korku yayılır veya analiz güven verir.',
+    narrative: 'Maçın hakemi kart rekoruyla ünlü. Oyuncular düdükten çekiniyor — sakin kalıp temkinli oynarsan moral korunur; hakemi analiz edersen avantaj ama tedirginlik artar.',
     props: ['🟨', '📋', '😰'],
-    choiceA: { icon: '😨', flavor: 'Korkuyu kabul et', scene: 'choice-fear' },
+    choiceA: { icon: '😌', flavor: 'Sakin kal, temkinli oyna', scene: 'choice-fear' },
     choiceB: { icon: '📊', flavor: 'Hakem analizi yap', scene: 'choice-study' },
   },
   evt_eksik_kadro: {
@@ -458,7 +458,7 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
   evt_legend_ziyaret: {
     scene: 'star-visit',
     atmosphere: 'Antrenman · efsane sahadan',
-    narrative: 'Kulüp efsanesi sürpriz ziyarette. Gençler autograf peşinde — dinlemek ruhu ateşler, odak antrenmanı korur.',
+    narrative: 'Kulüp efsanesi sürpriz ziyarette. Gençler imza peşinde — dinlemek ruhu ateşler, odak antrenmanı korur.',
     props: ['⭐', '👟', '🏆'],
     choiceA: { icon: '🌟', flavor: 'Efsaneyi dinle', scene: 'choice-star' },
     choiceB: { icon: '⚽', flavor: 'Antrenmana dön', scene: 'choice-ball' },

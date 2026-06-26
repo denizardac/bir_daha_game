@@ -49,7 +49,7 @@ const POOL: PlayerTemplate[] = [
   { name: 'Tolga Şahin', rating: 72, position: 'STP', rarity: 'iyi', tags: ['GÜÇLÜ', 'YERLİ'] },
   { name: 'Diego Ramos', rating: 79, position: 'STP', rarity: 'iyi', tags: ['GÜÇLÜ'] },
   { name: 'Serkan Öztürk', rating: 83, position: 'STP', rarity: 'güçlü', tags: ['GÜÇLÜ', 'LİDER'] },
-  { name: 'Ahmet Kaya', rating: 86, position: 'STP', rarity: 'güçlü', tags: ['DAYANIKLI', 'YERLİ'] },
+  { name: 'Ahmet Söyüncüoğlu', rating: 86, position: 'STP', rarity: 'güçlü', tags: ['DAYANIKLI', 'YERLİ'] },
 
   // Orta saha
   { name: 'Deniz Acar', rating: 62, position: 'OS', rarity: 'normal', tags: [] },
@@ -241,29 +241,61 @@ function pickNickname(i: number, pos: Position, rating: number): string | null {
   return pool[hashMix(i, 89) % pool.length]!;
 }
 
+/**
+ * Gerçek oyunculardan esinlenen, abartılmış "varyant" soyisimler — kimlik
+ * hissi ve mizah katar (ör. Arda Güler → Güleroğulları). Üretici bazı kartlara
+ * bunları atayarak isim çeşitliliğini artırır. Hiçbiri birebir gerçek isim değil.
+ */
+const VARIANT_LAST = [
+  'Güleroğulları', 'Söyüncüoğlu', 'Çalhanlıoğlu', 'Yılmazcan', 'Demiralpaslan',
+  'Kökçüoğlu', 'Ünderoğlu', 'Akgündüzhan', 'Tadıcıoğlu', 'Kabakçılar',
+  'Yıldızhanlı', 'Aktürkoğlu', 'Kahveciler', 'Müldüroğlu', 'Özcanlar',
+  'Sarıaslanoğlu', 'Bardakçıoğlu', 'Karaoğulları', 'Toprakhan', 'Şenoğulları',
+  'Kadıoğulları', 'Yazıcıoğlu', 'Demirören', 'Kuyucuoğlu', 'Çakıroğulları',
+  'Bayraktaroğlu', 'Şahinkaya', 'Yağmurdereli', 'Özbayraktar', 'Tosunzade',
+  'Kılıçarslan', 'Erdoğdular', 'Güneşoğulları', 'Aydoğanlar', 'Karabulutoğlu',
+];
+
 function generateExtraPlayers(): PlayerCard[] {
   const first = [
     'Emre', 'Can', 'Burak', 'Deniz', 'Kaan', 'Arda', 'Oğuz', 'Selim', 'Mert', 'Tolga',
     'Barış', 'Efe', 'Hakan', 'Volkan', 'Umut', 'Furkan', 'Gökhan', 'Sinan', 'Levent', 'Tuncay',
+    'Yusuf', 'Eren', 'Berke', 'Mehmet', 'Ali', 'Ahmet', 'Doruk', 'Çağrı', 'Onur', 'Kerem',
+    'Atakan', 'Yiğit', 'Halil', 'İsmail', 'Bora', 'Cenk', 'Sarp', 'Tunç', 'Poyraz', 'Alperen',
     'Marco', 'Luca', 'Victor', 'James', 'Tyler', 'Diego', 'Carlos', 'Rafael', 'Bolt', 'Flash',
     'Nikolai', 'Sven', 'Amir', 'João', 'Pierre', 'Kenji', 'Omar', 'Felix', 'Ivan', 'Noah',
+    'Mateo', 'Lucas', 'Hugo', 'Leon', 'Mads', 'Youssef', 'Dimitri', 'Andrés', 'Marek', 'Sergei',
+    'Kai', 'Bruno', 'Aleksander', 'Giorgio', 'Tariq', 'Emeka', 'Hiro', 'Rúben', 'Mohammed', 'Stefan',
+    'Berkay', 'Tunahan', 'Emircan', 'Kuzey', 'Ege', 'Demir', 'Yaman', 'Toprak', 'Aras', 'Kayra',
+    'Mauro', 'Diogo', 'Nuno', 'Karim', 'Ousmane', 'Vinícius', 'Lautaro', 'Federico', 'Matthijs', 'Joško',
   ];
   const last = [
     'Yılmaz', 'Demir', 'Kaya', 'Acar', 'Koç', 'Şahin', 'Polat', 'Taş', 'Kurt', 'Aktaş',
+    'Aydın', 'Çelik', 'Arslan', 'Doğan', 'Yıldız', 'Öztürk', 'Erdem', 'Bulut', 'Korkmaz', 'Güneş',
     'Silva', 'Costa', 'Brooks', 'Ramos', 'Mensah', 'Kane', 'Moretti', 'Fernández', 'Okonkwo', 'Adeyemi',
     'Novak', 'Larsen', 'Haddad', 'Santos', 'Dupont', 'Tanaka', 'Hassan', 'Müller', 'Petrov', 'Reed',
+    'Vidović', 'Andersson', 'Lindholm', 'Bianchi', 'Conti', 'Nowak', 'Sørensen', 'Diallo', 'Traoré', 'Bekele',
+    'Schmidt', 'Almeida', 'Pereira', 'Marchetti', 'Kovač', 'Vasilev', 'Nakamura', 'Park', 'Rahman', 'Oliveira',
+    'Aydoğan', 'Şimşek', 'Yavuz', 'Aslantürk', 'Çakır', 'Toprak', 'Güler', 'Eren', 'Sönmez', 'Karadağ',
+    'Mbappi', 'Haalund', 'Rodrigues', 'Bellinger', 'Sakaroğlu', 'Fodenli', 'Wirtsel', 'Musyala', 'Gündoğdu', 'Vinicius',
   ];
   const out: PlayerCard[] = [];
-  for (let i = 0; i < 80; i++) {
+  const COUNT = 150;
+  for (let i = 0; i < COUNT; i++) {
     const rating = ratingFromIndex(i);
     const pos = PROC_POSITIONS[i % PROC_POSITIONS.length]!;
     const fi = hashMix(i, 3) % first.length;
-    const li = (hashMix(i, 7) + Math.floor(i / first.length)) % last.length;
+    // Bazı kartlara (≈%18) gerçek-oyuncu-varyantı soyisim ver; geri kalanı normal havuzdan
+    const useVariant = hashMix(i, 31) % 100 < 18;
+    const li = useVariant
+      ? hashMix(i, 7) % VARIANT_LAST.length
+      : (hashMix(i, 7) + Math.floor(i / first.length)) % last.length;
+    const surname = useVariant ? VARIANT_LAST[li]! : last[li]!;
     const nick = pickNickname(i, pos, rating);
-    let name = `${first[fi]} ${last[li]}`;
+    let name = `${first[fi]} ${surname}`;
     if (nick) {
-      name = `${first[fi]} "${nick}" ${last[li]}`;
-    } else if (hashMix(i, 59) % 100 < 12) {
+      name = `${first[fi]} "${nick}" ${surname}`;
+    } else if (!useVariant && hashMix(i, 59) % 100 < 12) {
       name = `${name} ${String.fromCharCode(65 + (i % 26))}.`;
     }
     out.push(makePlayer({

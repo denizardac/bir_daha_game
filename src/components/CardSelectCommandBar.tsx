@@ -20,7 +20,6 @@ interface Props {
   rerollsRemaining?: number;
 }
 
-/** Kart seçim — moral (sol) + tur aksiyonları (sağ) tek şerit */
 export function CardSelectCommandBar({
   morale,
   pickMode,
@@ -29,11 +28,12 @@ export function CardSelectCommandBar({
   title,
   subtitle,
   actions,
-  activeSynergies = [],
-  nearSynergies = [],
   rerollsRemaining = 0,
 }: Props) {
   const fx = getMoraleEffect(morale);
+  const turnKicker = title.toLocaleLowerCase('tr-TR').includes('ikisinden')
+    ? 'Bu Tur - Birini Seç'
+    : title;
 
   return (
     <div
@@ -57,6 +57,7 @@ export function CardSelectCommandBar({
             <span className="card-select-moral-fx-label">maç gücü</span>
           </div>
         </div>
+
         <div className="card-select-command-tips">
           {MORALE_CHANGE_TIPS.map((t) => (
             <HoverTip key={t.label} tip={t.tip} placement="bottom" className="card-select-tip-wrap">
@@ -68,87 +69,54 @@ export function CardSelectCommandBar({
             </HoverTip>
           ))}
         </div>
-        <div className="card-select-synergy-row">
-          <span className="card-select-synergy-label">
-            {activeSynergies.length > 0 ? 'Aktif sinerjiler' : 'Sinerji durumu'}
-          </span>
-          <div className="card-select-synergy-chips">
-            {activeSynergies.length > 0 ? (
-              activeSynergies.map((s) => (
-                <HoverTip key={s.id} tip={s.description} className="card-select-synergy-wrap" placement="bottom">
-                  <span className="card-select-synergy-chip card-select-synergy-chip--active">
-                    <span aria-hidden>{s.icon}</span>
-                    <span>{s.name}</span>
-                  </span>
-                </HoverTip>
-              ))
-            ) : nearSynergies.length > 0 ? (
-              nearSynergies.map(({ synergy, progress }) => (
-                <HoverTip
-                  key={synergy.id}
-                  tip={`${synergy.description}\nİlerleme: ${progress.current}/${progress.required}${progress.note ? `\n${progress.note}` : ''}`}
-                  className="card-select-synergy-wrap"
-                  placement="bottom"
-                >
-                  <span className="card-select-synergy-chip card-select-synergy-chip--near">
-                    <span aria-hidden>{synergy.icon}</span>
-                    <span>{synergy.name}</span>
-                    <span className="card-select-synergy-progress">{progress.current}/{progress.required}</span>
-                  </span>
-                </HoverTip>
-              ))
-            ) : (
-              <span className="card-select-synergy-empty">Henüz aktif sinerji yok — aynı tag&apos;leri topla</span>
-            )}
-          </div>
-        </div>
       </div>
 
-      <div className="card-select-command-divider" aria-hidden />
+      <section className="card-select-turn-card" aria-label={turnKicker}>
+        <div className="card-select-turn-kicker">
+          <span className="card-select-turn-dot" aria-hidden />
+          <span>{turnKicker}</span>
+        </div>
 
-      <div className="card-select-command-right">
         {trainingAvailable && (
-          <div className="card-pick-mode-switch" role="group" aria-label="Tur seçimi">
-            <button
-              type="button"
-              className={`card-pick-mode-btn ${pickMode === 'cards' ? 'card-pick-mode-btn--active' : ''}`}
-              onClick={() => onPickModeChange('cards')}
-            >
-              <span className="card-pick-mode-btn-icon" aria-hidden>🃏</span>
-              <span className="card-pick-mode-btn-text">Oyuncu kartı seç</span>
-            </button>
-            <button
-              type="button"
-              className={`card-pick-mode-btn ${pickMode === 'training' ? 'card-pick-mode-btn--active' : ''}`}
-              onClick={() => onPickModeChange('training')}
-            >
-              <span className="card-pick-mode-btn-icon" aria-hidden>🎓</span>
-              <span className="card-pick-mode-btn-text">Özel antrenman</span>
-            </button>
+          <div className="card-pick-mode-block">
+            <div className="card-pick-mode-switch card-pick-mode-switch--tabs" role="group" aria-label="Tur seçimi">
+              <button
+                type="button"
+                className={`card-pick-mode-btn card-pick-mode-btn--tab card-pick-mode-btn--cards ${pickMode === 'cards' ? 'card-pick-mode-btn--active' : ''}`}
+                onClick={() => onPickModeChange('cards')}
+              >
+                <span className="card-pick-mode-btn-icon" aria-hidden>🃏</span>
+                <span className="card-pick-mode-btn-copy">
+                  <span className="card-pick-mode-btn-text">Oyuncu Kartı</span>
+                  <span className="card-pick-mode-btn-desc">3 tekliften birini kadroya al</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className={`card-pick-mode-btn card-pick-mode-btn--tab card-pick-mode-btn--training ${pickMode === 'training' ? 'card-pick-mode-btn--active' : ''}`}
+                onClick={() => onPickModeChange('training')}
+              >
+                <span className="card-pick-mode-btn-icon" aria-hidden>🏋️</span>
+                <span className="card-pick-mode-btn-copy">
+                  <span className="card-pick-mode-btn-text">Antrenman</span>
+                  <span className="card-pick-mode-btn-desc">Bir oyuncuya tag kazandır</span>
+                </span>
+              </button>
+            </div>
           </div>
         )}
 
-        <div className="card-select-command-pick-block">
-          <h2 className="card-pick-title card-pick-title--inline">{title}</h2>
-          <p className="card-pick-subtitle card-pick-subtitle--inline">{subtitle}</p>
-          {trainingAvailable && (
-            <p className={`card-pick-mode-banner ${pickMode === 'training' ? 'card-pick-mode-banner--training' : 'card-pick-mode-banner--cards'}`}>
-              {pickMode === 'training'
-                ? 'Antrenman modu aktif — kartlar kilitli, bir oyuncuya nitelik ekleyeceksin.'
-                : 'Kart modu aktif — antrenman için yukarıdaki sekmeye geç.'}
-            </p>
-          )}
-        </div>
+        <p className="card-select-turn-summary">{subtitle}</p>
 
-        <div className="card-select-command-actions">
-          <div className="card-pick-reroll-hint-bar" title="Her kartın sağ üstündeki 🔄 ile tek tek yenile">
-            <span className={`card-pick-reroll-count ${rerollsRemaining <= 0 ? 'card-pick-reroll-count--empty' : ''}`}>
-              🔄 {rerollsRemaining} yenileme hakkı
-            </span>
-            <span className="card-pick-reroll-tip">Kart başına yenile — sağ üst 🔄</span>
-          </div>
-          {actions}
+        <div className="card-select-turn-reroll" title="Kartların sağ üstündeki yenileme ikonlarıyla teklifleri tek tek değiştirebilirsin">
+          <span aria-hidden>🔄</span>
+          <strong>{rerollsRemaining}</strong>
+          <span>yenileme hakkı</span>
         </div>
+      </section>
+
+      <div className="card-select-command-actions">
+        {actions}
       </div>
     </div>
   );

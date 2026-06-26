@@ -33,7 +33,10 @@ export function GameHeader({ round, maxRounds, score, streak, timerSeconds = 20,
         </div>
         <div className="flex flex-1 flex-wrap items-center justify-center gap-3 text-base font-bold">
           <span className="game-header-stat rounded-lg bg-neutral-900 px-3 py-1">Round {round}/{maxRounds}</span>
-          <span className="game-header-stat">Skor {formatScore(score)}</span>
+          <span className="game-header-score">
+            <span className="game-header-score-label">SKOR</span>
+            <span className="game-header-score-value">{formatScore(score)}</span>
+          </span>
           <span className="game-header-stat text-amber-400">Seri {streak}</span>
           <MatchHistoryStrip />
         </div>

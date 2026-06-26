@@ -48,7 +48,7 @@ function DotProgress({ current, required }: { current: number; required: number 
 
 function ActiveSynergyTile({ synergy }: { synergy: SynergyDefinition }) {
   return (
-    <HoverTip tip={`${synergy.description}\n\n${getSynergyBenefitText(synergy)}`} className="syn-tile-wrap" placement="left">
+    <HoverTip tip={`${synergy.description}\n\n${getSynergyBenefitText(synergy)}`} className="syn-tile-wrap" placement="right">
     <div className="syn-tile syn-tile--active">
       <ProgressRing pct={100} icon={synergy.icon} active />
       <div className="syn-tile-body">
@@ -84,7 +84,7 @@ function NearSynergyTile({
   const tip = `${synergy.description}\n\n${getSynergyBenefitText(synergy)}${note ? `\n\n${note}` : ''}${need > 0 ? `\n\nAçmak için: ${need} eksik` : ''}${offerHint ? `\n\n${offerHint}` : ''}`;
 
   return (
-    <HoverTip tip={tip} className="syn-tile-wrap" placement="left">
+    <HoverTip tip={tip} className="syn-tile-wrap" placement="right">
       <div className={`syn-tile syn-tile--near ${almost ? 'syn-tile--almost' : ''}`}>
         <ProgressRing pct={pct} icon={synergy.icon} />
         <div className="syn-tile-body">
@@ -110,7 +110,7 @@ function NearSynergyTile({
 
 function TagChip({ tag, count }: { tag: Tag; count: number }) {
   return (
-    <HoverTip tip={TAG_DESCRIPTIONS[tag]} className="syn-tag-chip-wrap" placement="left">
+    <HoverTip tip={TAG_DESCRIPTIONS[tag]} className="syn-tag-chip-wrap" placement="right">
       <span className="syn-tag-chip">
         <span className="syn-tag-icon" aria-hidden>{TAG_ICONS[tag]}</span>
         <span className="syn-tag-label">{tag}</span>

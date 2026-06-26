@@ -43,7 +43,7 @@ export function LeaderboardScreen() {
   }, [tab, remote]);
 
   const list = remote && remoteList !== null ? remoteList : localLists[tab];
-  const labels: Record<Tab, string> = { daily: 'Günlük', weekly: 'Haftalık', allTime: 'All-Time', flawless: 'Namağlup' };
+  const labels: Record<Tab, string> = { daily: 'Günlük', weekly: 'Haftalık', allTime: 'Tüm Zamanlar', flawless: 'Namağlup' };
 
   return (
     <div className="game-shell min-h-screen p-6">
