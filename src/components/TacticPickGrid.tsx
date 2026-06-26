@@ -3,17 +3,20 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { TacticCard } from '@/components/TacticCard';
 import { TacticBoardVisual } from '@/components/TacticBoardVisual';
-import { getTacticCategory } from '@/data/tactics';
+import { LineupPreviewCenterTrigger, LineupPreviewModal } from '@/components/LineupPreview';
+import { getTacticCategory, getTacticEffect } from '@/data/tactics';
 import { playSound } from '@/utils/sound';
 import type { ActiveTactic, GameCard, PlayerCard, TacticCard as TacticCardType } from '@/types';
 import { isTacticCard } from '@/types';
 import type { TacticDraft } from '@/engine/runPersistence';
+import type { ManualLineup } from '@/engine/lineupPreview';
 
 interface Props {
   offers: GameCard[];
   squad: PlayerCard[];
   activeTactics: ActiveTactic[];
   draft: TacticDraft;
+  manualLineup?: ManualLineup;
   sound: boolean;
   onSelect: (card: GameCard) => void;
   onConfirm: () => void;
@@ -28,6 +31,7 @@ function TacticExpandModal({
   squad,
   activeTactics,
   selected,
+  canDeselect,
   sound,
   onSelect,
   onClose,
@@ -36,6 +40,7 @@ function TacticExpandModal({
   squad: PlayerCard[];
   activeTactics: ActiveTactic[];
   selected: boolean;
+  canDeselect: boolean;
   sound: boolean;
   onSelect: () => void;
   onClose: () => void;
@@ -103,7 +108,7 @@ function TacticExpandModal({
               onClose();
             }}
           >
-            {selected ? '✓ Seçili' : 'Bu kartı seç'}
+            {selected && canDeselect ? 'Seçimi kaldır' : selected ? '✓ Seçili' : 'Bu kartı seç'}
           </button>
         </div>
       </div>
@@ -115,11 +120,13 @@ function TacticExpandModal({
 function TacticPickCard({
   card,
   selected,
+  canDeselect,
   onSelect,
   onExpand,
 }: {
   card: TacticCardType;
   selected: boolean;
+  canDeselect: boolean;
   onSelect: () => void;
   onExpand: () => void;
 }) {
@@ -157,7 +164,7 @@ function TacticPickCard({
           onSelect();
         }}
       >
-        {selected ? '✓ Seçildi' : 'Seç'}
+        {selected && canDeselect ? 'Seçimi kaldır' : selected ? '✓ Seçildi' : 'Seç'}
       </button>
     </article>
   );
@@ -192,8 +199,9 @@ function TacticPickRow({
   );
 }
 
-export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onSelect, onConfirm, onRerollFormation, onRerollSystem, formationRerollUsed = false, systemRerollUsed = false }: Props) {
+export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLineup = {}, sound, onSelect, onConfirm, onRerollFormation, onRerollSystem, formationRerollUsed = false, systemRerollUsed = false }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [lineupOpen, setLineupOpen] = useState(false);
   const tactics = offers.filter(isTacticCard);
   const formations = tactics.filter((o) => getTacticCategory(o.id) === 'formasyon');
   const systems = tactics.filter((o) => getTacticCategory(o.id) === 'sistem');
@@ -206,6 +214,17 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onS
   const ready = optional ? true : Boolean(draft.formationId && draft.systemId);
   const changed = Boolean(draft.formationId || draft.systemId);
   const expanded = expandedId ? tactics.find((t) => t.id === expandedId) : undefined;
+  const previewTactics = [
+    ...activeTactics.filter((t) => {
+      const cat = getTacticCategory(t.id);
+      if (draft.formationId && cat === 'formasyon') return false;
+      if (draft.systemId && cat === 'sistem') return false;
+      return true;
+    }),
+    ...(draft.formationId ? [getTacticEffect(draft.formationId)] : []),
+    ...(draft.systemId ? [getTacticEffect(draft.systemId)] : []),
+  ];
+  const previewManualLineup = draft.formationId ? {} : manualLineup ?? {};
 
   return (
     <div className="tactic-pick-stage">
@@ -214,11 +233,27 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onS
           <p className="tactic-pick-stage-kicker">Taktik günü · maç yok</p>
           <p className="tactic-pick-stage-sub">
             {optional
-              ? 'İstersen formasyon/sistem değiştir — değiştirmezsen mevcut taktiğin kalır · +35 puan · +8 moral'
-              : 'Üstten bir formasyon, alttan bir oyun sistemi seç · +35 puan · +8 moral'}
+              ? 'İstersen formasyon/sistem değiştir — değiştirmezsen mevcut taktiğin kalır · seçim sonrası tur ödülü eklenir'
+              : 'Üstten bir formasyon, alttan bir oyun sistemi seç · seçim sonrası tur ödülü eklenir'}
           </p>
         </div>
+        <LineupPreviewCenterTrigger
+          squad={squad}
+          activeTactics={previewTactics}
+          manualLineup={previewManualLineup}
+          compact
+          className="lineup-compact-btn--tactic"
+          onOpen={() => setLineupOpen(true)}
+        />
       </header>
+
+      <LineupPreviewModal
+        open={lineupOpen}
+        onClose={() => setLineupOpen(false)}
+        squad={squad}
+        activeTactics={previewTactics}
+        manualLineup={previewManualLineup}
+      />
 
       <div className="tactic-pick-stage-grid">
         <TacticPickRow
@@ -242,6 +277,7 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onS
               key={card.id}
               card={card}
               selected={draft.formationId === card.id}
+              canDeselect={optional}
               onExpand={() => setExpandedId(card.id)}
               onSelect={() => { playSound('tick', sound); onSelect(card); }}
             />
@@ -269,6 +305,7 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onS
               key={card.id}
               card={card}
               selected={draft.systemId === card.id}
+              canDeselect={optional}
               onExpand={() => setExpandedId(card.id)}
               onSelect={() => { playSound('tick', sound); onSelect(card); }}
             />
@@ -309,6 +346,7 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, sound, onS
             (getTacticCategory(expanded.id) === 'formasyon' && draft.formationId === expanded.id)
             || (getTacticCategory(expanded.id) === 'sistem' && draft.systemId === expanded.id)
           }
+          canDeselect={optional}
           sound={sound}
           onSelect={() => onSelect(expanded)}
           onClose={() => setExpandedId(null)}

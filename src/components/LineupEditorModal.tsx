@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { HoverTip } from '@/components/HoverTip';
+import { LineupPlayerHoverCard, getLineupPlayerHoverAria } from '@/components/LineupPlayerHoverCard';
 import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
 import { getPlayablePositions, getSlotFitTier } from '@/data/positionFlexibility';
 import {
@@ -146,13 +147,17 @@ export function LineupEditorModal({
     const onField = from !== 'bench';
     const slot = onField ? lineup[from as number]?.slot : undefined;
     const tier = slot ? fitClass(player, slot) : 'ideal';
-    const traitLine = player.tags.length ? player.tags.join(' · ') : 'Özel nitelik yok';
-    const fitLabel = !onField ? 'Yedek' : tier === 'ideal' ? 'Ana mevki' : tier === 'flex' ? 'Yan mevki' : 'Zorlama mevki';
-    const tipText = `${player.name} · ${player.position} · ${player.currentRating}\n${fitLabel}\nNitelikler: ${traitLine}`;
+    const hoverFit = onField ? tier : 'bench';
     const dragging = dragSource?.player.id === player.id;
     return (
+      <HoverTip
+        tip={<LineupPlayerHoverCard player={player} slotLabel={slot?.label} fit={hoverFit} />}
+        ariaLabel={getLineupPlayerHoverAria(player, slot?.label, hoverFit)}
+        placement="auto"
+        className="le-chip-hover"
+        stopPropagation={false}
+      >
       <motion.div
-        title={tipText}
         className={`le-chip le-chip--${onField ? `fit-${tier}` : 'bench'} ${isGk ? 'le-chip--gk' : ''} ${highlightId === player.id ? 'le-chip--highlight' : ''} ${dragging ? 'le-chip--dragging' : ''}`}
         drag
         dragSnapToOrigin
@@ -176,6 +181,7 @@ export function LineupEditorModal({
         <span className="le-chip-name">{player.name.split(' ').pop()}</span>
         <span className="le-chip-badge">{POSITION_BADGE[player.position]}</span>
       </motion.div>
+      </HoverTip>
     );
   }
 
@@ -361,7 +367,15 @@ export function LineupEditorModal({
         </div>
 
         <div className="le-foot">
-          <button type="button" className="btn-secondary le-reset" onClick={onReset}>↺ Otomatiğe dön</button>
+          <button
+            type="button"
+            className="le-reset-prominent"
+            onClick={onReset}
+            title="Sistemin önerdiği en uygun yerleşime döner"
+          >
+            <span className="le-reset-prominent-icon" aria-hidden>↺</span>
+            <span className="le-reset-prominent-text">Optimal pozisyonlara dön</span>
+          </button>
           <button type="button" className="btn-primary le-confirm" onClick={onConfirm}>Onayla ve devam</button>
         </div>
       </div>

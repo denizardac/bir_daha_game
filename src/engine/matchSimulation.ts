@@ -11,10 +11,12 @@ import {
   tacticDefenseMultiplier,
 } from '@/engine/matchPower';
 import { generateMatchEvents } from '@/engine/matchEvents';
+import { getTacticScoreHighlights } from '@/engine/tacticRules';
 import {
   attackTagMultiplier,
   defenseTagMultiplier,
   moraleStabilityBonus,
+  riskTagStrengthPenalty,
 } from '@/engine/tagMechanics';
 import { createRng, generateOpponent, seedVariation } from '@/engine/seed';
 import type { ActiveTactic, MatchHighlight, MatchResult, PlayerCard } from '@/types';
@@ -70,15 +72,8 @@ function squadStrength(
   const moraleFactor = 0.75 + (morale / 100) * 0.4 + moraleStabilityBonus(squad, morale);
   const ratingMult = synergyRatingMultiplier(synergies);
   const positionFit = positionFitMultiplier(squad, tactics);
-  return avg * fill * moraleFactor * ratingMult * positionFit;
-}
-
-function tekForvetMultiplier(squad: PlayerCard[], tactics: ActiveTactic[]): number {
-  if (!tactics.some((t) => t.id === 'tactic_tekli_forvet')) return 1;
-  const sfPlayers = squad.filter((p) => p.position === 'SF');
-  const hasFinisherSf = sfPlayers.some((p) => p.tags.includes('FİNİŞÖR'));
-  if (sfPlayers.length === 1 && hasFinisherSf) return 1.24;
-  return 0.92;
+  const riskPenalty = riskTagStrengthPenalty(squad, morale);
+  return avg * fill * moraleFactor * ratingMult * positionFit * riskPenalty;
 }
 
 function attackPower(
@@ -87,13 +82,9 @@ function attackPower(
   ourStrength: number,
   behindInMatch: boolean,
 ): number {
-  const attackTactic = tacticAttackMultiplier(tactics);
-  const tacticFast = tactics.reduce((s, t) => s + (t.fastBonus ?? 0) / 100, 0);
-  const tacticTech = tactics.reduce((s, t) => s + (t.technicalBonus ?? 0) / 50, 0);
+  const attackTactic = tacticAttackMultiplier(tactics, squad);
   return (ourStrength / 62)
     * attackTagMultiplier(squad, behindInMatch)
-    * (1 + tacticFast + tacticTech * 0.5)
-    * tekForvetMultiplier(squad, tactics)
     * attackTactic;
 }
 
@@ -102,7 +93,7 @@ function defensePower(
   tactics: ActiveTactic[],
   synergies: ReturnType<typeof getActiveSynergies>,
 ): number {
-  const defenseTactic = tacticDefenseMultiplier(tactics);
+  const defenseTactic = tacticDefenseMultiplier(tactics, squad);
   const cleanSheetBoost = synergies.reduce((s, syn) => s + (syn.cleanSheetDefenseBonus ?? 0), 0);
   return defenseTactic * defenseTagMultiplier(squad) * (1 + cleanSheetBoost * 0.5);
 }
@@ -217,6 +208,7 @@ export function simulateMatch(
       highlights.push({ text: `${synergy.icon} ${synergy.name} pasif`, points: synergy.perRoundBonus });
     }
   }
+  highlights.push(...getTacticScoreHighlights({ outcome, goalsFor, goalsAgainst, cleanSheet }, starters, activeTactics));
   if (cleanSheet && outcome === 'win') highlights.push({ text: '🛡️ MÜKEMMEL SAVUNMA', points: 100 });
   // Savunma odaklı taktikler kazanamasa bile değer üretsin: gol yemeden biten
   // beraberlik/maç da puan verir (Catenaccio / Otobüsü Çek tuzak olmaktan çıkar).

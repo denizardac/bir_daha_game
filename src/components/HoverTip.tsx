@@ -3,16 +3,18 @@ import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 
 interface Props {
-  tip: string;
+  tip: ReactNode;
   children: ReactNode;
   className?: string;
   placement?: 'top' | 'bottom' | 'left' | 'right' | 'auto';
+  ariaLabel?: string;
+  stopPropagation?: boolean;
 }
 
 type TipPlace = 'top' | 'bottom' | 'left' | 'right';
 
 /** Hover / focus — viewport içinde kalır (portal + fixed) */
-export function HoverTip({ tip, children, className = '', placement = 'auto' }: Props) {
+export function HoverTip({ tip, children, className = '', placement = 'auto', ariaLabel, stopPropagation = true }: Props) {
   const triggerRef = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
   const [pos, setPos] = useState<{ x: number; y: number; place: TipPlace } | null>(null);
@@ -72,19 +74,19 @@ export function HoverTip({ tip, children, className = '', placement = 'auto' }: 
         ref={triggerRef}
         className={`hover-tip ${className}`.trim()}
         tabIndex={0}
-        aria-label={tip}
+        aria-label={ariaLabel ?? (typeof tip === 'string' ? tip : undefined)}
         onMouseEnter={show}
         onMouseLeave={hide}
         onFocus={show}
         onBlur={hide}
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => { if (stopPropagation) e.stopPropagation(); }}
+        onMouseDown={(e) => { if (stopPropagation) e.stopPropagation(); }}
       >
         {children}
       </span>
 
       {visible && pos && createPortal(
-        <span
+        <div
           className={`hover-tip-popup hover-tip-popup--fixed hover-tip-popup--${pos.place}`}
           style={{
             left: pos.x,
@@ -101,7 +103,7 @@ export function HoverTip({ tip, children, className = '', placement = 'auto' }: 
           role="tooltip"
         >
           {tip}
-        </span>,
+        </div>,
         document.body,
       )}
     </>

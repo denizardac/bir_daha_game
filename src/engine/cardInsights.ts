@@ -127,15 +127,15 @@ function getPlayerTacticContributions(
   return activeTactics.map((tactic) => {
     const lines: string[] = [];
     if (tactic.fastBonus && card.tags.includes('HIZLI')) {
-      lines.push(`HIZLI bonusu: +${tactic.fastBonus} puan/maç`);
+      lines.push('Bu sistem HIZLI oyuncudan ekstra skor çıkarır');
     }
     if (tactic.technicalBonus && card.tags.includes('TEKNİK')) {
-      lines.push(`TEKNİK bonusu: +${tactic.technicalBonus} puan/maç`);
+      lines.push('Bu sistem TEKNİK oyuncudan ekstra skor çıkarır');
     }
     if (tactic.id === 'tactic_tekli_forvet') {
       const sfCount = getStartingEleven(simSquad, activeTactics).filter((p) => p.position === 'SF').length;
       if (card.position === 'SF' && card.tags.includes('FİNİŞÖR') && sfCount <= 2) {
-        lines.push(sfCount === 1 ? 'Tek forvet FİNİŞÖR — hücum +30%' : 'Forvet FİNİŞÖR — tek forvet şartına yakın');
+        lines.push(sfCount === 1 ? 'Tek forvet FİNİŞÖR — plan hazır' : 'Forvet FİNİŞÖR — tek forvet şartına yakın');
       }
     }
     if (!lines.length) {
@@ -188,23 +188,23 @@ export function getPlayerCardInsight(
 
 function getTacticWhyPick(card: TacticCard): string[] {
   const map: Record<string, string[]> = {
-    tactic_442: ['Risk almadan oyna', 'Savunma ve hücum dengeli', 'Acemi run için en güvenli formasyon'],
-    tactic_433_kontr: ['HIZLI kadrolarda patlar', 'Savunma güçlenir — zayıf kadrolarda ideal'],
-    tactic_352: ['Gol atmak istiyorsan', 'Baskılı oyun — savunma riski bilinçli tercih'],
-    tactic_532: ['Gol yememek öncelikse', 'Savunma duvarı — skor düşük kalabilir'],
-    tactic_4231: ['TEKNİK oyuncuların varsa', 'Modern oyun — orta saha kontrolü'],
-    tactic_343: ['Üç forvet + iki kanat oyuncusu varsa', 'En agresif formasyon — savunma açık kalır'],
-    tactic_diamond: ['Orta sahan kalabalık ve TEKNİK ise', 'Merkez kontrolü — kanat boşlukları riskli'],
-    tactic_yuksek_blok: ['Rakibi baskı altında tut', 'Gol yeme ihtimali azalır'],
-    tactic_topla_oyn: ['TEKNİK tag\'li oyunculara göre', 'Maç başına ekstra puan'],
-    tactic_direkt: ['HIZLI tag\'li oyunculara göre', 'Kontra ve sprint bonusu'],
+    tactic_442: ['Risk almadan oyna', 'Her hatta küçük stabil avantaj', 'Acemi run için en güvenli formasyon'],
+    tactic_433_kontr: ['Kanat ve forvet kadrolarında', 'Geniş alan açar', 'Arkada kontrollü risk bırakır'],
+    tactic_352: ['Orta saha + çift forvet kadrolarında', 'Baskılı oynar', 'Kanat arkası riskli'],
+    tactic_532: ['Zayıf kadroyu hayatta tut', 'Savunma duvarı kurar', 'Gol üretimi düşebilir'],
+    tactic_4231: ['OOS/OS kadrolara uygun', 'İki yönlü modern yapı', 'Dengeli maç planı'],
+    tactic_343: ['En yüksek risk/ödül', 'Üçlü hücumla patlar', 'Savunma açık kalır'],
+    tactic_diamond: ['Merkez oyuncuların güçlüyse', 'Kanatsız merkez kontrolü', 'Kadro uyumu önemli'],
+    tactic_yuksek_blok: ['HIZLI/SAVAŞÇI profili varsa', 'Galibiyet ve golleri ödüllendirir', 'Profil yoksa arkada boşluk'],
+    tactic_topla_oyn: ['TEKNİK tag\'li oyunculara göre', 'Pas planı skor üretir', 'Çok teknik kadro beraberliği bile değerli tutar'],
+    tactic_direkt: ['HIZLI tag\'li oyunculara göre', 'Direkt çıkışla ilk darbeyi arar'],
     tactic_rotasyon: ['Kadro yorgunluğundan korun', 'Performans düşüşü engellenir'],
-    tactic_tekli_forvet: ['Tek forvet FİNİŞÖR ise', 'Hücum odağı — forvete yüklenir'],
-    tactic_catenaccio: ['Skoru korumak istiyorsan', 'En güçlü savunma — gol atmak zorlaşır'],
-    tactic_gegenpress: ['HIZLI ve agresif kadrolarda', 'Hücum + hız bonusu', '⚠ Yüksek savunma çizgisi — geç gol riski'],
-    tactic_tiki_taka: ['TEKNİK oyuncuların çoksa', 'En yüksek teknik bonus', '⚠ Savunma açığı — gol yiyebilirsin'],
-    tactic_park_bus: ['Güçlü rakibe karşı skoru tut', 'Aşılmaz savunma', '⚠ Hücum neredeyse durur — gol atmak çok zor'],
-    tactic_kanat_bindirme: ['HIZLI bek/kanatların varsa', 'Kanatlardan akın bonusu', '⚠ Bekler öne çıkınca arkada boşluk'],
+    tactic_tekli_forvet: ['Tek forvet FİNİŞÖR ise', 'Her golü daha değerli yapar', 'Şart yoksa sistem kısırlaşır'],
+    tactic_catenaccio: ['Skoru korumak istiyorsan', 'Gol yememeyi ödüllendirir', 'Hücum üretimi kısılır'],
+    tactic_gegenpress: ['HIZLI + SAVAŞÇI/GÜÇLÜ kadrolarda', 'Zor kombo, güçlü ödül', 'Şart yoksa savunma kırılır'],
+    tactic_tiki_taka: ['TEKNİK oyuncuların çoksa', 'Pas ekonomisi kurar', 'Geçiş savunması riskli'],
+    tactic_park_bus: ['Güçlü rakibe karşı skoru tut', 'Gol yememeyi büyük ödüle çevirir', 'Hücum azalır'],
+    tactic_kanat_bindirme: ['HIZLI bek/kanatların varsa', 'Doğru mevkide HIZLI ister', 'Kanat profili yoksa arkada boşluk'],
     tactic_4411: ['Gölge forvet + golcü ikilin varsa', 'Dengeli, ikinci forvetli hücum'],
     tactic_3412: ['İki santrafor + 10 numara ile', 'Çok hücumcu', '⚠ Kanat savunması zayıf'],
     tactic_451: ['Gol yememek öncelikse', 'Beş orta saha — kalabalık merkez', '⚠ Tek forvet — gol kısır kalabilir'],
@@ -235,10 +235,18 @@ export function getTacticCardInsight(card: TacticCard, squad: PlayerCard[], acti
 export function getTacticEffectLines(card: TacticCard): string[] {
   const fx = getTacticEffect(card.id);
   const lines: string[] = [];
-  if (fx.attackMod) lines.push(`Hücum ${fx.attackMod > 0 ? '+' : ''}${fx.attackMod}%`);
-  if (fx.defenseMod) lines.push(`Savunma ${fx.defenseMod > 0 ? '+' : ''}${fx.defenseMod}%`);
-  if (fx.fastBonus) lines.push(`Her HIZLI +${fx.fastBonus} puan/maç`);
-  if (fx.technicalBonus) lines.push(`Her TEKNİK +${fx.technicalBonus} puan/maç`);
+  if (fx.attackMod && fx.attackMod > 0) lines.push('Gol bulma ihtimali artar');
+  if (fx.attackMod && fx.attackMod < 0) lines.push('Gol üretimi düşer');
+  if (fx.defenseMod && fx.defenseMod > 0) lines.push('Savunma direnci artar');
+  if (fx.defenseMod && fx.defenseMod < 0) lines.push('Savunma riski artar');
+  if (fx.fastBonus) lines.push('HIZLI oyuncular ekstra skor üretir');
+  if (fx.technicalBonus) lines.push('TEKNİK oyuncular ekstra skor üretir');
+  if (fx.perGoalBonus) lines.push('Goller ekstra puan getirir');
+  if (fx.perWinBonus) lines.push('Galibiyetler ekstra puan getirir');
+  if (fx.drawBonus) lines.push('Beraberlik bile değer kazanabilir');
+  if (fx.cleanSheetWinBonus || fx.cleanSheetDrawBonus) lines.push('Gol yememek ekstra puan getirir');
+  if (fx.firstGoalBonus) lines.push('İlk gol planı ödüllenir');
+  if (fx.squadSizeBonus) lines.push('Geniş kadro ödüllendirilir');
   if (card.id === 'tactic_442') return ['Güvenli denge', 'Her hat eşit'];
   if (card.id === 'tactic_rotasyon') return ['Yorgunluk koruması'];
   return lines.length ? lines : [card.effectSummary];

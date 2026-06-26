@@ -1,5 +1,11 @@
 import { getTacticEffect } from '@/data/tactics';
 import { FORMATION_SLOT_COUNTS } from '@/data/formations';
+import {
+  countFastWidePlayers,
+  hasSingleFinisherForward,
+  isGegenpressReady,
+  isHighPressReady,
+} from '@/engine/tacticRules';
 import type { PlayerCard, TacticCard } from '@/types';
 import type { Tag } from '@/types';
 
@@ -130,6 +136,8 @@ export function getTacticHeroCopy(card: TacticCard): { title: string; lines: str
 function relevantTagsForTactic(id: string): Tag[] {
   const fx = getTacticEffect(id);
   const tags: Tag[] = [];
+  if (id === 'tactic_yuksek_blok') return ['HIZLI', 'SAVAŞÇI'];
+  if (id === 'tactic_gegenpress') return ['HIZLI', 'SAVAŞÇI', 'GÜÇLÜ'];
   if (fx.fastBonus) tags.push('HIZLI');
   if (fx.technicalBonus) tags.push('TEKNİK');
   if (id === 'tactic_tekli_forvet') tags.push('FİNİŞÖR');
@@ -140,6 +148,8 @@ export function getTacticBeneficiaryPlayers(card: TacticCard, squad: PlayerCard[
   players: PlayerCard[];
   tag: Tag | null;
   label: string;
+  reason: string;
+  scope: 'players' | 'team';
 } {
   const tags = relevantTagsForTactic(card.id);
   const tag = tags[0] ?? null;
@@ -147,11 +157,13 @@ export function getTacticBeneficiaryPlayers(card: TacticCard, squad: PlayerCard[
   if (card.id === 'tactic_tekli_forvet') {
     const sfPlayers = squad.filter((p) => p.position === 'SF');
     const finisherSf = sfPlayers.filter((p) => p.tags.includes('FİNİŞÖR'));
-    if (sfPlayers.length === 1 && finisherSf.length === 1) {
+    if (hasSingleFinisherForward(squad)) {
       return {
         players: finisherSf.slice(0, limit),
         tag: 'FİNİŞÖR',
-        label: 'Tek forvet FİNİŞÖR — hücum +30%',
+        label: 'Tek forvet FİNİŞÖR — plan hazır',
+        reason: 'Tek forvet + FİNİŞÖR şartını sağlıyor',
+        scope: 'players',
       };
     }
     return {
@@ -159,7 +171,43 @@ export function getTacticBeneficiaryPlayers(card: TacticCard, squad: PlayerCard[
       tag: 'FİNİŞÖR',
       label: sfPlayers.length !== 1
         ? `${sfPlayers.length} forvet var — tek forvet şartı sağlanmıyor`
-        : 'Forvet FİNİŞÖR değil — hücum -15%',
+        : 'Forvet FİNİŞÖR değil — sistem kısır kalır',
+      reason: 'Sadece tek forvet FİNİŞÖR ise pozitif çalışır',
+      scope: finisherSf.length ? 'players' : 'team',
+    };
+  }
+
+  if (card.id === 'tactic_yuksek_blok') {
+    const players = squad.filter((p) => p.tags.includes('HIZLI') || p.tags.includes('SAVAŞÇI'));
+    return {
+      players: players.slice(0, limit),
+      tag: null,
+      label: isHighPressReady(squad) ? 'Baskı profili hazır' : 'Baskı profili eksik',
+      reason: 'HIZLI veya SAVAŞÇI oyuncular önde baskıyı taşır',
+      scope: players.length ? 'players' : 'team',
+    };
+  }
+
+  if (card.id === 'tactic_gegenpress') {
+    const players = squad.filter((p) => p.tags.includes('HIZLI') || p.tags.includes('SAVAŞÇI') || p.tags.includes('GÜÇLÜ'));
+    return {
+      players: players.slice(0, limit),
+      tag: null,
+      label: isGegenpressReady(squad) ? 'Pres kombosu hazır' : 'Pres kombosu eksik',
+      reason: 'HIZLI oyuncular ve fiziksel presçiler birlikte gerekir',
+      scope: players.length ? 'players' : 'team',
+    };
+  }
+
+  if (card.id === 'tactic_kanat_bindirme') {
+    const wide = new Set(['SLB', 'SÖB', 'SLK', 'SÖK']);
+    const players = squad.filter((p) => wide.has(p.position) && p.tags.includes('HIZLI'));
+    return {
+      players: players.slice(0, limit),
+      tag: 'HIZLI',
+      label: countFastWidePlayers(squad) > 0 ? `${players.length} HIZLI kanat/bek etkilenir` : 'HIZLI kanat/bek yok',
+      reason: 'Sadece bek ve kanattaki HIZLI oyuncular planı taşır',
+      scope: players.length ? 'players' : 'team',
     };
   }
 
@@ -171,6 +219,8 @@ export function getTacticBeneficiaryPlayers(card: TacticCard, squad: PlayerCard[
       label: players.length
         ? `${players.length} ${tag} oyuncu bu sistemden yararlanır`
         : `Kadroda ${tag} yok — bonus şimdilik pasif`,
+      reason: `${tag} tag'ine göre etkilenir`,
+      scope: players.length ? 'players' : 'team',
     };
   }
 
@@ -182,6 +232,8 @@ export function getTacticBeneficiaryPlayers(card: TacticCard, squad: PlayerCard[
       label: tired.length
         ? `${tired.length} yorgun oyuncu korunur — performans düşüşü yok`
         : 'Kadro rotasyonu aktif — yorgunluk cezası engellenir',
+      reason: 'GERİLEYEN / PERFORMANS DÜŞÜŞÜ tagleri hedeflenir',
+      scope: tired.length ? 'players' : 'team',
     };
   }
 
@@ -189,18 +241,20 @@ export function getTacticBeneficiaryPlayers(card: TacticCard, squad: PlayerCard[
     const fx = getTacticEffect(card.id);
     if ((fx.defenseMod ?? 0) > 10) {
       const defs = squad.filter((p) => ['KL', 'STP', 'SLB', 'SÖB', 'DOS'].includes(p.position));
-      return { players: defs.slice(0, limit), tag: null, label: 'Savunma hattı güçlenir' };
+      return { players: defs.slice(0, limit), tag: null, label: 'Savunma hattı güçlenir', reason: 'Kaleci, savunma ve DOS rolleri öncelikli etkilenir', scope: 'players' };
     }
     if ((fx.attackMod ?? 0) > 10) {
       const atk = squad.filter((p) => ['SLK', 'SÖK', 'OOS', 'SF'].includes(p.position));
-      return { players: atk.slice(0, limit), tag: null, label: 'Hücum hattı öne çıkar' };
+      return { players: atk.slice(0, limit), tag: null, label: 'Hücum hattı öne çıkar', reason: 'Kanat, OOS ve forvet rolleri öncelikli etkilenir', scope: 'players' };
     }
   }
 
   return {
-    players: squad.slice(0, Math.min(limit, 3)),
+    players: [],
     tag: null,
     label: 'Dengeli etki — tüm kadroya yayılır',
+    reason: 'Belirli oyuncu/tag hedefi yok; takım geneli mod uygulanır',
+    scope: 'team',
   };
 }
 

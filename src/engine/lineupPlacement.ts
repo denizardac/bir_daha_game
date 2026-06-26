@@ -330,6 +330,40 @@ function fillRemainingEmptySlots(ctx: PlacementCtx, squad: PlayerCard[]): void {
   }
 }
 
+function improveFieldCountByShiftingFlexiblePlayers(ctx: PlacementCtx, squad: PlayerCard[]): void {
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const used = assignedIds(ctx.assigned);
+    const benchCandidates = squad
+      .filter((p) => p.position !== 'KL' && !used.has(p.id))
+      .sort((a, b) => b.currentRating - a.currentRating);
+    const emptySlots = ctx.fieldIndices.filter((i) => !ctx.assigned[i] && !isLockedSlot(ctx, i));
+    if (!benchCandidates.length || !emptySlots.length) return;
+
+    for (const benchPlayer of benchCandidates) {
+      const targetSlots = playableSlotIndices(ctx, benchPlayer)
+        .filter((i) => ctx.assigned[i] && !isLockedSlot(ctx, i))
+        .sort((a, b) => flexRoleOrder(benchPlayer, ctx.slots[a]!) - flexRoleOrder(benchPlayer, ctx.slots[b]!));
+
+      for (const targetIdx of targetSlots) {
+        const occupant = ctx.assigned[targetIdx]!;
+        const relocationSlots = emptySlots
+          .filter((emptyIdx) => slotAcceptsPlayerForPlacement(occupant, ctx.slots[emptyIdx]!))
+          .sort((a, b) => flexRoleOrder(occupant, ctx.slots[a]!) - flexRoleOrder(occupant, ctx.slots[b]!));
+        const emptyIdx = relocationSlots[0];
+        if (emptyIdx === undefined) continue;
+
+        ctx.assigned[emptyIdx] = occupant;
+        ctx.assigned[targetIdx] = benchPlayer;
+        changed = true;
+        break;
+      }
+      if (changed) break;
+    }
+  }
+}
+
 export function assignFieldPlayers(ctx: PlacementCtx, squad: PlayerCard[]): void {
   const fieldPlayers = squad.filter((p) => p.position !== 'KL');
 
@@ -369,6 +403,7 @@ export function assignFieldPlayers(ctx: PlacementCtx, squad: PlayerCard[]): void
   }
 
   fillRemainingEmptySlots(ctx, squad);
+  improveFieldCountByShiftingFlexiblePlayers(ctx, squad);
 }
 
 export function assignPlayersByRules(

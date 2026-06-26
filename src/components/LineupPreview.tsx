@@ -1,23 +1,25 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { HoverTip } from '@/components/HoverTip';
+import { LineupPlayerHoverCard, getLineupPlayerHoverAria } from '@/components/LineupPlayerHoverCard';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { getPlayablePositions } from '@/data/positionFlexibility';
 import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
-import { getBenchExplanations, getSquadLineupSummary } from '@/engine/lineupPreview';
+import { getBenchExplanations, getSquadLineupSummary, type ManualLineup } from '@/engine/lineupPreview';
 import type { ActiveTactic, PlayerCard } from '@/types';
 import { formatLineupPlayerTip, formationSlotLabel, POSITION_BADGE } from '@/utils/positionStyle';
 
 interface Props {
   squad: PlayerCard[];
   activeTactics: ActiveTactic[];
+  manualLineup?: ManualLineup;
 }
 
 function clampPct(value: number, min = 10, max = 90) {
   return Math.min(max, Math.max(min, value));
 }
 
-function buildLineupPlayerTip(player: PlayerCard, slotCode: string, outOfPosition: boolean): string {
+export function buildLineupPlayerTip(player: PlayerCard, slotCode: string, outOfPosition: boolean): string {
   const playableBadges = getPlayablePositions(player).map((p) => POSITION_BADGE[p]).join(' · ');
   const tagLine =
     player.tags.length > 0
@@ -187,7 +189,8 @@ function LineupPitchContent({
               >
                 {slot.player ? (
                   <HoverTip
-                    tip={buildLineupPlayerTip(slot.player, slot.slot.label, slot.outOfPosition)}
+                    tip={<LineupPlayerHoverCard player={slot.player} slotLabel={slot.slot.label} fit={slot.outOfPosition ? 'flex' : 'ideal'} />}
+                    ariaLabel={getLineupPlayerHoverAria(slot.player, slot.slot.label, slot.outOfPosition ? 'flex' : 'ideal')}
                     placement={tipPlacement}
                     className="lineup-dot-hover"
                   >
@@ -248,8 +251,9 @@ export function LineupPreviewModal({
   onClose,
   squad,
   activeTactics,
+  manualLineup = {},
 }: Props & { open: boolean; onClose: () => void }) {
-  const summary = getSquadLineupSummary(squad, activeTactics);
+  const summary = getSquadLineupSummary(squad, activeTactics, manualLineup);
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, open, onClose);
 
@@ -302,9 +306,10 @@ export function LineupPreviewModal({
 export function LineupPreviewSidebar({
   squad,
   activeTactics,
+  manualLineup = {},
   onShow,
 }: Props & { onShow?: () => void }) {
-  const summary = getSquadLineupSummary(squad, activeTactics);
+  const summary = getSquadLineupSummary(squad, activeTactics, manualLineup);
   const emptyOnField = 11 - summary.filled;
 
   return (
@@ -332,11 +337,12 @@ export function LineupPreviewSidebar({
 export function LineupPreviewCenterTrigger({
   squad,
   activeTactics,
+  manualLineup = {},
   className = '',
   onOpen,
   compact = false,
 }: Props & { className?: string; onOpen: () => void; compact?: boolean }) {
-  const summary = getSquadLineupSummary(squad, activeTactics);
+  const summary = getSquadLineupSummary(squad, activeTactics, manualLineup);
   const emptyOnField = 11 - summary.filled;
 
   if (compact) {
@@ -381,8 +387,8 @@ export function LineupPreviewCenterTrigger({
 }
 
 /** Kayıp ekranı vb. — her zaman açık tam önizleme */
-export function LineupPreviewExpanded({ squad, activeTactics }: Props) {
-  const summary = getSquadLineupSummary(squad, activeTactics);
+export function LineupPreviewExpanded({ squad, activeTactics, manualLineup = {} }: Props) {
+  const summary = getSquadLineupSummary(squad, activeTactics, manualLineup);
   return (
     <div className="lineup-preview lineup-preview--expanded lineup-preview--v2">
       <div className="lineup-preview-head">
@@ -395,9 +401,9 @@ export function LineupPreviewExpanded({ squad, activeTactics }: Props) {
 }
 
 /** Geriye uyumluluk */
-export function LineupPreview({ squad, activeTactics, collapsible = true }: Props & { collapsible?: boolean }) {
+export function LineupPreview({ squad, activeTactics, manualLineup = {}, collapsible = true }: Props & { collapsible?: boolean }) {
   if (!collapsible) {
-    return <LineupPreviewExpanded squad={squad} activeTactics={activeTactics} />;
+    return <LineupPreviewExpanded squad={squad} activeTactics={activeTactics} manualLineup={manualLineup} />;
   }
-  return <LineupPreviewSidebar squad={squad} activeTactics={activeTactics} />;
+  return <LineupPreviewSidebar squad={squad} activeTactics={activeTactics} manualLineup={manualLineup} />;
 }

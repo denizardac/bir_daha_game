@@ -2,6 +2,7 @@ import { SYNERGIES } from '@/data/synergies';
 import { getStartingEleven } from '@/engine/lineupPreview';
 import { FINALE_MATCH_BONUS } from '@/engine/roundFlow';
 import { passiveTagRoundPoints } from '@/engine/tagMechanics';
+import { getTacticScoreHighlights } from '@/engine/tacticRules';
 import type { ActiveTactic, MatchResult, PlayerCard } from '@/types';
 
 function streakMultiplier(streak: number): number {
@@ -56,14 +57,7 @@ export function calculateRoundPoints(
 
   points += passiveTagRoundPoints(scoringSquad);
 
-  for (const t of activeTactics) {
-    if (t.technicalBonus) {
-      points += scoringSquad.filter((p) => p.tags.includes('TEKNİK')).length * (t.technicalBonus ?? 0);
-    }
-    if (t.fastBonus) {
-      points += scoringSquad.filter((p) => p.tags.includes('HIZLI')).length * (t.fastBonus ?? 0);
-    }
-  }
+  points += getTacticScoreHighlights(match, scoringSquad, activeTactics).reduce((sum, h) => sum + h.points, 0);
 
   if (match.outcome === 'win') points = Math.floor(points * streakMultiplier(streak));
 

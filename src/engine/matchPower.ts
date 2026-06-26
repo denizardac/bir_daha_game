@@ -1,17 +1,18 @@
 import { getSlotFitTier } from '@/data/positionFlexibility';
 import { assignSquadToFormation, getActiveFormationKey } from '@/engine/lineupPreview';
+import { conditionalAttackMod, conditionalDefenseMod } from '@/engine/tacticRules';
 import type { ActiveTactic, PlayerCard, SynergyDefinition } from '@/types';
 
 export function effectivePlayerRating(player: PlayerCard): number {
   return Math.max(50, player.currentRating + (player.tempRatingMod ?? 0));
 }
 
-export function tacticAttackMultiplier(tactics: ActiveTactic[]): number {
-  return tactics.reduce((m, t) => m + (t.attackMod ?? 0) / 100, 1);
+export function tacticAttackMultiplier(tactics: ActiveTactic[], squad: PlayerCard[] = []): number {
+  return tactics.reduce((m, t) => m + (t.attackMod ?? 0) / 100, 1) + conditionalAttackMod(tactics, squad) / 100;
 }
 
-export function tacticDefenseMultiplier(tactics: ActiveTactic[]): number {
-  return tactics.reduce((m, t) => m + (t.defenseMod ?? 0) / 100, 1);
+export function tacticDefenseMultiplier(tactics: ActiveTactic[], squad: PlayerCard[] = []): number {
+  return tactics.reduce((m, t) => m + (t.defenseMod ?? 0) / 100, 1) + conditionalDefenseMod(tactics, squad) / 100;
 }
 
 /** UI'daki güç bonusu → maç gücü çarpanı (ör. +175 ≈ +%27) */

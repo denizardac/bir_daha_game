@@ -8,6 +8,22 @@ export const ALL_TAGS: Tag[] = [
   'GERİLEYEN', 'YENİ SEZON', 'SAKATLIK RİSKİ', 'KIRMIZI KART', 'PERFORMANS DÜŞÜŞÜ',
 ];
 
+export const TAG_GROUPS = {
+  matchPower: ['HIZLI', 'GÜÇLÜ', 'DAYANIKLI', 'KISA', 'UZUN', 'TEKNİK', 'FİNİŞÖR', 'ASİSTÇİ', 'SERBEST VURUŞ', 'PENALTI', 'SAVAŞÇI', 'SOĞUKKANLI', 'PİK DÖNEM'] as Tag[],
+  morale: ['LİDER', 'KAPİTAN', 'SOYUNMA ODASI'] as Tag[],
+  growth: ['MENTOR', 'POTANSİYEL', 'YENİ SEZON'] as Tag[],
+  risk: ['TARTIŞMALI', 'GERİLEYEN', 'SAKATLIK RİSKİ', 'KIRMIZI KART', 'PERFORMANS DÜŞÜŞÜ'] as Tag[],
+  identity: ['YERLİ', 'YABANCI YILDIZ'] as Tag[],
+};
+
+export const TAG_GROUP_LABELS: Record<keyof typeof TAG_GROUPS, string> = {
+  matchPower: 'Maç gücü',
+  morale: 'Moral / liderlik',
+  growth: 'Gelişim',
+  risk: 'Risk',
+  identity: 'Kimlik / kadro kurma',
+};
+
 export const TAG_ICONS: Record<Tag, string> = {
   HIZLI: '⚡', GÜÇLÜ: '💪', DAYANIKLI: '🛡️', KISA: '↕️', UZUN: '↕️',
   TEKNİK: '🎯', FİNİŞÖR: '⚽', ASİSTÇİ: '🤝', 'SERBEST VURUŞ': '🥅', PENALTI: '🎯',

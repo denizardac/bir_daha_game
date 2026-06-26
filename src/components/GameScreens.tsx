@@ -13,7 +13,6 @@ import { fetchRemoteLeaderboard, isRemoteLeaderboardEnabled } from '@/api/leader
 import { SynergyRevealOverlay } from '@/components/SynergyRevealOverlay';
 import { SidePanel } from '@/components/SidePanel';
 import { SynergySideSection } from '@/components/SynergySideSection';
-import { MoralePanel } from '@/components/MoralePanel';
 import { PlayerHeroMini } from '@/components/PlayerHero';
 import { MatchTeamCard } from '@/components/MatchPickPanel';
 import { getActiveSynergies, getSynergyById, SYNERGIES } from '@/data/synergies';
@@ -113,6 +112,7 @@ export function CardSelectScreen() {
     round, maxRounds, squad, maxSquadSize, morale, score, streak,
     currentOffers, selectOffer,
     dangerMode, isFirstRun, discoveredSynergies, activeTactics, usedEventIds,
+    manualLineup,
     rerollsRemaining, rerollSingleOffer, offersRerollIndex,
     trainingFlow, beginTraining, pickTrainingPlayer, completeTraining, cancelTraining, backTrainingPlayer,
     tacticDraft, confirmTacticRound, rerollFormationOffers, rerollSystemOffers,
@@ -121,7 +121,7 @@ export function CardSelectScreen() {
   const sound = getPersistedStats().soundEnabled;
 
   const empty = maxSquadSize - squad.length;
-  const lineupSummary = getSquadLineupSummary(squad, activeTactics);
+  const lineupSummary = getSquadLineupSummary(squad, activeTactics, manualLineup);
   const activeSynergies = getActiveSynergies(squad, morale, { activeTactics });
   const nearSynergies = getSidePanelNearSynergies(squad, morale, discoveredSynergies, currentOffers, 4);
   const emptyField = 11 - lineupSummary.filled;
@@ -174,6 +174,7 @@ export function CardSelectScreen() {
                 <LineupPreviewCenterTrigger
                   squad={squad}
                   activeTactics={activeTactics}
+                  manualLineup={manualLineup}
                   compact
                   onOpen={() => setLineupOpen(true)}
                 />
@@ -206,6 +207,7 @@ export function CardSelectScreen() {
               onClose={() => setLineupOpen(false)}
               squad={squad}
               activeTactics={activeTactics}
+              manualLineup={manualLineup}
             />
 
             {finaleMatch && (
@@ -235,6 +237,7 @@ export function CardSelectScreen() {
                 squad={squad}
                 activeTactics={activeTactics}
                 draft={tacticDraft}
+                manualLineup={manualLineup}
                 sound={sound}
                 onSelect={selectOffer}
                 onConfirm={confirmTacticRound}
@@ -326,7 +329,7 @@ export function CardSelectScreen() {
 }
 
 export function EventScreen() {
-  const { currentEvent, resolveEventChoice, round, maxRounds, score, streak, squad, morale, isFirstRun, seed, discoveredSynergies, activeTactics, maxSquadSize } = useGameStore();
+  const { currentEvent, resolveEventChoice, round, maxRounds, score, streak, squad, morale, isFirstRun, seed, discoveredSynergies, activeTactics, manualLineup, maxSquadSize } = useGameStore();
   const [picked, setPicked] = useState<'A' | 'B' | null>(null);
   const [lineupOpen, setLineupOpen] = useState(false);
   const pickTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -349,7 +352,7 @@ export function EventScreen() {
   const categoryBite = EVENT_CATEGORY_BITE[currentEvent.category];
   const presentation = getEventPresentation(currentEvent.id);
   const avg = squad.length ? Math.round(squad.reduce((s, p) => s + p.currentRating, 0) / squad.length) : 0;
-  const lineupSummary = getSquadLineupSummary(squad, activeTactics);
+  const lineupSummary = getSquadLineupSummary(squad, activeTactics, manualLineup);
   const topPlayers = sortSquadByRating(squad);
   const hasRiskChoice = Boolean(previews.a.nextMatchRisk || previews.b.nextMatchRisk);
 
@@ -407,35 +410,63 @@ export function EventScreen() {
         <GameHeader round={round} maxRounds={maxRounds} score={score} streak={streak} />
 
         <div className="game-layout event-layout">
-          <div className="panel space-y-3">
-            <div className="event-squad-head">
-              <h3 className="text-sm font-bold uppercase text-neutral-400">Kadro durumu</h3>
-              <LineupPreviewCenterTrigger
-                squad={squad}
-                activeTactics={activeTactics}
-                compact
-                onOpen={() => setLineupOpen(true)}
-              />
+          <div className="panel event-squad-panel">
+            <div className="event-squad-title-row">
+              <div>
+                <p className="event-squad-kicker">Olay öncesi</p>
+                <h3 className="event-squad-title">Kadro durumu</h3>
+              </div>
+              <span className="event-squad-score">{avg}</span>
             </div>
             <LineupPreviewModal
               open={lineupOpen}
               onClose={() => setLineupOpen(false)}
               squad={squad}
               activeTactics={activeTactics}
+              manualLineup={manualLineup}
             />
-            <p className="text-lg font-extrabold">
-              {lineupSummary.squadSize}/{maxSquadSize} kadro · {lineupSummary.filled}/11 saha · Ort. {avg}
-            </p>
-            <MoralePanel morale={morale} />
-            <p className="text-xs text-neutral-500">{BITE.eventNoMatch}</p>
-            <p className="event-category-bite">
+            <div className="event-squad-metrics">
+              <div>
+                <span>Kadro</span>
+                <strong>{lineupSummary.squadSize}/{maxSquadSize}</strong>
+              </div>
+              <div>
+                <span>Saha</span>
+                <strong>{lineupSummary.filled}/11</strong>
+              </div>
+              <div className="event-squad-morale-cell">
+                <span>Moral</span>
+                <strong>{morale}/100</strong>
+                <div className="event-squad-morale-bar">
+                  <div className="event-squad-morale-bar-fill" style={{ width: `${morale}%` }} />
+                </div>
+              </div>
+            </div>
+            <LineupPreviewCenterTrigger
+              squad={squad}
+              activeTactics={activeTactics}
+              manualLineup={manualLineup}
+              compact
+              onOpen={() => setLineupOpen(true)}
+            />
+            <div className="event-squad-card event-squad-card--category">
               <span className="event-category-badge">{categoryBite.label}</span>
-              {categoryBite.desc}
-            </p>
-            {topPlayers.slice(0, 4).map((p) => (
-              <PlayerCardMini key={p.id} card={p} />
-            ))}
-            {squad.length > 4 && <p className="text-xs text-neutral-600">+{squad.length - 4} oyuncu daha</p>}
+              <p>{categoryBite.desc}</p>
+            </div>
+            <div className="event-squad-card">
+              <p className="event-squad-card-title">Bu tur maç yok</p>
+              <p>{BITE.eventNoMatch}</p>
+            </div>
+            <div className="event-squad-mini-list">
+              <p className="event-squad-card-title">Öne çıkan kadro</p>
+              {topPlayers.slice(0, 3).map((p) => (
+                <div key={p.id} className="event-squad-mini-row">
+                  <span className="event-squad-mini-name">{p.name}</span>
+                  <span>{formatPosition(p.position)}</span>
+                  <strong>{p.currentRating}</strong>
+                </div>
+              ))}
+            </div>
           </div>
 
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="panel event-main-panel border-amber-500/30">
@@ -864,13 +895,14 @@ export function MatchScreen() {
 }
 
 export function LossScreen() {
-  const { lastLossPlayer, lastLossBrokenSynergies, pendingSelected, roundHistory, finishLoss, dangerMode, squad, round, maxRounds, score, streak, morale, activeTactics } = useGameStore();
-  const lastPick = pendingSelected ?? roundHistory[roundHistory.length - 1]?.cardSelected;
+  const { lastLossPlayer, lastLossBrokenSynergies, finishLoss, dangerMode, squad, round, maxRounds, score, streak, morale, activeTactics, manualLineup } = useGameStore();
 
   const departedScore = lastLossPlayer ? getDepartureScore(lastLossPlayer, morale) : 0;
   const remainingScores = squad
     .map((p) => ({ player: p, score: getDepartureScore(p, morale) }))
     .sort((a, b) => a.score - b.score);
+  const lineupSummary = getSquadLineupSummary(squad, activeTactics, manualLineup);
+  const avg = squad.length ? Math.round(squad.reduce((sum, p) => sum + p.currentRating, 0) / squad.length) : 0;
 
   return (
     <div className="game-shell min-h-screen p-4">
@@ -878,68 +910,72 @@ export function LossScreen() {
       <div className="mx-auto max-w-5xl">
         <GameHeader round={round} maxRounds={maxRounds} score={score} streak={streak} />
         <div className="loss-screen-layout">
-        <motion.div initial={{ x: -16, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="panel loss-screen-main border-red-800/60 bg-red-950/20">
-          <p className="text-2xl font-extrabold uppercase text-red-400">Maç Kaybedildi</p>
-          <p className="mt-2 text-xs text-neutral-500">
-            Not: İlk maçta mağlubiyet sayılmaz — koruma kalkanı aktiftir.
-          </p>
-          <p className="mt-2 text-base leading-relaxed text-neutral-300">
-            En düşük ayrılma skoru olan oyuncu gider — MENTOR / LİDER / KAPİTAN daha zor ayrılır. Moral −20.
-          </p>
-
-          <div className="mt-4">
-            <MoralePanel morale={morale} compact />
-          </div>
-
-          {lastPick && isPlayerCard(lastPick) && (
-            <div className="mt-4">
-              <PlayerHeroMini
-                player={lastPick}
-                label="Bu round aldın"
-                highlight="gain"
-                extra="Mağlubiyet sonrası kadroda kalır"
-              />
+          <motion.div initial={{ x: -16, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="panel loss-screen-main border-red-800/60 bg-red-950/20">
+            <div className="loss-hero">
+              <p className="loss-kicker">Round {round}</p>
+              <h2>Maç kaybedildi</h2>
+              <p>En düşük ayrılma skoruna sahip oyuncu kadrodan çıkar. MENTOR, LİDER ve KAPİTAN oyuncular daha zor ayrılır.</p>
             </div>
-          )}
 
-          {lastPick && isTacticCard(lastPick) && (
-            <div className="mt-4 rounded-xl border border-purple-500/40 bg-purple-950/20 p-4">
-              <p className="text-xs uppercase text-purple-400">Bu round seçtin</p>
-              <p className="text-xl font-extrabold">📋 {lastPick.name}</p>
-              <p className="text-sm text-neutral-400">Taktik aktif — oyuncu ayrılmaz</p>
+            <div className="loss-summary-grid">
+              <div className="loss-summary-morale">
+                <span>Moral</span>
+                <strong>{morale}/100</strong>
+                <div className="loss-summary-morale-bar">
+                  <div className="loss-summary-morale-bar-fill" style={{ width: `${morale}%` }} />
+                </div>
+                <small>Mağlubiyet sonrası -20</small>
+              </div>
+              <div>
+                <span>Kadro</span>
+                <strong>{squad.length}/11</strong>
+                <small>Ort. {avg}</small>
+              </div>
+              <div>
+                <span>Saha</span>
+                <strong>{lineupSummary.filled}/11</strong>
+                <small>{lineupSummary.filled < 11 ? `${11 - lineupSummary.filled} boş slot` : 'Hazır'}</small>
+              </div>
             </div>
-          )}
 
-          {lastLossPlayer && (
-            <div className="mt-4">
-              <PlayerHeroMini
-                player={lastLossPlayer}
-                label="Ayrılan"
-                strikethrough
-                highlight="loss"
-                extra={`Ayrılma skoru: ${formatStatDisplay(departedScore)} (en düşük)`}
-              />
-            </div>
-          )}
+            {lastLossPlayer && (
+              <div className="loss-departed-card">
+                <PlayerHeroMini
+                  player={lastLossPlayer}
+                  label="Kadrodan ayrıldı"
+                  strikethrough
+                  highlight="loss"
+                  extra={`Ayrılma skoru ${formatStatDisplay(departedScore)} · en düşük değer`}
+                />
+              </div>
+            )}
 
-          {lastLossBrokenSynergies.length > 0 && (
-            <div className="mt-4 rounded-xl border border-red-500/35 bg-red-950/25 p-3">
-              <p className="text-xs font-bold uppercase text-red-300">Artık aktif değil</p>
-              {lastLossBrokenSynergies.map((id) => (
-                <p key={id} className="text-sm text-red-200/90">
-                  {getSynergyById(id)?.icon} {getSynergyById(id)?.name} — {lastLossPlayer?.name} gittiği için
-                </p>
-              ))}
-              <p className="mt-1 text-xs text-neutral-500">Keşif kaydın kalır; yeniden aynı şartları sağlarsan tekrar aktif olur.</p>
-            </div>
-          )}
+            {lastLossBrokenSynergies.length > 0 && (
+              <div className="loss-broken-card">
+                <p className="loss-risk-title">Kırılan sinerji</p>
+                {lastLossBrokenSynergies.map((id) => (
+                  <p key={id}>
+                    {getSynergyById(id)?.icon} {getSynergyById(id)?.name}
+                    <span> · {lastLossPlayer?.name} ayrıldığı için pasif</span>
+                  </p>
+                ))}
+                <small>Keşif kaydın kalır; şartları tekrar kurarsan yeniden aktif olur.</small>
+              </div>
+            )}
 
-        </motion.div>
+
+          </motion.div>
 
         <div className="loss-screen-right">
-          <div className="loss-screen-lineup panel">
-            <p className="loss-screen-lineup-title">Kadro & diziliş</p>
-            <LineupPreviewExpanded squad={squad} activeTactics={activeTactics} />
+          <div className="loss-screen-lineup panel loss-screen-lineup--enhanced">
+            <div className="loss-screen-lineup-head">
+              <div className="loss-screen-lineup-title-group">
+                <span className="loss-screen-lineup-icon" aria-hidden>⚽</span>
+                <p className="loss-screen-lineup-title">Kalan ilk 11</p>
+              </div>
+              <span className="loss-screen-lineup-badge">{lineupSummary.squadSize}/11 kadro</span>
+            </div>
+            <LineupPreviewExpanded squad={squad} activeTactics={activeTactics} manualLineup={manualLineup} />
           </div>
 
           <div className="loss-screen-actions panel">

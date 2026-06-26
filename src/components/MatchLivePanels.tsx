@@ -5,8 +5,8 @@ import {
   getContextualMatchTip,
   getLiveCommentary,
   getMatchMomentum,
-  getSquadSnapshotLines,
 } from '@/engine/matchLiveContent';
+import { getSynergyBenefitText } from '@/engine/squadInsights';
 import { formatScore } from '@/engine/scoring';
 import type { MatchAnimState } from '@/engine/matchAnimSchedule';
 import { HoverTip } from '@/components/HoverTip';
@@ -34,8 +34,8 @@ export function MatchLeftPanel({
 }: LeftProps) {
   const moraleFx = getMoraleEffect(morale);
   const synergies = getActiveSynergies(squad, morale, { activeTactics });
-  const stars = getSquadSnapshotLines(squad, 4);
   const powerPct = Math.min(100, Math.round((squadAvg / Math.max(opponentRating, 1)) * 50));
+  const powerState = squadAvg >= opponentRating + 5 ? 'Avantajlı' : squadAvg <= opponentRating - 5 ? 'Zor maç' : 'Dengeli';
 
   return (
     <div className="match-left-stack">
@@ -46,7 +46,12 @@ export function MatchLeftPanel({
         className="match-side-block-wrap"
       >
         <div className="match-side-block">
-          <p className="match-panel-label">Maç gücü</p>
+          <div className="match-side-head-row">
+            <p className="match-panel-label">Maç dengesi</p>
+            <span className={`match-state-chip ${squadAvg >= opponentRating ? 'match-state-chip--good' : 'match-state-chip--danger'}`}>
+              {powerState}
+            </span>
+          </div>
           <div className="match-power-compare">
             <span className="match-power-label">Kadro {squadAvg}</span>
             <div className="match-power-track">
@@ -55,54 +60,47 @@ export function MatchLeftPanel({
             <span className="match-power-label">Rakip {opponentRating}</span>
           </div>
           <p className="match-side-hint">
-            {squadAvg >= opponentRating ? '✓ Ortalama üstünsün' : '⚠ Rakip daha güçlü'}
+            {squadAvg >= opponentRating ? 'Ortalama üstünlüğü sende' : 'Rakip güç olarak önde'}
             {squad.length < 11 ? ` · ${squad.length}/11 kadro` : ''}
           </p>
         </div>
       </HoverTip>
 
-      {synergies.length > 0 && (
-        <div className="match-side-block match-side-block--synergies">
-          <p className="match-panel-label">Aktif sinerji ({synergies.length})</p>
-          <ul className="match-synergy-live-list">
-            {synergies.map((s) => (
-              <li key={s.id} className="match-synergy-live-item">
-                <HoverTip tip={`${s.description}\n\n${s.perGoalBonus ? `Gol başına +${s.perGoalBonus}` : s.perWinBonus ? `Galibiyet +${s.perWinBonus}` : 'Maç bonusu'}`} className="match-synergy-tip-wrap">
-                  <span className="match-synergy-live-inner">
+      <div className="match-side-block match-plan-card">
+        <div className="match-side-head-row">
+          <p className="match-panel-label">Maç planı</p>
+          <span className="match-state-chip">{moraleFx.label} moral</span>
+        </div>
+        <p className="match-side-hint">{moraleFx.detail}</p>
+
+        {activeTactics.length > 0 && (
+          <div className="match-plan-section">
+            <span className="match-plan-section-label">Taktik</span>
+            <div className="match-plan-chip-list">
+              {activeTactics.map((t) => (
+                <span key={t.id} className="match-plan-chip">📋 {t.name}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="match-plan-section">
+          <span className="match-plan-section-label">Sinerji</span>
+          {synergies.length > 0 ? (
+            <div className="match-plan-chip-list">
+              {synergies.slice(0, 4).map((s) => (
+                <HoverTip key={s.id} tip={`${s.description}\n\n${getSynergyBenefitText(s)}`} className="match-synergy-tip-wrap">
+                  <span className="match-plan-chip match-plan-chip--synergy">
                     <span>{s.icon}</span> {s.name}
                   </span>
                 </HoverTip>
-              </li>
-            ))}
-          </ul>
+              ))}
+              {synergies.length > 4 && <span className="match-plan-chip">+{synergies.length - 4}</span>}
+            </div>
+          ) : (
+            <p className="match-side-hint">Aktif sinerji yok</p>
+          )}
         </div>
-      )}
-
-      <div className="match-side-block match-side-block--grow">
-        <p className="match-panel-label">Yıldızlar</p>
-        <ul className="match-star-list">
-          {stars.map((p) => (
-            <li key={p.name} className="match-star-row">
-              <span className="match-star-name">{p.name}</span>
-              <span className="match-star-meta">{p.pos} · {p.rating}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {activeTactics.length > 0 && (
-        <div className="match-active-tactics">
-          <p className="match-panel-label">Aktif taktik</p>
-          {activeTactics.map((t) => (
-            <p key={t.id} className="match-tactic-line">📋 {t.name}</p>
-          ))}
-        </div>
-      )}
-
-      <div className="match-side-block match-side-block--morale-mini">
-        <p className="match-panel-label">Moral · {moraleFx.label}</p>
-        <p className="match-side-line">{moraleFx.multiplier}</p>
-        <p className="match-side-hint">{moraleFx.detail}</p>
       </div>
     </div>
   );

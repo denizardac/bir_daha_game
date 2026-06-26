@@ -124,6 +124,14 @@ export interface ActiveTactic {
   fastBonus?: number;
   technicalBonus?: number;
   moralePerMatch?: number;
+  perGoalBonus?: number;
+  perWinBonus?: number;
+  drawBonus?: number;
+  cleanSheetWinBonus?: number;
+  cleanSheetDrawBonus?: number;
+  firstGoalBonus?: number;
+  squadSizeBonus?: number;
+  squadSizeThreshold?: number;
 }
 
 export interface EventChoice {

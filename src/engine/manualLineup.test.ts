@@ -122,3 +122,27 @@ describe('selectDepartingPlayer override-aware (yedege dusme)', () => {
     expect(selectDepartingPlayer(sq, 50, [], { 0: 'g2' }).id).toBe('g1');
   });
 });
+
+describe('otomatik dizilis saha doluluk onceligi', () => {
+  it('3412: OOS kanada kayip yedekteki OS oyuncusuna OOS slotu acar', () => {
+    const players = [
+      p({ id: 'gk', name: 'Kaleci', position: 'KL', currentRating: 74, rating: 74 }),
+      p({ id: 'stp1', name: 'Stoper 1', position: 'STP', currentRating: 74, rating: 74 }),
+      p({ id: 'stp2', name: 'Stoper 2', position: 'STP', currentRating: 74, rating: 74 }),
+      p({ id: 'stp3', name: 'Stoper 3', position: 'STP', currentRating: 74, rating: 74 }),
+      p({ id: 'dos', name: 'DOS', position: 'DOS', currentRating: 74, rating: 74 }),
+      p({ id: 'osStrong', name: 'Ana OS', position: 'OS', currentRating: 76, rating: 76 }),
+      p({ id: 'oosFlex', name: 'Kanada Kayabilen OOS', position: 'OOS', currentRating: 67, rating: 67 }),
+      p({ id: 'rightWing', name: 'Sag Kanat', position: 'SÖK', currentRating: 63, rating: 63 }),
+      p({ id: 'sf1', name: 'Forvet 1', position: 'SF', currentRating: 74, rating: 74 }),
+      p({ id: 'sf2', name: 'Forvet 2', position: 'SF', currentRating: 74, rating: 74 }),
+      p({ id: 'umut', name: 'Umut Sari', position: 'OS', currentRating: 65, rating: 65 }),
+    ];
+
+    const lineup = assignSquadToFormation(players, '3412');
+
+    expect(lineup.find((s) => s.slot.label === 'SLK')?.player?.id).toBe('oosFlex');
+    expect(lineup.find((s) => s.slot.label === 'OOS')?.player?.id).toBe('umut');
+    expect(lineup.some((s) => s.player?.id === 'umut')).toBe(true);
+  });
+});

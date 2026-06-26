@@ -4,6 +4,7 @@ import {
   attackTagMultiplier,
   TAG_MECHANIC_DESCRIPTIONS,
   passiveTagRoundPoints,
+  riskTagStrengthPenalty,
 } from './tagMechanics';
 import { TAG_DESCRIPTIONS } from '@/data/tags';
 
@@ -36,6 +37,12 @@ describe('tagMechanics', () => {
   });
 
   it('YABANCI YILDIZ maç sonu pasif puan verir', () => {
-    expect(passiveTagRoundPoints([p(['YABANCI YILDIZ'])])).toBe(5);
+    expect(passiveTagRoundPoints([p(['YABANCI YILDIZ'])])).toBe(4);
+  });
+
+  it('risk tagleri gerçek güç bedeli uygular', () => {
+    expect(riskTagStrengthPenalty([p(['KIRMIZI KART'])], 80)).toBeLessThan(1);
+    expect(riskTagStrengthPenalty([p(['TARTIŞMALI'])], 50)).toBeLessThan(1);
+    expect(riskTagStrengthPenalty([p(['TARTIŞMALI'])], 80)).toBe(1);
   });
 });

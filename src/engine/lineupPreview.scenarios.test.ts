@@ -69,12 +69,13 @@ describe('lineup scenarios — mevki × formasyon (18+ koşul)', () => {
     expect(['SĞK', 'SLK']).not.toContain(slotOf(squad, 'nik', '442'));
   });
 
-  it('03 — OS 433\'te zayıf OS\'u düşürüp OS slotuna girer', () => {
+  it('03 — OS 433\'te OS slotunu alır, eski OS OOS\'a kayar', () => {
     const squad = base442Ten();
     const umut = p({ id: 'umut', name: 'Umut Sarı', position: 'OS', currentRating: 64, rating: 64 });
     const lineup = assignSquadToFormation([...squad, umut], '433');
     expect(lineup.find((s) => s.player?.id === 'umut')?.slot.label).toBe('OS');
-    expect(lineup.some((s) => s.player?.id === 'weak')).toBe(false);
+    expect(lineup.find((s) => s.player?.id === 'weak')?.slot.label).toBe('OOS');
+    expect(lineup.find((s) => s.player?.id === 'oos')?.slot.label).toBe('SĞK');
   });
 
   it('04 — DOS orta saha slotuna girer, kanata değil (442)', () => {
@@ -494,12 +495,13 @@ describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
     }
   });
 
-  it('34 — 433 OS zayıf OS düşürür', () => {
+  it('34 — 433 OS slot değişimiyle 11 oyuncuyu sahada tutar', () => {
     const squad = base442Ten();
     const strong = p({ id: 's', name: 'OS', position: 'OS', currentRating: 72, rating: 72 });
     const lineup = assignSquadToFormation([...squad, strong], '433');
     expect(lineup.find((x) => x.player?.id === 's')?.slot.label).toBe('OS');
-    expect(lineup.some((x) => x.player?.id === 'weak')).toBe(false);
+    expect(lineup.find((x) => x.player?.id === 'weak')?.slot.label).toBe('OOS');
+    expect(lineup.find((x) => x.player?.id === 'oos')?.slot.label).toBe('SĞK');
   });
 
   it('35 — 4231 OS merkezde kalır', () => {

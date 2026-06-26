@@ -653,9 +653,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const category = getTacticCategory(card.id);
       if (category !== 'formasyon' && category !== 'sistem') return;
       playSound('select', loadPersisted().soundEnabled);
+      const hasActiveFormation = state.activeTactics.some((t) => getTacticCategory(t.id) === 'formasyon');
+      const hasActiveSystem = state.activeTactics.some((t) => getTacticCategory(t.id) === 'sistem');
+      const optionalTacticPick = hasActiveFormation && hasActiveSystem;
+      const currentDraftId = category === 'formasyon' ? state.tacticDraft.formationId : state.tacticDraft.systemId;
+      const nextDraftId = optionalTacticPick && currentDraftId === card.id ? null : card.id;
       const tacticDraft: TacticDraft = {
         ...state.tacticDraft,
-        ...(category === 'formasyon' ? { formationId: card.id } : { systemId: card.id }),
+        ...(category === 'formasyon' ? { formationId: nextDraftId } : { systemId: nextDraftId }),
       };
       set({ tacticDraft });
       persistRun({ ...get(), tacticDraft });
@@ -1015,9 +1020,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     };
     const roundHistory = [...state.roundHistory, eventHistoryEntry];
 
-    const next = startRound({ ...state, squad, morale, score, roundHistory, eventResolvedThisRound: true, usedEventIds: [...state.usedEventIds, state.currentEvent.id] });
+    const formationKey = getActiveFormationKey(state.activeTactics);
+    const manualLineup = reconcileManualLineup(state.manualLineup, squad, formationKey);
+    const next = startRound({ ...state, squad, morale, score, roundHistory, eventResolvedThisRound: true, usedEventIds: [...state.usedEventIds, state.currentEvent.id], manualLineup });
     set({
       squad,
+      manualLineup,
       score,
       morale,
       roundHistory,
@@ -1050,6 +1058,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return rest;
     });
 
+    const formationKey = getActiveFormationKey(state.activeTactics);
+    let manualLineup = reconcileManualLineup(state.manualLineup, squad, formationKey);
+
     const tacticMorale = state.activeTactics.reduce((n, t) => n + (t.moralePerMatch ?? 0), 0);
     let morale = Math.min(100, state.morale + passiveMoraleFromSquad(squad) + tacticMorale);
     const activeSynergyList = getActiveSynergies(squad, morale, { activeTactics: state.activeTactics });
@@ -1076,7 +1087,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.activeTactics,
       state.timerSeconds,
       flawless,
-      state.manualLineup,
+      manualLineup,
     );
     score += points;
     match.roundPoints = points;
@@ -1104,8 +1115,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       morale = Math.max(0, morale - 16);
       flawless = false;
       const squadBeforeLoss = squad;
-      const departing = selectDepartingPlayer(squad, morale, state.activeTactics, state.manualLineup);
+      const departing = selectDepartingPlayer(squad, morale, state.activeTactics, manualLineup);
       squad = squad.filter((p) => p.id !== departing.id);
+      manualLineup = reconcileManualLineup(manualLineup, squad, formationKey);
       const brokenSynergies = getBrokenSynergies(squadBeforeLoss, squad, morale, state.activeTactics).map((s) => s.id);
       if (squad.length <= 5) morale = Math.max(DANGER_MORALE_FLOOR, morale);
       lossesCount += 1;
@@ -1119,6 +1131,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         void persistRunEndScore({ ...state, score, roundHistory, flawless, lossesCount }, score, state.round, flawless);
         set({
           squad, morale, streak, score, lossesCount, flawless,
+          manualLineup,
           phase: 'runEnd',
           roundHistory,
           discoveredSynergies: discoveries,
@@ -1139,6 +1152,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       const lossState = {
         squad, morale, streak, score, lossesCount, flawless,
+        manualLineup,
         phase: 'loss' as GamePhase,
         roundHistory,
         discoveredSynergies: discoveries,
@@ -1183,6 +1197,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       void persistRunEndScore({ ...state, score, roundHistory, flawless, lossesCount }, score, state.round, flawless);
       set({
         squad, morale, streak, score, lossesCount, flawless,
+        manualLineup,
         phase: 'runEnd',
         roundHistory,
         discoveredSynergies: discoveries,
@@ -1203,6 +1218,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const next = startRound({
       ...state,
       squad,
+      manualLineup,
       morale,
       score,
       streak,
@@ -1216,6 +1232,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
     const nextState = {
       squad, morale, streak, score, lossesCount, flawless, round, roundHistory, discoveredSynergies: discoveries,
+      manualLineup,
       dangerMode, currentMatch: null, lastLossPlayer: null, lastLossBrokenSynergies: [],
       pendingSynergyReveal: [],
       pendingOffersShown: [], pendingSelected: null,

@@ -16,6 +16,13 @@ import {
 } from '@/engine/lineupPreview';
 import { POSITION_BADGE } from '@/utils/positionStyle';
 import { getDepartureScore } from '@/engine/squadLogic';
+import {
+  countFastWidePlayers,
+  hasSingleFinisherForward,
+  hasWidePlayer,
+  isGegenpressReady,
+  isHighPressReady,
+} from '@/engine/tacticRules';
 
 export function getMoraleEffect(morale: number): { label: string; detail: string; multiplier: string } {
   const mult = 0.75 + (morale / 100) * 0.4;
@@ -210,31 +217,70 @@ export function getTacticPreview(
   let score = 0;
 
   if (fx.fastBonus) {
-    const bonus = fast * (fx.fastBonus ?? 0);
-    lines.push(`${fast} HIZLI oyuncu → ~+${bonus} puan/maç potansiyeli`);
+    lines.push(`${fast} HIZLI oyuncu bu plana doğrudan katkı verir`);
     score += fast >= 2 ? 2 : fast >= 1 ? 1 : -1;
   }
   if (fx.technicalBonus) {
-    const bonus = tech * (fx.technicalBonus ?? 0);
-    lines.push(`${tech} TEKNİK oyuncu → ~+${bonus} puan/maç potansiyeli`);
+    lines.push(`${tech} TEKNİK oyuncu bu plana doğrudan katkı verir`);
     score += tech >= 2 ? 2 : tech >= 1 ? 1 : -1;
   }
-  if (fx.defenseMod && fx.defenseMod > 0) lines.push('Savunma güçlenir — zayıf kadrolarda ideal');
-  if (card.id === 'tactic_tekli_forvet') {
-    const sf = getStartingEleven(squad, activeTactics).filter((p) => p.position === 'SF');
-    const finisher = sf.filter((p) => p.tags.includes('FİNİŞÖR'));
-    if (sf.length === 1 && finisher.length === 1) {
-      lines.push('Tek forvet FİNİŞÖR — hücum +30%');
+  if (card.id === 'tactic_yuksek_blok') {
+    if (isHighPressReady(squad)) {
+      lines.push('Baskı profili hazır — galibiyet ve goller ekstra değer kazanır');
       score += 2;
     } else {
-      lines.push(sf.length !== 1 ? 'Birden fazla forvet — bonus devreye girmez' : 'Forvet FİNİŞÖR değil — hücum -15%');
+      lines.push('Baskı profili eksik — arkada boşluk verme riski var');
+      score -= 1;
+    }
+  }
+  if (fx.defenseMod && fx.defenseMod > 0) lines.push('Savunma güçlenir — zayıf kadrolarda ideal');
+  if (fx.defenseMod && fx.defenseMod < 0) lines.push('Savunma riski artar — geride boşluk verebilir');
+  if (card.id === 'tactic_tekli_forvet') {
+    if (hasSingleFinisherForward(getStartingEleven(squad, activeTactics))) {
+      lines.push('Tek forvet FİNİŞÖR — hücum onun üzerinden akar');
+      score += 2;
+    } else {
+      lines.push('Tek FİNİŞÖR santrafor şartı yok — bu sistem verimsiz kalır');
+      score -= 1;
+    }
+  }
+  if (card.id === 'tactic_catenaccio') {
+    lines.push('Gol yemeden biten maçlar ekstra değer kazanır');
+    score += 1;
+  }
+  if (card.id === 'tactic_gegenpress') {
+    if (isGegenpressReady(squad)) {
+      lines.push('Pres kombosu hazır — top kazanımları gole dönebilir');
+      score += 2;
+    } else {
+      lines.push('Pres kombosu eksik — savunma çizgisi kırılabilir');
+      score -= 1;
+    }
+  }
+  if (card.id === 'tactic_tiki_taka' && tech >= 5) {
+    lines.push('Çok teknik kadro — galibiyetleri büyütür');
+    score += 2;
+  }
+  if (card.id === 'tactic_park_bus') {
+    lines.push('Gol yemeden biten maçlar yüksek ödül getirir');
+    score += 1;
+  }
+  if (card.id === 'tactic_kanat_bindirme') {
+    const wideFast = countFastWidePlayers(squad);
+    if (wideFast > 0) {
+      lines.push(`${wideFast} HIZLI kanat/bek bu plana doğrudan katkı verir`);
+      score += wideFast >= 2 ? 2 : 1;
+    } else if (!hasWidePlayer(squad)) {
+      lines.push('Kanat profili yok — bindirme arkada açık verir');
       score -= 1;
     }
   }
   if (fx.attackMod && fx.attackMod > 0) lines.push('Hücum güçlenir — gol şansı artar');
   if (fx.attackMod && fx.attackMod < 0) lines.push('Gol ihtimali düşer — dikkatli seç');
   const isBalanced = card.id === 'tactic_442'
-    || (!fx.attackMod && !fx.defenseMod && !fx.fastBonus && !fx.technicalBonus);
+    || (!fx.attackMod && !fx.defenseMod && !fx.fastBonus && !fx.technicalBonus
+      && !fx.perGoalBonus && !fx.perWinBonus && !fx.drawBonus && !fx.cleanSheetWinBonus
+      && !fx.cleanSheetDrawBonus && !fx.firstGoalBonus && !fx.squadSizeBonus);
 
   if (isBalanced) {
     lines.length = 0;

@@ -50,28 +50,31 @@ interface Props {
 export function MatchPickPanel({ selection, subtitle }: Props) {
   if (isPlayerCard(selection)) {
     return (
-      <div className="match-pick-panel">
-        <p className="match-panel-label">Seçimin</p>
-        <div className="match-pick-row">
+      <div className="match-pick-panel match-pick-panel--player">
+        <div className="match-pick-topline">
+          <p className="match-panel-label">Bu round</p>
+          <span className="match-pick-pill">Kadroya katıldı</span>
+        </div>
+        <div className="match-pick-row match-pick-row--hero">
           <PlayerPortrait player={selection} size="lg" />
           <div className="match-pick-info">
             <h3 className="match-pick-name">{selection.name}</h3>
             <p className="match-pick-meta">
-              {formatPosition(selection.position)} · {selection.currentRating}
+              {formatPosition(selection.position)} · {selection.currentRating} rating
             </p>
             {selection.tags.length > 0 && (
-              <div className="match-pick-tag-bites">
+              <div className="match-pick-tags">
                 {selection.tags.map((t) => (
-                  <div key={t} className="match-pick-tag-bite">
-                    <span className="match-pick-tag">{t}</span>
-                    <span className="match-pick-tag-desc">{getTagBite(t)}</span>
-                  </div>
+                  <span key={t} className="match-pick-tag" title={getTagBite(t)}>{t}</span>
                 ))}
               </div>
             )}
           </div>
         </div>
-        <p className="match-pick-sub">{subtitle}</p>
+        <div className="match-pick-impact">
+          <span className="match-pick-impact-label">Maça etkisi</span>
+          <p>{subtitle}</p>
+        </div>
       </div>
     );
   }
@@ -79,12 +82,21 @@ export function MatchPickPanel({ selection, subtitle }: Props) {
   if (isTacticCard(selection)) {
     return (
       <div className="match-pick-panel match-pick-panel--tactic">
-        <p className="match-panel-label">Taktik seçtin</p>
-        <div className="match-pick-tactic-icon">📋</div>
-        <h3 className="match-pick-name">{selection.name}</h3>
-        <p className="match-pick-meta">{selection.effectSummary}</p>
-        <p className="match-pick-tactic-desc">{selection.description}</p>
-        <p className="match-pick-sub">{subtitle}</p>
+        <div className="match-pick-topline">
+          <p className="match-panel-label">Bu round</p>
+          <span className="match-pick-pill match-pick-pill--tactic">Taktik</span>
+        </div>
+        <div className="match-pick-row match-pick-row--hero">
+          <div className="match-pick-tactic-icon">📋</div>
+          <div className="match-pick-info">
+            <h3 className="match-pick-name">{selection.name}</h3>
+            <p className="match-pick-meta">{selection.effectSummary}</p>
+          </div>
+        </div>
+        <div className="match-pick-impact">
+          <span className="match-pick-impact-label">Plan</span>
+          <p>{selection.description}</p>
+        </div>
       </div>
     );
   }
@@ -92,11 +104,16 @@ export function MatchPickPanel({ selection, subtitle }: Props) {
   if (isSkipCard(selection)) {
     return (
       <div className="match-pick-panel match-pick-panel--skip">
-        <p className="match-panel-label">Seçimin</p>
+        <div className="match-pick-topline">
+          <p className="match-panel-label">Bu round</p>
+          <span className="match-pick-pill">Pas</span>
+        </div>
         <div className="match-pick-skip-icon" aria-hidden>⏭</div>
         <h3 className="match-pick-name">{selection.name}</h3>
-        <p className="match-pick-meta">{selection.description}</p>
-        <p className="match-pick-sub">{subtitle}</p>
+        <div className="match-pick-impact">
+          <span className="match-pick-impact-label">Maça etkisi</span>
+          <p>{subtitle}</p>
+        </div>
       </div>
     );
   }

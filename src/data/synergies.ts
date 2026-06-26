@@ -26,7 +26,7 @@ function countMidfieldWithTrait(squad: PlayerCard[], tags: string[]): number {
   ).length;
 }
 
-/** 4 HIZLI + 2 TEKNİK + 1 ASİSTÇİ — parça parça ilerleme (7 puan) */
+/** 4 HIZLI + 2 TEKNİK + 1 ASİSTÇİ — parça parça ilerleme */
 export function getKarmaFirtinaProgress(squad: PlayerCard[]): SynergyProgress | null {
   const hizli = countTag(squad, 'HIZLI');
   const teknik = countTag(squad, 'TEKNİK');
@@ -45,8 +45,8 @@ export function getKarmaFirtinaProgress(squad: PlayerCard[]): SynergyProgress | 
 export const SYNERGIES: SynergyDefinition[] = [
   {
     id: 'synergy_kontr_atiligi', name: 'HIZLI KONTRA', icon: '⚡', hidden: false,
-    description: '3+ HIZLI — her gol +55 puan',
-    check: (s) => countTag(s, 'HIZLI') >= 3, perGoalBonus: 55,
+    description: '3 HIZLI oyuncu aynı anda sahadaysa kontralar daha tehlikeli olur.',
+    check: (s) => countTag(s, 'HIZLI') >= 3, perGoalBonus: 45,
     getProgress: (s, c) => {
       const n = countTag(c ? [...s, c] : s, 'HIZLI');
       if (n >= 3 || countTag(s, 'HIZLI') >= 3) return null;
@@ -55,8 +55,8 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_ruzgar_gibi', name: 'EXPRESS HIZ', icon: '🏃', hidden: true,
-    description: '4+ HIZLI — gol çarpanı ×1.1',
-    check: (s) => countTag(s, 'HIZLI') >= 4, perGoalBonus: 25, goalMultiplier: 1.1,
+    description: '4 HIZLI oyuncuyla rakip savunma sürekli arkaya koşmak zorunda kalır.',
+    check: (s) => countTag(s, 'HIZLI') >= 4, perGoalBonus: 20, goalMultiplier: 1.08,
     getProgress: (s, c) => {
       const n = countTag(c ? [...s, c] : s, 'HIZLI');
       if (n >= 4) return null;
@@ -65,8 +65,8 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_kanatlar', name: 'ÇİFT KANAT', icon: '🦅', hidden: true,
-    description: 'Sol + Sağ Kanat HIZLI — gol ×1.22, gol başına +20',
-    check: (s) => hasPosTag(s, 'SLK', 'HIZLI') && hasPosTag(s, 'SÖK', 'HIZLI'), goalMultiplier: 1.22, perGoalBonus: 20,
+    description: 'İki kanatta da HIZLI oyuncu varsa oyun genişler ve savunma iki yana açılır.',
+    check: (s) => hasPosTag(s, 'SLK', 'HIZLI') && hasPosTag(s, 'SÖK', 'HIZLI'), goalMultiplier: 1.14, perGoalBonus: 20,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const have = (hasPosTag(combined, 'SLK', 'HIZLI') ? 1 : 0) + (hasPosTag(combined, 'SÖK', 'HIZLI') ? 1 : 0);
@@ -76,8 +76,8 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_topa_sahip', name: 'PAS USTASI', icon: '🎯', hidden: false,
-    description: '3+ TEKNİK — +12 puan/round',
-    check: (s) => countTag(s, 'TEKNİK') >= 3, perRoundBonus: 12,
+    description: '3 TEKNİK oyuncu pas ritmini kurar; top sende kaldıkça skor istikrarı artar.',
+    check: (s) => countTag(s, 'TEKNİK') >= 3, perRoundBonus: 18,
     getProgress: (s, c) => {
       const n = countTag(c ? [...s, c] : s, 'TEKNİK');
       if (n >= 3) return null;
@@ -86,8 +86,8 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_mister_asist', name: 'MİSTER ASİST', icon: '🤝', hidden: false,
-    description: '2+ ASİSTÇİ — gol başına +25',
-    check: (s) => countTag(s, 'ASİSTÇİ') >= 2, perGoalBonus: 25,
+    description: '2 ASİSTÇİ oyuncu gol pozisyonlarını daha kaliteli hazırlar.',
+    check: (s) => countTag(s, 'ASİSTÇİ') >= 2, perGoalBonus: 30,
     getProgress: (s, c) => {
       const n = countTag(c ? [...s, c] : s, 'ASİSTÇİ');
       if (n >= 2) return null;
@@ -96,8 +96,8 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_duran_top', name: 'SET PİECE', icon: '🥅', hidden: true,
-    description: 'Serbest vuruş + penaltı — gol başına +50',
-    check: (s) => countTag(s, 'SERBEST VURUŞ') >= 1 && countTag(s, 'PENALTI') >= 1, perGoalBonus: 50,
+    description: 'SERBEST VURUŞ ve PENALTI uzmanı olan kadro duran topları gerçek tehdide çevirir.',
+    check: (s) => countTag(s, 'SERBEST VURUŞ') >= 1 && countTag(s, 'PENALTI') >= 1, perGoalBonus: 45,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const fk = countTag(combined, 'SERBEST VURUŞ') >= 1;
@@ -108,8 +108,8 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_akademi', name: 'GENÇ YETENEK', icon: '📚', hidden: false,
-    description: 'MENTOR + POTANSİYEL — +30 puan/round',
-    check: (s) => countTag(s, 'MENTOR') >= 1 && countTag(s, 'POTANSİYEL') >= 1, perRoundBonus: 30,
+    description: 'MENTOR, POTANSİYEL oyuncunun gelişimini hızlandırır ve genç planını ödüllendirir.',
+    check: (s) => countTag(s, 'MENTOR') >= 1 && countTag(s, 'POTANSİYEL') >= 1, perRoundBonus: 35,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const m = countTag(combined, 'MENTOR') >= 1;
@@ -120,8 +120,8 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_kaptan_modu', name: 'LİDER YÜRÜYÜŞÜ', icon: '👑', hidden: false,
-    description: 'LİDER + Moral ≥80 — galibiyet +150',
-    check: (s, morale) => countTag(s, 'LİDER') >= 1 && morale >= 80, perWinBonus: 150,
+    description: 'LİDER yüksek moralli takımı sahada diri tutar; galibiyetler daha değerli olur.',
+    check: (s, morale) => countTag(s, 'LİDER') >= 1 && morale >= 80, perWinBonus: 110,
     getProgress: (s, c) => {
       if (countTag(c ? [...s, c] : s, 'LİDER') >= 1) return null;
       return { current: countTag(s, 'LİDER'), required: 1, icon: '👑', note: 'ayrıca moral 80+ gerekiyor' };
@@ -129,9 +129,9 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_soyunma_odasi', name: 'TAKIM RUHU', icon: '🎤', hidden: true,
-    description: 'Kaptan + soyunma odası + mentor — moral tabanı 70, +20/round, galibiyet +60',
+    description: 'KAPİTAN, SOYUNMA ODASI ve MENTOR birlikteyse takımın morali kolay dağılmaz.',
     check: (s) => countTag(s, 'KAPİTAN') >= 1 && countTag(s, 'SOYUNMA ODASI') >= 1 && countTag(s, 'MENTOR') >= 1,
-    minMorale: 70, perMatchMorale: 5, perRoundBonus: 20, perWinBonus: 60,
+    minMorale: 68, perMatchMorale: 4, perRoundBonus: 20, perWinBonus: 50,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const have = (countTag(combined, 'KAPİTAN') >= 1 ? 1 : 0) + (countTag(combined, 'SOYUNMA ODASI') >= 1 ? 1 : 0) + (countTag(combined, 'MENTOR') >= 1 ? 1 : 0);
@@ -141,8 +141,8 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_ev_sahibi', name: 'YERLİ KADRO', icon: '🏠', hidden: false,
-    description: '5+ YERLİ — galibiyet +100, moral +20',
-    check: (s) => countTag(s, 'YERLİ') >= 5, perWinBonus: 100, perMatchMorale: 20,
+    description: '5 YERLİ oyuncu aynı ilk 11’deyse takım kimyası ve tribün bağı güçlenir.',
+    check: (s) => countTag(s, 'YERLİ') >= 5, perWinBonus: 80, perMatchMorale: 15,
     getProgress: (s, c) => {
       const n = countTag(c ? [...s, c] : s, 'YERLİ');
       if (n >= 5) return null;
@@ -151,9 +151,9 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_super_yabanci', name: 'YILDIZLAR GECE', icon: '🌍', hidden: true,
-    description: '3+ yabancı yıldız, 0 yerli — rating ×1.15',
+    description: 'Tamamen YABANCI YILDIZ ağırlıklı kadro bireysel kaliteyle maçları çözer.',
     check: (s) => countTag(s, 'YABANCI YILDIZ') >= 3 && countTag(s, 'YERLİ') === 0,
-    ratingMultiplier: 1.15, perRoundBonus: 12,
+    ratingMultiplier: 1.08, perRoundBonus: 20,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const stars = countTag(combined, 'YABANCI YILDIZ');
@@ -164,23 +164,23 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_karma_guc', name: 'KARMA DENGE', icon: '⚖️', hidden: true,
-    description: '3 yerli + 3 yabancı yıldız — galibiyet +70',
-    check: (s) => countTag(s, 'YERLİ') >= 3 && countTag(s, 'YABANCI YILDIZ') >= 3, perWinBonus: 70,
+    description: 'YERLİ omurga ve YABANCI YILDIZ kalitesi dengelenirse kadro daha güvenilir olur.',
+    check: (s) => countTag(s, 'YERLİ') >= 3 && countTag(s, 'YABANCI YILDIZ') >= 3, perWinBonus: 90,
   },
   {
     id: 'synergy_temiz_sayfa', name: 'DEMİR KALE', icon: '🧱', hidden: false,
-    description: 'Kaleci ≥75 + 2 stoper — gol yeme azalır',
+    description: 'Güvenilir kaleci ve iki stoperle savunma hattı daha zor dağılır.',
     check: (s) => {
       const gk = s.find((p) => p.position === 'KL');
       return !!gk && gk.currentRating >= 75 && s.filter((p) => p.position === 'STP').length >= 2;
     },
-    cleanSheetDefenseBonus: 0.22,
+    cleanSheetDefenseBonus: 0.18,
   },
   {
     id: 'synergy_uc_boyut', name: 'ÜÇLÜ HÜCUM', icon: '🔺', hidden: false,
-    description: 'Hücum hattında (SF/kanat) 2+ FİNİŞÖR — gol ×1.3',
+    description: 'Hücum hattında 2 FİNİŞÖR varsa yarım pozisyonlar bile gole dönebilir.',
     check: (s) => s.filter((p) => (p.position === 'SF' || p.position === 'SLK' || p.position === 'SÖK') && p.tags.includes('FİNİŞÖR')).length >= 2,
-    goalMultiplier: 1.3,
+    goalMultiplier: 1.22,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const n = combined.filter((p) => (p.position === 'SF' || p.position === 'SLK' || p.position === 'SÖK') && p.tags.includes('FİNİŞÖR')).length;
@@ -190,9 +190,9 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_saglam_orta', name: 'ORTA DUVAR', icon: '🧱', hidden: false,
-    description: '2+ orta saha TEKNİK/GÜÇLÜ — +18/round, gol yeme azalır',
+    description: 'Orta sahada TEKNİK/GÜÇLÜ oyuncular varsa merkez daha kolay geçilmez.',
     check: (s) => countMidfieldWithTrait(s, ['TEKNİK', 'GÜÇLÜ']) >= 2,
-    cleanSheetDefenseBonus: 0.12, perRoundBonus: 18,
+    cleanSheetDefenseBonus: 0.1, perRoundBonus: 22,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const n = countMidfieldWithTrait(combined, ['TEKNİK', 'GÜÇLÜ']);
@@ -202,23 +202,23 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_tanri_modu', name: 'ZİRVE GÜN', icon: '✨', hidden: true,
-    description: 'Kaptan + finişör + frikik, moral ≥90 — puan ×1.75',
+    description: 'KAPİTAN, FİNİŞÖR ve frikik tehdidi yüksek moralle birleşirse özel maç gecesi yaşanır.',
     check: (s, morale) =>
       countTag(s, 'KAPİTAN') >= 1 && countTag(s, 'FİNİŞÖR') >= 1 &&
       countTag(s, 'SERBEST VURUŞ') >= 1 && morale >= 90,
-    scoreMultiplier: 1.75,
+    scoreMultiplier: 1.35,
   },
   {
     id: 'synergy_firtina', name: 'KARMA FIRTINA', icon: '🌪️', hidden: true,
-    description: '4 HIZLI + 2 TEKNİK + 1 ASİSTÇİ — galibiyet +130',
+    description: 'HIZLI, TEKNİK ve ASİSTÇİ oyuncular birlikteyse hücum planı fırtınaya dönüşür.',
     check: (s) => countTag(s, 'HIZLI') >= 4 && countTag(s, 'TEKNİK') >= 2 && countTag(s, 'ASİSTÇİ') >= 1,
-    perWinBonus: 130, goalMultiplier: 1.15,
+    perWinBonus: 120, goalMultiplier: 1.1,
     getProgress: (s, c) => getKarmaFirtinaProgress(c ? [...s, c] : s),
   },
   {
     id: 'synergy_efsaneler', name: 'EFSANE 11', icon: '🏆', hidden: true,
-    description: '3+ efsane kart — galibiyet +180, moral tabanı 75',
-    check: (s) => countRarity(s, 'efsane') >= 3, perWinBonus: 180, minMorale: 75,
+    description: '3 efsane kart aynı sahadaysa takımın yıldız ağırlığı maça damga vurur.',
+    check: (s) => countRarity(s, 'efsane') >= 3, perWinBonus: 150, minMorale: 72,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const n = countRarity(combined, 'efsane');
@@ -228,15 +228,15 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_savasci_ruhu', name: 'GERİDEN GEL', icon: '⚔️', hidden: true,
-    description: '1+ SAVAŞÇI, maçta gerideyken — gol başına +45',
+    description: 'SAVAŞÇI oyuncular geriye düşülen maçlarda takımı oyunda tutar.',
     check: (s, _, ctx) => countTag(s, 'SAVAŞÇI') >= 1 && !!ctx?.behindInMatch,
-    perGoalBonus: 45,
+    perGoalBonus: 55,
   },
   {
     id: 'synergy_altin_defans', name: 'ÇELİK STOP', icon: '🔒', hidden: true,
-    description: '2 GÜÇLÜ stoper — savunma bonusu, +12/round',
+    description: '2 GÜÇLÜ stoper rakip forvetleri yıpratır ve savunma güvenini artırır.',
     check: (s) => s.filter((p) => p.position === 'STP' && p.tags.includes('GÜÇLÜ')).length >= 2,
-    cleanSheetDefenseBonus: 0.15, perRoundBonus: 12,
+    cleanSheetDefenseBonus: 0.12, perRoundBonus: 18,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const n = combined.filter((p) => p.position === 'STP' && p.tags.includes('GÜÇLÜ')).length;
@@ -246,11 +246,11 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_yildiz_hucum', name: 'YILDIZ HATT', icon: '⭐', hidden: true,
-    description: 'Hücumda 2+ GÜÇLÜ/EFSANE kart (rarity) — gol başına +40',
+    description: 'Hücum hattında yüksek nadirlikli oyuncular varsa yıldız kalitesi fark yaratır.',
     check: (s) =>
       s.filter((p) => (p.position === 'SF' || p.position === 'SLK' || p.position === 'SÖK') &&
         (p.rarity === 'güçlü' || p.rarity === 'efsane')).length >= 2,
-    perGoalBonus: 40,
+    perGoalBonus: 35,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const n = combined.filter((p) => (p.position === 'SF' || p.position === 'SLK' || p.position === 'SÖK') &&
@@ -261,9 +261,9 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_pas_motoru', name: 'PAS AĞI', icon: '🔗', hidden: true,
-    description: '2+ ASİSTÇİ + 2+ TEKNİK — +22/round',
+    description: 'ASİSTÇİ ve TEKNİK oyuncular birlikte pas ağını kurar.',
     check: (s) => countTag(s, 'ASİSTÇİ') >= 2 && countTag(s, 'TEKNİK') >= 2,
-    perRoundBonus: 22,
+    perRoundBonus: 32,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const have = (countTag(combined, 'ASİSTÇİ') >= 2 ? 1 : 0) + (countTag(combined, 'TEKNİK') >= 2 ? 1 : 0);
@@ -273,8 +273,8 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_demir_form', name: 'DEMİR FORM', icon: '🛡️', hidden: false,
-    description: '2+ DAYANIKLI — yorgunluk etkisine direnç, +10/round',
-    check: (s) => countTag(s, 'DAYANIKLI') >= 2, perRoundBonus: 10,
+    description: '2 DAYANIKLI oyuncu uzun run’da kadronun temposunu ayakta tutar.',
+    check: (s) => countTag(s, 'DAYANIKLI') >= 2, perRoundBonus: 16,
     getProgress: (s, c) => {
       const n = countTag(c ? [...s, c] : s, 'DAYANIKLI');
       if (n >= 2) return null;
@@ -283,8 +283,8 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_ucuz_kadro', name: 'UCUZ KADRO', icon: '📉', hidden: true,
-    description: '3+ GERİLEYEN — galibiyet +90 (ucuz ama tecrübeli)',
-    check: (s) => countTag(s, 'GERİLEYEN') >= 3, perWinBonus: 90, perRoundBonus: 10,
+    description: 'GERİLEYEN veteranlar risklidir; doğru kurulursa tecrübeleri hâlâ maç kazandırır.',
+    check: (s) => countTag(s, 'GERİLEYEN') >= 3, perWinBonus: 120, perRoundBonus: 12,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const n = countTag(combined, 'GERİLEYEN');
@@ -296,9 +296,9 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_rotasyon_ustasi', name: 'ROTASYON USTASI', icon: '🔄', hidden: true,
-    description: '2+ PERFORMANS DÜŞÜŞÜ + 1 DAYANIKLI — +28/round',
+    description: 'PERFORMANS DÜŞÜŞÜ yaşayan oyuncular DAYANIKLI destekle daha verimli rotasyona girer.',
     check: (s) => countTag(s, 'PERFORMANS DÜŞÜŞÜ') >= 2 && countTag(s, 'DAYANIKLI') >= 1,
-    perRoundBonus: 28,
+    perRoundBonus: 36,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const have = (countTag(combined, 'PERFORMANS DÜŞÜŞÜ') >= 2 ? 1 : 0) + (countTag(combined, 'DAYANIKLI') >= 1 ? 1 : 0);
@@ -309,23 +309,23 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_tartismali_guc', name: 'TARTIŞMALI GÜÇ', icon: '💥', hidden: true,
-    description: 'TARTIŞMALI + LİDER — galibiyet +90',
-    check: (s) => countTag(s, 'TARTIŞMALI') >= 1 && countTag(s, 'LİDER') >= 1, perWinBonus: 90,
+    description: 'TARTIŞMALI oyuncu, yanında LİDER varsa sorun değil silaha dönüşür.',
+    check: (s) => countTag(s, 'TARTIŞMALI') >= 1 && countTag(s, 'LİDER') >= 1, perWinBonus: 110,
   },
   {
     id: 'synergy_soguk_kan', name: 'SOĞUK KAN', icon: '🧊', hidden: true,
-    description: '2+ SOĞUKKANLI — moral tabanı 55, +8/round',
-    check: (s) => countTag(s, 'SOĞUKKANLI') >= 2, minMorale: 55, perRoundBonus: 8,
+    description: '2 SOĞUKKANLI oyuncu kötü gidişte takımın paniklemesini engeller.',
+    check: (s) => countTag(s, 'SOĞUKKANLI') >= 2, minMorale: 55, perRoundBonus: 14,
   },
   {
     id: 'synergy_yenisezon_patlama', name: 'YENİ SEZON PATLAMASI', icon: '🌱', hidden: true,
-    description: '2+ YENİ SEZON + 1 MENTOR — +20/round',
-    check: (s) => countTag(s, 'YENİ SEZON') >= 2 && countTag(s, 'MENTOR') >= 1, perRoundBonus: 20,
+    description: 'YENİ SEZON oyuncuları MENTOR ile daha çabuk oyuna alışır.',
+    check: (s) => countTag(s, 'YENİ SEZON') >= 2 && countTag(s, 'MENTOR') >= 1, perRoundBonus: 28,
   },
   {
     id: 'synergy_imza_kadrosu', name: 'İMZA KADROSU', icon: '✒️', hidden: true,
-    description: '2+ imza kartı (efsane ikon) — gol ×1.2, galibiyet +120',
-    check: (s) => s.filter((p) => p.signature).length >= 2, goalMultiplier: 1.2, perWinBonus: 120,
+    description: '2 imza kartı aynı kadrodaysa özel yetenekler maçın yönünü değiştirebilir.',
+    check: (s) => s.filter((p) => p.signature).length >= 2, goalMultiplier: 1.12, perWinBonus: 110,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const n = combined.filter((p) => p.signature).length;

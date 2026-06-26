@@ -3,6 +3,11 @@ import type { ActiveTactic, GameCard, PlayerCard, Tag } from '@/types';
 import type { SynergyDefinition } from '@/types';
 import { SYNERGIES } from '@/data/synergies';
 import { isPlayerCard } from '@/types';
+import {
+  countFastWidePlayers,
+  isGegenpressReady,
+  isHighPressReady,
+} from '@/engine/tacticRules';
 
 export type NearSynergyProgress = {
   synergy: SynergyDefinition;
@@ -58,18 +63,31 @@ export function explainActiveTactic(tactic: ActiveTactic, squad: PlayerCard[]): 
   const fast = squad.filter((p) => p.tags.includes('HIZLI')).length;
   const tech = squad.filter((p) => p.tags.includes('TEKNİK')).length;
 
-  if (tactic.attackMod && tactic.attackMod > 0) lines.push(`Hücum gücü +%${tactic.attackMod} — daha fazla gol şansı`);
-  if (tactic.attackMod && tactic.attackMod < 0) lines.push(`Gol ihtimali ${tactic.attackMod}% — savunma odaklı`);
-  if (tactic.defenseMod && tactic.defenseMod > 0) lines.push(`Savunma +%${tactic.defenseMod} — daha az gol yersin`);
-  if (tactic.defenseMod && tactic.defenseMod < 0) lines.push(`Savunma ${tactic.defenseMod}% — riskli oyun`);
-  if (tactic.fastBonus && fast > 0) lines.push(`${fast} HIZLI × +${tactic.fastBonus} puan/maç`);
+  if (tactic.attackMod && tactic.attackMod > 0) lines.push('Hücum planı güçlenir — daha fazla gol şansı');
+  if (tactic.attackMod && tactic.attackMod < 0) lines.push('Gol üretimi düşer — savunma odaklı');
+  if (tactic.defenseMod && tactic.defenseMod > 0) lines.push('Savunma direnci artar — daha az gol yersin');
+  if (tactic.defenseMod && tactic.defenseMod < 0) lines.push('Savunma riski artar — arkada boşluk verebilir');
+  if (tactic.fastBonus && fast > 0) lines.push(`${fast} HIZLI oyuncu bu sistemden ekstra skor çıkarır`);
   if (tactic.fastBonus && fast === 0) lines.push(`HIZLI oyuncu yok — bonus aktif olmaz`);
-  if (tactic.technicalBonus && tech > 0) lines.push(`${tech} TEKNİK × +${tactic.technicalBonus} puan/maç`);
+  if (tactic.technicalBonus && tech > 0) lines.push(`${tech} TEKNİK oyuncu bu sistemden ekstra skor çıkarır`);
   if (tactic.technicalBonus && tech === 0) lines.push(`TEKNİK oyuncu yok — bonus aktif olmaz`);
+  if (tactic.id === 'tactic_yuksek_blok') {
+    lines.push(isHighPressReady(squad) ? 'Baskı profili hazır — goller ve galibiyet değerli' : 'Baskı profili eksik — savunma riski artar');
+  }
+  if (tactic.id === 'tactic_gegenpress') {
+    lines.push(isGegenpressReady(squad) ? 'Pres kombosu hazır — top kazanımları ödüllenir' : 'Pres kombosu eksik — savunma çizgisi kırılabilir');
+  }
+  if (tactic.id === 'tactic_catenaccio' || tactic.id === 'tactic_park_bus') {
+    lines.push('Gol yemeden biten maçlar ekstra değer kazanır');
+  }
+  if (tactic.id === 'tactic_kanat_bindirme') {
+    const wideFast = countFastWidePlayers(squad);
+    lines.push(wideFast > 0 ? `${wideFast} HIZLI kanat/bek bu planı besler` : 'HIZLI kanat/bek yok — plan zayıf kalır');
+  }
   if (tactic.id === 'tactic_rotasyon') {
     const gerileyen = squad.filter((p) => p.tags.includes('GERİLEYEN')).length;
     lines.push(gerileyen > 0
-      ? `${gerileyen} GERİLEYEN oyuncu — rating düşüşü engellenir`
+      ? `${gerileyen} GERİLEYEN oyuncu — form düşüşü engellenir`
       : 'GERİLEYEN yok — yorgunluk koruması hazır bekler');
   }
   if (!lines.length) lines.push('Güvenli taban — stabil maç gücü, ekstra ceza yok');
@@ -78,12 +96,17 @@ export function explainActiveTactic(tactic: ActiveTactic, squad: PlayerCard[]): 
 }
 
 export function getSynergyBenefitText(s: SynergyDefinition): string {
-  if (s.perGoalBonus) return `Her attığın gol +${s.perGoalBonus} puan`;
-  if (s.perWinBonus) return `Her galibiyet +${s.perWinBonus} puan`;
-  if (s.perRoundBonus) return `Her round +${s.perRoundBonus} puan (pasif)`;
-  if (s.goalMultiplier) return 'Gol çarpanı artar';
-  if (s.cleanSheetDefenseBonus) return 'Clean sheet şansı yükselir';
-  return 'Maç performansını güçlendirir';
+  const rewards: string[] = [];
+  if (s.perGoalBonus) rewards.push(`Gol başına +${s.perGoalBonus} puan`);
+  if (s.perWinBonus) rewards.push(`Galibiyet başına +${s.perWinBonus} puan`);
+  if (s.perRoundBonus) rewards.push(`Maç sonrası +${s.perRoundBonus} puan`);
+  if (s.perMatchMorale) rewards.push('Moral kazanımı artar');
+  if (s.minMorale) rewards.push('Moral tabanı korunur');
+  if (s.goalMultiplier) rewards.push('Gol üretimi artar');
+  if (s.cleanSheetDefenseBonus) rewards.push('Gol yememe şansı artar');
+  if (s.ratingMultiplier) rewards.push('İlk 11 kalitesi sahaya daha iyi yansır');
+  if (s.scoreMultiplier) rewards.push('Maç puanı büyür');
+  return rewards.length ? rewards.join(' · ') : 'Maç performansını güçlendirir';
 }
 
 export function getSynergyRequirementHint(s: SynergyDefinition, squad: PlayerCard[]): string {
