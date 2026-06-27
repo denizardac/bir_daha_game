@@ -12,6 +12,11 @@ import { StartRunModal } from '@/components/StartRunModal';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { loadPersisted } from '@/utils/storage';
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+};
+
 export function MainMenu() {
   const startRun = useGameStore((s) => s.startRun);
   const continueRun = useGameStore((s) => s.continueRun);
@@ -21,6 +26,8 @@ export function MainMenu() {
   const stats = getPersistedStats();
 
   const [startPrompt, setStartPrompt] = useState<{ daily: boolean; afterAbandon?: boolean } | null>(null);
+  const [installTipVisible, setInstallTipVisible] = useState(false);
+  const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
 
   const openStart = (daily: boolean, afterAbandon = false) => {
     setStartPrompt({ daily, afterAbandon });
@@ -47,6 +54,22 @@ export function MainMenu() {
   }, []);
   const todayRuns = remoteTodayRuns ?? localTodayRuns;
 
+  useEffect(() => {
+    const nav = navigator as Navigator & { standalone?: boolean };
+    const standalone = window.matchMedia?.('(display-mode: standalone)').matches || nav.standalone === true;
+    if (standalone || localStorage.getItem('bir-daha-install-tip-dismissed') === '1') return;
+
+    setInstallTipVisible(true);
+    const onBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event as BeforeInstallPromptEvent);
+      setInstallTipVisible(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+  }, []);
+
   const handleNewRunFromContinue = () => {
     openStart(savedRun?.isDailySeed ?? true, true);
   };
@@ -57,6 +80,21 @@ export function MainMenu() {
       return;
     }
     openStart(daily);
+  };
+
+  const dismissInstallTip = () => {
+    localStorage.setItem('bir-daha-install-tip-dismissed', '1');
+    setInstallTipVisible(false);
+  };
+
+  const handleInstallClick = async () => {
+    if (!installPromptEvent) {
+      dismissInstallTip();
+      return;
+    }
+    await installPromptEvent.prompt();
+    const choice = await installPromptEvent.userChoice;
+    if (choice.outcome === 'accepted') dismissInstallTip();
   };
 
   const quickLinks = [
@@ -181,6 +219,21 @@ export function MainMenu() {
             <aside className="menu-side-stack">
               <MenuLeaderboardWidget initialExpanded />
             </aside>
+
+            {installTipVisible && (
+              <div className="menu-install-tip" role="status">
+                <div className="menu-install-tip-copy">
+                  <p>Telefona ekle</p>
+                  <span>{installPromptEvent ? 'Tam ekran uygulama gibi açılır.' : 'iPhone: Paylaş, sonra Ana Ekrana Ekle.'}</span>
+                </div>
+                <button type="button" className="menu-install-tip-action" onClick={handleInstallClick}>
+                  {installPromptEvent ? 'Ekle' : 'Tamam'}
+                </button>
+                <button type="button" className="menu-install-tip-close" aria-label="Kapat" onClick={dismissInstallTip}>
+                  x
+                </button>
+              </div>
+            )}
 
             <MenuBiteTipsWidget />
           </div>
