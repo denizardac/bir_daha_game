@@ -16544,3 +16544,461 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
+
+/* ---- Mobile-only flow guards: keep desktop/base layout untouched ---- */
+@media (max-width: 899px) {
+  .menu-dashboard {
+    min-height: 0;
+  }
+
+  .menu-top {
+    gap: 0.85rem;
+  }
+
+  .menu-hero-badge {
+    margin-bottom: 0.35rem;
+  }
+
+  .menu-hero-tagline {
+    margin-top: 0.45rem;
+  }
+
+  .menu-top-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .menu-stat-card {
+    min-height: 5.15rem;
+    align-items: flex-start;
+    padding: 0.7rem 0.75rem;
+  }
+
+  .menu-stat-icon {
+    font-size: 1.25rem;
+  }
+
+  .menu-stat-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+  }
+
+  .menu-stat-value--big {
+    font-size: 1.16rem;
+  }
+
+  .menu-play-panel-inner {
+    padding: 1rem;
+  }
+
+  .menu-play-btn {
+    min-height: 4.5rem;
+    padding: 0.85rem 0.95rem !important;
+  }
+
+  .menu-play-btn-icon {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
+  .menu-play-btn-label {
+    font-size: 1.05rem;
+    line-height: 1.05;
+  }
+
+  .menu-play-btn-sub,
+  .menu-footer-desc {
+    line-height: 1.25;
+  }
+
+  .card-select-screen,
+  .card-select-inner {
+    height: auto;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
+  .card-select-command-bar,
+  .card-select-command-bar--has-mode,
+  .card-select-command-bar--training {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .card-select-command-actions {
+    min-width: 0;
+  }
+
+  .card-select-command-left {
+    padding: 0.62rem 0.7rem;
+  }
+
+  .card-select-command-tips {
+    display: none;
+  }
+
+  .card-select-turn-card {
+    gap: 0.38rem;
+    padding: 0.68rem 0.72rem;
+  }
+
+  .card-select-turn-card .card-pick-mode-switch--tabs {
+    gap: 0.38rem;
+  }
+
+  .card-select-turn-card .card-pick-mode-btn--tab {
+    min-height: 2.35rem;
+    padding: 0.42rem 0.5rem;
+  }
+
+  .card-select-turn-card .card-pick-mode-btn-icon {
+    display: none;
+  }
+
+  .card-select-turn-summary {
+    padding: 0.48rem 0.58rem;
+    font-size: 0.72rem;
+  }
+
+  .card-select-turn-reroll {
+    min-height: 2.2rem;
+  }
+
+  .card-select-command-actions .lineup-compact-btn {
+    min-height: 3.6rem;
+    padding: 0.72rem 0.78rem;
+    gap: 0.7rem;
+  }
+
+  .card-select-command-actions .lineup-compact-btn-icon {
+    width: 2.65rem;
+    height: 2.65rem;
+    border-radius: 12px;
+  }
+
+  .card-select-command-actions .lineup-compact-btn-label {
+    font-size: 0.96rem;
+  }
+
+  .card-select-command-actions .lineup-compact-btn-label::after,
+  .card-select-command-actions .lineup-compact-btn-meta,
+  .card-select-command-actions .lineup-compact-btn-cta {
+    display: none;
+  }
+
+  .card-select-screen .card-select-layout,
+  .card-select-inner .game-layout.card-select-layout {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+  }
+
+  .card-select-screen .card-select-layout > * {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .card-select-screen .card-pick-center {
+    order: -1;
+    display: flex;
+    flex: none;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .card-select-screen .cards-pick-grid {
+    flex: none;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    align-content: start;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .card-select-screen .card-pick-slot,
+  .card-select-screen .card-pick-slot-anchor {
+    flex: none;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .card-select-screen .card-pick-slot-anchor > .card-fut--pick,
+  .card-select-screen .card-pick-slot-anchor > .tactic-card,
+  .card-select-screen .card-pick-slot-anchor > .training-card {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .card-select-screen .card-pick-slot-anchor .card-body,
+  .card-select-screen .card-pick-slot-anchor .card-pick-body-scroll {
+    flex: none;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .card-select-screen .card-pick-slot-anchor .card-pick-footer {
+    margin-top: 0.65rem;
+  }
+
+  .card-select-screen .select-cta,
+  .tactic-pick-card-select,
+  .tactic-pick-confirm,
+  .event-choice-card,
+  .match-continue-btn,
+  .run-end-primary-actions > button,
+  .start-run-actions .btn-primary,
+  .start-run-actions .btn-secondary {
+    min-height: 2.9rem;
+  }
+
+  .card-select-insight-rail,
+  .side-panel {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .card-select-insight-rail .syn-panel,
+  .side-panel-body,
+  .side-panel-scroll {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .tactic-pick-stage,
+  .tactic-pick-stage-grid,
+  .tactic-pick-row,
+  .tactic-pick-row-cards {
+    flex: none;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .tactic-pick-stage {
+    display: block;
+  }
+
+  .tactic-pick-stage-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .tactic-pick-row {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tactic-pick-stage-head {
+    grid-template-columns: 1fr;
+    padding: 0.72rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .tactic-pick-row-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.4rem 0.55rem;
+  }
+
+  .tactic-pick-row-head .tactic-pick-reroll {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .tactic-pick-row-cards {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .tactic-pick-card,
+  .tactic-pick-card-hero {
+    flex: none;
+    height: auto;
+    min-height: 0;
+  }
+
+  .tactic-pick-card-visual {
+    flex: none;
+    min-height: 6.5rem;
+  }
+
+  .tactic-pick-stage-foot {
+    margin-top: 0.85rem;
+    padding-top: 0;
+  }
+
+  .event-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .event-main-panel {
+    order: -1;
+  }
+
+  .event-hero {
+    min-height: 132px;
+    margin-top: 0.75rem;
+  }
+
+  .event-choice-card {
+    min-height: 0;
+  }
+
+  .event-choice-visual {
+    min-height: 72px;
+  }
+
+  .event-choice-body {
+    padding: 0.85rem 0.95rem 0.95rem;
+  }
+
+  .loss-screen-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .loss-screen-main {
+    order: -1;
+  }
+
+  .loss-summary-grid,
+  .event-squad-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .run-end-shell {
+    min-height: 0;
+  }
+
+  .run-end-hero-panel,
+  .run-end-rank-panel,
+  .run-end-summary {
+    padding: 1rem;
+  }
+
+  .run-end-hero-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .run-end-primary-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .synergy-reveal-overlay {
+    align-items: flex-start;
+    overflow: auto;
+    padding: 0.75rem;
+  }
+
+  .synergy-reveal-card {
+    max-height: calc(100dvh - 1.5rem);
+    overflow: auto;
+    padding: 1rem;
+  }
+
+  .synergy-reveal-item {
+    gap: 0.55rem;
+  }
+
+  .synergy-reveal-name {
+    font-size: 1.12rem;
+  }
+
+  .lineup-preview-modal-shell {
+    padding: 0.75rem;
+  }
+
+  .lineup-preview-modal-shell .lineup-preview-popover--center.lineup-preview-popover--modal {
+    width: 100%;
+    max-height: none;
+  }
+
+  .lineup-squad-popover {
+    width: 100%;
+    max-height: 42vh;
+  }
+
+  .le-modal-group {
+    top: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    transform: none;
+    flex-direction: column;
+    width: auto;
+    max-height: calc(100dvh - 1rem);
+    overflow: auto;
+  }
+
+  .le-squad-panel,
+  .le-modal {
+    width: 100%;
+    max-height: none;
+  }
+
+  .le-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .menu-dashboard {
+    padding: 0.75rem;
+  }
+
+  .menu-hero-title {
+    font-size: 2.2rem;
+  }
+
+  .menu-top-stats {
+    gap: 0.45rem;
+  }
+
+  .menu-stat-card {
+    min-height: 4.9rem;
+    padding: 0.62rem;
+  }
+
+  .menu-score-chart {
+    padding: 0.75rem;
+  }
+
+  .menu-score-chart-bars {
+    min-height: 62px;
+  }
+
+  .card-select-inner {
+    padding-left: 0.65rem !important;
+    padding-right: 0.65rem !important;
+  }
+
+  .event-squad-metrics,
+  .loss-summary-grid,
+  .run-end-spotlight-grid {
+    grid-template-columns: 1fr;
+  }
+}
