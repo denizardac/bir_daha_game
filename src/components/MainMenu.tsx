@@ -7,7 +7,7 @@ import { getTodayKey } from '@/engine/leaderboard';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
 import { MenuBiteTipsWidget } from '@/components/MenuBiteTipsWidget';
 import { MenuLeaderboardWidget } from '@/components/MenuLeaderboardWidget';
-import { MenuDailyScoreChart } from '@/components/MenuDailyScoreChart';
+
 import { StartRunModal } from '@/components/StartRunModal';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { loadPersisted } from '@/utils/storage';
@@ -190,28 +190,17 @@ export function MainMenu() {
                       <p className="menu-play-hint-sub">
                         Seed {formatDailyDate()} · 15 round · herkes aynı kartlarla oynar
                       </p>
+                      {todayRuns > 0 && (
+                        <p className="menu-play-hint-runs">
+                          🌍 {formatScore(todayRuns)} run başladı — skor kartını paylaş, meydan oku
+                        </p>
+                      )}
                     </div>
                   )}
 
-                  <MenuDailyScoreChart />
-
-                  <div className="menu-daily-challenge">
-                    <div>
-                      <span className="menu-daily-challenge-kicker">Günlük seed</span>
-                      <strong>{formatScore(todayRuns)} run başladı</strong>
-                      <p>Skor kartını paylaş; aynı seed'de seni geçmeye çalışsınlar.</p>
-                    </div>
-                    <button type="button" className="menu-daily-challenge-btn" onClick={() => handlePlayClick(true)}>
-                      Meydan Oku
-                    </button>
-                  </div>
-
                   <div className="menu-beta-strip">
-                    <div>
-                      <span className="menu-beta-badge">Beta</span>
-                      <strong>Android ve iOS app yakında</strong>
-                      <p>Şimdilik webde oyna; native app aynı oyunu tam ekran kabukta açacak.</p>
-                    </div>
+                    <span className="menu-beta-badge">Beta</span>
+                    <span className="menu-beta-text">Android ve iOS app yakında</span>
                     <span className="menu-beta-date">TestFlight / APK</span>
                   </div>
 
