@@ -301,6 +301,37 @@ export function CardSelectScreen() {
             />
           )}
 
+          <div className="card-select-mobile-dock" aria-label="Oyun bilgileri">
+            {!tacticBonus && (
+              <details className="card-select-mobile-drawer">
+                <summary>
+                  <span>Sinerjiler</span>
+                  <small>{activeSynergies.length} aktif · {nearSynergies.length} yakın</small>
+                </summary>
+                <CardSelectInsightRail
+                  squad={squad}
+                  morale={morale}
+                  discoveredSynergies={discoveredSynergies}
+                  currentOffers={currentOffers}
+                />
+              </details>
+            )}
+            <details className="card-select-mobile-drawer">
+              <summary>
+                <span>Maç Planı</span>
+                <small>Taktik slotları · olay takvimi</small>
+              </summary>
+              <SidePanel
+                squad={squad}
+                activeTactics={activeTactics}
+                usedEventIds={usedEventIds}
+                round={round}
+                currentOffers={currentOffers}
+                tacticDraft={tacticBonus ? tacticDraft : undefined}
+              />
+            </details>
+          </div>
+
           <SidePanel
             squad={squad}
             activeTactics={activeTactics}
@@ -829,6 +860,81 @@ export function MatchScreen() {
             </div>
           </div>
 
+          <div className="match-mobile-dock" aria-label="Maç detayları">
+            {anim.showHighlights && (
+              <div className={`match-mobile-result-bar match-mobile-result-bar--${currentMatch.outcome}`}>
+                <div>
+                  <span>{outcome}</span>
+                  <strong>{anim.goalsFor} - {anim.goalsAgainst}</strong>
+                  <small>Round puanı {previewRoundPoints > 0 ? `+${previewRoundPoints}` : '0'}</small>
+                </div>
+                <button type="button" className="btn-primary match-mobile-continue" onClick={finishMatch}>
+                  Devam
+                </button>
+              </div>
+            )}
+
+            <details className="match-mobile-drawer" open={!anim.showHighlights}>
+              <summary>
+                <span>{anim.showHighlights ? 'Maç özeti' : 'Canlı anlatım'}</span>
+                <small>{anim.minute}&apos; · {anim.goalsFor}-{anim.goalsAgainst}</small>
+              </summary>
+              <MatchRightPanel
+                anim={anim}
+                currentMatch={currentMatch}
+                squad={squad}
+                morale={morale}
+                squadAvg={squadAvg}
+                activeTactics={activeTactics}
+                streak={streak}
+                outcomeLabel={anim.showResult ? outcome : undefined}
+                outcomeColor={anim.showResult ? outcomeColor : undefined}
+                resultExplain={anim.showResult ? resultExplain : undefined}
+              />
+
+              {anim.showResult && (
+                <div className="match-result-extras">
+                  <div className={`match-morale-delta match-morale-delta--${moraleOutcomeDelta >= 0 ? 'up' : 'down'}`}>
+                    <span className="match-morale-delta-icon" aria-hidden>{moraleOutcomeDelta >= 0 ? '❤️' : '💔'}</span>
+                    <span className="match-morale-delta-label">Moral</span>
+                    <span className="match-morale-delta-value">{moraleOutcomeDelta > 0 ? `+${moraleOutcomeDelta}` : moraleOutcomeDelta}</span>
+                    <span className="match-morale-delta-after">{currentMatch.outcome === 'win' ? 'galibiyet' : currentMatch.outcome === 'draw' ? 'beraberlik' : 'mağlubiyet'}</span>
+                  </div>
+                  <div className="match-bonus-row">
+                    {currentMatch.outcome === 'win' && currentMatch.cleanSheet && (
+                      <span className="match-bonus-chip">🛡️ Clean sheet +100</span>
+                    )}
+                    {currentMatch.outcome === 'win' && streakMult > 1 && (
+                      <span className="match-bonus-chip match-bonus-chip--fire">🔥 Seri ×{streakMult}</span>
+                    )}
+                    {round === 1 && currentMatch.outcome === 'win' && (
+                      <FirstWinCelebration compact />
+                    )}
+                  </div>
+                  {currentMatch.wowMoment && (
+                    <p className="match-wow">{currentMatch.wowMoment}</p>
+                  )}
+                </div>
+              )}
+            </details>
+
+            <details className="match-mobile-drawer">
+              <summary>
+                <span>Maç planı</span>
+                <small>Kadro · moral · sinerji</small>
+              </summary>
+              <MatchLeftPanel
+                selection={pendingSelected}
+                subtitle={selectionSubtitle}
+                squad={squad}
+                morale={morale}
+                activeTactics={activeTactics}
+                squadAvg={squadAvg}
+                opponentRating={currentMatch.opponent.rating}
+              />
+            </details>
+          </div>
+
           <div className="match-col match-col--result">
             <MatchRightPanel
               anim={anim}
@@ -905,7 +1011,7 @@ export function LossScreen() {
   const avg = squad.length ? Math.round(squad.reduce((sum, p) => sum + p.currentRating, 0) / squad.length) : 0;
 
   return (
-    <div className="game-shell min-h-screen p-4">
+    <div className="game-shell loss-game-shell min-h-screen p-4">
       <SynergyRevealOverlay />
       <div className="mx-auto max-w-5xl">
         <GameHeader round={round} maxRounds={maxRounds} score={score} streak={streak} />
@@ -963,8 +1069,45 @@ export function LossScreen() {
               </div>
             )}
 
+            <button type="button" className="btn-primary loss-mobile-primary-cta" onClick={finishLoss}>
+              {squad.length <= 4 ? 'Run Özeti' : 'Sonraki Round'}
+            </button>
 
           </motion.div>
+
+        <div className="loss-mobile-dock" aria-label="Mağlubiyet detayları">
+          <details className="loss-mobile-drawer">
+            <summary>
+              <span>Kalan ilk 11</span>
+              <small>{lineupSummary.squadSize}/11 kadro</small>
+            </summary>
+            <LineupPreviewExpanded squad={squad} activeTactics={activeTactics} manualLineup={manualLineup} />
+          </details>
+
+          <details className="loss-mobile-drawer">
+            <summary>
+              <span>Ayrılma riski</span>
+              <small>{remainingScores[0]?.player.name ?? 'Kadro'}</small>
+            </summary>
+            {remainingScores.length > 0 && (
+              <div className="loss-risk-block">
+                <p className="loss-risk-title">Kalan kadro — ayrılma riski</p>
+                <ul className="loss-risk-list">
+                  {remainingScores.slice(0, 6).map(({ player, score: ds }) => (
+                    <li key={player.id} className={`loss-risk-row ${player.id === remainingScores[0]?.player.id ? 'loss-risk-row--hot' : ''}`}>
+                      <span className="loss-risk-name">{player.name}</span>
+                      <span className="loss-risk-pos">{formatPosition(player.position)}</span>
+                      <span className="loss-risk-score">{formatStatDisplay(ds)}</span>
+                      {player.id === remainingScores[0]?.player.id && (
+                        <span className="loss-risk-badge">En riskli</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </details>
+        </div>
 
         <div className="loss-screen-right">
           <div className="loss-screen-lineup panel loss-screen-lineup--enhanced">
