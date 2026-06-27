@@ -85,4 +85,11 @@ describe('calculateRoundPoints', () => {
     const withTactic = calculateRoundPoints(draw, squad, 50, 0, 5, 0, [getTacticEffect('tactic_catenaccio')]);
     expect(withTactic - base).toBe(100);
   });
+
+  it('applies final flawless bonus once', () => {
+    const finalWin = mockMatch({ opponent: { name: 'Final', rating: 90, style: 'dengeli' }, goalsFor: 1, goalsAgainst: 0, cleanSheet: true });
+    const flawless = calculateRoundPoints(finalWin, squad, 50, 0, 15, 0, [], 0, true);
+    const nonFlawless = calculateRoundPoints(finalWin, squad, 50, 0, 15, 1, [], 0, false);
+    expect(flawless - nonFlawless).toBe(2000);
+  });
 });

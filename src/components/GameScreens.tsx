@@ -9,7 +9,7 @@ import { buildMatchAnimSchedule, buildMatchAnimScheduleResume, type MatchAnimSta
 import { isFinaleRound, isTacticBonusRound } from '@/engine/roundFlow';
 import { getLegendaryChanceTier, getDailySeed } from '@/engine/seed';
 import { getEventSubjects } from '@/engine/eventSubjects';
-import { fetchRemoteLeaderboard, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
+import { fetchRemoteRank, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { SynergyRevealOverlay } from '@/components/SynergyRevealOverlay';
 import { SidePanel } from '@/components/SidePanel';
 import { SynergySideSection } from '@/components/SynergySideSection';
@@ -1056,25 +1056,53 @@ export function RunEndScreen() {
   const analysis = runEndAnalysis;
   const playerName = displayName || 'Anonim';
   const [shareMsg, setShareMsg] = useState('');
+  const [liveRank, setLiveRank] = useState<{ rank: number; total: number; percent: number } | null>(null);
   const wins = roundHistory.filter((r) => r.matchResult?.outcome === 'win').length;
   const matchesPlayed = roundHistory.filter((r) => r.matchResult).length;
   const draws = roundHistory.filter((r) => r.matchResult?.outcome === 'draw').length;
   const allLoss = lossesCount > 0 && wins === 0;
+  const squadAvg = squad.length ? Math.round(squad.reduce((s, p) => s + p.currentRating, 0) / squad.length) : 0;
+  const activeSynergyStats = analysis?.synergyStats.filter((s) => s.activations > 0) ?? [];
+  const bestRound = roundHistory.reduce<typeof roundHistory[number] | null>(
+    (best, item) => (!best || item.pointsEarned > best.pointsEarned ? item : best),
+    null,
+  );
+  const goalCounts = new Map<string, number>();
+  for (const item of roundHistory) {
+    for (const event of item.matchResult?.events ?? []) {
+      if (event.type !== 'goal_for') continue;
+      goalCounts.set(event.playerName, (goalCounts.get(event.playerName) ?? 0) + 1);
+    }
+  }
+  const topScorers = [...goalCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'tr'))
+    .slice(0, 3);
+  const finalRank = liveRank?.rank ?? analysis?.rank;
+  const finalTotal = liveRank?.total ?? analysis?.totalPlayers;
+  const finalPercent = liveRank?.percent ?? analysis?.rankPercent;
+  const shareStats = {
+    wins,
+    losses: lossesCount,
+    synergiesFound: activeSynergyStats.length,
+    squadAvg,
+  };
+  const outcomeLine = flawless && lossesCount === 0
+    ? 'Namağlup tamamlandı'
+    : lossesCount >= 3
+      ? 'Kadro son haftalarda yıprandı'
+      : wins >= Math.max(1, matchesPlayed - 1)
+        ? 'Maç planı büyük ölçüde tuttu'
+        : 'Run dalgalı geçti';
 
   // Gerçek sıralama: bot-dolgulu yerel liste yerine canlı remote leaderboard'dan
   // hesapla (varsa). Yoksa yerel analiz değerlerine düşer.
-  const [liveRank, setLiveRank] = useState<{ rank: number; total: number; percent: number } | null>(null);
   useEffect(() => {
     if (!isRemoteLeaderboardEnabled() || score <= 0) return;
     let cancelled = false;
-    fetchRemoteLeaderboard(isDailySeed ? 'daily' : 'allTime', isDailySeed ? getDailySeed() : undefined)
-      .then((rows) => {
-        if (cancelled || !rows.length) return;
-        const better = rows.filter((r) => r.totalScore > score).length;
-        const total = Math.max(rows.length, better + 1);
-        const rank = better + 1;
-        const percent = Math.max(1, Math.round(((total - better) / total) * 100));
-        setLiveRank({ rank, total, percent });
+    fetchRemoteRank(isDailySeed ? 'daily' : 'allTime', score, isDailySeed ? getDailySeed() : undefined)
+      .then((rank) => {
+        if (cancelled || !rank) return;
+        setLiveRank(rank);
       })
       .catch(() => { /* sessiz: yerel değerlere düşer */ });
     return () => { cancelled = true; };
@@ -1089,10 +1117,55 @@ export function RunEndScreen() {
       <div className="mx-auto max-w-5xl run-end-shell">
         <AnimatePresence mode="wait">
           {runEndStep === 0 && (
-            <motion.div key="score" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="panel text-center run-end-hero-panel">
-              <p className="text-sm uppercase text-neutral-500">Run Bitti</p>
-              <p className="text-6xl font-extrabold text-amber-400">{formatScore(score)}</p>
-              <p className="text-neutral-400">{round} round · {matchesPlayed} maç · {wins}G {draws}B {lossesCount}M {flawless && lossesCount === 0 ? '· NAMAĞLUP' : ''}</p>
+            <motion.div key="score" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="panel run-end-hero-panel run-end-hero-panel--dashboard">
+              <div className="run-end-hero-top">
+                <div>
+                  <p className="run-end-summary-kicker">Run bitti</p>
+                  <h1 className="run-end-hero-title">{playerName}</h1>
+                  <p className="run-end-hero-sub">{outcomeLine}</p>
+                </div>
+                <div className="run-end-score-lockup">
+                  <span>Final skor</span>
+                  <strong>{formatScore(score)}</strong>
+                </div>
+              </div>
+
+              <div className="run-end-hero-metrics">
+                <div className="run-end-hero-metric">
+                  <span>Maç karnesi</span>
+                  <strong>{wins}G {draws}B {lossesCount}M</strong>
+                  <small>{matchesPlayed} maç · {round} round</small>
+                </div>
+                <div className="run-end-hero-metric">
+                  <span>Sıralama</span>
+                  <strong>{finalRank && finalTotal ? `#${finalRank}/${finalTotal}` : 'Kaydedildi'}</strong>
+                  <small>{finalPercent ? `Yüzdelik: %${finalPercent}` : liveRank ? 'Canlı veri' : 'Yerel kayıt'}</small>
+                </div>
+                <div className="run-end-hero-metric">
+                  <span>Kadro</span>
+                  <strong>{squad.length}/11</strong>
+                  <small>Ortalama rating {squadAvg || '-'}</small>
+                </div>
+                <div className="run-end-hero-metric">
+                  <span>Sinerji</span>
+                  <strong>{activeSynergyStats.length}</strong>
+                  <small>{discoveredSynergies.length}/{TOTAL_SYNERGIES} keşif</small>
+                </div>
+              </div>
+
+              <div className="run-end-spotlight-grid">
+                <div className="run-end-spotlight">
+                  <span>En iyi round</span>
+                  <strong>{bestRound ? `R${bestRound.round} · +${formatScore(bestRound.pointsEarned)}` : 'Yok'}</strong>
+                  <small>{bestRound ? bestRound.cardSelected.name : 'Puan üreten round bulunamadı'}</small>
+                </div>
+                <div className="run-end-spotlight">
+                  <span>Gol yükü</span>
+                  <strong>{topScorers[0] ? `${topScorers[0][0]} · ${topScorers[0][1]}` : 'Gol yok'}</strong>
+                  <small>{topScorers.slice(1).map(([name, goals]) => `${name} ${goals}`).join(' · ') || 'Bir sonraki run daha net bitebilir'}</small>
+                </div>
+              </div>
+
               {allLoss && (
                 <p className="mt-3 rounded-lg bg-neutral-900 px-3 py-2 text-sm text-neutral-400">
                   Hiç galip gelmedin — kayıp roundlar puan vermez. Bir sonraki run&apos;da ilk galibiyeti hedefle.
@@ -1106,11 +1179,11 @@ export function RunEndScreen() {
               {score > 0 && score < 500 && !allLoss && (
                 <p className="mt-3 text-sm text-neutral-500">Beraberlikler az puan verir; bir sonraki run&apos;da sinerji kurmayı dene.</p>
               )}
-              <button type="button" className="btn-primary mt-6 w-full" onClick={() => resetRun()}>BİR DAHA</button>
-              <button type="button" className="btn-secondary mt-2 w-full" onClick={advanceRunEnd}>İSTATİSTİKLERİNE BAK</button>
-              <button type="button" className="mt-2 w-full text-sm text-neutral-500 underline-offset-2 hover:underline" onClick={goToMenu}>
-                Ana Menü
-              </button>
+              <div className="run-end-primary-actions">
+                <button type="button" className="btn-primary" onClick={() => resetRun()}>Bir Daha</button>
+                <button type="button" className="btn-secondary" onClick={advanceRunEnd}>Sıralama ve detaylar</button>
+                <button type="button" className="btn-secondary" onClick={goToMenu}>Ana Menü</button>
+              </div>
             </motion.div>
           )}
 
@@ -1310,12 +1383,7 @@ export function RunEndScreen() {
                       flawless: flawless && lossesCount === 0,
                       roundsCompleted: round,
                       squad,
-                      stats: {
-                        wins,
-                        losses: lossesCount,
-                        synergiesFound: analysis?.synergyStats.filter((s) => s.activations > 0).length ?? 0,
-                        squadAvg: squad.length ? Math.round(squad.reduce((s, p) => s + p.currentRating, 0) / squad.length) : 0,
-                      },
+                      stats: shareStats,
                     });
                     setShareMsg('PNG indirildi!');
                   }}
@@ -1333,12 +1401,7 @@ export function RunEndScreen() {
                       flawless: flawless && lossesCount === 0,
                       roundsCompleted: round,
                       squad,
-                      stats: {
-                        wins,
-                        losses: lossesCount,
-                        synergiesFound: analysis?.synergyStats.filter((s) => s.activations > 0).length ?? 0,
-                        squadAvg: squad.length ? Math.round(squad.reduce((s, p) => s + p.currentRating, 0) / squad.length) : 0,
-                      },
+                      stats: shareStats,
                     });
                     setShareMsg(ok ? 'Görsel panoya kopyalandı!' : 'Kopyalama desteklenmiyor — PNG indir.');
                   }}

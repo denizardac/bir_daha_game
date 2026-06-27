@@ -2,6 +2,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
 const SCORE_TOLERANCE = 30;
 const MAX_SCORE = 500_000;
+const MAX_HISTORY_ENTRIES = 32;
+const MAX_MATCH_POINTS = 25_000;
+const MAX_TACTIC_POINTS = 500;
+const MAX_EVENT_ABS_POINTS = 1_000;
 
 type RoundPick = {
   round: number;
@@ -31,9 +35,11 @@ type SubmitBody = {
   roundHistory: Array<{
     round: number;
     pointsEarned: number;
+    cardsShown?: Array<{ id: string; kind?: string }>;
     cardSelected: { id: string; kind?: string };
     matchResult?: { roundPoints: number; outcome: string; goalsFor?: number; goalsAgainst?: number } | null;
     isTacticBonus?: boolean;
+    isEvent?: boolean;
     eventChoice?: 'A' | 'B';
   }>;
   isDaily: boolean;
@@ -95,20 +101,51 @@ function validate(body: SubmitBody): string | null {
   const { entry, digest, roundHistory } = body;
 
   if (!entry?.id || !entry.seed || !entry.displayName) return 'Eksik oyuncu bilgisi';
+  if (entry.id.length > 80 || entry.seed.length > 80) return 'Oyuncu veya seed cok uzun';
+  const displayName = entry.displayName.trim();
+  if (displayName.length < 1 || displayName.length > 32) return 'Isim uzunlugu gecersiz';
+  if (typeof body.isDaily !== 'boolean') return 'Mod bilgisi gecersiz';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(body.dayKey)) return 'Gun anahtari gecersiz';
+  if (!/^\d{4}-W\d{1,2}$/.test(body.weekKey)) return 'Hafta anahtari gecersiz';
   if (entry.totalScore < 0 || entry.totalScore > MAX_SCORE) return 'Skor aralığı geçersiz';
   if (entry.roundsCompleted < 1 || entry.roundsCompleted > 15) return 'Round sayısı geçersiz';
-  if (!Array.isArray(roundHistory) || roundHistory.length === 0) return 'Round geçmişi eksik';
+  if (!Array.isArray(roundHistory) || roundHistory.length === 0 || roundHistory.length > MAX_HISTORY_ENTRIES) {
+    return 'Round geçmişi geçersiz';
+  }
 
   const summed = roundHistory.reduce((s, r) => s + (r.pointsEarned ?? 0), 0);
   if (Math.abs(summed - entry.totalScore) > SCORE_TOLERANCE) {
     return `Puan toplamı uyuşmuyor (${summed} vs ${entry.totalScore})`;
   }
 
+  const playedRoundNumbers = new Set<number>();
   for (const r of roundHistory) {
+    if (!Number.isInteger(r.round) || r.round < 1 || r.round > 15) return 'Geçersiz round numarası';
     if (!r.cardSelected?.id) return 'Geçersiz kart seçimi';
+    const selectedKind = r.cardSelected.kind ?? 'player';
+    const offerRequired = !r.isEvent && selectedKind !== 'event' && selectedKind !== 'training' && selectedKind !== 'skip';
+    if (offerRequired) {
+      const shown = Array.isArray(r.cardsShown) ? r.cardsShown : [];
+      const selectedWasShown = shown.some((c) => c.id === r.cardSelected.id && (c.kind ?? 'player') === selectedKind);
+      if (!selectedWasShown) return `Round ${r.round} seçimi tekliflerde yok`;
+    }
     if (r.matchResult?.roundPoints && Math.abs(r.pointsEarned - r.matchResult.roundPoints) > 120) {
       return `Round ${r.round} puanı şüpheli`;
     }
+    if (r.isEvent || selectedKind === 'event') {
+      if (r.matchResult) return `Round ${r.round} olayında maç sonucu var`;
+      if (Math.abs(r.pointsEarned ?? 0) > MAX_EVENT_ABS_POINTS) return `Round ${r.round} olay puanı şüpheli`;
+      continue;
+    }
+    if (r.isTacticBonus) {
+      if (r.matchResult) return `Round ${r.round} taktik turunda maç sonucu var`;
+      if ((r.pointsEarned ?? 0) < 0 || (r.pointsEarned ?? 0) > MAX_TACTIC_POINTS) return `Round ${r.round} taktik puanı şüpheli`;
+      continue;
+    }
+    if (playedRoundNumbers.has(r.round)) return `Round ${r.round} tekrar edilmiş`;
+    playedRoundNumbers.add(r.round);
+    if (!r.matchResult) return `Round ${r.round} maç sonucu eksik`;
+    if ((r.pointsEarned ?? 0) < 0 || (r.pointsEarned ?? 0) > MAX_MATCH_POINTS) return `Round ${r.round} maç puanı şüpheli`;
   }
 
   if (!digest || digest.length < 8) return 'Digest eksik';
@@ -116,19 +153,56 @@ function validate(body: SubmitBody): string | null {
   return null;
 }
 
-// ALLOWED_ORIGIN env ayarlıysa yalnızca o origin'e izin ver; yoksa '*' (geriye dönük uyumlu).
-const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
-const CORS_HEADERS: Record<string, string> = {
-  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Vary': 'Origin',
-};
-const JSON_HEADERS = { 'Content-Type': 'application/json', ...CORS_HEADERS };
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://birdaha.tech',
+  'https://www.birdaha.tech',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+];
+
+function allowedOrigins(): string[] {
+  const raw = Deno.env.get('ALLOWED_ORIGIN') ?? Deno.env.get('ALLOWED_ORIGINS');
+  if (!raw) return DEFAULT_ALLOWED_ORIGINS;
+  return raw.split(',').map((x) => x.trim()).filter(Boolean);
+}
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowed = allowedOrigins();
+  const allowOrigin = allowed.includes('*')
+    ? '*'
+    : allowed.includes(origin)
+      ? origin
+      : allowed[0]!;
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
+}
+
+function isOriginAllowed(req: Request): boolean {
+  const origin = req.headers.get('Origin');
+  if (!origin) return true;
+  const allowed = allowedOrigins();
+  return allowed.includes('*') || allowed.includes(origin);
+}
 
 Deno.serve(async (req) => {
+  const CORS_HEADERS = corsHeaders(req);
+  const JSON_HEADERS = { 'Content-Type': 'application/json', ...CORS_HEADERS };
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: CORS_HEADERS });
+  }
+  if (!isOriginAllowed(req)) {
+    return new Response(JSON.stringify({ ok: false, error: 'Origin reddedildi' }), {
+      status: 403,
+      headers: JSON_HEADERS,
+    });
   }
 
   if (req.method !== 'POST') {

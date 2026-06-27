@@ -158,19 +158,19 @@ export function MainMenu() {
                 </div>
 
                 <div className="menu-play-actions">
-                  <button type="button" className="btn-primary menu-play-btn" onClick={() => handlePlayClick(true)}>
-                    <span className="menu-play-btn-icon">▶</span>
-                    <span>
-                      <span className="menu-play-btn-label">Oyna — Günlük Seed</span>
-                      <span className="menu-play-btn-sub">Herkes aynı kartları görür · skor kıyaslanır</span>
-                    </span>
-                    <span className="menu-play-btn-arrow" aria-hidden>→</span>
-                  </button>
                   <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" onClick={() => handlePlayClick(false)}>
                     <span className="menu-play-btn-icon">🎲</span>
                     <span>
                       <span className="menu-play-btn-label">Serbest Mod — Rastgele Seed</span>
                       <span className="menu-play-btn-sub">Her oyunda yeni kadro · pratik yap, sınır yok</span>
+                    </span>
+                    <span className="menu-play-btn-arrow" aria-hidden>→</span>
+                  </button>
+                  <button type="button" className="btn-primary menu-play-btn" onClick={() => handlePlayClick(true)}>
+                    <span className="menu-play-btn-icon">▶</span>
+                    <span>
+                      <span className="menu-play-btn-label">Oyna — Günlük Seed</span>
+                      <span className="menu-play-btn-sub">Herkes aynı kartları görür · skor kıyaslanır</span>
                     </span>
                     <span className="menu-play-btn-arrow" aria-hidden>→</span>
                   </button>

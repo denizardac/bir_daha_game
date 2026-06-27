@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { drawOffers, rerollSinglePlayerOffer } from '@/engine/cardDraw';
+import { drawOffers, drawTacticCategoryOffers, rerollSinglePlayerOffer } from '@/engine/cardDraw';
 import { PLAYER_POOL, clonePlayer } from '@/data/players';
 import { isPlayerCard } from '@/types';
 
@@ -19,6 +19,13 @@ describe('drawOffers', () => {
     const a = drawOffers('stable-seed', 5, 1, squad, [], false, 0);
     const b = drawOffers('stable-seed', 5, 1, squad, [], false, 0);
     expect(a.map((c) => c.id)).toEqual(b.map((c) => c.id));
+  });
+
+  it('changes player offers across different seeds', () => {
+    const squad = [{ id: 'p1', name: 'Deniz Acar', position: 'OS' as const }];
+    const a = drawOffers('daily-seed-a', 5, 1, squad, [], false, 0).map((c) => c.id);
+    const b = drawOffers('daily-seed-b', 5, 1, squad, [], false, 0).map((c) => c.id);
+    expect(a).not.toEqual(b);
   });
 
   it('boosts rarity on reroll index', () => {
@@ -59,5 +66,12 @@ describe('drawOffers', () => {
         }
       }
     }
+  });
+
+  it('tactic category reroll excludes cards already shown in that category', () => {
+    const current = ['tactic_433_kontr', 'tactic_442'];
+    const fresh = drawTacticCategoryOffers('tactic-reroll-seed', 3, [], 'formasyon', 1, current);
+    expect(fresh).toHaveLength(2);
+    expect(fresh.some((c) => current.includes(c.id))).toBe(false);
   });
 });

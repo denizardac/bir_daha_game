@@ -1,11 +1,17 @@
 import { getStartingSquad } from '@/data/players';
-import { drawOffers } from '@/engine/cardDraw';
+import { drawOffers, getOfferDrawModeForRound } from '@/engine/cardDraw';
+import { isEventRound } from '@/data/events';
+import { getTacticCategory, getTacticEffect } from '@/data/tactics';
+import { drawEvent, previewEventPlayer, resolveEvent } from '@/engine/events';
+import { getEventRatingTarget, resolveEventRemoval } from '@/engine/eventRemoval';
+import { isTacticBonusRound, TACTIC_BONUS_MORALE, TACTIC_BONUS_SCORE } from '@/engine/roundFlow';
 import { applyPlayerToSquad } from '@/engine/lineupPreview';
 import { simulateMatch } from '@/engine/matchSimulation';
 import { calculateRoundPoints } from '@/engine/scoring';
-import { selectDepartingPlayer } from '@/engine/squadLogic';
+import { getWeakestPlayer, selectDepartingPlayer } from '@/engine/squadLogic';
 import { getRandomSeed } from '@/engine/seed';
-import { isPlayerCard } from '@/types';
+import { isPlayerCard, isTacticCard } from '@/types';
+import type { ActiveTactic, PlayerCard } from '@/types';
 
 export type PlaytestRunResult = {
   seed: string;
@@ -35,8 +41,64 @@ function autoPick(offers: ReturnType<typeof drawOffers>) {
   return offers[0]!;
 }
 
+function applyEventForPlaytest(
+  seed: string,
+  round: number,
+  squad: PlayerCard[],
+  morale: number,
+  score: number,
+  activeTactics: ActiveTactic[],
+  lossesCount: number,
+) {
+  const event = drawEvent(seed, round, [], {
+    streak: 0,
+    morale,
+    lossesCount,
+    squadSize: squad.length,
+    maxSquadSize: 11,
+    round,
+  });
+  const choice = morale < 38 ? 'B' : 'A';
+  const outcome = resolveEvent(event, choice, { squad, morale, score, activeTactics });
+  let nextSquad = [...squad];
+  let nextMorale = Math.min(100, Math.max(0, morale + outcome.moraleDelta));
+  let nextScore = Math.max(0, score + outcome.scoreDelta);
+
+  if (outcome.removeWeakest && nextSquad.length > 4) {
+    const target = resolveEventRemoval(event.id, choice, nextSquad, activeTactics, outcome.sellPlayerId) ?? getWeakestPlayer(nextSquad);
+    nextSquad = nextSquad.filter((p) => p.id !== target.id);
+  }
+  if (outcome.tempRatingDelta) {
+    const target = getEventRatingTarget(event.id, choice, nextSquad);
+    if (target) {
+      nextSquad = nextSquad.map((p) =>
+        p.id === target.id ? { ...p, tempRatingMod: (p.tempRatingMod ?? 0) + outcome.tempRatingDelta! } : p,
+      );
+    }
+  }
+  if (outcome.addYouth && nextSquad.length < 11) {
+    nextSquad = [...nextSquad, previewEventPlayer(seed, round, event.id)];
+  }
+  if (outcome.grantTag) {
+    const target = [...nextSquad].sort((a, b) => b.currentRating - a.currentRating)[0];
+    if (target && !target.tags.includes(outcome.grantTag)) {
+      nextSquad = nextSquad.map((p) =>
+        p.id === target.id ? { ...p, tags: [...p.tags, outcome.grantTag!] } : p,
+      );
+    }
+  }
+
+  return {
+    squad: nextSquad,
+    morale: nextMorale,
+    score: nextScore,
+    nextMatchRisk: outcome.nextMatchRisk ?? 0,
+    nextMatchBonus: outcome.nextMatchBonus ?? 0,
+  };
+}
+
 export function simulateFullRun(seed: string, maxRounds = 15): PlaytestRunResult {
-  let squad = getStartingSquad();
+  let squad = getStartingSquad(seed, true);
   let morale = 50;
   let score = 0;
   let streak = 0;
@@ -45,24 +107,54 @@ export function simulateFullRun(seed: string, maxRounds = 15): PlaytestRunResult
   let draws = 0;
   let losses = 0;
   const discovered: string[] = [];
-  const activeTactics: never[] = [];
+  let activeTactics: ActiveTactic[] = [];
+  let nextMatchRisk = 0;
+  let nextMatchBonus = 0;
 
   for (let round = 1; round <= maxRounds; round++) {
-    if (round % 3 === 0 && round < maxRounds) {
-      score += 35;
-      morale = Math.min(100, morale + 8);
+    if (isEventRound(round)) {
+      const eventResult = applyEventForPlaytest(seed, round, squad, morale, score, activeTactics, lossesCount);
+      squad = eventResult.squad;
+      morale = eventResult.morale;
+      score = eventResult.score;
+      nextMatchRisk = eventResult.nextMatchRisk;
+      nextMatchBonus = eventResult.nextMatchBonus;
+    }
+
+    if (isTacticBonusRound(round, maxRounds)) {
+      const offers = drawOffers(seed, round, lossesCount, squad, activeTactics.map((t) => t.id), false, 0, 'normal', 'tacticBonus');
+      const formation = offers.find((o) => isTacticCard(o) && getTacticCategory(o.id) === 'formasyon');
+      const system = offers.find((o) => isTacticCard(o) && getTacticCategory(o.id) === 'sistem');
+      activeTactics = [
+        ...(formation ? [getTacticEffect(formation.id)] : activeTactics.filter((t) => getTacticCategory(t.id) === 'formasyon')),
+        ...(system ? [getTacticEffect(system.id)] : activeTactics.filter((t) => getTacticCategory(t.id) === 'sistem')),
+      ];
+      score += TACTIC_BONUS_SCORE;
+      morale = Math.min(100, morale + TACTIC_BONUS_MORALE);
       continue;
     }
 
-    const offers = drawOffers(seed, round, lossesCount, squad, [], false, 0);
+    const offers = drawOffers(
+      seed,
+      round,
+      lossesCount,
+      squad,
+      activeTactics.map((t) => t.id),
+      lossesCount > 0 && lossesCount <= 2,
+      0,
+      'normal',
+      getOfferDrawModeForRound(round, maxRounds),
+    );
     const pick = autoPick(offers);
     if (isPlayerCard(pick)) {
       squad = applyPlayerToSquad(squad, pick, 11, morale, activeTactics);
     }
 
-    const match = simulateMatch(seed, round, squad, morale, 11, discovered, activeTactics, 0, 0, lossesCount);
+    const match = simulateMatch(seed, round, squad, morale, 11, discovered, activeTactics, nextMatchRisk, nextMatchBonus, lossesCount);
     const points = calculateRoundPoints(match, squad, morale, streak, round, lossesCount, activeTactics, 0, lossesCount === 0);
     score += points;
+    nextMatchRisk = 0;
+    nextMatchBonus = 0;
 
     if (match.outcome === 'win') {
       wins++;
@@ -75,7 +167,7 @@ export function simulateFullRun(seed: string, maxRounds = 15): PlaytestRunResult
     } else {
       losses++;
       streak = 0;
-      morale = Math.max(0, morale - 20);
+      morale = Math.max(0, morale - 16);
       const out = selectDepartingPlayer(squad, morale);
       squad = squad.filter((p) => p.id !== out.id);
       lossesCount++;

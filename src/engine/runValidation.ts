@@ -13,6 +13,16 @@ export type RunValidationResult = {
 };
 
 const SCORE_TOLERANCE = 30;
+const MAX_HISTORY_ENTRIES = 32;
+const MAX_MATCH_POINTS = 25_000;
+const MAX_TACTIC_POINTS = 500;
+const MAX_EVENT_ABS_POINTS = 1_000;
+
+function selectedCardWasOffered(r: RoundResult): boolean {
+  const kind = r.cardSelected?.kind;
+  if (r.isEvent || kind === 'event' || kind === 'training' || kind === 'skip') return true;
+  return r.cardsShown?.some((c) => c.id === r.cardSelected.id && c.kind === kind) ?? false;
+}
 
 export function validateRunSubmissionSync(
   entry: Omit<LeaderboardEntry, 'weekKey'>,
@@ -25,6 +35,10 @@ export function validateRunSubmissionSync(
 
   if (!digest || digest.length < 8) {
     return { ok: false, reason: 'Bütünlük özeti eksik' };
+  }
+
+  if (!Array.isArray(roundHistory) || roundHistory.length === 0 || roundHistory.length > MAX_HISTORY_ENTRIES) {
+    return { ok: false, reason: 'Round geçmişi geçersiz' };
   }
 
   if (entry.integrityDigest && entry.integrityDigest !== digest) {
@@ -41,7 +55,11 @@ export function validateRunSubmissionSync(
     return { ok: false, reason: `Puan toplamı uyuşmuyor (${summed} vs ${entry.totalScore})` };
   }
 
+  const playedRoundNumbers = new Set<number>();
   for (const r of roundHistory) {
+    if (!Number.isInteger(r.round) || r.round < 1 || r.round > 15) {
+      return { ok: false, reason: 'Geçersiz round numarası' };
+    }
     if (r.matchResult && r.matchResult.roundPoints > 0) {
       const diff = Math.abs(r.pointsEarned - r.matchResult.roundPoints);
       if (diff > 120) {
@@ -51,6 +69,25 @@ export function validateRunSubmissionSync(
     if (!r.cardSelected?.id) {
       return { ok: false, reason: 'Eksik kart seçimi' };
     }
+    if (!selectedCardWasOffered(r)) {
+      return { ok: false, reason: `Round ${r.round} seçimi tekliflerde yok` };
+    }
+    if (r.isEvent) {
+      if (r.matchResult) return { ok: false, reason: `Round ${r.round} olayında maç sonucu var` };
+      if (Math.abs(r.pointsEarned) > MAX_EVENT_ABS_POINTS) return { ok: false, reason: `Round ${r.round} olay puanı şüpheli` };
+      continue;
+    }
+    if (r.isTacticBonus) {
+      if (r.matchResult) return { ok: false, reason: `Round ${r.round} taktik turunda maç sonucu var` };
+      if (r.pointsEarned < 0 || r.pointsEarned > MAX_TACTIC_POINTS) return { ok: false, reason: `Round ${r.round} taktik puanı şüpheli` };
+      continue;
+    }
+    if (playedRoundNumbers.has(r.round)) {
+      return { ok: false, reason: `Round ${r.round} tekrar edilmiş` };
+    }
+    playedRoundNumbers.add(r.round);
+    if (!r.matchResult) return { ok: false, reason: `Round ${r.round} maç sonucu eksik` };
+    if (r.pointsEarned < 0 || r.pointsEarned > MAX_MATCH_POINTS) return { ok: false, reason: `Round ${r.round} maç puanı şüpheli` };
   }
 
   return { ok: true };

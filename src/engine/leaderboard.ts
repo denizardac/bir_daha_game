@@ -19,6 +19,7 @@ export function getTodayKey(): string {
 export function addScoreToLeaderboards(
   data: PersistedData,
   entry: Omit<LeaderboardEntry, 'weekKey'>,
+  isDailyScore = true,
 ): PersistedData {
   const weekKey = getWeekKey();
   const fullEntry: LeaderboardEntry = { ...entry, weekKey };
@@ -33,7 +34,9 @@ export function addScoreToLeaderboards(
   };
 
   const seed = entry.seed;
-  const dailyLeaderboard = upsertBest(data.dailyLeaderboard, fullEntry, (x) => x.seed === seed);
+  const dailyLeaderboard = isDailyScore
+    ? upsertBest(data.dailyLeaderboard, fullEntry, (x) => x.seed === seed)
+    : data.dailyLeaderboard;
   const weeklyLeaderboard = upsertBest(data.weeklyLeaderboard, fullEntry, (x) => x.weekKey === weekKey);
   const allTimeLeaderboard = upsertBest(data.allTimeLeaderboard, fullEntry);
 
@@ -43,12 +46,16 @@ export function addScoreToLeaderboards(
   }
 
   let dailyStreak = data.dailyStreak;
-  if (data.lastPlayedDate === today) {
-    /* same day */
-  } else if (isYesterday(data.lastPlayedDate, today)) {
-    dailyStreak += 1;
-  } else {
-    dailyStreak = 1;
+  let lastPlayedDate = data.lastPlayedDate;
+  if (isDailyScore) {
+    if (data.lastPlayedDate === today) {
+      /* same day */
+    } else if (isYesterday(data.lastPlayedDate, today)) {
+      dailyStreak += 1;
+    } else {
+      dailyStreak = 1;
+    }
+    lastPlayedDate = today;
   }
 
   return {
@@ -57,10 +64,10 @@ export function addScoreToLeaderboards(
     weeklyLeaderboard,
     allTimeLeaderboard,
     flawlessLeaderboard,
-    todayScore: Math.max(data.todayScore, entry.totalScore),
+    todayScore: isDailyScore ? Math.max(data.todayScore, entry.totalScore) : data.todayScore,
     allTimeBest: Math.max(data.allTimeBest, entry.totalScore),
     dailyStreak,
-    lastPlayedDate: today,
+    lastPlayedDate,
     totalRuns: data.totalRuns + 1,
   };
 }

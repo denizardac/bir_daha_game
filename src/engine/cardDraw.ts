@@ -212,9 +212,12 @@ export function drawTacticCategoryOffers(
   activeTacticIds: string[],
   category: 'formasyon' | 'sistem',
   rerollIndex: number,
+  excludeIds: string[] = [],
 ): TacticCard[] {
   const rng = createRng(seed, 'tactic-cat-reroll', round, category, rerollIndex);
-  let pool = TACTIC_CARDS.filter((t) => t.category === category && !activeTacticIds.includes(t.id));
+  const blocked = new Set([...activeTacticIds, ...excludeIds]);
+  let pool = TACTIC_CARDS.filter((t) => t.category === category && !blocked.has(t.id));
+  if (pool.length < 2) pool = TACTIC_CARDS.filter((t) => t.category === category && !excludeIds.includes(t.id));
   if (pool.length < 2) pool = TACTIC_CARDS.filter((t) => t.category === category);
   const picked: TacticCard[] = [];
   while (picked.length < 2) {

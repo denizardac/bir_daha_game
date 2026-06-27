@@ -67,7 +67,6 @@ export function calculateRoundPoints(
   if (round === 1 && match.outcome === 'win') points += 200;
   // Final (round 15) bonusları yalnızca ŞAMPİYONLUK (galibiyet) ile verilir — beraberlik şampiyonluk değildir
   if (round === 15 && match.outcome === 'win') points += FINALE_MATCH_BONUS;
-  if (round === 15 && match.outcome === 'win' && lossesCount === 0) points += 2000;
   if (scoringSquad.length <= 4 && match.outcome === 'win') points += 800;
   for (const id of match.newlyDiscoveredSynergies) {
     points += 200;

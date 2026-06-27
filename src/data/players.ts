@@ -185,6 +185,43 @@ const POOL: PlayerTemplate[] = [
   { name: 'Kayra Demir', rating: 74, position: 'OOS', rarity: 'iyi', tags: ['PENALTI', 'TEKNİK'] },
 ];
 
+const LEGENDARY_PROFILES: PlayerTemplate[] = [
+  { name: 'Gökhan Sazdağı', rating: 88, position: 'SÖB', rarity: 'efsane', tags: ['DAYANIKLI', 'YERLİ', 'LİDER'], signature: true, signatureColor: '#22c55e', signatureQuote: 'Söz verdik, sözümüzü tuttuk.' },
+  { name: 'Burak Yılmaz', rating: 91, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'LİDER', 'KAPİTAN'], signature: true, signatureColor: '#ef4444', signatureQuote: 'Benim kanım her renk akar.' },
+  { name: 'Peter Etebo', rating: 88, position: 'DOS', rarity: 'efsane', tags: ['GÜÇLÜ', 'SAVAŞÇI', 'DAYANIKLI'], signature: true, signatureColor: '#f97316', signatureQuote: 'Etebo çok güçlü, Etebo!' },
+  { name: 'Daniel Güiza', rating: 87, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'YABANCI YILDIZ', 'TARTIŞMALI'], signature: true, signatureColor: '#facc15', signatureQuote: 'Vuruyorum... tabelacı hazır olsun.' },
+  { name: 'Sabri Sarıoğlu', rating: 88, position: 'SÖB', rarity: 'efsane', tags: ['HIZLI', 'YERLİ', 'SERBEST VURUŞ'], signature: true, signatureColor: '#fb923c', signatureQuote: 'Uzaktan denemeden maç bitmez.' },
+  { name: 'Batuhan Karadeniz', rating: 87, position: 'SF', rarity: 'efsane', tags: ['GÜÇLÜ', 'TARTIŞMALI', 'SOYUNMA ODASI'], signature: true, signatureColor: '#a855f7', signatureQuote: 'Ben antrenman yapmam, maça çıkarım.' },
+  { name: 'Sergen Yalçın', rating: 91, position: 'OOS', rarity: 'efsane', tags: ['TEKNİK', 'LİDER', 'SOĞUKKANLI'], signature: true, signatureColor: '#38bdf8', signatureQuote: 'Koşsaydım Barcelona’da oynardım.' },
+  { name: 'Volkan Demirel', rating: 90, position: 'KL', rarity: 'efsane', tags: ['LİDER', 'KAPİTAN', 'PENALTI'], signature: true, signatureColor: '#eab308', signatureQuote: 'Biz bitti demeden bitmez.' },
+  { name: 'Ricardo Quaresma', rating: 90, position: 'SLK', rarity: 'efsane', tags: ['TEKNİK', 'ASİSTÇİ', 'YABANCI YILDIZ'], signature: true, signatureColor: '#e879f9', signatureQuote: 'Basit pas yok; trivela varsa oyun var.' },
+  { name: 'Ozan Tufan', rating: 88, position: 'OS', rarity: 'efsane', tags: ['GÜÇLÜ', 'YERLİ', 'DAYANIKLI'], signature: true, signatureColor: '#60a5fa', signatureQuote: 'I am sorry he... orta sahayı kapattı.' },
+  { name: 'Max Kruse', rating: 89, position: 'OOS', rarity: 'efsane', tags: ['TEKNİK', 'PENALTI', 'YABANCI YILDIZ'], signature: true, signatureColor: '#14b8a6', signatureQuote: 'Maç bittiyse poker masasına geçiyorum hocam.' },
+  { name: 'Mario Balotelli', rating: 90, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'TARTIŞMALI', 'YABANCI YILDIZ'], signature: true, signatureColor: '#f43f5e', signatureQuote: 'Why always me?' },
+  { name: 'Engin Baytar', rating: 87, position: 'OOS', rarity: 'efsane', tags: ['SAVAŞÇI', 'KIRMIZI KART', 'TEKNİK'], signature: true, signatureColor: '#dc2626', signatureQuote: 'Hakem beyin yakası buruşmuştu, düzelttim.' },
+  { name: 'Ariel Ortega', rating: 89, position: 'OOS', rarity: 'efsane', tags: ['TEKNİK', 'YABANCI YILDIZ', 'TARTIŞMALI'], signature: true, signatureColor: '#06b6d4', signatureQuote: 'Bu şehri sevemedim, topu alıp dönüyorum.' },
+  { name: 'Mustafa Pektemek', rating: 87, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'SAKATLIK RİSKİ', 'YERLİ'], signature: true, signatureColor: '#f59e0b', signatureQuote: 'Formayı giydim, ısındım... yine nazarlık olduk.' },
+  { name: 'Selçuk İnan', rating: 89, position: 'OS', rarity: 'efsane', tags: ['TEKNİK', 'SERBEST VURUŞ', 'KAPİTAN'], signature: true, signatureColor: '#fbbf24', signatureQuote: 'Yanımdaki adam boştaysa risk almam.' },
+  { name: 'Alper Potuk', rating: 87, position: 'OS', rarity: 'efsane', tags: ['YERLİ', 'PERFORMANS DÜŞÜŞÜ', 'TEKNİK'], signature: true, signatureColor: '#94a3b8', signatureQuote: 'Sözleşme uzadıysa tempoyu kısmak sanattır.' },
+  { name: 'Tanju Çolak', rating: 91, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'PENALTI', 'SOĞUKKANLI'], signature: true, signatureColor: '#f97316', signatureQuote: 'Ceza sahası bana kira öder.' },
+  { name: 'Alex de Souza', rating: 91, position: 'OOS', rarity: 'efsane', tags: ['TEKNİK', 'ASİSTÇİ', 'LİDER'], signature: true, signatureColor: '#fde047', signatureQuote: 'Top bana gelince zaman biraz yavaşlar.' },
+  { name: 'Gheorghe Hagi', rating: 91, position: 'OOS', rarity: 'efsane', tags: ['TEKNİK', 'LİDER', 'SERBEST VURUŞ'], signature: true, signatureColor: '#facc15', signatureQuote: 'Sol ayağım açıldıysa tabelaya bakın.' },
+  { name: 'Metin Tekin', rating: 88, position: 'SLK', rarity: 'efsane', tags: ['HIZLI', 'ASİSTÇİ', 'YERLİ'], signature: true, signatureColor: '#f8fafc', signatureQuote: 'Sarı fırtına çizgiden eser.' },
+  { name: 'Rıdvan Dilmen', rating: 89, position: 'SÖK', rarity: 'efsane', tags: ['HIZLI', 'TEKNİK', 'YERLİ'], signature: true, signatureColor: '#f59e0b', signatureQuote: 'Şeytan ayrıntıda değil, sağ kanatta.' },
+  { name: 'Arda Turan', rating: 89, position: 'OS', rarity: 'efsane', tags: ['TEKNİK', 'LİDER', 'TARTIŞMALI'], signature: true, signatureColor: '#ef4444', signatureQuote: 'Topu saklarım, gündemi de.' },
+  { name: 'Emre Belözoğlu', rating: 89, position: 'DOS', rarity: 'efsane', tags: ['SAVAŞÇI', 'LİDER', 'KIRMIZI KART'], signature: true, signatureColor: '#16a34a', signatureQuote: 'Tansiyon yükselirse oyunu ben kurarım.' },
+  { name: 'Hasan Şaş', rating: 88, position: 'SLK', rarity: 'efsane', tags: ['SAVAŞÇI', 'HIZLI', 'YERLİ'], signature: true, signatureColor: '#fb923c', signatureQuote: 'Çizgi benim, itirazı sonra alırım.' },
+  { name: 'Ümit Karan', rating: 88, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'SOĞUKKANLI', 'YERLİ'], signature: true, signatureColor: '#f87171', signatureQuote: 'Ceza sahasında magazin yok, bitiriş var.' },
+  { name: 'Pascal Nouma', rating: 88, position: 'SF', rarity: 'efsane', tags: ['GÜÇLÜ', 'TARTIŞMALI', 'SOYUNMA ODASI'], signature: true, signatureColor: '#0f172a', signatureQuote: 'Formayı yırtarım, maçı da yırtarım.' },
+  { name: 'Felipe Melo', rating: 89, position: 'DOS', rarity: 'efsane', tags: ['SAVAŞÇI', 'GÜÇLÜ', 'KIRMIZI KART'], signature: true, signatureColor: '#fde047', signatureQuote: 'Pitbull tasmasını soyunma odasında bıraktı.' },
+  { name: 'Claudio Taffarel', rating: 90, position: 'KL', rarity: 'efsane', tags: ['SOĞUKKANLI', 'MENTOR', 'DAYANIKLI'], signature: true, signatureColor: '#22d3ee', signatureQuote: 'Kalede panik yok, ders var.' },
+  { name: 'Fernando Muslera', rating: 91, position: 'KL', rarity: 'efsane', tags: ['DAYANIKLI', 'LİDER', 'SOĞUKKANLI'], signature: true, signatureColor: '#facc15', signatureQuote: 'Uzatmalarda bile nabız aynı.' },
+  { name: 'Caner Erkin', rating: 88, position: 'SLB', rarity: 'efsane', tags: ['ASİSTÇİ', 'SAVAŞÇI', 'SERBEST VURUŞ'], signature: true, signatureColor: '#38bdf8', signatureQuote: 'Orta açılacaksa ses de yükselir.' },
+  { name: 'Gökdeniz Karadeniz', rating: 88, position: 'SÖK', rarity: 'efsane', tags: ['HIZLI', 'TEKNİK', 'YERLİ'], signature: true, signatureColor: '#10b981', signatureQuote: 'Karadeniz’den çıkış var, dönüş yok.' },
+  { name: 'İlhan Mansız', rating: 89, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'TEKNİK', 'SOĞUKKANLI'], signature: true, signatureColor: '#e5e7eb', signatureQuote: 'Altın gol değilse de altın poz.' },
+  { name: 'Aykut Kocaman', rating: 88, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'SOĞUKKANLI', 'LİDER'], signature: true, signatureColor: '#fbbf24', signatureQuote: 'Golü atarım, yüzüm aynı kalır.' },
+];
+
 function hashMix(n: number, salt: number): number {
   let x = Math.imul(n + 1, 2654435761) ^ salt;
   x = Math.imul(x ^ (x >>> 16), 0x7feb352d);
@@ -310,18 +347,10 @@ function generateExtraPlayers(): PlayerCard[] {
 }
 
 export const PLAYER_POOL: PlayerCard[] = [
-  ...POOL.map((p, i) => makePlayer(p, `player_${String(i + 1).padStart(3, '0')}`)),
-  ...generateExtraPlayers(),
-];
-
-const DAILY_START_SQUAD: PlayerTemplate[] = [
-  { name: 'Cenk Arslan', rating: 62, position: 'KL', rarity: 'normal', tags: [] },
-  { name: 'Burak Koç', rating: 61, position: 'STP', rarity: 'normal', tags: ['GÜÇLÜ'] },
-  { name: 'Kerem Aydın', rating: 60, position: 'STP', rarity: 'normal', tags: [] },
-  { name: 'Mert Çelik', rating: 63, position: 'STP', rarity: 'normal', tags: [] },
-  { name: 'Deniz Acar', rating: 62, position: 'OS', rarity: 'normal', tags: [] },
-  { name: 'Hakan Yılmaz', rating: 61, position: 'DOS', rarity: 'normal', tags: [] },
-  { name: 'Ali Rıza', rating: 60, position: 'SLK', rarity: 'normal', tags: [] },
+  ...POOL
+    .flatMap((p, i) => (p.rarity === 'efsane' ? [] : [makePlayer(p, `player_${String(i + 1).padStart(3, '0')}`)])),
+  ...generateExtraPlayers().filter((p) => p.rarity !== 'efsane'),
+  ...LEGENDARY_PROFILES.map((p, i) => makePlayer(p, `legend_${String(i + 1).padStart(2, '0')}`)),
 ];
 
 const BAD_START_TAGS: Tag[] = ['GERİLEYEN', 'SAKATLIK RİSKİ', 'PERFORMANS DÜŞÜŞÜ', 'TARTIŞMALI'];
@@ -353,22 +382,27 @@ function cloneFreeStarter(template: PlayerCard, rng: () => number, id: string): 
   }, id, true);
 }
 
-export function getStartingSquad(seed?: string, isDaily = true): PlayerCard[] {
-  if (isDaily) {
-    return DAILY_START_SQUAD.map((p, i) => makePlayer(p, `start_${i}`, true));
-  }
-
-  const rng = createRng(seed ?? 'free', 'start-squad');
+function drawSeededStartingSquad(seed: string, isDaily: boolean): PlayerCard[] {
+  const rng = createRng(seed, isDaily ? 'daily-start-squad-v2' : 'start-squad');
   const usedNames = new Set<string>();
-  const pool = PLAYER_POOL.filter((p) => !p.tags.some((t) => BAD_START_TAGS.includes(t)));
+  const pool = PLAYER_POOL.filter((p) => p.rarity !== 'efsane' && !p.tags.some((t) => BAD_START_TAGS.includes(t)));
   const squad: PlayerCard[] = [];
 
-  const gks = pool.filter((p) => p.position === 'KL');
-  if (gks.length) {
-    const gk = gks[Math.floor(rng() * gks.length)]!;
-    usedNames.add(gk.name);
-    squad.push(cloneFreeStarter(gk, rng, 'start_kl_0'));
-  }
+  const pickFrom = (positions: Position[], id: string) => {
+    const available = pool.filter((p) => positions.includes(p.position) && !usedNames.has(p.name));
+    if (!available.length) return;
+    const pick = available[Math.floor(rng() * available.length)]!;
+    usedNames.add(pick.name);
+    squad.push(cloneFreeStarter(pick, rng, id));
+  };
+
+  pickFrom(['KL'], 'start_kl_0');
+  pickFrom(['STP'], 'start_stp_1');
+  pickFrom(['STP', 'SLB', 'SÖB'], 'start_def_2');
+  pickFrom(['DOS', 'OS'], 'start_mid_3');
+  pickFrom(['OS', 'OOS'], 'start_mid_4');
+  pickFrom(['SLK', 'SÖK', 'SLB', 'SÖB'], 'start_wide_5');
+  pickFrom(['SF', 'OOS', 'SLK', 'SÖK'], 'start_att_6');
 
   while (squad.length < FREE_START_SIZE) {
     const hasGk = squad.some((p) => p.position === 'KL');
@@ -384,6 +418,14 @@ export function getStartingSquad(seed?: string, isDaily = true): PlayerCard[] {
   }
 
   return squad;
+}
+
+export function getStartingSquad(seed?: string, isDaily = true): PlayerCard[] {
+  if (isDaily) {
+    return drawSeededStartingSquad(seed ?? 'daily', true);
+  }
+
+  return drawSeededStartingSquad(seed ?? 'free', false);
 }
 
 export function clonePlayer(player: PlayerCard): PlayerCard {

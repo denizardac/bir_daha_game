@@ -1,116 +1,80 @@
-# birdaha.tech — Domain + Hosting (Cloudflare Pages)
+# birdaha.tech - Domain + Hosting
 
-Vercel kullanmadan, GitHub + ücretsiz Cloudflare Pages ile yayın.
+GitHub + Cloudflare Pages ile yayin akisi.
 
----
+## Supabase kontrol listesi
 
-## Supabase kontrol listesi (önce bunu doğrula)
+| Adim | Durum |
+|------|-------|
+| `supabase db push` / `001_leaderboard.sql` calisti | Kontrol et |
+| `submit-score` Edge Function deploy edildi | Kontrol et |
+| `record-start` Edge Function deploy edildi | Kontrol et |
+| `LEADERBOARD_HMAC_SECRET` set edildi | Kontrol et |
+| `ALLOWED_ORIGINS` prod domainlere kisitlandi | Kontrol et |
+| Client env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | Kontrol et |
+| Test run: `run_starts` satiri | Kontrol et |
+| Test run bitisi: `leaderboard_scores` satiri | Kontrol et |
 
-| Adım | Durum |
-|------|--------|
-| SQL (`001_leaderboard.sql`) çalıştı | ✅ sen yaptın |
-| `.env` → URL + anon key | ✅ |
-| `submit-score` Edge Function deploy | ✅ deploy ettiysen tamam |
-| Test: run bitir → `leaderboard_scores` satırı | ⬜ bir kez kontrol et |
+Gerekli komutlar:
 
-Supabase **halloldu** sayılır: tabloda skor görünüyorsa ve Leaderboard’da “Canlı sıralama — Supabase” yazıyorsa devam.
+```bash
+supabase db push
+supabase functions deploy submit-score
+supabase functions deploy record-start
+supabase secrets set ALLOWED_ORIGINS="https://birdaha.tech,https://www.birdaha.tech"
+```
 
----
+`LEADERBOARD_HMAC_SECRET` icin birebir placeholder yazma. PowerShell'de gercek random secret uretip set et:
 
-## 1. Cloudflare hesabı
+```powershell
+$bytes = New-Object byte[] 32
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+$rng.Dispose()
+$secret = [Convert]::ToBase64String($bytes)
+supabase secrets set "LEADERBOARD_HMAC_SECRET=$secret"
+```
 
-1. [dash.cloudflare.com](https://dash.cloudflare.com) → ücretsiz hesap
-2. **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
-3. GitHub → repo: **denizardac/bir_daha_game**
-4. Build ayarları:
+## Cloudflare Pages
 
-| Alan | Değer |
-|------|--------|
+1. Cloudflare Dashboard -> Workers & Pages -> Create -> Pages -> Connect to Git.
+2. Repo: `denizardac/bir_daha_game`.
+3. Build ayarlari:
+
+| Alan | Deger |
+|------|-------|
 | Framework preset | Vite |
 | Build command | `npm run build` |
 | Build output directory | `dist` |
 | Root directory | `/` |
 
-5. **Environment variables** (Production):
+Production environment variables:
 
-```
+```env
 VITE_SUPABASE_URL=https://<PROJE-REF>.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ... (anon key — .env'deki ile aynı)
+VITE_SUPABASE_ANON_KEY=<anon-public-key>
 ```
 
-> Gerçek proje URL'si ve anahtarı dokümana yazma; yalnızca Cloudflare/Netlify
-> ortam değişkenlerine ve gitignore'lanmış `.env` dosyasına gir.
+Gercek key'leri dokumana yazma. Cloudflare env ve local `.env` yeterli.
 
-6. **Save and Deploy** — ilk build bitsin (~2 dk)
+## Domain
 
-Geçici adres: `https://bir-daha-game.pages.dev` gibi bir URL verir.
-
----
-
-## 2. Domain’i Cloudflare Pages’e bağla
-
-Pages projesi → **Custom domains** → **Set up a custom domain**
-
+Pages projesi -> Custom domains:
 - `birdaha.tech`
-- `www.birdaha.tech` (opsiyonel ama önerilir)
+- `www.birdaha.tech`
 
-Cloudflare sana **DNS kayıtlarını** gösterecek.
+Cloudflare'in verdigi DNS yonlendirmesini domain panelinde uygula. Nameserver'i Cloudflare'e tasimak en temiz yoldur.
 
----
+## Yayin sonrasi test
 
-## 3. get.tech panelinde DNS (şu an olduğun ekran)
+- `https://birdaha.tech` aciliyor.
+- Oyun menu ve run akisi calisiyor.
+- Gunluk run baslatinca `run_starts` satiri geliyor.
+- Run bitince `leaderboard_scores` satiri geliyor.
+- Leaderboard canli listeyi ve rank'i gosteriyor.
+- Mobilde PWA yukleniyor.
+- Browser devtools console'da CORS/CSP hatasi yok.
 
-`birdaha.tech` yanındaki **Manage** → **DNS** / **Nameservers**
+## Not
 
-### Seçenek A — Önerilen: Nameserver’ları Cloudflare’e taşı
-
-1. Cloudflare’de site eklerken verilen 2 nameserver (ör. `ada.ns.cloudflare.com`)
-2. get.tech → Manage → Nameservers → Cloudflare NS’leri yapıştır
-3. 15 dk – 24 saat içinde `birdaha.tech` Pages’e bağlanır
-
-### Seçenek B — DNS get.tech’te kalsın
-
-Cloudflare Pages’in verdiği kayıtları get.tech DNS’e ekle:
-
-- **CNAME** `www` → `bir-daha-game.pages.dev`
-- **A** veya **CNAME** kök (`@`) → Cloudflare’in gösterdiği hedef
-
-(get.tech arayüzüne göre “Quick Connect” yerine manuel DNS daha güvenilir.)
-
----
-
-## 4. HTTPS
-
-Cloudflare otomatik SSL verir. Nameserver değişince **Full (strict)** yeterli.
-
----
-
-## 5. Yayın sonrası test
-
-- [ ] https://birdaha.tech açılıyor
-- [ ] Oyun yükleniyor, menü çalışıyor
-- [ ] Günlük run → Supabase tablosunda skor
-- [ ] Leaderboard canlı liste
-- [ ] Mobilde “Ana ekrana ekle” (PWA)
-
----
-
-## Alternatif: Netlify
-
-Aynı mantık: GitHub bağla, build `npm run build`, publish `dist`, env ekle, custom domain `birdaha.tech`.
-
-`public/_redirects` SPA routing için repoda hazır.
-
----
-
-## Özet sıra
-
-```
-Cloudflare Pages ← GitHub repo
-     ↓
-Env: VITE_SUPABASE_*
-     ↓
-Custom domain: birdaha.tech
-     ↓
-get.tech Manage → DNS / NS
-```
+`public/_headers` Cloudflare Pages icin guvenlik header'larini ekler: CSP, frame engeli, nosniff, referrer policy ve permissions policy.

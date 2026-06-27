@@ -202,7 +202,7 @@ async function persistRunEndScore(state: GameStore, score: number, roundsComplet
     return;
   }
   const hallEntry = { ...signed.entry, flawless: signed.entry.flawless ?? false };
-  savePersisted(addToHallOfFame(addScoreToLeaderboards(p, signed.entry), hallEntry));
+  savePersisted(addToHallOfFame(addScoreToLeaderboards(p, signed.entry, state.isDailySeed), hallEntry));
   if (isRemoteLeaderboardEnabled()) {
     void submitRunToLeaderboard(signed, state.roundHistory, state.isDailySeed).then((result) => {
       if (!result.ok) console.warn('[leaderboard] Uzak skor gönderilemedi:', result.error);
@@ -600,7 +600,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (state.formationRerollUsed) return;
     playSound('tick', loadPersisted().soundEnabled);
     const newIndex = state.offersRerollIndex + 1;
-    const fresh = drawTacticCategoryOffers(state.seed, state.round, state.activeTactics.map((t) => t.id), 'formasyon', newIndex);
+    const currentFormationIds = state.currentOffers
+      .filter((c) => isTacticCard(c) && getTacticCategory(c.id) === 'formasyon')
+      .map((c) => c.id);
+    const fresh = drawTacticCategoryOffers(state.seed, state.round, state.activeTactics.map((t) => t.id), 'formasyon', newIndex, currentFormationIds);
     const systems = state.currentOffers.filter((c) => isTacticCard(c) && getTacticCategory(c.id) === 'sistem');
     const next = {
       currentOffers: [...fresh, ...systems],
@@ -620,7 +623,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (state.systemRerollUsed) return;
     playSound('tick', loadPersisted().soundEnabled);
     const newIndex = state.offersRerollIndex + 1;
-    const fresh = drawTacticCategoryOffers(state.seed, state.round, state.activeTactics.map((t) => t.id), 'sistem', newIndex);
+    const currentSystemIds = state.currentOffers
+      .filter((c) => isTacticCard(c) && getTacticCategory(c.id) === 'sistem')
+      .map((c) => c.id);
+    const fresh = drawTacticCategoryOffers(state.seed, state.round, state.activeTactics.map((t) => t.id), 'sistem', newIndex, currentSystemIds);
     const formations = state.currentOffers.filter((c) => isTacticCard(c) && getTacticCategory(c.id) === 'formasyon');
     const next = {
       currentOffers: [...formations, ...fresh],

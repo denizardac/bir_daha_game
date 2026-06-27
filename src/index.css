@@ -14526,6 +14526,112 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   line-height: 0.9;
 }
 
+.run-end-hero-panel--dashboard {
+  width: min(100%, 980px);
+  text-align: left;
+}
+
+.run-end-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.run-end-hero-title {
+  margin: 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2.2rem, 5vw, 4.8rem);
+  font-weight: 900;
+  line-height: 0.9;
+}
+
+.run-end-hero-sub {
+  margin-top: 0.45rem;
+  color: var(--tx-2);
+  font-weight: 800;
+}
+
+.run-end-score-lockup {
+  min-width: 220px;
+  text-align: right;
+}
+
+.run-end-score-lockup span,
+.run-end-hero-metric span,
+.run-end-spotlight span {
+  display: block;
+  color: var(--tx-3);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.run-end-score-lockup strong {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--gold-2);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(3rem, 7vw, 6.2rem);
+  font-weight: 900;
+  line-height: 0.82;
+}
+
+.run-end-hero-metrics,
+.run-end-spotlight-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.run-end-spotlight-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.run-end-hero-metric,
+.run-end-spotlight {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 0.85rem;
+}
+
+.run-end-hero-metric strong,
+.run-end-spotlight strong {
+  display: block;
+  margin-top: 0.28rem;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.run-end-hero-metric small,
+.run-end-spotlight small {
+  display: block;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  color: var(--tx-2);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-end-primary-actions {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.8fr;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.run-end-primary-actions > button {
+  width: 100%;
+}
+
 @media (max-width: 1180px) {
   .card-select-layout--pick,
   .card-select-layout--tactic {
@@ -14539,6 +14645,32 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 @media (max-width: 960px) {
+  .run-end-shell {
+    align-items: flex-start;
+  }
+
+  .run-end-hero-top,
+  .run-end-primary-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .run-end-hero-top {
+    display: grid;
+  }
+
+  .run-end-score-lockup {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .run-end-hero-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .run-end-spotlight-grid {
+    grid-template-columns: 1fr;
+  }
+
   .lineup-preview-modal-shell {
     overflow: auto;
     align-items: flex-start;
