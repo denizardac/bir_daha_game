@@ -1251,9 +1251,18 @@ export function RunEndScreen() {
     return () => { cancelled = true; };
   }, [score, isDailySeed]);
 
-  const shareText = analysis
-    ? `BİR DAHA\nSkor: ${formatScore(score)}\nSıra: #${analysis.rank}/${analysis.totalPlayers}${analysis.rankPercent >= 50 ? ` (en iyi %${Math.max(1, 100 - analysis.rankPercent)})` : ''}\n${analysis.bestDecision ? `En iyi karar: R${analysis.bestDecision.round} ${analysis.bestDecision.cardName}` : ''}`
-    : formatScore(score);
+  const viralHook = score > 0
+    ? `${formatScore(score)} puan yaptım. Aynı seed'de geçebilir misin?`
+    : `${round} round hayatta kaldım. Aynı seed'de daha iyisini yapabilir misin?`;
+  const shareRankLine = finalRank && finalTotal
+    ? `Sıra: #${finalRank}/${finalTotal}${finalPercent ? ` · yüzdelik %${finalPercent}` : ''}`
+    : 'Sıra: skor kaydedildi';
+  const shareBestLine = analysis?.bestDecision
+    ? `En iyi karar: R${analysis.bestDecision.round} ${analysis.bestDecision.cardName}`
+    : bestRound
+      ? `En iyi round: R${bestRound.round} +${formatScore(bestRound.pointsEarned)}`
+      : '';
+  const shareText = `BİR DAHA\n${viralHook}\nSkor: ${formatScore(score)}\n${shareRankLine}${shareBestLine ? `\n${shareBestLine}` : ''}\n#BirDaha`;
 
   return (
     <div className="game-shell min-h-screen p-4">
@@ -1322,6 +1331,11 @@ export function RunEndScreen() {
               {score > 0 && score < 500 && !allLoss && (
                 <p className="mt-3 text-sm text-neutral-500">Beraberlikler az puan verir; bir sonraki run&apos;da sinerji kurmayı dene.</p>
               )}
+              <div className="run-end-viral-strip">
+                <span>Paylaşılabilir meydan okuma</span>
+                <strong>{viralHook}</strong>
+                <small>Detaylarda PNG skor kartı ve kopyalanabilir paylaşım metni hazır.</small>
+              </div>
               <div className="run-end-primary-actions">
                 <button type="button" className="btn-primary" onClick={() => resetRun()}>Bir Daha</button>
                 <button type="button" className="btn-secondary" onClick={advanceRunEnd}>Sıralama ve detaylar</button>
@@ -1497,7 +1511,7 @@ export function RunEndScreen() {
               {analysis && (
                 <div>
                   <p className="mb-2 text-xs uppercase text-neutral-500">
-                    Paylaşım kartı · {getShareTier(analysis.rankPercent).toUpperCase()}
+                    Meydan okuma kartı · {getShareTier(analysis.rankPercent).toUpperCase()}
                   </p>
                   <ShareCardPreview
                     score={score}

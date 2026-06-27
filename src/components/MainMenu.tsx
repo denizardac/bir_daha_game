@@ -186,12 +186,34 @@ export function MainMenu() {
                     </div>
                   ) : (
                     <div className="menu-play-hint">
-                      <p className="menu-play-hint-title">15 round · 11 oyuncu · tek hayat</p>
-                      <p className="menu-play-hint-sub">Kart seç, maç oyna, kaybedersen oyuncu gider</p>
+                      <p className="menu-play-hint-title">Bugünün meydan okuması</p>
+                      <p className="menu-play-hint-sub">
+                        Seed {formatDailyDate()} · 15 round · herkes aynı kartlarla oynar
+                      </p>
                     </div>
                   )}
 
                   <MenuDailyScoreChart />
+
+                  <div className="menu-daily-challenge">
+                    <div>
+                      <span className="menu-daily-challenge-kicker">Günlük seed</span>
+                      <strong>{formatScore(todayRuns)} run başladı</strong>
+                      <p>Skor kartını paylaş; aynı seed'de seni geçmeye çalışsınlar.</p>
+                    </div>
+                    <button type="button" className="menu-daily-challenge-btn" onClick={() => handlePlayClick(true)}>
+                      Meydan Oku
+                    </button>
+                  </div>
+
+                  <div className="menu-beta-strip">
+                    <div>
+                      <span className="menu-beta-badge">Beta</span>
+                      <strong>Android ve iOS app yakında</strong>
+                      <p>Şimdilik webde oyna; native app aynı oyunu tam ekran kabukta açacak.</p>
+                    </div>
+                    <span className="menu-beta-date">TestFlight / APK</span>
+                  </div>
 
                 </div>
 
@@ -207,8 +229,8 @@ export function MainMenu() {
                   <button type="button" className="btn-primary menu-play-btn" onClick={() => handlePlayClick(true)}>
                     <span className="menu-play-btn-icon">▶</span>
                     <span>
-                      <span className="menu-play-btn-label">Oyna — Günlük Seed</span>
-                      <span className="menu-play-btn-sub">Herkes aynı kartları görür · skor kıyaslanır</span>
+                      <span className="menu-play-btn-label">Bugünün Seed'ini Oyna</span>
+                      <span className="menu-play-btn-sub">Aynı kartlar · tek skor · arkadaşına meydan oku</span>
                     </span>
                     <span className="menu-play-btn-arrow" aria-hidden>→</span>
                   </button>

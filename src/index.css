@@ -5346,6 +5346,96 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   line-height: 1.4;
 }
 
+.menu-daily-challenge,
+.menu-beta-strip {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 14px;
+  padding: 0.78rem 0.9rem;
+}
+
+.menu-daily-challenge {
+  border: 1px solid rgba(245, 196, 81, 0.28);
+  background:
+    linear-gradient(135deg, rgba(245, 196, 81, 0.12), rgba(34, 197, 94, 0.08)),
+    rgba(0, 0, 0, 0.2);
+}
+
+.menu-beta-strip {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(8, 12, 18, 0.72);
+}
+
+.menu-daily-challenge-kicker,
+.menu-beta-badge,
+.menu-beta-date {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.menu-daily-challenge-kicker,
+.menu-beta-badge {
+  margin-bottom: 0.3rem;
+  padding: 0.22rem 0.42rem;
+}
+
+.menu-daily-challenge-kicker {
+  background: rgba(245, 196, 81, 0.16);
+  color: #fde68a;
+}
+
+.menu-beta-badge {
+  background: rgba(226, 49, 80, 0.16);
+  color: #fda4af;
+}
+
+.menu-daily-challenge strong,
+.menu-beta-strip strong {
+  display: block;
+  color: #f8fafc;
+  font-size: 1.06rem;
+  line-height: 1.05;
+}
+
+.menu-daily-challenge p,
+.menu-beta-strip p {
+  margin: 0.22rem 0 0;
+  color: rgba(203, 213, 225, 0.76);
+  font-size: 0.8rem;
+  line-height: 1.32;
+}
+
+.menu-daily-challenge-btn {
+  min-height: 2.75rem;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  background: #f5c451;
+  color: #111827;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.menu-beta-date {
+  justify-self: end;
+  padding: 0.34rem 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  color: rgba(226, 232, 240, 0.82);
+  white-space: nowrap;
+}
+
 .menu-continue-banner {
   flex-shrink: 0;
   display: flex;
@@ -14625,6 +14715,41 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   white-space: nowrap;
 }
 
+.run-end-viral-strip {
+  margin-top: 1rem;
+  border: 1px solid rgba(245, 196, 81, 0.22);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(245, 196, 81, 0.12), rgba(226, 49, 80, 0.09)),
+    rgba(8, 12, 18, 0.62);
+  padding: 0.85rem 0.95rem;
+}
+
+.run-end-viral-strip span {
+  display: block;
+  color: #fde68a;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.run-end-viral-strip strong {
+  display: block;
+  margin-top: 0.28rem;
+  color: #f8fafc;
+  font-size: 1.15rem;
+  line-height: 1.12;
+}
+
+.run-end-viral-strip small {
+  display: block;
+  margin-top: 0.25rem;
+  color: rgba(203, 213, 225, 0.72);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .run-end-primary-actions {
   display: grid;
   grid-template-columns: 1.2fr 1fr 0.8fr;
@@ -16594,6 +16719,32 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
   .menu-play-panel-inner {
     padding: 1rem;
+  }
+
+  .menu-daily-challenge,
+  .menu-beta-strip {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+    padding: 0.72rem;
+  }
+
+  .menu-daily-challenge strong,
+  .menu-beta-strip strong {
+    font-size: 0.98rem;
+  }
+
+  .menu-daily-challenge p,
+  .menu-beta-strip p {
+    font-size: 0.76rem;
+  }
+
+  .menu-daily-challenge-btn {
+    width: 100%;
+    min-height: 2.65rem;
+  }
+
+  .menu-beta-date {
+    justify-self: start;
   }
 
   .menu-play-btn {

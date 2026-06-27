@@ -73,27 +73,31 @@ export function renderShareCardToCanvas(opts: ShareCardOptions): HTMLCanvasEleme
   ctx.font = 'bold 26px system-ui, sans-serif';
   ctx.fillText('BİR DAHA', 40, 56);
 
+  ctx.fillStyle = '#d4d4d4';
+  ctx.font = 'bold 15px system-ui, sans-serif';
+  ctx.fillText('GÜNLÜK SEED MEYDAN OKUMASI', 40, 84);
+
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 68px system-ui, sans-serif';
-  ctx.fillText(formatScore(score), 40, 132);
+  ctx.fillText(formatScore(score), 40, 150);
 
   ctx.fillStyle = '#a3a3a3';
   ctx.font = '19px system-ui, sans-serif';
   if (analysis) {
-    ctx.fillText(`Sıra: #${analysis.rank} / ${analysis.totalPlayers}`, 40, 172);
+    ctx.fillText(`Sıra: #${analysis.rank} / ${analysis.totalPlayers}`, 40, 190);
     if (score > 0) {
       const rankLine = analysis.totalPlayers > 1
         ? `Listedeki skorların %${analysis.rankPercent}'ini geçtin`
         : 'Yerel kayıt · canlı sıralama yok';
-      ctx.fillText(rankLine, 40, 200);
+      ctx.fillText(rankLine, 40, 218);
     } else {
-      ctx.fillText(`${roundsCompleted} round hayatta kaldın`, 40, 200);
+      ctx.fillText(`${roundsCompleted} round hayatta kaldın`, 40, 218);
     }
   } else {
-    ctx.fillText(`${displayName} · ${roundsCompleted} round`, 40, 172);
+    ctx.fillText(`${displayName} · ${roundsCompleted} round`, 40, 190);
   }
 
-  let y = 248;
+  let y = 264;
   ctx.fillStyle = colors.accent;
   ctx.font = 'bold 15px system-ui, sans-serif';
   ctx.fillText('ÖZET', 40, y);
@@ -151,7 +155,11 @@ export function renderShareCardToCanvas(opts: ShareCardOptions): HTMLCanvasEleme
 
   ctx.fillStyle = '#525252';
   ctx.font = 'italic 14px system-ui, sans-serif';
-  ctx.fillText('Aynı seed. Farklı sen.', 40, 690);
+  ctx.fillText('Aynı seed. Farklı sen.', 40, 660);
+
+  ctx.fillStyle = colors.accent;
+  ctx.font = 'bold 24px system-ui, sans-serif';
+  ctx.fillText('BENİ GEÇEBİLİR MİSİN?', 40, 692);
 
   return canvas;
 }
