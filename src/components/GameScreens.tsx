@@ -33,6 +33,7 @@ import { LineupPreviewCenterTrigger, LineupPreviewExpanded, LineupPreviewModal }
 import { LineupEditorModal } from '@/components/LineupEditorModal';
 import { TrainingPickModal } from '@/components/TrainingPickModal';
 import { FirstWinCelebration } from '@/components/FirstWinCelebration';
+import { GameIcon } from '@/components/GameIcon';
 import { downloadShareCard, copyShareCardImage, getShareTier, renderShareCardToCanvas } from '@/utils/shareCard';
 import { playSound } from '@/utils/sound';
 import { formatStatDisplay } from '@/utils/formatNumber';
@@ -64,6 +65,45 @@ function CardSelectInsightRail({
         discoveredSynergies={discoveredSynergies}
         currentOffers={currentOffers}
       />
+    </aside>
+  );
+}
+
+type CardSelectInfoDrawer = 'synergies' | 'plan' | 'help' | null;
+
+function CardSelectInfoRail({
+  activeCount,
+  nearCount,
+  onOpen,
+  onOpenLineup,
+}: {
+  activeCount: number;
+  nearCount: number;
+  onOpen: (drawer: Exclude<CardSelectInfoDrawer, null>) => void;
+  onOpenLineup: () => void;
+}) {
+  return (
+    <aside className="card-select-info-rail" aria-label="Oyun bilgileri">
+      <button type="button" className="card-select-rail-btn" onClick={() => onOpen('synergies')}>
+        <GameIcon name="zap" size={18} />
+        <span>Sinerji</span>
+        <small>{activeCount} aktif · {nearCount} yakın</small>
+      </button>
+      <button type="button" className="card-select-rail-btn" onClick={() => onOpen('plan')}>
+        <GameIcon name="tactic" size={18} />
+        <span>Taktik</span>
+        <small>Slotlar · olaylar</small>
+      </button>
+      <button type="button" className="card-select-rail-btn" onClick={onOpenLineup}>
+        <GameIcon name="ball" size={18} />
+        <span>Kadro</span>
+        <small>Dizilişi gör</small>
+      </button>
+      <button type="button" className="card-select-rail-btn card-select-rail-btn--ghost" onClick={() => onOpen('help')}>
+        <GameIcon name="help" size={18} />
+        <span>Yardım</span>
+        <small>Temel bilgi</small>
+      </button>
     </aside>
   );
 }
@@ -107,6 +147,7 @@ function formatEventOutcome(o: EventOutcome, eventId?: string) {
 export function CardSelectScreen() {
   const [lineupOpen, setLineupOpen] = useState(false);
   const [pickMode, setPickMode] = useState<CardPickMode>('cards');
+  const [infoDrawer, setInfoDrawer] = useState<CardSelectInfoDrawer>(null);
   const state = useGameStore();
   const {
     round, maxRounds, squad, maxSquadSize, morale, score, streak,
@@ -192,15 +233,6 @@ export function CardSelectScreen() {
         )}
 
         <div className={`game-layout card-select-layout ${tacticBonus ? 'card-select-layout--tactic' : 'card-select-layout--pick'}`}>
-          {!tacticBonus && (
-            <CardSelectInsightRail
-              squad={squad}
-              morale={morale}
-              discoveredSynergies={discoveredSynergies}
-              currentOffers={currentOffers}
-            />
-          )}
-
           <div className={`card-pick-center min-w-0 ${cardsLocked ? 'card-pick-center--training' : ''} ${tacticBonus ? 'card-pick-center--tactic' : ''}`}>
             <LineupPreviewModal
               open={lineupOpen}
@@ -288,6 +320,13 @@ export function CardSelectScreen() {
             )}
           </div>
 
+          <CardSelectInfoRail
+            activeCount={activeSynergies.length}
+            nearCount={nearSynergies.length}
+            onOpen={setInfoDrawer}
+            onOpenLineup={() => setLineupOpen(true)}
+          />
+
           {trainingFlow && (
             <TrainingPickModal
               squad={squad}
@@ -331,17 +370,41 @@ export function CardSelectScreen() {
               />
             </details>
           </div>
-
-          <SidePanel
-            squad={squad}
-            activeTactics={activeTactics}
-            usedEventIds={usedEventIds}
-            round={round}
-            currentOffers={currentOffers}
-            tacticDraft={tacticBonus ? tacticDraft : undefined}
-          />
         </div>
       </div>
+      {infoDrawer && (
+        <div className="ui-modal-backdrop" role="presentation" onClick={() => setInfoDrawer(null)}>
+          <div className="ui-modal card-select-drawer" role="dialog" aria-modal="true" aria-label="Oyun bilgileri" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="ui-modal-close" aria-label="Kapat" onClick={() => setInfoDrawer(null)}>x</button>
+            {infoDrawer === 'synergies' && (
+              <CardSelectInsightRail
+                squad={squad}
+                morale={morale}
+                discoveredSynergies={discoveredSynergies}
+                currentOffers={currentOffers}
+              />
+            )}
+            {infoDrawer === 'plan' && (
+              <SidePanel
+                squad={squad}
+                activeTactics={activeTactics}
+                usedEventIds={usedEventIds}
+                round={round}
+                currentOffers={currentOffers}
+                tacticDraft={tacticBonus ? tacticDraft : undefined}
+              />
+            )}
+            {infoDrawer === 'help' && (
+              <div className="card-select-help-sheet">
+                <h2>Bilmen gerekenler</h2>
+                <p>{BITE.playerPick}</p>
+                <p>{BITE.synergyIntro}</p>
+                <p>{BITE.tacticIntro}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {state.lineupEditorOpen && (
         <LineupEditorModal
           open
@@ -936,18 +999,52 @@ export function MatchScreen() {
           </div>
 
           <div className="match-col match-col--result">
-            <MatchRightPanel
-              anim={anim}
-              currentMatch={currentMatch}
-              squad={squad}
-              morale={morale}
-              squadAvg={squadAvg}
-              activeTactics={activeTactics}
-              streak={streak}
-              outcomeLabel={anim.showResult ? outcome : undefined}
-              outcomeColor={anim.showResult ? outcomeColor : undefined}
-              resultExplain={anim.showResult ? resultExplain : undefined}
-            />
+            {anim.showResult ? (
+              <>
+                <div className="match-result-summary-v2">
+                  <p className={`match-result-summary-title ${outcomeColor}`}>{outcome}</p>
+                  <p className="match-result-summary-score">{anim.goalsFor} - {anim.goalsAgainst}</p>
+                  {resultExplain && <p className="match-result-summary-explain">{resultExplain}</p>}
+                  <div className="match-result-summary-gains">
+                    <span><GameIcon name="trophy" size={16} /> Round puanı <strong>{previewRoundPoints > 0 ? `+${previewRoundPoints}` : '0'}</strong></span>
+                    <span><GameIcon name={moraleOutcomeDelta >= 0 ? 'heart' : 'heart-crack'} size={16} /> Moral <strong>{moraleOutcomeDelta > 0 ? `+${moraleOutcomeDelta}` : moraleOutcomeDelta}</strong></span>
+                    {currentMatch.highlights.slice(0, 1).map((h) => (
+                      <span key={h.text}><GameIcon name="sparkles" size={16} /> {h.text.replace(/^[^\wÇĞİÖŞÜçğıöşü]+/u, '')} <strong>+{h.points}</strong></span>
+                    ))}
+                  </div>
+                  {anim.showHighlights && (
+                    <button type="button" className="btn-primary match-continue-btn" onClick={finishMatch}>
+                      Devam
+                    </button>
+                  )}
+                </div>
+                <details className="match-result-detail-drawer">
+                  <summary>Detaylı maç özeti</summary>
+                  <MatchRightPanel
+                    anim={anim}
+                    currentMatch={currentMatch}
+                    squad={squad}
+                    morale={morale}
+                    squadAvg={squadAvg}
+                    activeTactics={activeTactics}
+                    streak={streak}
+                    outcomeLabel={outcome}
+                    outcomeColor={outcomeColor}
+                    resultExplain={resultExplain}
+                  />
+                </details>
+              </>
+            ) : (
+              <MatchRightPanel
+                anim={anim}
+                currentMatch={currentMatch}
+                squad={squad}
+                morale={morale}
+                squadAvg={squadAvg}
+                activeTactics={activeTactics}
+                streak={streak}
+              />
+            )}
 
             {anim.showResult && (
               <div className="match-result-extras">
@@ -976,7 +1073,7 @@ export function MatchScreen() {
               </div>
             )}
 
-            {anim.showHighlights && (
+            {anim.showHighlights && !anim.showResult && (
               <div className="match-footer-panel">
                 <div className="match-highlights">
                   {currentMatch.highlights.map((h, i) => (

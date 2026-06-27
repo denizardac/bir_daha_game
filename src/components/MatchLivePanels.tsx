@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { GameIcon } from '@/components/GameIcon';
 import { getActiveSynergies } from '@/data/synergies';
 import { getMoraleEffect } from '@/engine/contextPreview';
 import {
@@ -227,17 +228,17 @@ export function MatchRightPanel({
 
       {anim.playing && (
         <div className="match-tip-card">
-          <p className="match-tip-kicker">💡 Maç ipucu</p>
+          <p className="match-tip-kicker"><GameIcon name="info" size={14} /> Maç ipucu</p>
           <p className="match-tip-text">{tip}</p>
         </div>
       )}
 
       {streak >= 2 && anim.playing && (
-        <p className="match-streak-chip">🔥 {streak} maçlık seri — galibiyet çarpanı aktif</p>
+        <p className="match-streak-chip"><GameIcon name="flame" size={14} /> {streak} maçlık seri — galibiyet çarpanı aktif</p>
       )}
 
       {anim.halftime && (
-        <p className="match-halftime-chip">⏸️ Devre arası — taktikler konuşuluyor</p>
+        <p className="match-halftime-chip">Devre arası — taktikler konuşuluyor</p>
       )}
     </div>
   );

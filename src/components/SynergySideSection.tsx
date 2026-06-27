@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { GameIcon } from '@/components/GameIcon';
 import { HoverTip } from '@/components/HoverTip';
 import { BITE } from '@/data/biteTips';
 import { SYNERGIES } from '@/data/synergies';
@@ -27,7 +28,7 @@ function ProgressRing({ pct, icon, active }: { pct: number; icon: string; active
       aria-hidden
     >
       <div className="syn-ring-inner">
-        <span className="syn-ring-icon">{icon}</span>
+        <span className="syn-ring-icon"><GameIcon legacyIcon={icon} size={16} /></span>
       </div>
     </div>
   );
@@ -112,7 +113,7 @@ function TagChip({ tag, count }: { tag: Tag; count: number }) {
   return (
     <HoverTip tip={TAG_DESCRIPTIONS[tag]} className="syn-tag-chip-wrap" placement="right">
       <span className="syn-tag-chip">
-        <span className="syn-tag-icon" aria-hidden>{TAG_ICONS[tag]}</span>
+        <span className="syn-tag-icon" aria-hidden><GameIcon legacyIcon={TAG_ICONS[tag]} size={13} /></span>
         <span className="syn-tag-label">{tag}</span>
         {count > 1 && <span className="syn-tag-count">{count}</span>}
       </span>
@@ -144,7 +145,7 @@ export function SynergySideSection({ squad, morale, discoveredSynergies, current
 
       {!hasContent ? (
         <div className="syn-empty">
-          <span className="syn-empty-icon" aria-hidden>🔗</span>
+          <span className="syn-empty-icon" aria-hidden><GameIcon name="tags" size={20} /></span>
           <p className="syn-empty-text">Tag&apos;ler birleşince sinerji açılır — tekliflerde uygun kart aramaya devam et.</p>
         </div>
       ) : (

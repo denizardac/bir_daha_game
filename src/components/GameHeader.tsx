@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { MatchHistoryStrip } from '@/components/MatchHistoryStrip';
+import { GameIcon } from '@/components/GameIcon';
 import { formatScore } from '@/engine/scoring';
 import { useGameStore } from '@/store/gameStore';
 
@@ -26,7 +27,7 @@ export function GameHeader({ round, maxRounds, score, streak, timerSeconds = 20,
       <header className="game-top-header flex flex-wrap items-center gap-3">
         <div className="flex gap-2">
           <button type="button" className="game-header-menu-btn" onClick={() => setModal('exit')}>
-            <span className="game-header-menu-btn-icon" aria-hidden>←</span>
+            <span className="game-header-menu-btn-icon" aria-hidden><GameIcon name="arrow-left" size={16} /></span>
             Menü
           </button>
           <button type="button" className="btn-secondary game-header-reset-btn text-sm text-red-400" onClick={() => setModal('reset')}>Sıfırla</button>

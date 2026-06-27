@@ -1,4 +1,5 @@
 import { MiniTacticBoard } from '@/components/MiniTacticBoard';
+import { GameIcon } from '@/components/GameIcon';
 import { EVENT_ROUNDS, getEventById } from '@/data/events';
 import { getTacticCategory } from '@/data/tactics';
 import { HoverTip } from '@/components/HoverTip';
@@ -116,7 +117,7 @@ function EventSlot({
     >
       <div className="event-slot-icon-wrap">
         {event ? (
-          <span className="event-slot-icon">{event.icon}</span>
+          <span className="event-slot-icon"><GameIcon legacyIcon={event.icon} size={17} /></span>
         ) : (
           <span className="event-slot-icon event-slot-icon--empty">?</span>
         )}

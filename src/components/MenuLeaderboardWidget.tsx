@@ -4,6 +4,7 @@ import { getDailyList, getWeekKey } from '@/engine/leaderboard';
 import { fetchRemoteLeaderboard, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { getDailySeed } from '@/engine/seed';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
+import { GameIcon } from '@/components/GameIcon';
 import { getAnonymousId } from '@/utils/storage';
 import type { LeaderboardEntry } from '@/types';
 
@@ -115,11 +116,11 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
         aria-expanded={expanded}
         aria-label={expanded ? 'Leaderboard daralt' : 'Leaderboard genişlet'}
       >
-        <span className="menu-widget-icon" aria-hidden>🏆</span>
+        <span className="menu-widget-icon" aria-hidden><GameIcon name="trophy" size={18} /></span>
         <span className="menu-widget-title">Leaderboard</span>
         {remote && <span className="menu-lb-live-badge">Canlı</span>}
         <span className="menu-lb-toggle-hint">{expanded ? 'Daralt' : 'Genişlet'}</span>
-        <span className={`menu-lb-chevron ${expanded ? 'menu-lb-chevron--up' : ''}`} aria-hidden>▼</span>
+        <span className={`menu-lb-chevron ${expanded ? 'menu-lb-chevron--up' : ''}`} aria-hidden><GameIcon name="arrow-right" size={15} /></span>
       </button>
 
       <div className="menu-widget-tabs menu-lb-tabs" onClick={(e) => e.stopPropagation()} role="tablist">
@@ -153,7 +154,7 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
             </p>
           )}
           {myEntry && myRank === 1 && (
-            <p className="menu-lb-compact-me menu-lb-compact-me--lead">Lider sensin 🏆</p>
+            <p className="menu-lb-compact-me menu-lb-compact-me--lead">Lider sensin</p>
           )}
           {!myEntry && fullList.length > 0 && (
             <p className="menu-lb-compact-me">Bugün oyna — sıralamaya gir</p>
@@ -194,7 +195,7 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
                     {isMe && entry.displayName?.trim() && (
                       <span className="menu-lb-you-pill">Sen</span>
                     )}
-                    {entry.flawless && <span className="menu-lb-flawless" title="Namağlup">🛡️</span>}
+                    {entry.flawless && <span className="menu-lb-flawless" title="Namağlup"><GameIcon name="shield" size={13} /></span>}
                   </span>
                   <span className="menu-lb-score">{formatScore(entry.totalScore)}</span>
                 </div>
@@ -209,7 +210,8 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
         className="menu-lb-fullbtn"
         onClick={() => setScreen('leaderboard')}
       >
-        Tüm sıralamayı gör →
+        <span>Tüm sıralamayı gör</span>
+        <GameIcon name="arrow-right" size={15} />
       </button>
     </div>
   );

@@ -7,6 +7,7 @@ import { getTodayKey } from '@/engine/leaderboard';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
 import { MenuBiteTipsWidget } from '@/components/MenuBiteTipsWidget';
 import { MenuLeaderboardWidget } from '@/components/MenuLeaderboardWidget';
+import { GameIcon, type GameIconName } from '@/components/GameIcon';
 
 import { StartRunModal } from '@/components/StartRunModal';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
@@ -28,6 +29,7 @@ export function MainMenu() {
   const [startPrompt, setStartPrompt] = useState<{ daily: boolean; afterAbandon?: boolean } | null>(null);
   const [installTipVisible, setInstallTipVisible] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const openStart = (daily: boolean, afterAbandon = false) => {
     setStartPrompt({ daily, afterAbandon });
@@ -98,11 +100,11 @@ export function MainMenu() {
   };
 
   const quickLinks = [
-    { icon: '📖', label: 'Nasıl Oynanır & Rehber', desc: 'Kurallar + tag, taktik, sinerji ve mevki rehberi', screen: 'gameGuide' as const },
-    { icon: '🗃️', label: 'Koleksiyon', desc: 'Açtığın sinerji, efsane ve olayları topla', screen: 'collection' as const },
-    { icon: '🏛️', label: 'Hall of Fame', desc: 'Aylık ve tüm zamanlar rekor tablosu', screen: 'hallOfFame' as const },
-    { icon: '⚡', label: 'Sinerjiler', desc: '29 kombinasyon — bonus koşulları', screen: 'synergies' as const },
-    { icon: '⚙️', label: 'Ayarlar', desc: 'Ses ve oyun tercihleri', screen: 'settings' as const },
+    { icon: 'book', label: 'Rehber', desc: 'Kurallar ve temel sistemler', screen: 'gameGuide' as const },
+    { icon: 'archive', label: 'Koleksiyon', desc: 'Açtığın içerikler', screen: 'collection' as const },
+    { icon: 'landmark', label: 'Hall of Fame', desc: 'Rekor tabloları', screen: 'hallOfFame' as const },
+    { icon: 'zap', label: 'Sinerjiler', desc: 'Bonus koşulları', screen: 'synergies' as const },
+    { icon: 'settings', label: 'Ayarlar', desc: 'Ses ve tercihler', screen: 'settings' as const },
   ];
 
   return (
@@ -118,7 +120,7 @@ export function MainMenu() {
           <div className="menu-brand">
             <p className="menu-hero-badge">Futbol Roguelite</p>
             <h1 className="menu-hero-title">
-              <span className="menu-hero-ball" aria-hidden>⚽</span>
+              <span className="menu-hero-ball" aria-hidden><GameIcon name="ball" size={40} /></span>
               Bir Daha
             </h1>
             <p className="menu-hero-tagline">Aynı seed. Farklı sen.</p>
@@ -132,7 +134,7 @@ export function MainMenu() {
           <div className="menu-top-stats">
             <div className="menu-stat-card">
               <div className="menu-stat-icon-row">
-                <span className="menu-stat-icon">🏅</span>
+                <span className="menu-stat-icon"><GameIcon name="medal" size={24} /></span>
                 <span className="menu-stat-label">Senin En İyin</span>
               </div>
               <p className="menu-stat-value menu-stat-value--big">{formatScore(stats.allTimeBest)}</p>
@@ -140,7 +142,7 @@ export function MainMenu() {
             </div>
             <div className="menu-stat-card">
               <div className="menu-stat-icon-row">
-                <span className="menu-stat-icon">🌍</span>
+                <span className="menu-stat-icon"><GameIcon name="globe" size={24} /></span>
                 <span className="menu-stat-label">Bugün Oynanan</span>
               </div>
               <p className="menu-stat-value menu-stat-value--big">{formatScore(todayRuns)}</p>
@@ -148,7 +150,7 @@ export function MainMenu() {
             </div>
             <div className={`menu-stat-card ${stats.dailyStreak > 1 ? 'menu-stat-card--gold' : ''}`}>
               <div className="menu-stat-icon-row">
-                <span className="menu-stat-icon">🔥</span>
+                <span className="menu-stat-icon"><GameIcon name="flame" size={24} /></span>
                 <span className="menu-stat-label">Seri</span>
               </div>
               <p className="menu-stat-value menu-stat-value--big menu-stat-value--gold">{stats.dailyStreak} gün</p>
@@ -156,7 +158,7 @@ export function MainMenu() {
             </div>
             <div className="menu-stat-card">
               <div className="menu-stat-icon-row">
-                <span className="menu-stat-icon">🎲</span>
+                <span className="menu-stat-icon"><GameIcon name="dice" size={24} /></span>
                 <span className="menu-stat-label">Bugünkü Seed</span>
               </div>
               <p className="menu-stat-value">{formatDailyDate()}</p>
@@ -192,7 +194,7 @@ export function MainMenu() {
                       </p>
                       {todayRuns > 0 && (
                         <p className="menu-play-hint-runs">
-                          🌍 {formatScore(todayRuns)} run başladı — skor kartını paylaş, meydan oku
+                          {formatScore(todayRuns)} run başladı — skor kartını paylaş, meydan oku
                         </p>
                       )}
                     </div>
@@ -208,26 +210,33 @@ export function MainMenu() {
 
                 <div className="menu-play-actions">
                   <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" onClick={() => handlePlayClick(false)}>
-                    <span className="menu-play-btn-icon">🎲</span>
+                    <span className="menu-play-btn-icon"><GameIcon name="dice" size={24} /></span>
                     <span>
                       <span className="menu-play-btn-label">Serbest Mod — Rastgele Seed</span>
                       <span className="menu-play-btn-sub">Her oyunda yeni kadro · pratik yap, sınır yok</span>
                     </span>
-                    <span className="menu-play-btn-arrow" aria-hidden>→</span>
+                    <span className="menu-play-btn-arrow" aria-hidden><GameIcon name="arrow-right" size={18} /></span>
                   </button>
                   <button type="button" className="btn-primary menu-play-btn" onClick={() => handlePlayClick(true)}>
-                    <span className="menu-play-btn-icon">▶</span>
+                    <span className="menu-play-btn-icon"><GameIcon name="play" size={22} /></span>
                     <span>
                       <span className="menu-play-btn-label">Bugünün Seed'ini Oyna</span>
                       <span className="menu-play-btn-sub">Aynı kartlar · tek skor · arkadaşına meydan oku</span>
                     </span>
-                    <span className="menu-play-btn-arrow" aria-hidden>→</span>
+                    <span className="menu-play-btn-arrow" aria-hidden><GameIcon name="arrow-right" size={18} /></span>
                   </button>
                 </div>
               </div>
             </section>
 
             <aside className="menu-side-stack">
+              <button type="button" className="menu-help-entry" onClick={() => setHelpOpen(true)}>
+                <GameIcon name="help" size={20} />
+                <span>
+                  <strong>Bilmen gerekenler</strong>
+                  <small>Kısa oyun özeti</small>
+                </span>
+              </button>
               <MenuLeaderboardWidget initialExpanded />
             </aside>
 
@@ -245,8 +254,6 @@ export function MainMenu() {
                 </button>
               </div>
             )}
-
-            <MenuBiteTipsWidget />
           </div>
 
           <footer className="menu-footer">
@@ -257,7 +264,7 @@ export function MainMenu() {
                 className="menu-footer-tile"
                 onClick={() => setScreen(link.screen)}
               >
-                <span className="menu-footer-icon">{link.icon}</span>
+                <span className="menu-footer-icon"><GameIcon name={link.icon as GameIconName} size={22} /></span>
                 <span className="menu-footer-label">{link.label}</span>
                 <span className="menu-footer-desc">{link.desc}</span>
               </button>
@@ -265,6 +272,15 @@ export function MainMenu() {
           </footer>
         </div>
       </motion.div>
+
+      {helpOpen && (
+        <div className="ui-modal-backdrop" role="presentation" onClick={() => setHelpOpen(false)}>
+          <div className="ui-modal ui-modal--menu-help" role="dialog" aria-modal="true" aria-label="Bilmen gerekenler" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="ui-modal-close" aria-label="Kapat" onClick={() => setHelpOpen(false)}>x</button>
+            <MenuBiteTipsWidget />
+          </div>
+        </div>
+      )}
 
       <StartRunModal
         open={startPrompt !== null}

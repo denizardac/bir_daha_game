@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { GameIcon } from '@/components/GameIcon';
 import { HoverTip } from '@/components/HoverTip';
 import { LineupPlayerHoverCard, getLineupPlayerHoverAria } from '@/components/LineupPlayerHoverCard';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
@@ -354,14 +355,14 @@ export function LineupPreviewCenterTrigger({
         aria-label="Diziliş önizlemesini göster"
         title={`${summary.formationLabel} · ${summary.filled}/11 saha`}
       >
-        <span className="lineup-compact-btn-icon" aria-hidden>⚽</span>
+        <span className="lineup-compact-btn-icon" aria-hidden><GameIcon name="ball" size={18} /></span>
         <span className="lineup-compact-btn-text">
           <span className="lineup-compact-btn-label">Dizilişi Göster</span>
           <span className="lineup-compact-btn-meta">
             Kadro {summary.squadSize}/11 · {emptyOnField > 0 ? `${emptyOnField} boş slot` : 'saha hazır'} — sahayı ve kadroyu gör
           </span>
         </span>
-        <span className="lineup-compact-btn-cta">→</span>
+        <span className="lineup-compact-btn-cta"><GameIcon name="arrow-right" size={16} /></span>
       </button>
     );
   }
@@ -373,7 +374,7 @@ export function LineupPreviewCenterTrigger({
       onClick={onOpen}
       aria-label="Diziliş önizlemesini göster"
     >
-      <span className="lineup-center-trigger-icon" aria-hidden>⚽</span>
+      <span className="lineup-center-trigger-icon" aria-hidden><GameIcon name="ball" size={18} /></span>
       <span className="lineup-center-trigger-body">
         <span className="lineup-center-trigger-title">Diziliş önizlemesi</span>
         <span className="lineup-center-trigger-sub">

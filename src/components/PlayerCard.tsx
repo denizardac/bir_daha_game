@@ -7,6 +7,7 @@ import { ReplacementPlayerTip } from '@/components/ReplacementPlayerTip';
 import { HoverTip } from '@/components/HoverTip';
 import { PlayerPortrait } from '@/components/PlayerPortrait';
 import { TagTraitBadges } from '@/components/TagTraitBadges';
+import { GameIcon } from '@/components/GameIcon';
 import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
 import type { ActiveTactic, PlayerCard as PlayerCardType } from '@/types';
 import { RARITY_LABELS } from '@/types';
@@ -56,6 +57,20 @@ function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergi
   );
 }
 
+function getCompactImpactLines(
+  card: PlayerCardType,
+  insight: ReturnType<typeof getPlayerCardInsight>,
+) {
+  const summaryParts = insight.summary.split(' · ').filter(Boolean);
+  const primary = summaryParts[0] ?? `Kadroya ${formatPosition(card.position)} olarak girer`;
+  const synergy = insight.synergies[0];
+  const secondary = synergy
+    ? `${synergy.name}: ${synergy.before}/${synergy.required} -> ${synergy.after}/${synergy.required}${synergy.completes ? ' · açılır' : ''}`
+    : summaryParts[1] ?? `${formatPosition(card.position)} rolünde kadro gücünü artırır`;
+
+  return [primary, secondary];
+}
+
 export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeTactics = [], morale = 50, onSelect, selected, showTagHint, tipPlacement = 'auto', onReroll, rerollDisabled }: Props) {
   const insight = getPlayerCardInsight(card, squad, discovered, maxSquadSize, activeTactics, morale);
   const themeVars = getPlayerCardThemeVars(card.rarity, card.position);
@@ -64,6 +79,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
   const archetype = getPlayerArchetype(card);
   const hasDetail = insight.positionHints.length > 0 || insight.synergies.length > 0 || insight.tacticContributions.length > 0;
   const [showDetail, setShowDetail] = useState(false);
+  const compactImpact = getCompactImpactLines(card, insight);
 
   return (
     <motion.div
@@ -100,7 +116,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
             {RARITY_LABELS[card.rarity]}
           </span>
           <span className="archetype-badge" title={archetype.label}>
-            <span aria-hidden>{archetype.icon}</span> {archetype.label}
+            <span aria-hidden><GameIcon legacyIcon={archetype.icon} size={13} /></span> {archetype.label}
           </span>
           {card.rarity === 'efsane' && <span className="rarity-spark" aria-hidden>✦</span>}
         </div>
@@ -118,7 +134,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
               onReroll();
             }}
           >
-            🔄
+            <GameIcon name="refresh" size={15} />
           </button>
         )}
       </div>
@@ -141,16 +157,17 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
                   <span key={pos} className="card-pick-stat card-pick-stat--alt">{pos}</span>
                 ))}
               </div>
-              {card.tags.length > 0 && (
-                <div className="card-pick-trait-row">
-                  {card.tags.map((tag) => (
+          {card.tags.length > 0 && (
+            <div className="card-pick-trait-row">
+                  {card.tags.slice(0, 3).map((tag) => (
                     <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} className="card-pick-trait-wrap" placement={tipPlacement}>
                       <span className={`card-pick-trait-pill tag-trait-badge tag-trait-badge--${tag.replace(/\s+/g, '-')}`}>
-                        <span className="tag-trait-icon" aria-hidden>{TAG_ICONS[tag]}</span>
+                        <span className="tag-trait-icon" aria-hidden><GameIcon legacyIcon={TAG_ICONS[tag]} size={13} /></span>
                         <span className="tag-trait-name">{tag}</span>
                       </span>
                     </HoverTip>
                   ))}
+                  {card.tags.length > 3 && <span className="tag-trait-badge tag-trait-badge--more">+{card.tags.length - 3}</span>}
                 </div>
               )}
             </div>
@@ -163,7 +180,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
         >
           <div className="card-pick-scroll">
             {showTagHint && card.tags[0] && (
-              <p className="hint-flash">Aynı tag&apos;ler sinerji açar — sağ panelde ilerlemeni gör</p>
+              <p className="hint-flash">Aynı tag&apos;ler sinerji açar — Sinerji butonundan ilerlemeyi gör</p>
             )}
 
             {card.signature && card.signatureQuote && (
@@ -177,23 +194,23 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
               {insight.replacedPlayer ? (
                 <ReplacementPlayerTip player={insight.replacedPlayer} kind={insight.replacementKind ?? 'squad'}>
                   <p className="card-insight-line card-insight-line--lead card-insight-line--hoverable">
-                    {insight.summary}
+                    {compactImpact[0]}
                   </p>
                 </ReplacementPlayerTip>
               ) : (
-                <p className="card-insight-line card-insight-line--lead">{insight.summary}</p>
+                <p className="card-insight-line card-insight-line--lead">{compactImpact[0]}</p>
               )}
+              <p className="card-insight-line card-insight-line--compact">{compactImpact[1]}</p>
               {insight.tagBites.length > 0 && (
                 <ul className="card-tag-bites card-tag-bites--compact">
-                  {insight.tagBites.map(({ tag, desc }) => (
+                  {insight.tagBites.slice(0, 2).map(({ tag, desc }) => (
                     <li key={tag} className="card-tag-bite">
                       <HoverTip tip={desc} className="tag-trait-badge-wrap" placement={tipPlacement}>
                         <span className={`tag-trait-badge tag-trait-badge--${tag.replace(/\s+/g, '-')}`}>
-                          <span className="tag-trait-icon" aria-hidden>{TAG_ICONS[tag]}</span>
+                          <span className="tag-trait-icon" aria-hidden><GameIcon legacyIcon={TAG_ICONS[tag]} size={13} /></span>
                           <span className="tag-trait-name">{tag}</span>
                         </span>
                       </HoverTip>
-                      <span className="card-tag-bite-desc">{desc}</span>
                     </li>
                   ))}
                 </ul>
@@ -210,47 +227,8 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
                   setShowDetail((v) => !v);
                 }}
               >
-                {showDetail ? 'Detayı gizle ▲' : 'Detayı göster ▼'}
+                Detay
               </button>
-            )}
-
-            {hasDetail && (
-              <div className={`card-pick-extra ${showDetail ? 'card-pick-extra--open' : 'card-pick-extra--collapsed'}`}>
-                {insight.tacticContributions.length > 0 && activeTactics.length > 0 && (
-                  <div className="card-tactic-contrib-block">
-                    <p className="card-insight-subtitle">Taktik katkısı</p>
-                    {insight.tacticContributions.map((t) => (
-                      <div key={t.tacticName} className="card-tactic-contrib-row">
-                        <p className="card-tactic-contrib-name">{t.tacticName}</p>
-                        {t.lines.map((line) => (
-                          <p key={line} className="card-insight-line card-insight-line--bullet">✓ {line}</p>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {insight.positionHints.length > 0 && (
-                  <div className="card-position-hints">
-                    <p className="card-insight-subtitle">Mevki & diziliş</p>
-                    <ul className="card-position-hint-list">
-                      {insight.positionHints.map((hint) => (
-                        <li key={hint.text} className={`card-position-hint card-position-hint--${hint.tone}`}>
-                          {hint.text}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {insight.synergies.length > 0 && (
-                  <div className="card-synergy-block">
-                    <p className="card-insight-subtitle">Sinerjiye katkı</p>
-                    {insight.synergies.map((s) => (
-                      <SynergyRow key={s.name} s={s} />
-                    ))}
-                  </div>
-                )}
-              </div>
             )}
           </div>
         </div>
@@ -258,7 +236,71 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
 
       {onSelect && (
         <div className="card-pick-footer">
+          {hasDetail && (
+            <button
+              type="button"
+              className="card-detail-footer-btn"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowDetail(true);
+              }}
+            >
+              Detay
+            </button>
+          )}
           <p className="select-cta">SEÇ</p>
+        </div>
+      )}
+      {showDetail && (
+        <div className="ui-modal-backdrop" role="presentation" onClick={(e) => { e.stopPropagation(); setShowDetail(false); }}>
+          <div className="ui-modal player-detail-modal" role="dialog" aria-modal="true" aria-label={`${card.name} detayı`} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="ui-modal-close" aria-label="Kapat" onClick={() => setShowDetail(false)}>x</button>
+            <div className="player-detail-head">
+              <PlayerPortrait player={card} size="sm" />
+              <div>
+                <p className="card-insight-title">Kart detayı</p>
+                <h2>{card.name}</h2>
+                <p>{card.currentRating} · {formatPosition(card.position)}</p>
+              </div>
+            </div>
+            <div className="card-pick-extra card-pick-extra--open">
+              {insight.tacticContributions.length > 0 && activeTactics.length > 0 && (
+                <div className="card-tactic-contrib-block">
+                  <p className="card-insight-subtitle">Taktik katkısı</p>
+                  {insight.tacticContributions.map((t) => (
+                    <div key={t.tacticName} className="card-tactic-contrib-row">
+                      <p className="card-tactic-contrib-name">{t.tacticName}</p>
+                      {t.lines.map((line) => (
+                        <p key={line} className="card-insight-line card-insight-line--bullet">{line}</p>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {insight.positionHints.length > 0 && (
+                <div className="card-position-hints">
+                  <p className="card-insight-subtitle">Mevki & diziliş</p>
+                  <ul className="card-position-hint-list">
+                    {insight.positionHints.map((hint) => (
+                      <li key={hint.text} className={`card-position-hint card-position-hint--${hint.tone}`}>
+                        {hint.text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {insight.synergies.length > 0 && (
+                <div className="card-synergy-block">
+                  <p className="card-insight-subtitle">Sinerjiye katkı</p>
+                  {insight.synergies.map((s) => (
+                    <SynergyRow key={s.name} s={s} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </motion.div>
