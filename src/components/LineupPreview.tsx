@@ -2,12 +2,14 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { HoverTip } from '@/components/HoverTip';
 import { LineupPlayerHoverCard, getLineupPlayerHoverAria } from '@/components/LineupPlayerHoverCard';
+import { UiIcon } from '@/components/UiIcon';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { getPlayablePositions } from '@/data/positionFlexibility';
-import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
+import { TAG_DESCRIPTIONS } from '@/data/tags';
 import { getBenchExplanations, getSquadLineupSummary, type ManualLineup } from '@/engine/lineupPreview';
 import type { ActiveTactic, PlayerCard } from '@/types';
 import { formatLineupPlayerTip, formationSlotLabel, POSITION_BADGE } from '@/utils/positionStyle';
+import { iconForTag } from '@/utils/gameIcons';
 
 interface Props {
   squad: PlayerCard[];
@@ -23,7 +25,7 @@ export function buildLineupPlayerTip(player: PlayerCard, slotCode: string, outOf
   const playableBadges = getPlayablePositions(player).map((p) => POSITION_BADGE[p]).join(' · ');
   const tagLine =
     player.tags.length > 0
-      ? player.tags.map((t) => `${TAG_ICONS[t]} ${t}`).join(' · ')
+      ? player.tags.join(' · ')
       : 'Tag yok';
   return formatLineupPlayerTip(player, slotCode, { playableBadges, tagLine, outOfPosition });
 }
@@ -109,7 +111,7 @@ function LineupSquadPopover({
                     {player.tags.slice(0, 3).map((tag) => (
                       <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="lineup-squad-popover-tag-tip">
                         <span className="lineup-squad-popover-tag">
-                          <span aria-hidden>{TAG_ICONS[tag]}</span>
+                          <UiIcon name={iconForTag(tag)} />
                           {tag}
                         </span>
                       </HoverTip>
@@ -354,14 +356,14 @@ export function LineupPreviewCenterTrigger({
         aria-label="Diziliş önizlemesini göster"
         title={`${summary.formationLabel} · ${summary.filled}/11 saha`}
       >
-        <span className="lineup-compact-btn-icon" aria-hidden>⚽</span>
+        <UiIcon name="circle-dot" className="lineup-compact-btn-icon" />
         <span className="lineup-compact-btn-text">
-          <span className="lineup-compact-btn-label">Dizilişi Göster</span>
+          <span className="lineup-compact-btn-label">Diziliş</span>
           <span className="lineup-compact-btn-meta">
-            Kadro {summary.squadSize}/11 · {emptyOnField > 0 ? `${emptyOnField} boş slot` : 'saha hazır'} — sahayı ve kadroyu gör
+            {summary.filled}/11 saha
           </span>
         </span>
-        <span className="lineup-compact-btn-cta">→</span>
+        <UiIcon name="arrow-right" className="lineup-compact-btn-cta" />
       </button>
     );
   }
@@ -371,9 +373,9 @@ export function LineupPreviewCenterTrigger({
       type="button"
       className={`lineup-center-trigger lineup-center-trigger--v2 ${className}`}
       onClick={onOpen}
-      aria-label="Diziliş önizlemesini göster"
-    >
-      <span className="lineup-center-trigger-icon" aria-hidden>⚽</span>
+    aria-label="Diziliş önizlemesini göster"
+  >
+      <UiIcon name="circle-dot" className="lineup-center-trigger-icon" />
       <span className="lineup-center-trigger-body">
         <span className="lineup-center-trigger-title">Diziliş önizlemesi</span>
         <span className="lineup-center-trigger-sub">

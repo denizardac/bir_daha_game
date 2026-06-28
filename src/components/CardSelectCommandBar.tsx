@@ -2,6 +2,7 @@ import { MORALE_CHANGE_TIPS } from '@/data/moraleTips';
 import { getMoraleEffect } from '@/engine/contextPreview';
 import type { NearSynergyProgress } from '@/engine/squadInsights';
 import { HoverTip } from '@/components/HoverTip';
+import { UiIcon } from '@/components/UiIcon';
 import type { SynergyDefinition } from '@/types';
 import type { ReactNode } from 'react';
 
@@ -31,9 +32,7 @@ export function CardSelectCommandBar({
   rerollsRemaining = 0,
 }: Props) {
   const fx = getMoraleEffect(morale);
-  const turnKicker = title.toLocaleLowerCase('tr-TR').includes('ikisinden')
-    ? 'Bu Tur - Birini Seç'
-    : title;
+  const turnKicker = title;
 
   return (
     <div
@@ -41,7 +40,7 @@ export function CardSelectCommandBar({
     >
       <div className="card-select-command-left">
         <div className="card-select-moral-top">
-          <span className="pick-morale-icon" aria-hidden>❤️</span>
+          <UiIcon name="heart" className="pick-morale-icon" />
           <div className="card-select-command-moral">
             <div className="pick-morale-compact-head card-select-moral-head">
               <span className="pick-morale-label">Moral</span>
@@ -85,7 +84,7 @@ export function CardSelectCommandBar({
                 className={`card-pick-mode-btn card-pick-mode-btn--tab card-pick-mode-btn--cards ${pickMode === 'cards' ? 'card-pick-mode-btn--active' : ''}`}
                 onClick={() => onPickModeChange('cards')}
               >
-                <span className="card-pick-mode-btn-icon" aria-hidden>🃏</span>
+                <UiIcon name="circle-dot" className="card-pick-mode-btn-icon" />
                 <span className="card-pick-mode-btn-copy">
                   <span className="card-pick-mode-btn-text">Oyuncu Kartı</span>
                   <span className="card-pick-mode-btn-desc">3 tekliften birini kadroya al</span>
@@ -96,7 +95,7 @@ export function CardSelectCommandBar({
                 className={`card-pick-mode-btn card-pick-mode-btn--tab card-pick-mode-btn--training ${pickMode === 'training' ? 'card-pick-mode-btn--active' : ''}`}
                 onClick={() => onPickModeChange('training')}
               >
-                <span className="card-pick-mode-btn-icon" aria-hidden>🏋️</span>
+                <UiIcon name="graduation-cap" className="card-pick-mode-btn-icon" />
                 <span className="card-pick-mode-btn-copy">
                   <span className="card-pick-mode-btn-text">Antrenman</span>
                   <span className="card-pick-mode-btn-desc">Bir oyuncuya tag kazandır</span>
@@ -109,7 +108,7 @@ export function CardSelectCommandBar({
         <p className="card-select-turn-summary">{subtitle}</p>
 
         <div className="card-select-turn-reroll" title="Kartların sağ üstündeki yenileme ikonlarıyla teklifleri tek tek değiştirebilirsin">
-          <span aria-hidden>🔄</span>
+          <UiIcon name="refresh" />
           <strong>{rerollsRemaining}</strong>
           <span>yenileme hakkı</span>
         </div>

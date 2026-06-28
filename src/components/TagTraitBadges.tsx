@@ -1,5 +1,7 @@
 import { HoverTip } from '@/components/HoverTip';
-import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
+import { UiIcon } from '@/components/UiIcon';
+import { TAG_DESCRIPTIONS } from '@/data/tags';
+import { iconForTag } from '@/utils/gameIcons';
 import type { Tag } from '@/types';
 
 interface Props {
@@ -18,7 +20,7 @@ export function TagTraitBadges({ tags, compact = false, tipPlacement = 'auto' }:
           <span
             className={`tag-trait-badge tag-trait-badge--${tag.replace(/\s+/g, '-')}`}
           >
-            <span className="tag-trait-icon" aria-hidden>{TAG_ICONS[tag]}</span>
+            <UiIcon name={iconForTag(tag)} className="tag-trait-icon" />
             {!compact && <span className="tag-trait-name">{tag}</span>}
           </span>
         </HoverTip>

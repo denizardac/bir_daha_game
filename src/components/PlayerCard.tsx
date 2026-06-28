@@ -7,11 +7,13 @@ import { ReplacementPlayerTip } from '@/components/ReplacementPlayerTip';
 import { HoverTip } from '@/components/HoverTip';
 import { PlayerPortrait } from '@/components/PlayerPortrait';
 import { TagTraitBadges } from '@/components/TagTraitBadges';
-import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
+import { UiIcon } from '@/components/UiIcon';
+import { TAG_DESCRIPTIONS } from '@/data/tags';
 import type { ActiveTactic, PlayerCard as PlayerCardType } from '@/types';
 import { RARITY_LABELS } from '@/types';
 import { POSITION_LABELS, POSITION_BADGE, formatPosition } from '@/utils/positionStyle';
 import { getPlayerCardThemeClass, getPlayerCardThemeVars } from '@/utils/playerCardTheme';
+import { iconForTag } from '@/utils/gameIcons';
 
 interface Props {
   card: PlayerCardType;
@@ -56,13 +58,63 @@ function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergi
   );
 }
 
+function getCompactPickSummary(summary: string) {
+  const firstEleven = summary.match(/İlk 11'de ([^ ·(]+)(?: \(([^)]+)\))? slotuna girer/i);
+  if (firstEleven) {
+    return {
+      label: 'İlk 11',
+      value: firstEleven[1] ?? '',
+      text: 'İlk 11’e girer',
+      tone: 'good' as const,
+    };
+  }
+
+  if (summary.toLocaleLowerCase('tr-TR').includes('yedek')) {
+    return {
+      label: 'Rol',
+      value: 'Yedek',
+      text: 'Yedek kalır',
+      tone: 'warn' as const,
+    };
+  }
+
+  return {
+    label: 'Etki',
+    value: '',
+    text: summary.split(' · ')[0] ?? summary,
+    tone: 'info' as const,
+  };
+}
+
+function compactPositionHint(text: string) {
+  return text
+    .replace(/\s+—.+$/u, '')
+    .replace(/^Alternatif mevkiler:.+$/u, '')
+    .replace(/ slotuna yerleştirilir$/u, '')
+    .replace(/ · ideal pozisyon$/u, '')
+    .trim();
+}
+
 export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeTactics = [], morale = 50, onSelect, selected, showTagHint, tipPlacement = 'auto', onReroll, rerollDisabled }: Props) {
   const insight = getPlayerCardInsight(card, squad, discovered, maxSquadSize, activeTactics, morale);
   const themeVars = getPlayerCardThemeVars(card.rarity, card.position);
   const themeClass = getPlayerCardThemeClass(card.rarity, card.position);
   const altPos = formatAltPositionsBadge(card.position);
   const archetype = getPlayerArchetype(card);
-  const hasDetail = insight.positionHints.length > 0 || insight.synergies.length > 0 || insight.tacticContributions.length > 0;
+  const compactSummary = getCompactPickSummary(insight.summary);
+  const visiblePositionHints = insight.positionHints
+    .map((hint) => ({ ...hint, text: compactPositionHint(hint.text) }))
+    .filter((hint) =>
+      hint.text
+      && !hint.text.includes('Alternatif')
+      && !hint.text.includes('uygun slot yok')
+      && !hint.text.includes('Boş slot')
+      && !hint.text.includes('Saha dolu')
+      && !hint.text.includes('DEMİR KALE')
+      && !hint.text.includes('yedek'),
+    )
+    .slice(0, 2);
+  const hasDetail = visiblePositionHints.length > 0 || insight.tacticContributions.length > 0;
   const [showDetail, setShowDetail] = useState(false);
 
   return (
@@ -91,7 +143,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
           style={card.signatureColor ? { background: card.signatureColor } : undefined}
           title="İmza kart"
         >
-          ✒ İMZA
+          İMZA
         </span>
       )}
       <div className="player-pick-card__rarity-row">
@@ -100,7 +152,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
             {RARITY_LABELS[card.rarity]}
           </span>
           <span className="archetype-badge" title={archetype.label}>
-            <span aria-hidden>{archetype.icon}</span> {archetype.label}
+            <UiIcon name="circle-dot" /> {archetype.label}
           </span>
           {card.rarity === 'efsane' && <span className="rarity-spark" aria-hidden>✦</span>}
         </div>
@@ -118,7 +170,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
               onReroll();
             }}
           >
-            🔄
+            <UiIcon name="refresh" />
           </button>
         )}
       </div>
@@ -146,7 +198,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
                   {card.tags.map((tag) => (
                     <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} className="card-pick-trait-wrap" placement={tipPlacement}>
                       <span className={`card-pick-trait-pill tag-trait-badge tag-trait-badge--${tag.replace(/\s+/g, '-')}`}>
-                        <span className="tag-trait-icon" aria-hidden>{TAG_ICONS[tag]}</span>
+                        <UiIcon name={iconForTag(tag)} className="tag-trait-icon" />
                         <span className="tag-trait-name">{tag}</span>
                       </span>
                     </HoverTip>
@@ -163,7 +215,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
         >
           <div className="card-pick-scroll">
             {showTagHint && card.tags[0] && (
-              <p className="hint-flash">Aynı tag&apos;ler sinerji açar — sağ panelde ilerlemeni gör</p>
+              <p className="hint-flash">Aynı tag&apos;ler sinerji açar — Sinerji butonundan ilerlemeni gör</p>
             )}
 
             {card.signature && card.signatureQuote && (
@@ -174,29 +226,36 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
 
             <div className="card-insight card-insight--player card-pick-core">
               <p className="card-insight-title">Seçersen</p>
+              <div className="card-impact-row">
+                <span className={`card-impact-chip card-impact-chip--${compactSummary.tone}`}>
+                  <strong>{compactSummary.label}</strong>
+                  {compactSummary.value && <span>{compactSummary.value}</span>}
+                </span>
+                {insight.synergies[0] && (
+                  <span className={`card-impact-chip card-impact-chip--synergy ${insight.synergies[0].completes ? 'card-impact-chip--unlock' : ''}`}>
+                    <strong>{insight.synergies[0].name}</strong>
+                    <span>{insight.synergies[0].after}/{insight.synergies[0].required}</span>
+                  </span>
+                )}
+              </div>
               {insight.replacedPlayer ? (
                 <ReplacementPlayerTip player={insight.replacedPlayer} kind={insight.replacementKind ?? 'squad'}>
                   <p className="card-insight-line card-insight-line--lead card-insight-line--hoverable">
-                    {insight.summary}
+                    {compactSummary.text}
                   </p>
                 </ReplacementPlayerTip>
               ) : (
-                <p className="card-insight-line card-insight-line--lead">{insight.summary}</p>
+                <p className="card-insight-line card-insight-line--lead">{compactSummary.text}</p>
               )}
-              {insight.tagBites.length > 0 && (
-                <ul className="card-tag-bites card-tag-bites--compact">
-                  {insight.tagBites.map(({ tag, desc }) => (
-                    <li key={tag} className="card-tag-bite">
-                      <HoverTip tip={desc} className="tag-trait-badge-wrap" placement={tipPlacement}>
-                        <span className={`tag-trait-badge tag-trait-badge--${tag.replace(/\s+/g, '-')}`}>
-                          <span className="tag-trait-icon" aria-hidden>{TAG_ICONS[tag]}</span>
-                          <span className="tag-trait-name">{tag}</span>
-                        </span>
-                      </HoverTip>
-                      <span className="card-tag-bite-desc">{desc}</span>
-                    </li>
+              {insight.synergies.length > 0 && (
+                <div className="card-synergy-strip">
+                  {insight.synergies.map((s) => (
+                    <div key={s.name} className={`card-synergy-mini ${s.completes ? 'card-synergy-mini--complete' : ''}`}>
+                      <span>{s.name}</span>
+                      <strong>{s.before}→{s.after}</strong>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
 
@@ -208,9 +267,10 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowDetail((v) => !v);
-                }}
-              >
-                {showDetail ? 'Detayı gizle ▲' : 'Detayı göster ▼'}
+              }}
+            >
+                <UiIcon name={showDetail ? 'x' : 'info'} />
+                <span>{showDetail ? 'Kapat' : 'Detay'}</span>
               </button>
             )}
 
@@ -229,11 +289,11 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
                     ))}
                   </div>
                 )}
-                {insight.positionHints.length > 0 && (
+                {visiblePositionHints.length > 0 && (
                   <div className="card-position-hints">
                     <p className="card-insight-subtitle">Mevki & diziliş</p>
                     <ul className="card-position-hint-list">
-                      {insight.positionHints.map((hint) => (
+                      {visiblePositionHints.map((hint) => (
                         <li key={hint.text} className={`card-position-hint card-position-hint--${hint.tone}`}>
                           {hint.text}
                         </li>

@@ -1,13 +1,14 @@
 import type { CSSProperties } from 'react';
 import { HoverTip } from '@/components/HoverTip';
-import { BITE } from '@/data/biteTips';
+import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import { SYNERGIES } from '@/data/synergies';
-import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
+import { TAG_DESCRIPTIONS } from '@/data/tags';
 import {
   getSidePanelNearSynergies,
   getSynergyBenefitText,
   getSquadTagCounts,
 } from '@/engine/squadInsights';
+import { iconForSynergy, iconForTag } from '@/utils/gameIcons';
 import type { GameCard, PlayerCard, SynergyDefinition } from '@/types';
 import type { Tag } from '@/types';
 
@@ -18,7 +19,7 @@ interface Props {
   currentOffers?: GameCard[];
 }
 
-function ProgressRing({ pct, icon, active }: { pct: number; icon: string; active?: boolean }) {
+function ProgressRing({ pct, icon, active }: { pct: number; icon: UiIconName; active?: boolean }) {
   const clamped = Math.min(100, Math.max(0, pct));
   return (
     <div
@@ -27,7 +28,7 @@ function ProgressRing({ pct, icon, active }: { pct: number; icon: string; active
       aria-hidden
     >
       <div className="syn-ring-inner">
-        <span className="syn-ring-icon">{icon}</span>
+        <UiIcon name={icon} className="syn-ring-icon" />
       </div>
     </div>
   );
@@ -46,21 +47,26 @@ function DotProgress({ current, required }: { current: number; required: number 
   );
 }
 
+function shortLine(text: string, max = 72) {
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 1).trim()}…`;
+}
+
 function ActiveSynergyTile({ synergy }: { synergy: SynergyDefinition }) {
+  const benefit = shortLine(getSynergyBenefitText(synergy), 68);
   return (
-    <HoverTip tip={`${synergy.description}\n\n${getSynergyBenefitText(synergy)}`} className="syn-tile-wrap" placement="right">
-    <div className="syn-tile syn-tile--active">
-      <ProgressRing pct={100} icon={synergy.icon} active />
-      <div className="syn-tile-body">
-        <div className="syn-tile-head">
-          <span className="syn-tile-name">{synergy.name}</span>
-          <span className="syn-tile-badge syn-tile-badge--live">Aktif</span>
+    <div className="syn-tile-wrap">
+      <div className="syn-tile syn-tile--active">
+        <ProgressRing pct={100} icon={iconForSynergy(synergy.icon)} active />
+        <div className="syn-tile-body">
+          <div className="syn-tile-head">
+            <span className="syn-tile-name">{synergy.name}</span>
+            <span className="syn-tile-badge syn-tile-badge--live">Aktif</span>
+          </div>
+          <p className="syn-tile-reward">{benefit}</p>
         </div>
-        <p className="syn-tile-desc">{synergy.description}</p>
-        <p className="syn-tile-reward">{getSynergyBenefitText(synergy)}</p>
       </div>
     </div>
-    </HoverTip>
   );
 }
 
@@ -81,30 +87,29 @@ function NearSynergyTile({
   const almost = pct >= 66;
 
   const need = required - current;
-  const tip = `${synergy.description}\n\n${getSynergyBenefitText(synergy)}${note ? `\n\n${note}` : ''}${need > 0 ? `\n\nAçmak için: ${need} eksik` : ''}${offerHint ? `\n\n${offerHint}` : ''}`;
-
+  const benefit = shortLine(getSynergyBenefitText(synergy), 62);
   return (
-    <HoverTip tip={tip} className="syn-tile-wrap" placement="right">
+    <div className="syn-tile-wrap">
       <div className={`syn-tile syn-tile--near ${almost ? 'syn-tile--almost' : ''}`}>
-        <ProgressRing pct={pct} icon={synergy.icon} />
+        <ProgressRing pct={pct} icon={iconForSynergy(synergy.icon)} />
         <div className="syn-tile-body">
           <div className="syn-tile-head">
             <span className="syn-tile-name">{synergy.name}</span>
             <span className="syn-tile-count">{current}/{required}</span>
           </div>
           <DotProgress current={current} required={required} />
-          {note && <p className="syn-tile-note">{note}</p>}
+          {note && <p className="syn-tile-note">{shortLine(note, 58)}</p>}
           {offerHint ? (
-            <p className="syn-tile-offer-hint">{offerHint}</p>
+            <p className="syn-tile-offer-hint">{shortLine(offerHint, 58)}</p>
           ) : (
-            <p className="syn-tile-hint">{need > 0 ? `${need} eksik · ` : ''}{getSynergyBenefitText(synergy)}</p>
+            <p className="syn-tile-hint">{need > 0 ? `${need} eksik · ` : ''}{benefit}</p>
           )}
           {offerHint && (
-            <p className="syn-tile-hint syn-tile-hint--sub">{getSynergyBenefitText(synergy)}</p>
+            <p className="syn-tile-hint syn-tile-hint--sub">{benefit}</p>
           )}
         </div>
       </div>
-    </HoverTip>
+    </div>
   );
 }
 
@@ -112,7 +117,7 @@ function TagChip({ tag, count }: { tag: Tag; count: number }) {
   return (
     <HoverTip tip={TAG_DESCRIPTIONS[tag]} className="syn-tag-chip-wrap" placement="right">
       <span className="syn-tag-chip">
-        <span className="syn-tag-icon" aria-hidden>{TAG_ICONS[tag]}</span>
+        <UiIcon name={iconForTag(tag)} className="syn-tag-icon" />
         <span className="syn-tag-label">{tag}</span>
         {count > 1 && <span className="syn-tag-count">{count}</span>}
       </span>
@@ -144,12 +149,11 @@ export function SynergySideSection({ squad, morale, discoveredSynergies, current
 
       {!hasContent ? (
         <div className="syn-empty">
-          <span className="syn-empty-icon" aria-hidden>🔗</span>
+          <UiIcon name="tag" className="syn-empty-icon" />
           <p className="syn-empty-text">Tag&apos;ler birleşince sinerji açılır — tekliflerde uygun kart aramaya devam et.</p>
         </div>
       ) : (
         <>
-          <p className="syn-panel-bite">{BITE.synergyIntro}</p>
           <div className="syn-tile-list">
             {activeSynergies.map((s) => (
               <ActiveSynergyTile key={s.id} synergy={s} />

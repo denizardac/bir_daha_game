@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { TacticCard } from '@/components/TacticCard';
 import { TacticBoardVisual } from '@/components/TacticBoardVisual';
 import { LineupPreviewCenterTrigger, LineupPreviewModal } from '@/components/LineupPreview';
+import { UiIcon } from '@/components/UiIcon';
 import { getTacticCategory, getTacticEffect } from '@/data/tactics';
 import { playSound } from '@/utils/sound';
 import type { ActiveTactic, GameCard, PlayerCard, TacticCard as TacticCardType } from '@/types';
@@ -82,7 +83,7 @@ function TacticExpandModal({
             {getTacticCategory(card.id) === 'formasyon' ? 'Formasyon kartı' : 'Oyun sistemi kartı'}
           </p>
           <button type="button" className="lineup-preview-close" onClick={onClose} aria-label="Kapat">
-            ✕
+            <UiIcon name="x" />
           </button>
         </div>
         <div className="tactic-expand-modal-body">
@@ -151,7 +152,7 @@ function TacticPickCard({
           <h3 className="tactic-pick-card-name">{card.name}</h3>
           <p className="tactic-pick-card-effect">{card.effectSummary}</p>
           <p className="tactic-pick-card-detail-hint">
-            <span aria-hidden>🔍</span> Detay için tıkla
+            <UiIcon name="info" /> Detay
           </p>
         </div>
         {selected && <span className="tactic-pick-card-badge" aria-hidden>✓</span>}
@@ -233,8 +234,8 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
           <p className="tactic-pick-stage-kicker">Taktik günü · maç yok</p>
           <p className="tactic-pick-stage-sub">
             {optional
-              ? 'İstersen formasyon/sistem değiştir — değiştirmezsen mevcut taktiğin kalır · seçim sonrası tur ödülü eklenir'
-              : 'Üstten bir formasyon, alttan bir oyun sistemi seç · seçim sonrası tur ödülü eklenir'}
+              ? 'İstersen değiştir; istemezsen mevcut taktik kalır.'
+              : 'Bir formasyon ve bir oyun sistemi seç.'}
           </p>
         </div>
         <LineupPreviewCenterTrigger
@@ -268,7 +269,7 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
               title={formationRerollUsed ? 'Bu run formasyon yenileme hakkını kullandın' : 'Formasyon tekliflerini bir kez yenile (run boyu tek hak)'}
               onClick={() => { playSound('tick', sound); onRerollFormation(); }}
             >
-              {formationRerollUsed ? '🔄 Yenilendi' : '🔄 Yenile'}
+              {formationRerollUsed ? 'Yenilendi' : 'Yenile'}
             </button>
           )}
         >
@@ -296,7 +297,7 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
               title={systemRerollUsed ? 'Bu run oyun sistemi yenileme hakkını kullandın' : 'Oyun sistemi tekliflerini bir kez yenile (run boyu tek hak)'}
               onClick={() => { playSound('tick', sound); onRerollSystem(); }}
             >
-              {systemRerollUsed ? '🔄 Yenilendi' : '🔄 Yenile'}
+              {systemRerollUsed ? 'Yenilendi' : 'Yenile'}
             </button>
           )}
         >
@@ -331,7 +332,7 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
             {optional && !changed
               ? 'Aktif formasyon ve sistemin korunur · sonraki maçlarda geçerli'
               : ready
-                ? 'Seçtiklerin slota yerleşir · sonraki maçlarda aktif'
+                ? 'Sonraki maçlarda aktif olur'
                 : `${effectiveFormation ? '✓ Formasyon' : '○ Formasyon'} · ${effectiveSystem ? '✓ Sistem' : '○ Sistem'}`}
           </span>
         </button>

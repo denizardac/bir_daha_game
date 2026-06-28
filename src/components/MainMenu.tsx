@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { fetchTodayRunStartCount, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { formatDailyDate } from '@/engine/seed';
 import { formatScore } from '@/engine/scoring';
@@ -9,6 +9,7 @@ import { MenuBiteTipsWidget } from '@/components/MenuBiteTipsWidget';
 import { MenuLeaderboardWidget } from '@/components/MenuLeaderboardWidget';
 
 import { StartRunModal } from '@/components/StartRunModal';
+import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { loadPersisted } from '@/utils/storage';
 
@@ -28,6 +29,7 @@ export function MainMenu() {
   const [startPrompt, setStartPrompt] = useState<{ daily: boolean; afterAbandon?: boolean } | null>(null);
   const [installTipVisible, setInstallTipVisible] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [menuDialog, setMenuDialog] = useState<'help' | 'score' | null>(null);
 
   const openStart = (daily: boolean, afterAbandon = false) => {
     setStartPrompt({ daily, afterAbandon });
@@ -97,12 +99,19 @@ export function MainMenu() {
     if (choice.outcome === 'accepted') dismissInstallTip();
   };
 
-  const quickLinks = [
-    { icon: '📖', label: 'Nasıl Oynanır & Rehber', desc: 'Kurallar + tag, taktik, sinerji ve mevki rehberi', screen: 'gameGuide' as const },
-    { icon: '🗃️', label: 'Koleksiyon', desc: 'Açtığın sinerji, efsane ve olayları topla', screen: 'collection' as const },
-    { icon: '🏛️', label: 'Hall of Fame', desc: 'Aylık ve tüm zamanlar rekor tablosu', screen: 'hallOfFame' as const },
-    { icon: '⚡', label: 'Sinerjiler', desc: '29 kombinasyon — bonus koşulları', screen: 'synergies' as const },
-    { icon: '⚙️', label: 'Ayarlar', desc: 'Ses ve oyun tercihleri', screen: 'settings' as const },
+  const quickLinks: { icon: UiIconName; label: string; screen: 'gameGuide' | 'collection' | 'hallOfFame' | 'synergies' | 'settings' }[] = [
+    { icon: 'book-open', label: 'Rehber', screen: 'gameGuide' },
+    { icon: 'archive', label: 'Koleksiyon', screen: 'collection' },
+    { icon: 'trophy', label: 'Hall of Fame', screen: 'hallOfFame' },
+    { icon: 'zap', label: 'Sinerjiler', screen: 'synergies' },
+    { icon: 'settings', label: 'Ayarlar', screen: 'settings' },
+  ];
+
+  const summaryStats: { icon: UiIconName; label: string; value: string; sub: string; hot?: boolean }[] = [
+    { icon: 'medal', label: 'En İyi Skor', value: formatScore(stats.allTimeBest), sub: 'kişisel rekor' },
+    { icon: 'globe', label: 'Bugün', value: formatScore(todayRuns), sub: remoteTodayRuns !== null ? 'başlatılan run' : 'bu cihazda' },
+    { icon: 'flame', label: 'Seri', value: `${stats.dailyStreak} gün`, sub: 'üst üste', hot: stats.dailyStreak > 1 },
+    { icon: 'calendar', label: 'Seed', value: formatDailyDate(), sub: String(new Date().getFullYear()) },
   ];
 
   return (
@@ -118,7 +127,7 @@ export function MainMenu() {
           <div className="menu-brand">
             <p className="menu-hero-badge">Futbol Roguelite</p>
             <h1 className="menu-hero-title">
-              <span className="menu-hero-ball" aria-hidden>⚽</span>
+              <UiIcon name="circle-dot" className="menu-hero-ball" />
               Bir Daha
             </h1>
             <p className="menu-hero-tagline">Aynı seed. Farklı sen.</p>
@@ -129,47 +138,50 @@ export function MainMenu() {
             )}
           </div>
 
-          <div className="menu-top-stats">
-            <div className="menu-stat-card">
-              <div className="menu-stat-icon-row">
-                <span className="menu-stat-icon">🏅</span>
-                <span className="menu-stat-label">Senin En İyin</span>
-              </div>
-              <p className="menu-stat-value menu-stat-value--big">{formatScore(stats.allTimeBest)}</p>
-              <p className="menu-stat-sub">kişisel rekor</p>
+          <div className="menu-top-right">
+            <div className="menu-top-actions" aria-label="Kısa yollar">
+              <button type="button" className="menu-icon-action" onClick={() => setMenuDialog('help')} aria-label="Bilmen gerekenleri aç">
+                <UiIcon name="info" />
+                <span>Bilgi</span>
+              </button>
+              <button type="button" className="menu-icon-action" onClick={() => setMenuDialog('score')} aria-label="Skor tablosunu aç">
+                <UiIcon name="chart" />
+                <span>Skor</span>
+              </button>
             </div>
-            <div className="menu-stat-card">
-              <div className="menu-stat-icon-row">
-                <span className="menu-stat-icon">🌍</span>
-                <span className="menu-stat-label">Bugün Oynanan</span>
-              </div>
-              <p className="menu-stat-value menu-stat-value--big">{formatScore(todayRuns)}</p>
-              <p className="menu-stat-sub">{remoteTodayRuns !== null ? 'başlatılan run' : 'bu cihazda'}</p>
-            </div>
-            <div className={`menu-stat-card ${stats.dailyStreak > 1 ? 'menu-stat-card--gold' : ''}`}>
-              <div className="menu-stat-icon-row">
-                <span className="menu-stat-icon">🔥</span>
-                <span className="menu-stat-label">Seri</span>
-              </div>
-              <p className="menu-stat-value menu-stat-value--big menu-stat-value--gold">{stats.dailyStreak} gün</p>
-              <p className="menu-stat-sub">üst üste oyna</p>
-            </div>
-            <div className="menu-stat-card">
-              <div className="menu-stat-icon-row">
-                <span className="menu-stat-icon">🎲</span>
-                <span className="menu-stat-label">Bugünkü Seed</span>
-              </div>
-              <p className="menu-stat-value">{formatDailyDate()}</p>
-              <p className="menu-stat-sub">{new Date().getFullYear()}</p>
+
+            <div className="menu-top-stats">
+              {summaryStats.map((item) => (
+                <div key={item.label} className={`menu-stat-card ${item.hot ? 'menu-stat-card--gold' : ''}`}>
+                  <div className="menu-stat-icon-row">
+                    <UiIcon name={item.icon} className="menu-stat-icon" />
+                    <span className="menu-stat-label">{item.label}</span>
+                  </div>
+                  <p className={`menu-stat-value ${item.label === 'Seed' ? '' : 'menu-stat-value--big'} ${item.hot ? 'menu-stat-value--gold' : ''}`}>
+                    {item.value}
+                  </p>
+                  <p className="menu-stat-sub">{item.sub}</p>
+                </div>
+              ))}
             </div>
           </div>
         </header>
 
         <div className="menu-main">
-          <div className="menu-body">
+          <div className="menu-body menu-body--simple">
             <section className="menu-play-panel">
               <div className="menu-play-panel-inner">
                 <div className="menu-play-content">
+                  <div className="menu-next-action">
+                    <span>Şimdi ne yapabilirim?</span>
+                    <strong>{showContinuePrompt ? 'Devam eden runu bitir' : 'Bugünün seed’ini oyna'}</strong>
+                    <p>
+                      {showContinuePrompt
+                        ? `Round ${savedRun?.round ?? '?'} · skor ${formatScore(savedRun?.score ?? 0)}. İstersen kaldığın yerden devam et.`
+                        : '3 karttan seçim yap, kadronu büyüt, maçı kazan ve skoru yukarı taşı.'}
+                    </p>
+                  </div>
+
                   {showContinuePrompt ? (
                     <div className="menu-continue-banner">
                       <div className="menu-continue-text">
@@ -192,7 +204,8 @@ export function MainMenu() {
                       </p>
                       {todayRuns > 0 && (
                         <p className="menu-play-hint-runs">
-                          🌍 {formatScore(todayRuns)} run başladı — skor kartını paylaş, meydan oku
+                          <UiIcon name="globe" />
+                          <span>{formatScore(todayRuns)} run başladı — skor kartını paylaş, meydan oku</span>
                         </p>
                       )}
                     </div>
@@ -207,29 +220,25 @@ export function MainMenu() {
                 </div>
 
                 <div className="menu-play-actions">
-                  <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" onClick={() => handlePlayClick(false)}>
-                    <span className="menu-play-btn-icon">🎲</span>
-                    <span>
-                      <span className="menu-play-btn-label">Serbest Mod — Rastgele Seed</span>
-                      <span className="menu-play-btn-sub">Her oyunda yeni kadro · pratik yap, sınır yok</span>
-                    </span>
-                    <span className="menu-play-btn-arrow" aria-hidden>→</span>
-                  </button>
                   <button type="button" className="btn-primary menu-play-btn" onClick={() => handlePlayClick(true)}>
-                    <span className="menu-play-btn-icon">▶</span>
+                    <span className="menu-play-btn-icon"><UiIcon name="play" /></span>
                     <span>
                       <span className="menu-play-btn-label">Bugünün Seed'ini Oyna</span>
                       <span className="menu-play-btn-sub">Aynı kartlar · tek skor · arkadaşına meydan oku</span>
                     </span>
-                    <span className="menu-play-btn-arrow" aria-hidden>→</span>
+                    <UiIcon name="arrow-right" className="menu-play-btn-arrow" />
+                  </button>
+                  <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" onClick={() => handlePlayClick(false)}>
+                    <span className="menu-play-btn-icon"><UiIcon name="dice" /></span>
+                    <span>
+                      <span className="menu-play-btn-label">Serbest Mod</span>
+                      <span className="menu-play-btn-sub">Rastgele seed · pratik yap, sınır yok</span>
+                    </span>
+                    <UiIcon name="arrow-right" className="menu-play-btn-arrow" />
                   </button>
                 </div>
               </div>
             </section>
-
-            <aside className="menu-side-stack">
-              <MenuLeaderboardWidget initialExpanded />
-            </aside>
 
             {installTipVisible && (
               <div className="menu-install-tip" role="status">
@@ -245,8 +254,6 @@ export function MainMenu() {
                 </button>
               </div>
             )}
-
-            <MenuBiteTipsWidget />
           </div>
 
           <footer className="menu-footer">
@@ -257,14 +264,47 @@ export function MainMenu() {
                 className="menu-footer-tile"
                 onClick={() => setScreen(link.screen)}
               >
-                <span className="menu-footer-icon">{link.icon}</span>
+                <UiIcon name={link.icon} className="menu-footer-icon" />
                 <span className="menu-footer-label">{link.label}</span>
-                <span className="menu-footer-desc">{link.desc}</span>
               </button>
             ))}
           </footer>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {menuDialog && (
+          <motion.div
+            className="menu-dialog-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMenuDialog(null)}
+          >
+            <motion.div
+              className={`menu-dialog menu-dialog--${menuDialog}`}
+              role="dialog"
+              aria-modal="true"
+              aria-label={menuDialog === 'help' ? 'Bilmen gerekenler' : 'Skor tablosu'}
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="menu-dialog-head">
+                <div>
+                  <span>{menuDialog === 'help' ? 'Kısa bilgi' : 'Skor tablosu'}</span>
+                  <strong>{menuDialog === 'help' ? 'Oyuna hızlı bakış' : 'Sıralama'}</strong>
+                </div>
+                <button type="button" className="menu-dialog-close" onClick={() => setMenuDialog(null)} aria-label="Kapat">
+                  <UiIcon name="x" />
+                </button>
+              </div>
+              {menuDialog === 'help' ? <MenuBiteTipsWidget /> : <MenuLeaderboardWidget initialExpanded />}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <StartRunModal
         open={startPrompt !== null}

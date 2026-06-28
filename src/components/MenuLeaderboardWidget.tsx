@@ -6,6 +6,7 @@ import { getDailySeed } from '@/engine/seed';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { getAnonymousId } from '@/utils/storage';
 import type { LeaderboardEntry } from '@/types';
+import { UiIcon } from '@/components/UiIcon';
 
 type Tab = 'daily' | 'weekly' | 'allTime';
 
@@ -115,7 +116,7 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
         aria-expanded={expanded}
         aria-label={expanded ? 'Leaderboard daralt' : 'Leaderboard genişlet'}
       >
-        <span className="menu-widget-icon" aria-hidden>🏆</span>
+        <UiIcon name="trophy" className="menu-widget-icon" />
         <span className="menu-widget-title">Leaderboard</span>
         {remote && <span className="menu-lb-live-badge">Canlı</span>}
         <span className="menu-lb-toggle-hint">{expanded ? 'Daralt' : 'Genişlet'}</span>
@@ -153,7 +154,7 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
             </p>
           )}
           {myEntry && myRank === 1 && (
-            <p className="menu-lb-compact-me menu-lb-compact-me--lead">Lider sensin 🏆</p>
+            <p className="menu-lb-compact-me menu-lb-compact-me--lead">Lider sensin</p>
           )}
           {!myEntry && fullList.length > 0 && (
             <p className="menu-lb-compact-me">Bugün oyna — sıralamaya gir</p>
@@ -194,7 +195,7 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
                     {isMe && entry.displayName?.trim() && (
                       <span className="menu-lb-you-pill">Sen</span>
                     )}
-                    {entry.flawless && <span className="menu-lb-flawless" title="Namağlup">🛡️</span>}
+                    {entry.flawless && <UiIcon name="shield" className="menu-lb-flawless" title="Namağlup" />}
                   </span>
                   <span className="menu-lb-score">{formatScore(entry.totalScore)}</span>
                 </div>
@@ -209,7 +210,8 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
         className="menu-lb-fullbtn"
         onClick={() => setScreen('leaderboard')}
       >
-        Tüm sıralamayı gör →
+        <span>Tüm sıralamayı gör</span>
+        <UiIcon name="arrow-right" />
       </button>
     </div>
   );

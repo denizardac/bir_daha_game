@@ -102,16 +102,25 @@
 
 .event-scene-prop {
   position: absolute;
-  font-size: 2.4rem;
-  line-height: 1;
+  width: 2.4rem;
+  height: 2.4rem;
   z-index: 2;
+  display: grid;
+  place-items: center;
+  color: rgba(253, 230, 138, 0.92);
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.55));
   animation: eventSceneFloat 4.5s ease-in-out infinite;
 }
 
+.event-scene-prop .ui-icon {
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.8;
+}
+
 .event-scene-prop--0 { left: 10%; top: 18%; animation-delay: 0s; }
-.event-scene-prop--1 { right: 12%; top: 28%; animation-delay: 0.7s; font-size: 2.1rem; }
-.event-scene-prop--2 { left: 38%; bottom: 22%; animation-delay: 1.4s; font-size: 2rem; }
+.event-scene-prop--1 { right: 12%; top: 28%; animation-delay: 0.7s; width: 2.1rem; height: 2.1rem; }
+.event-scene-prop--2 { left: 38%; bottom: 22%; animation-delay: 1.4s; width: 2rem; height: 2rem; }
 
 .event-scene-hero-wrap {
   position: absolute;
@@ -141,8 +150,10 @@
 }
 
 .event-scene-hero-icon {
-  font-size: 4.25rem;
-  line-height: 1;
+  width: 4.25rem;
+  height: 4.25rem;
+  color: #fde68a;
+  stroke-width: 1.65;
   filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.6));
 }
 
@@ -266,17 +277,31 @@
 
 .event-choice-deco {
   position: absolute;
-  font-size: 0.85rem;
+  width: 0.9rem;
+  height: 0.9rem;
   opacity: 0.35;
   z-index: 1;
+  color: rgba(226, 232, 240, 0.9);
 }
 
 .event-choice-deco--left { left: 12%; top: 38%; }
 .event-choice-deco--right { right: 12%; bottom: 38%; }
 
+.event-choice-deco--left .ui-icon {
+  transform: rotate(180deg);
+}
+
+.event-choice-deco .ui-icon {
+  width: 100%;
+  height: 100%;
+}
+
 .event-choice-visual-icon {
-  font-size: 2.35rem;
+  width: 2.35rem;
+  height: 2.35rem;
   z-index: 2;
+  color: #fde68a;
+  stroke-width: 1.8;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
 }
 

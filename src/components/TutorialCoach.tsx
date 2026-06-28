@@ -18,8 +18,8 @@ const STEPS = [
     round: 2,
     phase: 'cardSelect' as const,
     title: 'Tag\'ler sinerji açar',
-    body: 'Aynı nitelikler (HIZLI, TEKNİK…) bir araya gelince sağ panelde sinerji ilerlemesi görünür. Tamamlanınca maç bonusu alırsın.',
-    highlight: 'Sağ paneldeki sinerji çubuklarını izle.',
+    body: 'Aynı nitelikler (HIZLI, TEKNİK…) bir araya gelince Sinerji butonunda ilerlemeyi açıp kontrol edebilirsin. Tamamlanınca maç bonusu alırsın.',
+    highlight: 'Komuta barındaki Sinerji butonunu aç.',
   },
   {
     id: 'event',

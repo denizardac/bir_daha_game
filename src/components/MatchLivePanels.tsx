@@ -11,6 +11,7 @@ import { formatScore } from '@/engine/scoring';
 import type { MatchAnimState } from '@/engine/matchAnimSchedule';
 import { HoverTip } from '@/components/HoverTip';
 import { MatchPickPanel } from '@/components/MatchPickPanel';
+import { UiIcon } from '@/components/UiIcon';
 import type { ActiveTactic, GameCard, MatchResult, PlayerCard } from '@/types';
 
 interface LeftProps {
@@ -78,7 +79,7 @@ export function MatchLeftPanel({
             <span className="match-plan-section-label">Taktik</span>
             <div className="match-plan-chip-list">
               {activeTactics.map((t) => (
-                <span key={t.id} className="match-plan-chip">📋 {t.name}</span>
+                <span key={t.id} className="match-plan-chip"><UiIcon name="clipboard" /> {t.name}</span>
               ))}
             </div>
           </div>
@@ -91,7 +92,7 @@ export function MatchLeftPanel({
               {synergies.slice(0, 4).map((s) => (
                 <HoverTip key={s.id} tip={`${s.description}\n\n${getSynergyBenefitText(s)}`} className="match-synergy-tip-wrap">
                   <span className="match-plan-chip match-plan-chip--synergy">
-                    <span>{s.icon}</span> {s.name}
+                    <UiIcon name="zap" /> {s.name}
                   </span>
                 </HoverTip>
               ))}
@@ -227,17 +228,17 @@ export function MatchRightPanel({
 
       {anim.playing && (
         <div className="match-tip-card">
-          <p className="match-tip-kicker">💡 Maç ipucu</p>
+          <p className="match-tip-kicker"><UiIcon name="lightbulb" /> Maç ipucu</p>
           <p className="match-tip-text">{tip}</p>
         </div>
       )}
 
       {streak >= 2 && anim.playing && (
-        <p className="match-streak-chip">🔥 {streak} maçlık seri — galibiyet çarpanı aktif</p>
+        <p className="match-streak-chip"><UiIcon name="flame" /> {streak} maçlık seri — galibiyet çarpanı aktif</p>
       )}
 
       {anim.halftime && (
-        <p className="match-halftime-chip">⏸️ Devre arası — taktikler konuşuluyor</p>
+        <p className="match-halftime-chip">Devre arası — taktikler konuşuluyor</p>
       )}
     </div>
   );
