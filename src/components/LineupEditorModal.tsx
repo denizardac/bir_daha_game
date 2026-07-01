@@ -230,8 +230,8 @@ export function LineupEditorModal({
       <div className="lineup-preview-backdrop" onClick={dismiss} aria-hidden />
       <div className="le-modal-group">
 
-      {/* LEFT PANEL: squad list (desktop only) */}
-      {window.innerWidth >= 900 && <div className="le-squad-panel">
+      {/* LEFT PANEL: squad list */}
+      <div className="le-squad-panel">
         <div className="le-squad-panel-head">
           <p className="le-squad-panel-kicker">Kadro Listesi</p>
           <div className="le-squad-panel-title-row">
@@ -326,7 +326,7 @@ export function LineupEditorModal({
           <span>Yedek: <strong>{bench.length}</strong></span>
           <span>Ø Ort: <strong className="le-squad-avg">{squadAvg}</strong></span>
         </div>
-      </div>}
+      </div>
 
       <div
         ref={containerRef}
