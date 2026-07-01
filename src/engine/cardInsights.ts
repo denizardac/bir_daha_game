@@ -169,7 +169,7 @@ export function getPlayerCardInsight(
       if (a.completes !== b.completes) return a.completes ? -1 : 1;
       return bPct - aPct;
     })
-    .slice(0, 2);
+    .slice(0, 4);
 
   const tagBites = card.tags.map((tag) => ({ tag, desc: getTagBite(tag) }));
 
