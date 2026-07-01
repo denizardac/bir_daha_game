@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { fetchTodayRunStartCount, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
+import { fetchTodayRunStartCount, fetchTotalRunStartCount, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { formatDailyDate } from '@/engine/seed';
 import { formatScore } from '@/engine/scoring';
 import { getTodayKey } from '@/engine/leaderboard';
@@ -46,15 +46,20 @@ export function MainMenu() {
 
   const localTodayRuns = stats.todayRunsDate === getTodayKey() ? stats.todayRuns : 0;
   const [remoteTodayRuns, setRemoteTodayRuns] = useState<number | null>(null);
+  const [remoteTotalRuns, setRemoteTotalRuns] = useState<number | null>(null);
   useEffect(() => {
     if (!isRemoteLeaderboardEnabled()) return;
     let cancelled = false;
     fetchTodayRunStartCount()
       .then((count) => { if (!cancelled) setRemoteTodayRuns(count); })
       .catch(() => { /* sessiz */ });
+    fetchTotalRunStartCount()
+      .then((count) => { if (!cancelled) setRemoteTotalRuns(count); })
+      .catch(() => { /* sessiz */ });
     return () => { cancelled = true; };
   }, []);
   const todayRuns = remoteTodayRuns ?? localTodayRuns;
+  const totalRuns = remoteTotalRuns ?? stats.totalRuns;
 
   useEffect(() => {
     const nav = navigator as Navigator & { standalone?: boolean };
@@ -111,7 +116,7 @@ export function MainMenu() {
     { icon: 'medal', label: 'En İyi Skor', value: formatScore(stats.allTimeBest), sub: 'kişisel rekor' },
     { icon: 'globe', label: 'Bugün', value: formatScore(todayRuns), sub: 'başlatılan run' },
     { icon: 'flame', label: 'Seri', value: `${stats.dailyStreak} gün`, sub: 'üst üste', hot: stats.dailyStreak > 1 },
-    { icon: 'chart', label: 'Toplam', value: formatScore(stats.totalRuns), sub: 'run oynandı' },
+    { icon: 'chart', label: 'Toplam', value: formatScore(totalRuns), sub: 'run oynandı' },
     { icon: 'calendar', label: 'Seed', value: formatDailyDate(), sub: String(new Date().getFullYear()) },
   ];
 

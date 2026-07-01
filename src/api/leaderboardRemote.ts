@@ -139,6 +139,17 @@ export async function fetchTodayRunStartCount(): Promise<number | null> {
   return count;
 }
 
+export async function fetchTotalRunStartCount(): Promise<number | null> {
+  if (!supabase) return null;
+
+  const { count, error } = await supabase
+    .from('run_starts')
+    .select('id', { count: 'exact', head: true });
+
+  if (error || count === null) return null;
+  return count;
+}
+
 export async function fetchRemoteLeaderboard(
   period: LeaderboardPeriod,
   dailySeed?: string,
