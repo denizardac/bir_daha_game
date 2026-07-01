@@ -11922,7 +11922,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   transform: translateX(-50%);
   width: 55%;
   height: 16%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.025);
   pointer-events: none;
 }
 
@@ -30173,5 +30174,93 @@ body {
     margin: 0.25rem 0 0 !important;
     border-radius: 14px !important;
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38) !important;
+  }
+}
+
+/* Desktop follow-up: match controls, lineup editor pitch direction, and squad tags. */
+@media (min-width: 960px) {
+  .match-speed-control--floating {
+    top: -2rem !important;
+  }
+
+  .le-pitch.lineup-pitch--center-modal .lineup-pitch-box {
+    top: 50% !important;
+    left: auto !important;
+    transform: translateY(-50%) !important;
+    width: 14% !important;
+    height: 48% !important;
+  }
+
+  .le-pitch.lineup-pitch--center-modal .lineup-pitch-box--top {
+    left: 0 !important;
+    right: auto !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+    border-left: none !important;
+  }
+
+  .le-pitch.lineup-pitch--center-modal .lineup-pitch-box--bottom {
+    right: 0 !important;
+    left: auto !important;
+    bottom: auto !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+    border-right: none !important;
+  }
+
+  .le-squad-info {
+    position: static !important;
+    display: grid !important;
+    grid-template-columns: 4.6rem minmax(5.55rem, auto) minmax(7.2rem, 1fr) !important;
+    align-items: center !important;
+    column-gap: 0.48rem !important;
+    row-gap: 0 !important;
+  }
+
+  .le-squad-name-row {
+    grid-column: 1 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .le-squad-role-row {
+    grid-column: 2 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.22rem !important;
+    white-space: nowrap !important;
+  }
+
+  .le-squad-tags {
+    grid-column: 3 !important;
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    max-width: 100% !important;
+    max-height: 2.08rem !important;
+    display: flex !important;
+    align-items: center !important;
+    align-content: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: wrap !important;
+    gap: 0.18rem !important;
+    overflow: hidden !important;
+  }
+
+  .le-squad-tags .le-squad-tag-tip,
+  .le-squad-tags .le-squad-tag-tip:not(:first-child) {
+    display: inline-flex !important;
+    min-width: 0 !important;
+  }
+
+  .le-squad-tag {
+    max-width: 5.8rem !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
 }

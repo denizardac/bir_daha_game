@@ -348,7 +348,7 @@ export function LineupEditorModal({
         </div>
 
         <div className="le-body">
-          <div className="le-pitch">
+          <div className="le-pitch lineup-pitch--center-modal">
             <div className="lineup-pitch-grass" />
             <div className="lineup-pitch-stripes" aria-hidden />
             <div className="lineup-pitch-center" />
