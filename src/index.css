@@ -30180,8 +30180,11 @@ body {
 /* Desktop follow-up: match controls, lineup editor pitch direction, and squad tags. */
 @media (min-width: 960px) {
   .match-speed-control--floating {
-    top: -1.55rem !important;
-    z-index: 50 !important;
+    top: 0.7rem !important;
+    right: 0.85rem !important;
+    left: auto !important;
+    transform: none !important;
+    z-index: 60 !important;
     pointer-events: auto !important;
   }
 
