@@ -250,7 +250,7 @@ export function MainMenu() {
                   {installPromptEvent ? 'Ekle' : 'Tamam'}
                 </button>
                 <button type="button" className="menu-install-tip-close" aria-label="Kapat" onClick={dismissInstallTip}>
-                  x
+                  <UiIcon name="x" />
                 </button>
               </div>
             )}

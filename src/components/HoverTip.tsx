@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 
@@ -16,8 +16,14 @@ type TipPlace = 'top' | 'bottom' | 'left' | 'right';
 /** Hover / focus — viewport içinde kalır (portal + fixed) */
 export function HoverTip({ tip, children, className = '', placement = 'auto', ariaLabel, stopPropagation = true }: Props) {
   const triggerRef = useRef<HTMLSpanElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [pos, setPos] = useState<{ x: number; y: number; place: TipPlace } | null>(null);
+
+  const isTouchLike = useCallback(() => (
+    typeof window !== 'undefined'
+      && window.matchMedia?.('(hover: none), (pointer: coarse)').matches
+  ), []);
 
   const updatePosition = useCallback(() => {
     const el = triggerRef.current;
@@ -68,6 +74,34 @@ export function HoverTip({ tip, children, className = '', placement = 'auto', ar
 
   const hide = () => setVisible(false);
 
+  useEffect(() => {
+    if (!visible) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (triggerRef.current?.contains(target) || popupRef.current?.contains(target)) return;
+      hide();
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') hide();
+    };
+
+    const onViewportChange = () => updatePosition();
+
+    document.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('resize', onViewportChange);
+    window.addEventListener('scroll', onViewportChange, true);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('resize', onViewportChange);
+      window.removeEventListener('scroll', onViewportChange, true);
+    };
+  }, [updatePosition, visible]);
+
   return (
     <>
       <span
@@ -79,7 +113,13 @@ export function HoverTip({ tip, children, className = '', placement = 'auto', ar
         onMouseLeave={hide}
         onFocus={show}
         onBlur={hide}
-        onClick={(e) => { if (stopPropagation) e.stopPropagation(); }}
+        onClick={(e) => {
+          if (stopPropagation) e.stopPropagation();
+          if (!isTouchLike()) return;
+          e.preventDefault();
+          if (visible) hide();
+          else show();
+        }}
         onMouseDown={(e) => { if (stopPropagation) e.stopPropagation(); }}
       >
         {children}
@@ -87,6 +127,7 @@ export function HoverTip({ tip, children, className = '', placement = 'auto', ar
 
       {visible && pos && createPortal(
         <div
+          ref={popupRef}
           className={`hover-tip-popup hover-tip-popup--fixed hover-tip-popup--${pos.place}`}
           style={{
             left: pos.x,

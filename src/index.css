@@ -29271,3 +29271,378 @@ body {
   background: rgba(8, 12, 16, 0.92) !important;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4) !important;
 }
+
+/* Mobile optimization foundation: desktop rules stay untouched above 899px. */
+@media (hover: none), (pointer: coarse) {
+  .hover-tip {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .hover-tip-popup {
+    max-width: min(18rem, calc(100vw - 1.5rem)) !important;
+    padding: 0.72rem 0.82rem !important;
+    border-radius: 12px !important;
+    font-size: 0.82rem !important;
+    line-height: 1.38 !important;
+    white-space: pre-line;
+    touch-action: manipulation;
+  }
+}
+
+@media (max-width: 899px) {
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+  }
+
+  button,
+  [role='button'],
+  .btn-primary,
+  .btn-secondary,
+  .menu-icon-action,
+  .menu-footer-tile,
+  .game-header-menu-btn,
+  .game-header-reset-btn,
+  .card-compare-mode-tab,
+  .card-compare-reroll-slot,
+  .card-compare-select-btn,
+  .lineup-compact-btn,
+  .lineup-preview-close,
+  .menu-dialog-close,
+  .game-detail-close {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .game-viewport,
+  .game-shell {
+    min-height: 100dvh;
+  }
+
+  .game-shell {
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px)) !important;
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(0.9rem, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .menu-shell {
+    height: auto !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    align-items: flex-start !important;
+    padding:
+      max(0.75rem, env(safe-area-inset-top, 0px))
+      max(0.75rem, env(safe-area-inset-right, 0px))
+      max(0.85rem, env(safe-area-inset-bottom, 0px))
+      max(0.75rem, env(safe-area-inset-left, 0px)) !important;
+  }
+
+  .menu-shell .menu-dashboard {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0 !important;
+    justify-content: flex-start !important;
+    gap: 0.72rem !important;
+  }
+
+  .menu-shell .menu-top {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: start !important;
+    gap: 0.75rem !important;
+  }
+
+  .menu-shell .menu-brand {
+    min-width: 0 !important;
+    flex: none !important;
+  }
+
+  .menu-shell .menu-hero-badge {
+    margin-bottom: 0.28rem !important;
+    font-size: 0.66rem !important;
+    letter-spacing: 0.14em !important;
+  }
+
+  .menu-shell .menu-hero-title {
+    max-width: none !important;
+    font-size: 2.8rem !important;
+    line-height: 0.86 !important;
+    gap: 0.42rem !important;
+  }
+
+  .menu-shell .menu-hero-tagline {
+    margin-top: 0.4rem !important;
+    font-size: 0.88rem !important;
+  }
+
+  .menu-shell .menu-top-right {
+    display: contents !important;
+  }
+
+  .menu-shell .menu-top-actions {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid !important;
+    grid-template-columns: repeat(2, 44px) !important;
+    gap: 0.42rem !important;
+    justify-content: end !important;
+  }
+
+  .menu-shell .menu-icon-action {
+    width: 44px !important;
+    min-width: 44px !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    justify-content: center !important;
+  }
+
+  .menu-shell .menu-icon-action span {
+    display: none !important;
+  }
+
+  .menu-shell .menu-icon-action .ui-icon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .menu-shell .menu-top-stats {
+    grid-column: 1 / -1;
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+
+  .menu-shell .menu-stat-card {
+    max-width: none !important;
+    min-height: 4.45rem !important;
+    padding: 0.62rem 0.68rem !important;
+    border-radius: 12px !important;
+    align-items: flex-start !important;
+  }
+
+  .menu-shell .menu-stat-label {
+    font-size: 0.58rem !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  .menu-shell .menu-stat-value,
+  .menu-shell .menu-stat-value--big {
+    font-size: 1.12rem !important;
+    line-height: 1 !important;
+  }
+
+  .menu-shell .menu-stat-sub {
+    font-size: 0.68rem !important;
+  }
+
+  .menu-shell .menu-main {
+    gap: 0.68rem !important;
+  }
+
+  .menu-shell .menu-body,
+  .menu-shell .menu-body.menu-body--simple {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    gap: 0.68rem !important;
+  }
+
+  .menu-shell .menu-play-panel {
+    min-height: 0 !important;
+    height: auto !important;
+    border-radius: 14px !important;
+  }
+
+  .menu-shell .menu-play-panel-inner {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0.9rem !important;
+    gap: 0.8rem !important;
+  }
+
+  .menu-shell .menu-play-content {
+    gap: 0.62rem !important;
+  }
+
+  .menu-shell .menu-next-action strong {
+    font-size: 1.45rem !important;
+    line-height: 1.02 !important;
+  }
+
+  .menu-shell .menu-next-action p,
+  .menu-shell .menu-play-hint-sub,
+  .menu-shell .menu-play-hint-runs,
+  .menu-shell .menu-continue-sub {
+    font-size: 0.84rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .menu-shell .menu-beta-strip {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    gap: 0.32rem 0.5rem !important;
+    padding: 0.5rem 0.58rem !important;
+  }
+
+  .menu-shell .menu-beta-date {
+    grid-column: 2;
+  }
+
+  .menu-shell .menu-play-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.55rem !important;
+  }
+
+  .menu-shell .menu-play-btn {
+    min-height: 4.2rem !important;
+    padding: 0.76rem 0.82rem !important;
+    border-radius: 13px !important;
+    gap: 0.68rem !important;
+  }
+
+  .menu-shell .menu-play-btn-icon {
+    width: 2.35rem !important;
+    height: 2.35rem !important;
+    border-radius: 11px !important;
+  }
+
+  .menu-shell .menu-play-btn-label {
+    font-size: 1.05rem !important;
+    line-height: 1.04 !important;
+  }
+
+  .menu-shell .menu-play-btn-sub {
+    margin-top: 0.12rem !important;
+    font-size: 0.76rem !important;
+    line-height: 1.24 !important;
+  }
+
+  .menu-shell .menu-play-btn-arrow {
+    display: none !important;
+  }
+
+  .menu-shell .menu-install-tip {
+    display: grid !important;
+    position: static !important;
+    width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    margin: 0 !important;
+    border-radius: 13px !important;
+  }
+
+  .menu-shell .menu-install-tip-action,
+  .menu-shell .menu-install-tip-close {
+    min-height: 44px !important;
+  }
+
+  .menu-shell .menu-install-tip-action {
+    padding-inline: 0.95rem !important;
+  }
+
+  .menu-shell .menu-install-tip-close {
+    width: 44px !important;
+    min-width: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .menu-shell .menu-install-tip-close .ui-icon {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .menu-shell .menu-footer {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 0.42rem !important;
+    padding-bottom: 0 !important;
+  }
+
+  .menu-shell .menu-footer-tile {
+    min-height: 3.9rem !important;
+    padding: 0.48rem 0.22rem !important;
+    border-radius: 12px !important;
+    gap: 0.22rem !important;
+  }
+
+  .menu-shell .menu-footer-icon {
+    width: 19px !important;
+    height: 19px !important;
+    font-size: 1.1rem !important;
+  }
+
+  .menu-shell .menu-footer-label {
+    max-width: 100%;
+    font-size: 0.64rem !important;
+    line-height: 1.08 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: anywhere !important;
+    text-align: center !important;
+  }
+
+  .menu-dialog-backdrop,
+  .confirm-modal-backdrop,
+  .lineup-preview-backdrop,
+  .game-detail-backdrop {
+    padding:
+      max(0.75rem, env(safe-area-inset-top, 0px))
+      max(0.75rem, env(safe-area-inset-right, 0px))
+      max(0.75rem, env(safe-area-inset-bottom, 0px))
+      max(0.75rem, env(safe-area-inset-left, 0px)) !important;
+  }
+
+  .menu-dialog,
+  .confirm-modal,
+  .start-run-modal,
+  .game-detail-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 1.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    overflow: auto !important;
+    border-radius: 16px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .menu-shell .menu-hero-title {
+    font-size: 2.35rem !important;
+  }
+
+  .menu-shell .menu-top {
+    gap: 0.58rem !important;
+  }
+
+  .menu-shell .menu-top-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.42rem !important;
+  }
+
+  .menu-shell .menu-stat-card {
+    min-height: 4.25rem !important;
+    padding: 0.56rem !important;
+  }
+
+  .menu-shell .menu-footer {
+    gap: 0.34rem !important;
+  }
+
+  .menu-shell .menu-footer-label {
+    font-size: 0.58rem !important;
+  }
+}
