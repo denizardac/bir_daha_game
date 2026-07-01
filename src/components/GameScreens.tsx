@@ -1662,7 +1662,6 @@ export function RunEndScreen() {
                   {(() => {
                     const percent = liveRank?.percent ?? analysis.rankPercent;
                     const rank = liveRank?.rank ?? analysis.rank;
-                    const total = liveRank?.total ?? analysis.totalPlayers;
                     return (
                       <p className="mt-2 text-xl">
                         {score <= 0
