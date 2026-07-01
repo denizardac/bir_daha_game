@@ -109,8 +109,9 @@ export function MainMenu() {
 
   const summaryStats: { icon: UiIconName; label: string; value: string; sub: string; hot?: boolean }[] = [
     { icon: 'medal', label: 'En İyi Skor', value: formatScore(stats.allTimeBest), sub: 'kişisel rekor' },
-    { icon: 'globe', label: 'Bugün', value: formatScore(todayRuns), sub: remoteTodayRuns !== null ? 'başlatılan run' : 'bu cihazda' },
+    { icon: 'globe', label: 'Bugün', value: formatScore(todayRuns), sub: 'başlatılan run' },
     { icon: 'flame', label: 'Seri', value: `${stats.dailyStreak} gün`, sub: 'üst üste', hot: stats.dailyStreak > 1 },
+    { icon: 'chart', label: 'Toplam', value: formatScore(stats.totalRuns), sub: 'run oynandı' },
     { icon: 'calendar', label: 'Seed', value: formatDailyDate(), sub: String(new Date().getFullYear()) },
   ];
 

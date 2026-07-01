@@ -1667,8 +1667,6 @@ export function RunEndScreen() {
                       <p className="mt-2 text-xl">
                         {score <= 0
                           ? `${round} round hayatta kaldın — bir dahaki sefer farklı olabilir`
-                          : total <= 1 && !liveRank
-                            ? 'Skorun yerel kayda işlendi; canlı sıralama verisi yok'
                           : percent >= 50
                             ? `En iyi %${Math.max(1, 100 - percent)} içindesin`
                             : `Sıralaman #${rank} — bir dahaki run'da yüksel`}

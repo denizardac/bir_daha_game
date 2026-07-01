@@ -19603,9 +19603,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .menu-top-stats {
-  width: min(100%, 43rem);
+  width: min(100%, 52rem);
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.45rem;
 }
 

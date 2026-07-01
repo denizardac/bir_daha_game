@@ -32,23 +32,22 @@ export function HallOfFameScreen() {
   const remote = isRemoteLeaderboardEnabled();
   const [remoteEntries, setRemoteEntries] = useState<LeaderboardEntry[] | null>(null);
 
-  // Aktif sezonda gerçek oyuncuları göster (remote all-time). Geçmiş aylar yerel arşivden.
   useEffect(() => {
-    if (!remote || !isActive) { setRemoteEntries(null); return; }
+    if (!remote) { setRemoteEntries(null); return; }
     let cancelled = false;
     fetchRemoteLeaderboard('allTime')
       .then((rows) => {
         if (!cancelled) {
-          setRemoteEntries(rows.filter((row) => entryMonthKey(row) === activeKey));
+          setRemoteEntries(rows.filter((row) => entryMonthKey(row) === month));
         }
       })
       .catch(() => { if (!cancelled) setRemoteEntries(null); });
     return () => { cancelled = true; };
-  }, [remote, isActive, month]);
+  }, [remote, month]);
 
   const localEntries = getHallOfFameForMonth(stats, month);
   const entries: (HallOfFameEntry | LeaderboardEntry)[] =
-    remote && isActive && remoteEntries !== null ? remoteEntries : localEntries;
+    remote && remoteEntries !== null ? remoteEntries : localEntries;
   const archivePlaceholders = getPlaceholderMonths(activeKey).filter((m) => !months.includes(m));
   const champion = entries[0];
   const podiumEntries = entries.slice(0, 3);
