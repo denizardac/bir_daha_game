@@ -68,6 +68,37 @@ describe('drawOffers', () => {
     }
   });
 
+  it('sequential rerolls on the same slot never repeat the immediately previous result', () => {
+    const squad = PLAYER_POOL.slice(20, 31).map((p) => clonePlayer(p));
+    for (let round = 2; round <= 14; round++) {
+      if (round % 3 === 0) continue;
+      for (let s = 0; s < 15; s++) {
+        const seed = `reroll-seq-${s}`;
+        let offers = drawOffers(seed, round, 1, squad, [], false, 0, 'normal', 'players').filter(isPlayerCard);
+        const slot = 0;
+        let prevName = nameLc(offers[slot]!.name);
+        for (let ri = 1; ri <= 5; ri++) {
+          // Same accumulation the store uses: ALL current offers — including the
+          // slot's own previous result — are excluded from the next reroll.
+          const rep = rerollSinglePlayerOffer(seed, round, 1, squad, offers, slot, ri, false);
+          expect(nameLc(rep.name)).not.toBe(prevName);
+          prevName = nameLc(rep.name);
+          offers = [...offers.slice(0, slot), rep, ...offers.slice(slot + 1)];
+        }
+      }
+    }
+  });
+
+  it('single reroll avoids low-floor offers when the pool has better options', () => {
+    const squad = PLAYER_POOL.slice(20, 26).map((p) => clonePlayer(p));
+    for (let s = 0; s < 30; s++) {
+      const seed = `reroll-floor-${s}`;
+      const offers = drawOffers(seed, 7, 0, squad, [], false, 0, 'normal', 'players').filter(isPlayerCard);
+      const replacement = rerollSinglePlayerOffer(seed, 7, 0, squad, offers.slice(1), 0, 2, false);
+      expect(replacement.currentRating).toBeGreaterThanOrEqual(70);
+    }
+  });
+
   it('tactic category reroll excludes cards already shown in that category', () => {
     const current = ['tactic_433_kontr', 'tactic_442'];
     const fresh = drawTacticCategoryOffers('tactic-reroll-seed', 3, [], 'formasyon', 1, current);

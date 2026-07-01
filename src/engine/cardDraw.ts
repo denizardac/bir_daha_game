@@ -70,6 +70,17 @@ function upgradeWeakestCard(cards: PlayerCard[], pool: PlayerCard[], rng: () => 
   return result;
 }
 
+function boostRerollPool(pool: PlayerCard[], round: number, rerollIndex: number): PlayerCard[] {
+  if (rerollIndex <= 0) return pool;
+  const floor = Math.min(78, 64 + round + rerollIndex * 2);
+  const filtered = pool.filter((p) => {
+    if (p.currentRating < floor) return false;
+    if (rerollIndex >= 2 && (p.tags.includes('GERİLEYEN') || p.tags.includes('SAKATLIK RİSKİ') || p.tags.includes('PERFORMANS DÜŞÜŞÜ'))) return false;
+    return true;
+  });
+  return filtered.length >= Math.min(4, pool.length) ? filtered : pool;
+}
+
 function silentCardUpgrade(cards: PlayerCard[], pool: PlayerCard[], round: number, rng: () => number): PlayerCard[] {
   if (round > 3 || cards.length === 0) return cards;
   const avg = cards.reduce((s, c) => s + c.currentRating, 0) / cards.length;
@@ -158,7 +169,8 @@ function drawPlayers(
     // asla filtrelenmemiş rawPool'a düşme; aksi halde kadro üyesi tekrar gelebilir.
     const fallback = available.length ? available : filterDrawPool(rawPool, squad, new Set());
     if (!fallback.length) break;
-    const card = drawSinglePlayer(rng, round, fallback, rerollIndex);
+    const drawPool = boostRerollPool(fallback, round, rerollIndex);
+    const card = drawSinglePlayer(rng, round, drawPool, rerollIndex);
     usedNames.add(nameKey(card.name));
     cards.push(card);
   }
@@ -313,10 +325,11 @@ export function rerollSinglePlayerOffer(
     pool = filterDrawPool(PLAYER_POOL, squad, excludeNames);
   }
 
-  let card = drawSinglePlayer(rng, round, pool, rerollIndex);
+  const drawPool = boostRerollPool(pool, round, rerollIndex);
+  let card = drawSinglePlayer(rng, round, drawPool, rerollIndex);
   let guard = 0;
   while (excludeNames.has(nameKey(card.name)) && guard++ < 40) {
-    card = drawSinglePlayer(rng, round, pool.length ? pool : PLAYER_POOL, rerollIndex);
+    card = drawSinglePlayer(rng, round, drawPool.length ? drawPool : pool.length ? pool : PLAYER_POOL, rerollIndex);
   }
 
   if (rerollIndex > 0 && pool.length) {

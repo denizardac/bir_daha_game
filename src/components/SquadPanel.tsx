@@ -2,12 +2,14 @@ import { LineupPreviewSidebar } from '@/components/LineupPreview';
 import { formatAltPositionsBadge } from '@/data/positionFlexibility';
 import { HoverTip } from '@/components/HoverTip';
 import { PlayerPortrait } from '@/components/PlayerPortrait';
-import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
+import { UiIcon } from '@/components/UiIcon';
+import { TAG_DESCRIPTIONS } from '@/data/tags';
 import { getSquadLineupSummary } from '@/engine/lineupPreview';
 import { sortSquadByRating } from '@/engine/squadLogic';
 import type { ActiveTactic, PlayerCard as PlayerCardType, Tag } from '@/types';
 import { formatSquadListName } from '@/utils/squadDisplayName';
 import { POSITION_LABELS, POSITION_BADGE } from '@/utils/positionStyle';
+import { iconForTag } from '@/utils/gameIcons';
 
 interface Props {
   squad: PlayerCardType[];
@@ -22,7 +24,7 @@ function SquadTagChip({ tag }: { tag: Tag }) {
   return (
     <HoverTip tip={TAG_DESCRIPTIONS[tag]} className="syn-tag-chip-wrap" placement="right">
       <span className={`syn-tag-chip syn-tag-chip--squad syn-tag-chip--icon-only syn-tag-chip--${tag.replace(/\s+/g, '-')}`}>
-        <span className="syn-tag-icon" aria-hidden>{TAG_ICONS[tag]}</span>
+        <UiIcon name={iconForTag(tag)} className="syn-tag-icon" />
       </span>
     </HoverTip>
   );

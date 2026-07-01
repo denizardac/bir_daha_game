@@ -181,7 +181,7 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
     narrative: 'Ana sponsor reklam çekimi istiyor; setteki ışıklar ve kameralar hazır. Katılırsan kasaya gelir ama antrenman bölünür; reddedersen sahada kalıp formu korursun.',
     props: ['💼', '📸', '🏷️'],
     choiceA: { icon: '🤳', flavor: 'Etkinliğe katıl', scene: 'choice-photo' },
-    choiceB: { icon: '⛔', flavor: 'Reddet', scene: 'choice-skip' },
+    choiceB: { icon: '⛔', flavor: 'Antrenmana odaklan', scene: 'choice-skip' },
   },
   evt_menajer_krizi: {
     scene: 'agent-suit',

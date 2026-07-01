@@ -542,7 +542,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     playSound('tick', loadPersisted().soundEnabled);
     const newIndex = state.offersRerollIndex + 1;
-    const otherOffers = offers.filter((_, i) => i !== slotIndex).filter(isPlayerCard);
+    // Slot'un KENDİ mevcut kartını da hariç tut — aksi halde art arda reroll'de
+    // aynı oyuncu tekrar gelebilir (bir önceki reroll sonucu havuzdan çıkarılmıyordu).
+    const otherOffers = offers.filter(isPlayerCard);
     const replacement = rerollSinglePlayerOffer(
       state.seed,
       state.round,
@@ -1006,6 +1008,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
         squad = squad.map((p) =>
           p.id === target.id ? { ...p, tags: [...p.tags, tag] } : p,
         );
+      } else {
+        // Kadroda tag'i çelişmeden alabilecek kimse yoksa (ör. tüm kadro POTANSİYEL/YENİ
+        // SEZON iken MENTOR verilmek istenirse) seçim boşa gitmesin diye telafi puanı ver.
+        score += 60;
       }
     }
 

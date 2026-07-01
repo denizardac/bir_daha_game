@@ -1,9 +1,10 @@
 import type { CSSProperties } from 'react';
 import { getTagAccentColor } from '@/components/PositionGlyph';
-import { TAG_ICONS } from '@/data/tags';
+import { UiIcon } from '@/components/UiIcon';
 import { getTacticBeneficiaryPlayers } from '@/engine/tacticVisual';
 import type { PlayerCard, TacticCard } from '@/types';
 import { POSITION_BADGE, formatPosition } from '@/utils/positionStyle';
+import { iconForTag } from '@/utils/gameIcons';
 
 interface Props {
   card: TacticCard;
@@ -43,7 +44,7 @@ export function TacticSquadStrip({ card, squad, hideHint }: Props) {
                   <span className="tactic-squad-player-tags">
                     {p.tags.slice(0, 3).map((t) => (
                       <span key={t} className="tactic-squad-player-tag">
-                        <span aria-hidden>{TAG_ICONS[t]}</span>
+                        <UiIcon name={iconForTag(t)} />
                         {t}
                       </span>
                     ))}
@@ -55,7 +56,7 @@ export function TacticSquadStrip({ card, squad, hideHint }: Props) {
         </div>
       ) : (
         <div className="tactic-squad-team-effect">
-          <span className="tactic-squad-team-icon" aria-hidden>{tag ? '!' : '↔'}</span>
+          <UiIcon name={tag ? 'info' : 'arrow-right'} className="tactic-squad-team-icon" />
           <span>{label}</span>
         </div>
       )}

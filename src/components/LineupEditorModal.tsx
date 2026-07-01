@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { HoverTip } from '@/components/HoverTip';
 import { LineupPlayerHoverCard, getLineupPlayerHoverAria } from '@/components/LineupPlayerHoverCard';
-import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
+import { UiIcon } from '@/components/UiIcon';
+import { TAG_DESCRIPTIONS } from '@/data/tags';
 import { getPlayablePositions, getSlotFitTier } from '@/data/positionFlexibility';
 import {
   assignSquadToFormation,
@@ -13,8 +14,10 @@ import {
   type LineupSlot,
   type ManualLineup,
 } from '@/engine/lineupPreview';
-import type { ActiveTactic, PlayerCard } from '@/types';
-import { POSITION_BADGE } from '@/utils/positionStyle';
+import type { ActiveTactic, PlayerCard, Position } from '@/types';
+import { POSITION_BADGE, TAG_AVATAR_BG, getPositionRoleColor } from '@/utils/positionStyle';
+import { iconForTag } from '@/utils/gameIcons';
+import { formatSquadListName } from '@/utils/squadDisplayName';
 
 interface Props {
   open: boolean;
@@ -51,6 +54,23 @@ function fitClass(player: PlayerCard, slot: LineupSlot['slot']): 'ideal' | 'flex
   return getSlotFitTier(player, slot.preferred);
 }
 
+function gradientColor(value: string): string {
+  const colors = [...value.matchAll(/#[0-9a-fA-F]{6}/g)].map((m) => m[0]);
+  return colors[1] ?? colors[0] ?? '#8a948f';
+}
+
+function tagChipStyle(tag: PlayerCard['tags'][number]): CSSProperties {
+  const color = gradientColor(TAG_AVATAR_BG[tag] ?? '');
+  return { color, background: `${color}12`, borderColor: `${color}55` };
+}
+
+function positionChipStyle(position: Position, filled: boolean): CSSProperties {
+  const color = getPositionRoleColor(position);
+  return filled
+    ? { color: '#061412', background: color, borderColor: color }
+    : { color, background: `${color}10`, borderColor: `${color}8a` };
+}
+
 export function LineupEditorModal({
   open,
   squad,
@@ -72,8 +92,6 @@ export function LineupEditorModal({
   const bench = squad.filter((p) => !lineupIds.has(p.id));
   // Bu formasyon kadronun mevkileriyle tam dolmuyorsa: boş slot + yedek oyuncu.
   // Oyuncuyu sürükleyip yerleştirmezse eksik kadroyla oynar (güç + sinerji düşer).
-  const emptySlotCount = lineup.filter((s) => !s.player).length;
-  const underfielded = emptySlotCount > 0 && bench.length > 0;
 
   const [dragSource, setDragSource] = useState<DragSource | null>(null);
   const [dragGhost, setDragGhost] = useState<DragGhost>(null);
@@ -134,11 +152,16 @@ export function LineupEditorModal({
     const secondary = getPlayablePositions(player).filter((p) => p !== player.position);
     if (secondary.length === 0) return null;
     return (
-      <span className="le-squad-secondary-positions">
-        {secondary.slice(0, 3).map((pos) => (
-          <span key={pos} className="le-squad-secondary-pos">{POSITION_BADGE[pos]}</span>
-        ))}
-      </span>
+      <>
+        <span className="le-squad-role-arrow">→</span>
+        <span className="le-squad-secondary-positions">
+          {secondary.slice(0, 3).map((pos) => (
+            <span key={pos} className="le-squad-secondary-pos" style={positionChipStyle(pos, false)}>
+              {POSITION_BADGE[pos]}
+            </span>
+          ))}
+        </span>
+      </>
     );
   }
 
@@ -178,7 +201,7 @@ export function LineupEditorModal({
         style={{ touchAction: 'none', cursor: 'grab' }}
       >
         <span className="le-chip-rating">{player.currentRating}</span>
-        <span className="le-chip-name">{player.name.split(' ').pop()}</span>
+        <span className="le-chip-name">{formatSquadListName(player.name)}</span>
         <span className="le-chip-badge">{POSITION_BADGE[player.position]}</span>
       </motion.div>
       </HoverTip>
@@ -189,26 +212,10 @@ export function LineupEditorModal({
     ? Math.round(squad.reduce((s, p) => s + p.currentRating, 0) / squad.length)
     : 0;
 
-  // Sahada olan oyuncular ve slot bilgileri
-  const playerSlotMap = useMemo(() => {
-    const map = new Map<string, { label: string; fit: 'ideal' | 'flex' | 'forced' }>();
-    lineup.forEach((s) => {
-      if (s.player) {
-        map.set(s.player.id, { label: s.slot.label, fit: fitClass(s.player, s.slot) });
-      }
-    });
-    return map;
-  }, [lineup]);
-
-  const onFieldPlayers = lineup.filter((s) => s.player).map((s) => s.player!);
-  const fieldCount = onFieldPlayers.length;
-  const posStats = {
-    kaleci: onFieldPlayers.filter((p) => p.position === 'KL').length,
-    savunma: onFieldPlayers.filter((p) => ['STP', 'SLB', 'SĞB'].includes(p.position)).length,
-    ortaSaha: onFieldPlayers.filter((p) => ['DOS', 'OS', 'OOS', 'SLK', 'SĞK'].includes(p.position)).length,
-    hucum: onFieldPlayers.filter((p) => p.position === 'SF').length,
-  };
-
+  const fieldPlayersForList = lineup
+    .map((slot) => slot.player)
+    .filter((player): player is PlayerCard => Boolean(player));
+  const benchPlayersForList = squad.filter((player) => !lineupIds.has(player.id));
   const formationDisplay = formationKey.replace(/(\d)(\d)(\d)/, '$1-$2-$3');
 
   function ratingBadgeClass(position: string): string {
@@ -231,57 +238,89 @@ export function LineupEditorModal({
             <span className="le-squad-panel-title">Oyuncular</span>
             <span className="le-squad-panel-count">{squad.length} / 11</span>
           </div>
+          <div className="le-squad-panel-legend">
+            <span><i className="le-squad-panel-legend-main" /> ana rol</span>
+            <span><i className="le-squad-panel-legend-secondary" /> oynayabildiği yan roller</span>
+          </div>
         </div>
         <div className="le-squad-panel-list">
-          {squad.map((player) => {
+          {fieldPlayersForList.map((player) => {
             const onField = lineupIds.has(player.id);
-            const isGk = player.position === 'KL';
             return (
               <div
                 key={player.id}
-                className={`le-squad-row ${onField ? 'le-squad-row--field' : 'le-squad-row--bench'} ${highlightId === player.id ? 'le-squad-row--highlight' : ''}`}
+                className={`le-squad-row ${onField ? 'le-squad-row--field' : 'le-squad-row--bench'} ${player.position === 'KL' ? 'le-squad-row--gk' : ''} ${highlightId === player.id ? 'le-squad-row--highlight' : ''}`}
               >
                 <div className={`le-squad-rating-badge ${ratingBadgeClass(player.position)}`}>
                   <span className="le-squad-rating">{player.currentRating}</span>
-                  <span className="le-squad-pos">{player.position}</span>
+                  <span className="le-squad-pos">{POSITION_BADGE[player.position]}</span>
                 </div>
                 <div className="le-squad-info">
                   {(() => {
-                    const si = playerSlotMap.get(player.id);
-                    const slotBadgeClass = !onField
-                      ? 'le-squad-slot-badge--bench'
-                      : si?.fit === 'ideal'
-                        ? (isGk ? 'le-squad-slot-badge--gk' : 'le-squad-slot-badge--ideal')
-                        : si?.fit === 'flex'
-                          ? 'le-squad-slot-badge--flex'
-                          : 'le-squad-slot-badge--forced';
                     return (
-                      <div className="le-squad-name-row">
-                        <span className="le-squad-name">{player.name}</span>
-                        <span className="le-squad-primary-pos">{POSITION_BADGE[player.position]}</span>
-                        <SecondaryPositions player={player} />
-                        <span className={`le-squad-slot-badge ${slotBadgeClass}`}>
-                          {onField ? (si?.label ?? 'Saha') : 'Yedek'}
-                        </span>
-                      </div>
+                      <>
+                        <div className="le-squad-name-row">
+                          <span className="le-squad-name" title={player.name}>{formatSquadListName(player.name)}</span>
+                        </div>
+                        <div className="le-squad-role-row">
+                          <span className="le-squad-primary-pos" style={positionChipStyle(player.position, true)}>{POSITION_BADGE[player.position]}</span>
+                          {player.position === 'KL' ? <span className="le-squad-only">sadece kalede</span> : <SecondaryPositions player={player} />}
+                        </div>
+                      </>
                     );
                   })()}
-                  {player.tags.length > 0 && (
-                    <div className="le-squad-tags">
-                      {player.tags.slice(0, 2).map((tag) => (
-                        <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="le-squad-tag-tip">
-                          <span className="le-squad-tag">
-                            <span aria-hidden>{TAG_ICONS[tag]}</span>
-                            {tag}
-                          </span>
-                        </HoverTip>
-                      ))}
-                    </div>
-                  )}
+                  <div className="le-squad-tags">
+                    {player.tags.map((tag) => (
+                      <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="le-squad-tag-tip">
+                        <span className="le-squad-tag" style={tagChipStyle(tag)}>
+                          <UiIcon name={iconForTag(tag)} />
+                          {tag}
+                        </span>
+                      </HoverTip>
+                    ))}
+                  </div>
                 </div>
               </div>
             );
           })}
+          {benchPlayersForList.length > 0 && (
+            <>
+              <div className="le-squad-section-label">YEDEKLER</div>
+              {benchPlayersForList.map((player) => {
+                return (
+                  <div
+                    key={player.id}
+                    className={`le-squad-row le-squad-row--bench ${player.position === 'KL' ? 'le-squad-row--gk' : ''} ${highlightId === player.id ? 'le-squad-row--highlight' : ''}`}
+                  >
+                    <div className={`le-squad-rating-badge ${ratingBadgeClass(player.position)}`}>
+                      <span className="le-squad-rating">{player.currentRating}</span>
+                      <span className="le-squad-pos">{POSITION_BADGE[player.position]}</span>
+                    </div>
+                    <div className="le-squad-info">
+                      <div className="le-squad-name-row">
+                        <span className="le-squad-name" title={player.name}>{formatSquadListName(player.name)}</span>
+                      </div>
+                      <div className="le-squad-role-row">
+                        <span className="le-squad-primary-pos" style={positionChipStyle(player.position, true)}>{POSITION_BADGE[player.position]}</span>
+                        {player.position === 'KL' ? <span className="le-squad-only">sadece kalede</span> : <SecondaryPositions player={player} />}
+                      </div>
+                      <div className="le-squad-tags">
+                        <span className="le-squad-bench-badge">Yedek</span>
+                        {player.tags.map((tag) => (
+                          <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="le-squad-tag-tip">
+                            <span className="le-squad-tag" style={tagChipStyle(tag)}>
+                              <UiIcon name={iconForTag(tag)} />
+                              {tag}
+                            </span>
+                          </HoverTip>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
         <div className="le-squad-panel-foot">
           <span>Yedek: <strong>{bench.length}</strong></span>
@@ -300,35 +339,13 @@ export function LineupEditorModal({
           <div>
             <p className="le-kicker-small">İlk 11 Önizleme</p>
             <p className="le-kicker">{formationDisplay} (varsayılan)</p>
-            <p className="le-sub">{fieldCount}/11 saha dolu · {squad.length}/11 kadro · <span className="le-legend le-legend--ideal">ana mevki</span> <span className="le-legend le-legend--flex">yan mevki</span></p>
+          </div>
+          <div className="le-head-legend" aria-label="Mevki uyumu">
+            <span className="le-legend le-legend--ideal">ana mevki</span>
+            <span className="le-legend le-legend--flex">yan mevki</span>
           </div>
           <button type="button" className="lineup-preview-close" onClick={dismiss} aria-label="İptal et — kart seçimine dön">✕</button>
         </div>
-
-        {/* Pozisyon istatistik satırı */}
-        <div className="le-pos-stats">
-          {[
-            { label: 'Kaleci', value: posStats.kaleci },
-            { label: 'Savunma', value: posStats.savunma },
-            { label: 'Orta Saha', value: posStats.ortaSaha },
-            { label: 'Hücum', value: posStats.hucum },
-          ].map(({ label, value }) => (
-            <div key={label} className="le-pos-stat-card">
-              <p className="le-pos-stat-label">{label}</p>
-              <p className="le-pos-stat-value">{value}</p>
-            </div>
-          ))}
-        </div>
-
-        {underfielded && (
-          <div className="le-underfield-warn" role="alert">
-            <span className="le-underfield-warn-icon" aria-hidden>⚠️</span>
-            <span>
-              Bu formasyon kadrona tam oturmuyor: <strong>{emptySlotCount} slot boş</strong>, {bench.length} oyuncu yedekte.
-              Eksik kadroyla oynarsın — maç gücü ve sinerjiler düşer. Kadrona daha uygun bir formasyon seçmeyi düşün.
-            </span>
-          </div>
-        )}
 
         <div className="le-body">
           <div className="le-pitch">
@@ -345,7 +362,7 @@ export function LineupEditorModal({
                   key={slot.index}
                   data-drop={slot.index}
                   className={`le-slot ${dragPlayer ? (valid ? `le-slot--valid le-slot--${tier}` : 'le-slot--invalid') : ''}`}
-                  style={{ left: `${clampPct(slot.x)}%`, top: `${clampPct(slot.y)}%` }}
+                  style={{ left: `${clampPct(100 - slot.y, 4, 96)}%`, top: `${clampPct(slot.x, 10, 90)}%` }}
                 >
                   {slot.player
                     ? <PlayerChip player={slot.player} from={slot.index} />
@@ -376,7 +393,7 @@ export function LineupEditorModal({
             <span className="le-reset-prominent-icon" aria-hidden>↺</span>
             <span className="le-reset-prominent-text">Optimal pozisyonlara dön</span>
           </button>
-          <button type="button" className="btn-primary le-confirm" onClick={onConfirm}>Onayla ve devam</button>
+          <button type="button" className="btn-primary le-confirm" onClick={onConfirm}>Onayla ve devam et</button>
         </div>
       </div>
 
@@ -392,7 +409,7 @@ export function LineupEditorModal({
         >
           <span className="le-drag-ghost-rating">{dragGhost.player.currentRating}</span>
           <span className="le-drag-ghost-body">
-            <span className="le-drag-ghost-name">{dragGhost.player.name.split(' ').pop()}</span>
+            <span className="le-drag-ghost-name">{formatSquadListName(dragGhost.player.name)}</span>
             <span className="le-drag-ghost-pos">{POSITION_BADGE[dragGhost.player.position]}</span>
           </span>
         </motion.div>

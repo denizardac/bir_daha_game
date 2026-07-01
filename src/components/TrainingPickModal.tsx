@@ -1,10 +1,27 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { PlayerCardMini } from '@/components/PlayerCard';
-import { TagTraitBadges } from '@/components/TagTraitBadges';
+import type { CSSProperties } from 'react';
+import { useState } from 'react';
+import { SYNERGIES } from '@/data/synergies';
+import { HoverTip } from '@/components/HoverTip';
+import { UiIcon } from '@/components/UiIcon';
 import { canAddTag } from '@/data/tagConflicts';
 import { MAX_PLAYER_TAGS } from '@/data/training';
 import { TAG_DESCRIPTIONS } from '@/data/tags';
+import { iconForTag } from '@/utils/gameIcons';
+import { TAG_AVATAR_BG, POSITION_BADGE, getPositionRoleColor } from '@/utils/positionStyle';
 import type { PlayerCard, Tag } from '@/types';
+
+function tagPrimaryColor(tag: Tag): string {
+  const bg = TAG_AVATAR_BG[tag] ?? '';
+  const colors = [...bg.matchAll(/#[0-9a-fA-F]{6}/g)].map((m) => m[0]);
+  return colors[1] ?? colors[0] ?? '#8a948f';
+}
+
+function getSynergyHintsForTag(tag: Tag): string[] {
+  return SYNERGIES
+    .filter((s) => s.description.toLocaleUpperCase('tr-TR').includes(tag.toLocaleUpperCase('tr-TR')))
+    .map((s) => s.name)
+    .slice(0, 2);
+}
 
 interface Props {
   squad: PlayerCard[];
@@ -24,87 +41,118 @@ export function TrainingPickModal({
   selectedPlayerId,
   onPickPlayer,
   onPickTag,
-  onClose,
-  onBack,
 }: Props) {
+  const [pendingTag, setPendingTag] = useState<Tag | null>(null);
   const selected = squad.find((p) => p.id === selectedPlayerId);
 
   return (
-    <div className="training-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="training-modal-title">
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="training-modal panel"
-      >
-        <div className="training-modal-head">
-          <span className="training-modal-icon" aria-hidden>🏋️</span>
-          <div>
-            <h2 id="training-modal-title" className="training-modal-title">Özel Antrenman</h2>
-            <p className="training-modal-sub">
-              {step === 'player'
-                ? 'Nitelik eklemek istediğin oyuncuyu seç'
-                : `${selected?.name} için nitelik seç`}
-            </p>
-          </div>
-          <button type="button" className="training-modal-close" onClick={onClose} aria-label="İptal">
-            ✕
-          </button>
+    <div className="training-inline">
+      <div className="training-inline-left">
+        <div className="training-inline-list-head">
+          <span className="training-inline-label">Oyuncu Seç</span>
+          <span className="training-inline-count">{squad.length} oyuncu</span>
         </div>
+        <div className="training-inline-player-list">
+          {squad.map((p) => {
+            const full = p.tags.length >= MAX_PLAYER_TAGS;
+            const isSelected = p.id === selectedPlayerId;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={`training-player-row ${isSelected ? 'training-player-row--selected' : ''} ${full ? 'training-player-row--full' : ''}`}
+                disabled={full}
+                onClick={() => { onPickPlayer(p.id); setPendingTag(null); }}
+              >
+                <span className="training-player-row-rating">{p.currentRating}</span>
+                <span className="training-player-row-name">{p.name}</span>
+                <span className="training-player-row-tags">
+                  <span
+                    className="training-player-row-pos"
+                    style={{ background: getPositionRoleColor(p.position) } as CSSProperties}
+                  >
+                    {POSITION_BADGE[p.position]}
+                  </span>
+                  {p.tags.map((tag) => {
+                    const c = tagPrimaryColor(tag);
+                    return (
+                      <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="top">
+                        <span
+                          className="training-player-row-tag"
+                          style={{ color: c, background: `${c}18`, border: `1px solid ${c}44` } as CSSProperties}
+                        >
+                          {tag}
+                        </span>
+                      </HoverTip>
+                    );
+                  })}
+                  {full && <span className="training-player-row-full">Dolu</span>}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-        <AnimatePresence mode="wait">
-          {step === 'player' ? (
-            <motion.div key="players" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="training-modal-list">
-              {squad.map((p) => {
-                const full = p.tags.length >= MAX_PLAYER_TAGS;
+      <div className="training-inline-right">
+        {selected && step === 'tag' ? (
+          <>
+            <div className="training-inline-right-head">
+              <span className="training-inline-label">Seçili <strong>{selected.name}</strong></span>
+              <span className="training-inline-right-sub">— üç tag'den birini kazandır</span>
+            </div>
+            <div className="training-tag-cards">
+              {offeredTags.map((tag) => {
+                const hasTag = selected.tags.includes(tag);
+                const conflicts = !canAddTag(tag, selected.tags);
+                const disabled = hasTag || conflicts;
+                const color = tagPrimaryColor(tag);
+                const gradBg = TAG_AVATAR_BG[tag] ?? `linear-gradient(145deg, ${color}, ${color})`;
+                const synergies = getSynergyHintsForTag(tag);
+                const isPending = pendingTag === tag;
                 return (
                   <button
-                    key={p.id}
+                    key={tag}
                     type="button"
-                    className={`training-player-btn ${full ? 'training-player-btn--full' : ''}`}
-                    disabled={full}
-                    onClick={() => onPickPlayer(p.id)}
+                    className={`training-tag-card ${disabled ? 'training-tag-card--disabled' : ''} ${isPending ? 'training-tag-card--active' : ''}`}
+                    disabled={disabled}
+                    onClick={() => setPendingTag(isPending ? null : tag)}
                   >
-                    <PlayerCardMini card={p} />
-                    {full && <span className="training-full-badge">Nitelik dolu</span>}
+                    <div className="training-tag-card-icon" style={{ background: gradBg } as CSSProperties}>
+                      <UiIcon name={iconForTag(tag)} />
+                    </div>
+                    <div className="training-tag-card-name" style={{ color } as CSSProperties}>
+                      <UiIcon name={iconForTag(tag)} />
+                      {tag}
+                    </div>
+                    <p className="training-tag-card-desc">{TAG_DESCRIPTIONS[tag]}</p>
+                    {synergies.length > 0 && (
+                      <span className="training-tag-card-syn" style={{ color } as CSSProperties}>
+                        +{synergies.join(' / ')} →
+                      </span>
+                    )}
+                    {hasTag && <span className="training-tag-card-badge">Zaten var</span>}
+                    {!hasTag && conflicts && <span className="training-tag-card-badge">Çelişiyor</span>}
                   </button>
                 );
               })}
-            </motion.div>
-          ) : (
-            <motion.div key="tags" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {selected && (
-                <div className="training-selected-player">
-                  <PlayerCardMini card={selected} />
-                </div>
-              )}
-              <div className="training-tag-pick-grid">
-                {offeredTags.map((tag) => {
-                  const hasTag = selected?.tags.includes(tag);
-                  const conflicts = selected ? !canAddTag(tag, selected.tags) : false;
-                  const disabled = hasTag || conflicts;
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      className={`training-tag-pick ${disabled ? 'training-tag-pick--owned' : ''}`}
-                      disabled={disabled}
-                      onClick={() => onPickTag(tag)}
-                    >
-                      <TagTraitBadges tags={[tag]} />
-                      <p className="training-tag-pick-desc">{TAG_DESCRIPTIONS[tag]}</p>
-                      {hasTag && <span className="training-tag-owned">Zaten var</span>}
-                      {!hasTag && conflicts && <span className="training-tag-owned">Çelişiyor</span>}
-                    </button>
-                  );
-                })}
-              </div>
-              <button type="button" className="btn-secondary training-back-btn" onClick={onBack}>
-                ← Oyuncu değiştir
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+            </div>
+            <button
+              type="button"
+              className="training-apply-btn"
+              disabled={pendingTag === null}
+              onClick={() => { if (pendingTag) onPickTag(pendingTag); }}
+            >
+              Antrenmanı Uygula
+            </button>
+          </>
+        ) : (
+          <div className="training-inline-empty">
+            <UiIcon name="graduation-cap" className="training-inline-empty-icon" />
+            <p>Sol taraftan geliştirmek istediğin oyuncuyu seç</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { formatAltPositionsBadge } from '@/data/positionFlexibility';
 import { getPlayerArchetype } from '@/data/archetypes';
 import { getPlayerCardInsight } from '@/engine/cardInsights';
-import { ReplacementPlayerTip } from '@/components/ReplacementPlayerTip';
 import { HoverTip } from '@/components/HoverTip';
 import { PlayerPortrait } from '@/components/PlayerPortrait';
 import { TagTraitBadges } from '@/components/TagTraitBadges';
 import { UiIcon } from '@/components/UiIcon';
+import { SYNERGIES } from '@/data/synergies';
 import { TAG_DESCRIPTIONS } from '@/data/tags';
 import type { ActiveTactic, PlayerCard as PlayerCardType } from '@/types';
-import { RARITY_LABELS } from '@/types';
+import { RARITY_COLORS, RARITY_LABELS } from '@/types';
 import { POSITION_LABELS, POSITION_BADGE, formatPosition } from '@/utils/positionStyle';
 import { getPlayerCardThemeClass, getPlayerCardThemeVars } from '@/utils/playerCardTheme';
 import { iconForTag } from '@/utils/gameIcons';
@@ -33,8 +33,11 @@ interface Props {
 function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergies'][number] }) {
   const pctBefore = Math.min(100, (s.before / s.required) * 100);
   const pctAfter = Math.min(100, (s.after / s.required) * 100);
+  const remaining = Math.max(0, s.required - s.after);
+  const tokens = getSynergyRequirementTokens(s.description);
 
   return (
+    <HoverTip tip={getSynergyTip(s)} placement="top" className="card-synergy-row-tip" stopPropagation={false}>
     <div className={`card-synergy-row ${s.completes ? 'card-synergy-row--complete' : ''}`}>
       <p className="card-synergy-name">
         <span className="card-synergy-badge" aria-hidden />
@@ -46,7 +49,9 @@ function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergi
         <span className="card-synergy-count">{s.before}/{s.required}</span>
         <span className="card-synergy-arrow">→</span>
         <span className="card-synergy-count card-synergy-count--after">{s.after}/{s.required}</span>
+        <span className="card-synergy-remaining">{s.completes ? 'seçince açılır' : `${remaining} eksik kalacak`}</span>
       </div>
+      {tokens.length > 1 && <SynergyRequirementChips tokens={tokens} />}
       <div className="card-synergy-bar-track">
         <div className="card-synergy-bar-before" style={{ width: `${pctBefore}%` }} />
         <div className="card-synergy-bar-after" style={{ width: `${pctAfter}%` }} />
@@ -54,6 +59,66 @@ function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergi
       <p className="card-synergy-reward">
         {s.completes ? `Bonus: ${s.reward}` : `Tamamlanınca: ${s.reward}`}
       </p>
+    </div>
+    </HoverTip>
+  );
+}
+
+function getSynergyDeltaText(s: ReturnType<typeof getPlayerCardInsight>['synergies'][number]) {
+  return s.completes ? `Seçince açılır` : `Seçince ${s.after}/${s.required}`;
+}
+
+function getSynergyAfterText(s: ReturnType<typeof getPlayerCardInsight>['synergies'][number]) {
+  const remaining = Math.max(0, s.required - s.after);
+  return s.completes ? 'Bonus aktif olur' : `${remaining} eksik kalacak`;
+}
+
+function getSynergyTip(s: ReturnType<typeof getPlayerCardInsight>['synergies'][number]) {
+  const remaining = Math.max(0, s.required - s.after);
+  const status = s.completes ? 'Bu seçim sinerjiyi açar.' : `Bu seçimden sonra ${remaining} rol eksik kalacak.`;
+  return `${s.description}\n${status}\nÖdül: ${s.reward}`;
+}
+
+function getTagTip(tag: PlayerCardType['tags'][number], synergies: ReturnType<typeof getPlayerCardInsight>['synergies']) {
+  const fromCard = synergies
+    .filter((s) => `${s.name} ${s.description} ${s.contribution}`.toLocaleUpperCase('tr-TR').includes(tag))
+    .map((s) => s.name);
+  const fromCatalog = fromCard.length > 0
+    ? fromCard
+    : SYNERGIES
+      .filter((s) => s.description.toLocaleUpperCase('tr-TR').includes(tag))
+      .map((s) => s.name)
+      .slice(0, 3);
+  const synergyLine = fromCatalog.length > 0
+    ? `Sinerji: ${fromCatalog.join(' Â· ')}`
+    : 'Sinerji: uygun kombinasyonlarda deÄŸer kazanÄ±r';
+  return `${TAG_DESCRIPTIONS[tag]}\n${synergyLine}`;
+}
+
+function getSynergyRequirementTokens(description: string) {
+  const matches = [...description.matchAll(/([A-ZÇĞİÖŞÜ0-9 .]+?)\s+(\d+)\/(\d+)/g)];
+  return matches
+    .map((m) => ({
+      label: m[1]!.trim().replace(/\s+/g, ' '),
+      current: Number(m[2]),
+      required: Number(m[3]),
+    }))
+    .filter((x) => x.label && Number.isFinite(x.current) && Number.isFinite(x.required) && x.required > 0)
+    .slice(0, 4);
+}
+
+function SynergyRequirementChips({ tokens }: { tokens: ReturnType<typeof getSynergyRequirementTokens> }) {
+  return (
+    <div className="card-synergy-req-chips" aria-label="Sinerji koşulları">
+      {tokens.map((token) => {
+        const done = token.current >= token.required;
+        return (
+          <span key={`${token.label}-${token.required}`} className={`card-synergy-req-chip ${done ? 'card-synergy-req-chip--done' : ''}`}>
+            <span>{token.label}</span>
+            <strong>{Math.min(token.current, token.required)}/{token.required}</strong>
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -97,7 +162,10 @@ function compactPositionHint(text: string) {
 
 export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeTactics = [], morale = 50, onSelect, selected, showTagHint, tipPlacement = 'auto', onReroll, rerollDisabled }: Props) {
   const insight = getPlayerCardInsight(card, squad, discovered, maxSquadSize, activeTactics, morale);
-  const themeVars = getPlayerCardThemeVars(card.rarity, card.position);
+  const themeVars = {
+    ...getPlayerCardThemeVars(card.rarity, card.position),
+    '--pc-rarity-color': RARITY_COLORS[card.rarity],
+  } as CSSProperties;
   const themeClass = getPlayerCardThemeClass(card.rarity, card.position);
   const altPos = formatAltPositionsBadge(card.position);
   const archetype = getPlayerArchetype(card);
@@ -193,18 +261,16 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
                   <span key={pos} className="card-pick-stat card-pick-stat--alt">{pos}</span>
                 ))}
               </div>
-              {card.tags.length > 0 && (
-                <div className="card-pick-trait-row">
-                  {card.tags.map((tag) => (
-                    <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} className="card-pick-trait-wrap" placement={tipPlacement}>
-                      <span className={`card-pick-trait-pill tag-trait-badge tag-trait-badge--${tag.replace(/\s+/g, '-')}`}>
-                        <UiIcon name={iconForTag(tag)} className="tag-trait-icon" />
-                        <span className="tag-trait-name">{tag}</span>
-                      </span>
-                    </HoverTip>
-                  ))}
-                </div>
-              )}
+              <div className={`card-pick-trait-row ${card.tags.length === 0 ? 'card-pick-trait-row--empty' : ''}`} aria-hidden={card.tags.length === 0}>
+                {card.tags.map((tag) => (
+                  <HoverTip key={tag} tip={getTagTip(tag, insight.synergies)} className="card-pick-trait-wrap" placement={tipPlacement}>
+                    <span className={`card-pick-trait-pill tag-trait-badge tag-trait-badge--${tag.replace(/\s+/g, '-')}`}>
+                      <UiIcon name={iconForTag(tag)} className="tag-trait-icon" />
+                      <span className="tag-trait-name">{tag}</span>
+                    </span>
+                  </HoverTip>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -232,28 +298,30 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
                   {compactSummary.value && <span>{compactSummary.value}</span>}
                 </span>
                 {insight.synergies[0] && (
-                  <span className={`card-impact-chip card-impact-chip--synergy ${insight.synergies[0].completes ? 'card-impact-chip--unlock' : ''}`}>
-                    <strong>{insight.synergies[0].name}</strong>
-                    <span>{insight.synergies[0].after}/{insight.synergies[0].required}</span>
-                  </span>
+                  <HoverTip tip={getSynergyTip(insight.synergies[0])} placement="top" className="card-impact-chip-tip">
+                    <span className={`card-impact-chip card-impact-chip--synergy ${insight.synergies[0].completes ? 'card-impact-chip--unlock' : ''}`}>
+                      <strong>{insight.synergies[0].name}</strong>
+                      <span>{insight.synergies[0].after}/{insight.synergies[0].required}</span>
+                    </span>
+                  </HoverTip>
                 )}
               </div>
-              {insight.replacedPlayer ? (
-                <ReplacementPlayerTip player={insight.replacedPlayer} kind={insight.replacementKind ?? 'squad'}>
-                  <p className="card-insight-line card-insight-line--lead card-insight-line--hoverable">
-                    {compactSummary.text}
-                  </p>
-                </ReplacementPlayerTip>
-              ) : (
-                <p className="card-insight-line card-insight-line--lead">{compactSummary.text}</p>
-              )}
+              <p className="card-insight-line card-insight-line--lead">{compactSummary.text}</p>
               {insight.synergies.length > 0 && (
                 <div className="card-synergy-strip">
-                  {insight.synergies.map((s) => (
-                    <div key={s.name} className={`card-synergy-mini ${s.completes ? 'card-synergy-mini--complete' : ''}`}>
-                      <span>{s.name}</span>
-                      <strong>{s.before}→{s.after}</strong>
+                  {insight.synergies.slice(0, 1).map((s) => (
+                    <HoverTip key={s.name} tip={getSynergyTip(s)} placement="top" className="card-synergy-mini-tip">
+                    <div className={`card-synergy-mini ${s.completes ? 'card-synergy-mini--complete' : ''}`}>
+                      <div className="card-synergy-mini-main">
+                        <span>{s.name}</span>
+                        <strong>{getSynergyDeltaText(s)}</strong>
+                      </div>
+                      <div className="card-synergy-mini-bottom">
+                        <SynergyRequirementChips tokens={getSynergyRequirementTokens(s.description)} />
+                        <em>{getSynergyAfterText(s)}</em>
+                      </div>
                     </div>
+                    </HoverTip>
                   ))}
                 </div>
               )}
@@ -304,7 +372,7 @@ export function PlayerCard({ card, squad, discovered, maxSquadSize = 11, activeT
 
                 {insight.synergies.length > 0 && (
                   <div className="card-synergy-block">
-                    <p className="card-insight-subtitle">Sinerjiye katkı</p>
+                    <p className="card-insight-subtitle">Sinerji hedefi</p>
                     {insight.synergies.map((s) => (
                       <SynergyRow key={s.name} s={s} />
                     ))}

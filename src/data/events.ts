@@ -58,7 +58,7 @@ export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_yorgunluk', category: 'fiziksel', icon: '😴', title: 'Aşırı Yorgunluk',
     description: 'İlk 11’den birkaç oyuncu tempo testinde düşüş gösterdi. Rotasyon ritmi bozar ama sakince toparlar; zorlamak kısa vadede güç verir.',
-    optionA: { label: 'ROTASYON YAP', description: 'Ritim bozulur · +20 puan · Moral -3' },
+    optionA: { label: 'ROTASYON YAP', description: 'Takım dinlenir · +10 puan · Moral +6' },
     optionB: { label: 'ZORLA', description: 'Sonraki maç +70 · maç riski %22 · Moral -6' },
   },
   {
@@ -167,7 +167,7 @@ export const EVENT_CARDS: EventCard[] = [
     id: 'evt_ofsayt', category: 'taktik', icon: '🚩', title: 'Ofsayt Tuzağı',
     description: 'Rakip ofsayt tuzağı kuruyor.',
     optionA: { label: 'HIZLILARLA DEL', description: 'HIZLI oyuncu başına bonus' },
-    optionB: { label: 'NORMAL', description: 'Moral +4' },
+    optionB: { label: 'NORMAL', description: 'Moral +16' },
   },
   {
     id: 'evt_kontratak', category: 'taktik', icon: '⚡', title: 'Kontra Antrenmanı',
@@ -298,8 +298,8 @@ export const EVENT_CARDS: EventCard[] = [
   {
     id: 'evt_hakem_korkusu', category: 'ozel', icon: '🟨', title: 'Sert Hakem',
     description: 'Maçın hakemi kartları sever.',
-    optionA: { label: 'TEMKİNLİ', description: 'Sakin kal · Moral +6' },
-    optionB: { label: 'ANALİZ', description: 'Sonraki maç +50 · Moral -5' },
+    optionA: { label: 'TEMKİNLİ', description: 'Sakin kal · Moral +8' },
+    optionB: { label: 'ANALİZ', description: 'Sonraki maç +50 · Moral -6' },
   },
   {
     id: 'evt_eksik_kadro', category: 'ozel', icon: '⚠️', title: 'Eksik Kadro',

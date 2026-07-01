@@ -48,7 +48,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { removeWeakest: true, description: 'Sakat oyuncu kadrodan çıkarıldı, slot boşaldı.' },
   ),
   evt_yorgunluk: e(
-    { moraleDelta: -3, scoreDelta: 20, description: 'Rotasyon yapıldı — dinç kalındı ama ritim bölündü.' },
+    { moraleDelta: 6, scoreDelta: 10, description: 'Rotasyon yapıldı — takım dinlendi, moral toparladı.' },
     { nextMatchBonus: 70, nextMatchRisk: 0.22, moraleDelta: -6, description: 'Yorgun oyuncular zorlandı — kısa vadeli güç, yüksek maç riski.' },
   ),
   evt_zehir: e(
@@ -201,7 +201,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
   ),
   evt_ofsayt: e(
     { conditionalBonus: { tags: ['HIZLI'], perTag: 18, base: 25, cap: 95 }, description: 'Ofsayt tuzağı — hızlı oyuncular tuzağı deldi.' },
-    { moraleDelta: 4, description: 'Basit antrenman.' },
+    { moraleDelta: 16, description: 'Basit antrenman — takım rahatladı.' },
   ),
   evt_kontratak: e(
     { nextMatchBonus: 100, nextMatchRisk: 0.17, description: 'Kontra taktikleri — hızlı ödül, orta risk.' },

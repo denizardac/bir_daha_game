@@ -1,7 +1,10 @@
-import { getPlayablePositions } from '@/data/positionFlexibility';
-import { TAG_DESCRIPTIONS, TAG_ICONS } from '@/data/tags';
+import type { CSSProperties } from 'react';
+import { UiIcon } from '@/components/UiIcon';
+import { TAG_DESCRIPTIONS } from '@/data/tags';
 import type { PlayerCard } from '@/types';
-import { formationSlotLabel, POSITION_BADGE, POSITION_LABELS } from '@/utils/positionStyle';
+import { formationSlotLabel, POSITION_BADGE, POSITION_LABELS, TAG_AVATAR_BG } from '@/utils/positionStyle';
+import { iconForTag } from '@/utils/gameIcons';
+import type { Tag } from '@/types';
 
 type FitTone = 'ideal' | 'flex' | 'forced' | 'bench';
 
@@ -11,65 +14,59 @@ interface Props {
   fit?: FitTone;
 }
 
-function fitCopy(fit: FitTone, slotLabel?: string): { label: string; detail: string } {
-  if (fit === 'bench') {
-    return { label: 'Yedek', detail: 'Şu an ilk 11 dışında' };
-  }
-  if (fit === 'forced') {
-    return { label: 'Uyumsuz', detail: `${slotLabel ?? 'Bu slot'} oyuncuya zayıf uyuyor` };
-  }
-  if (fit === 'flex') {
-    return { label: 'Yan mevki', detail: `${slotLabel ?? 'Bu slot'} oynanabilir ama ana mevki değil` };
-  }
-  return { label: 'Ana mevki', detail: 'Oyuncu doğal rolünde oynuyor' };
+function tagPrimaryColor(tag: Tag): string {
+  const bg = TAG_AVATAR_BG[tag] ?? '';
+  const colors = [...bg.matchAll(/#[0-9a-fA-F]{6}/g)].map((m) => m[0]);
+  return colors[1] ?? colors[0] ?? '#8a948f';
 }
 
 export function getLineupPlayerHoverAria(player: PlayerCard, slotLabel?: string, fit: FitTone = 'ideal'): string {
-  const fitText = fitCopy(fit, slotLabel);
   const slotText = slotLabel ? `${formationSlotLabel(slotLabel)} ${slotLabel}` : 'Yedek';
-  return `${player.name}, ${player.currentRating}, ${POSITION_LABELS[player.position]}, ${slotText}, ${fitText.label}`;
+  const fitText = fit === 'flex' ? 'yan mevki' : fit === 'bench' ? 'yedek' : 'ana mevki';
+  return `${player.name}, ${player.currentRating}, ${POSITION_LABELS[player.position]}, ${slotText}, ${fitText}`;
 }
 
 export function LineupPlayerHoverCard({ player, slotLabel, fit = 'ideal' }: Props) {
-  const playable = getPlayablePositions(player);
-  const fitText = fitCopy(fit, slotLabel);
+  const isFlex = fit === 'flex' || fit === 'forced';
+  const isBench = fit === 'bench';
 
   return (
-    <div className={`lineup-player-tip-card lineup-player-tip-card--${fit}`}>
-      <div className="lineup-player-tip-head">
-        <div className="lineup-player-tip-rating">
-          <strong>{player.currentRating}</strong>
-          <span>{POSITION_BADGE[player.position]}</span>
+    <div className={`lineup-hover-card lineup-hover-card--${fit}`}>
+      <div className="lineup-hover-top">
+        <div className="lineup-hover-rating-col">
+          <span className="lineup-hover-rating">{player.currentRating}</span>
+          <span className="lineup-hover-pos-badge">{POSITION_BADGE[player.position]}</span>
         </div>
-        <div className="lineup-player-tip-title">
-          <strong>{player.name}</strong>
-          <span>{POSITION_LABELS[player.position]}</span>
-        </div>
-        <span className="lineup-player-tip-fit">{fitText.label}</span>
-      </div>
-
-      <div className="lineup-player-tip-grid">
-        <span>Ana mevki</span>
-        <strong>{POSITION_LABELS[player.position]} ({POSITION_BADGE[player.position]})</strong>
-        <span>{slotLabel ? 'Bu slot' : 'Durum'}</span>
-        <strong>{slotLabel ? `${formationSlotLabel(slotLabel)} (${slotLabel})` : 'Yedek'}</strong>
-        <span>Oynayabildiği</span>
-        <strong>{playable.map((pos) => POSITION_BADGE[pos]).join(' · ')}</strong>
-      </div>
-
-      <p className="lineup-player-tip-note">{fitText.detail}</p>
-
-      {player.tags.length > 0 ? (
-        <div className="lineup-player-tip-tags">
-          {player.tags.slice(0, 4).map((tag) => (
-            <span key={tag} className="lineup-player-tip-tag" title={TAG_DESCRIPTIONS[tag]}>
-              <span aria-hidden>{TAG_ICONS[tag]}</span>
-              {tag}
+        <div className="lineup-hover-info">
+          <strong className="lineup-hover-name">{player.name}</strong>
+          <span className="lineup-hover-pos-label">{POSITION_LABELS[player.position]}</span>
+          {slotLabel && (
+            <span className="lineup-hover-slot">
+              {formationSlotLabel(slotLabel)}
+              {isFlex && <span className="lineup-hover-flex-badge">yan mevki</span>}
+              {isBench && <span className="lineup-hover-bench-badge">yedek</span>}
             </span>
-          ))}
+          )}
         </div>
-      ) : (
-        <p className="lineup-player-tip-empty">Tag yok</p>
+      </div>
+
+      {player.tags.length > 0 && (
+        <div className="lineup-hover-tags">
+          {player.tags.slice(0, 4).map((tag) => {
+            const color = tagPrimaryColor(tag);
+            return (
+              <span
+                key={tag}
+                className="lineup-hover-tag"
+                title={TAG_DESCRIPTIONS[tag]}
+                style={{ color, background: `${color}18`, border: `1px solid ${color}44` } as CSSProperties}
+              >
+                <UiIcon name={iconForTag(tag)} />
+                {tag}
+              </span>
+            );
+          })}
+        </div>
       )}
     </div>
   );

@@ -7,7 +7,7 @@ interface Props {
 }
 
 function iconForEventCategory(category: EventCard['category']): UiIconName {
-  if (category === 'transfer') return 'arrow-right';
+  if (category === 'transfer') return 'chart';
   if (category === 'taktik') return 'clipboard';
   if (category === 'moral') return 'heart';
   if (category === 'fiziksel') return 'shield';
@@ -15,13 +15,24 @@ function iconForEventCategory(category: EventCard['category']): UiIconName {
 }
 
 function iconForChoiceScene(scene: string): UiIconName {
+  if (/^choice-check$/.test(scene)) return 'check';
+  if (/(gamble|risk)/.test(scene)) return 'dice';
   if (/(cash|pay|gift|save|bonus|sponsor)/.test(scene)) return 'chart';
   if (/(sign|plan|standard|study|trap|normal)/.test(scene)) return 'clipboard';
-  if (/(unity|support|deal|balance|home|talk|fans)/.test(scene)) return 'heart';
-  if (/(defend|hold|lock|keep|wall|closed|gk|calm)/.test(scene)) return 'shield';
-  if (/(attack|fire|blitz|train|practice|field|camp|run|extra|power|hard)/.test(scene)) return 'zap';
-  if (/(celebrate|star|pressure|party|tv|photo)/.test(scene)) return 'sparkles';
-  if (/(wait|rest|light|easy|skip|accept|no)/.test(scene)) return 'circle-dot';
+  if (/(unity|support|deal|balance|home|fans)/.test(scene)) return 'heart';
+  if (/(chat|speak|silent|mute|talk|spy|honor)/.test(scene)) return 'info';
+  if (/(defend|hold|lock|keep|wall|closed|gk|calm|cold|fear)/.test(scene)) return 'shield';
+  if (/(attack|fire|blitz|train|practice|field|camp|run|rush|extra|power|hard|derby)/.test(scene)) return 'zap';
+  if (/(celebrate|pressure|party|tv|photo|vip|touch|fresh)/.test(scene)) return 'sparkles';
+  if (/(wait|rest|light|easy|skip|accept|no|quick|slow|focus|ball)/.test(scene)) return 'circle-dot';
+  if (/(sick|push)/.test(scene)) return 'heart-crack';
+  if (/heal/.test(scene)) return 'heart';
+  if (/(shift|rotate|swap|limp)/.test(scene)) return 'refresh';
+  if (/(listen|star)/.test(scene)) return 'graduation-cap';
+  if (/(protest|punish|critique|appeal)/.test(scene)) return 'alert-triangle';
+  if (/(door|exit|leave|release|empty)/.test(scene)) return 'x';
+  if (/(heat|warm)/.test(scene)) return 'flame';
+  if (/^choice-in$/.test(scene)) return 'circle-dot';
   return 'arrow-right';
 }
 

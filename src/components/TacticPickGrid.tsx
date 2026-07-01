@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { TacticCard } from '@/components/TacticCard';
 import { TacticBoardVisual } from '@/components/TacticBoardVisual';
-import { LineupPreviewCenterTrigger, LineupPreviewModal } from '@/components/LineupPreview';
+import { LineupPreviewInline } from '@/components/LineupPreview';
+import { HoverTip } from '@/components/HoverTip';
 import { UiIcon } from '@/components/UiIcon';
-import { getTacticCategory, getTacticEffect } from '@/data/tactics';
+import { getTacticCard, getTacticCategory, getTacticEffect } from '@/data/tactics';
 import { playSound } from '@/utils/sound';
 import type { ActiveTactic, GameCard, PlayerCard, TacticCard as TacticCardType } from '@/types';
 import { isTacticCard } from '@/types';
@@ -202,7 +203,6 @@ function TacticPickRow({
 
 export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLineup = {}, sound, onSelect, onConfirm, onRerollFormation, onRerollSystem, formationRerollUsed = false, systemRerollUsed = false }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [lineupOpen, setLineupOpen] = useState(false);
   const tactics = offers.filter(isTacticCard);
   const formations = tactics.filter((o) => getTacticCategory(o.id) === 'formasyon');
   const systems = tactics.filter((o) => getTacticCategory(o.id) === 'sistem');
@@ -226,6 +226,33 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
     ...(draft.systemId ? [getTacticEffect(draft.systemId)] : []),
   ];
   const previewManualLineup = draft.formationId ? {} : manualLineup ?? {};
+  const selectedFormationName = draft.formationId
+    ? tactics.find((t) => t.id === draft.formationId)?.name
+    : activeTactics.find((t) => getTacticCategory(t.id) === 'formasyon')?.name;
+  const activeFormation = activeTactics.find((t) => getTacticCategory(t.id) === 'formasyon');
+  const activeSystem = activeTactics.find((t) => getTacticCategory(t.id) === 'sistem');
+  const selectedFormationCard = draft.formationId ? getTacticCard(draft.formationId) : undefined;
+  const selectedSystemCard = draft.systemId ? getTacticCard(draft.systemId) : undefined;
+  const currentPlanItems = [
+    {
+      key: 'formation',
+      label: 'Formasyon',
+      name: selectedFormationCard?.name ?? activeFormation?.name ?? 'Seçilmedi',
+      detail: selectedFormationCard?.effectSummary ?? activeFormation?.description ?? 'Bu turda bir formasyon seç.',
+      tip: selectedFormationCard?.description ?? activeFormation?.description,
+      active: Boolean(selectedFormationCard || activeFormation),
+      draft: Boolean(selectedFormationCard),
+    },
+    {
+      key: 'system',
+      label: 'Oyun sistemi',
+      name: selectedSystemCard?.name ?? activeSystem?.name ?? 'Seçilmedi',
+      detail: selectedSystemCard?.effectSummary ?? activeSystem?.description ?? 'Bu turda bir oyun sistemi seç.',
+      tip: selectedSystemCard?.description ?? activeSystem?.description,
+      active: Boolean(selectedSystemCard || activeSystem),
+      draft: Boolean(selectedSystemCard),
+    },
+  ];
 
   return (
     <div className="tactic-pick-stage">
@@ -238,105 +265,132 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
               : 'Bir formasyon ve bir oyun sistemi seç.'}
           </p>
         </div>
-        <LineupPreviewCenterTrigger
-          squad={squad}
-          activeTactics={previewTactics}
-          manualLineup={previewManualLineup}
-          compact
-          className="lineup-compact-btn--tactic"
-          onOpen={() => setLineupOpen(true)}
-        />
       </header>
 
-      <LineupPreviewModal
-        open={lineupOpen}
-        onClose={() => setLineupOpen(false)}
-        squad={squad}
-        activeTactics={previewTactics}
-        manualLineup={previewManualLineup}
-      />
+      <div className="tactic-pick-body-grid">
+        <div className="tactic-pick-stage-grid">
+          <TacticPickRow
+            label="Formasyon seç"
+            step="1"
+            done={effectiveFormation}
+            reroll={onRerollFormation && (
+              <button
+                type="button"
+                className="btn-secondary tactic-pick-reroll"
+                disabled={formationRerollUsed}
+                title={formationRerollUsed ? 'Bu run formasyon yenileme hakkını kullandın' : 'Formasyon tekliflerini bir kez yenile (run boyu tek hak)'}
+                onClick={() => { playSound('tick', sound); onRerollFormation(); }}
+              >
+                {formationRerollUsed ? 'Yenilendi' : 'Yenile'}
+              </button>
+            )}
+          >
+            {formations.map((card) => (
+              <TacticPickCard
+                key={card.id}
+                card={card}
+                selected={draft.formationId === card.id}
+                canDeselect={optional}
+                onExpand={() => setExpandedId(card.id)}
+                onSelect={() => { playSound('tick', sound); onSelect(card); }}
+              />
+            ))}
+          </TacticPickRow>
 
-      <div className="tactic-pick-stage-grid">
-        <TacticPickRow
-          label="Formasyon seç"
-          step="1"
-          done={effectiveFormation}
-          reroll={onRerollFormation && (
+          <TacticPickRow
+            label="Oyun sistemi seç"
+            step="2"
+            done={effectiveSystem}
+            reroll={onRerollSystem && (
+              <button
+                type="button"
+                className="btn-secondary tactic-pick-reroll"
+                disabled={systemRerollUsed}
+                title={systemRerollUsed ? 'Bu run oyun sistemi yenileme hakkını kullandın' : 'Oyun sistemi tekliflerini bir kez yenile (run boyu tek hak)'}
+                onClick={() => { playSound('tick', sound); onRerollSystem(); }}
+              >
+                {systemRerollUsed ? 'Yenilendi' : 'Yenile'}
+              </button>
+            )}
+          >
+            {systems.map((card) => (
+              <TacticPickCard
+                key={card.id}
+                card={card}
+                selected={draft.systemId === card.id}
+                canDeselect={optional}
+                onExpand={() => setExpandedId(card.id)}
+                onSelect={() => { playSound('tick', sound); onSelect(card); }}
+              />
+            ))}
+          </TacticPickRow>
+        </div>
+
+        <aside className="tactic-pick-lineup-panel">
+          <div className="tactic-pick-current-panel">
+            <div className="tactic-pick-current-head">
+              <span>Aktif plan</span>
+              <strong>{ready ? 'Hazır' : 'Eksik'}</strong>
+            </div>
+            <div className="tactic-pick-current-list">
+              {currentPlanItems.map((item) => {
+                const row = (
+                  <div
+                    className={`tactic-pick-current-item ${item.active ? 'tactic-pick-current-item--active' : ''} ${item.draft ? 'tactic-pick-current-item--draft' : ''}`}
+                  >
+                    <span>{item.label}</span>
+                    <strong>{item.name}</strong>
+                    <small>{item.detail}</small>
+                  </div>
+                );
+                return item.tip ? (
+                  <HoverTip key={item.key} tip={item.tip} placement="left">
+                    {row}
+                  </HoverTip>
+                ) : (
+                  <div key={item.key}>{row}</div>
+                );
+              })}
+            </div>
+          </div>
+          <LineupPreviewInline
+            squad={squad}
+            activeTactics={previewTactics}
+            manualLineup={previewManualLineup}
+            title={selectedFormationName ? `${selectedFormationName} önizleme` : 'Diziliş önizleme'}
+            headline="Mevcut Kadro"
+          />
+          <div className="tactic-pick-bonus-card">
+            <span>Taktik bonusu</span>
+            <strong>
+              {ready ? 'Sonraki maçlarda aktif olur' : 'Formasyon ve sistem seç'}
+            </strong>
+          </div>
+          <footer className="tactic-pick-stage-foot">
             <button
               type="button"
-              className="btn-secondary tactic-pick-reroll"
-              disabled={formationRerollUsed}
-              title={formationRerollUsed ? 'Bu run formasyon yenileme hakkını kullandın' : 'Formasyon tekliflerini bir kez yenile (run boyu tek hak)'}
-              onClick={() => { playSound('tick', sound); onRerollFormation(); }}
+              className="btn-primary tactic-pick-confirm"
+              disabled={!ready}
+              onClick={() => { playSound('tick', sound); onConfirm(); }}
             >
-              {formationRerollUsed ? 'Yenilendi' : 'Yenile'}
+              <span className="tactic-pick-confirm-label">
+                {optional && !changed
+                  ? 'Geç · mevcut taktik kalsın'
+                  : ready
+                    ? 'Onayla ve devam et'
+                    : 'Önce formasyon ve sistem seç'}
+              </span>
+              <span className="tactic-pick-confirm-hint">
+                {optional && !changed
+                  ? 'Aktif formasyon ve sistemin korunur · sonraki maçlarda geçerli'
+                  : ready
+                    ? 'Sonraki maçlarda aktif olur'
+                    : `${effectiveFormation ? '✓ Formasyon' : '○ Formasyon'} · ${effectiveSystem ? '✓ Sistem' : '○ Sistem'}`}
+              </span>
             </button>
-          )}
-        >
-          {formations.map((card) => (
-            <TacticPickCard
-              key={card.id}
-              card={card}
-              selected={draft.formationId === card.id}
-              canDeselect={optional}
-              onExpand={() => setExpandedId(card.id)}
-              onSelect={() => { playSound('tick', sound); onSelect(card); }}
-            />
-          ))}
-        </TacticPickRow>
-
-        <TacticPickRow
-          label="Oyun sistemi seç"
-          step="2"
-          done={effectiveSystem}
-          reroll={onRerollSystem && (
-            <button
-              type="button"
-              className="btn-secondary tactic-pick-reroll"
-              disabled={systemRerollUsed}
-              title={systemRerollUsed ? 'Bu run oyun sistemi yenileme hakkını kullandın' : 'Oyun sistemi tekliflerini bir kez yenile (run boyu tek hak)'}
-              onClick={() => { playSound('tick', sound); onRerollSystem(); }}
-            >
-              {systemRerollUsed ? 'Yenilendi' : 'Yenile'}
-            </button>
-          )}
-        >
-          {systems.map((card) => (
-            <TacticPickCard
-              key={card.id}
-              card={card}
-              selected={draft.systemId === card.id}
-              canDeselect={optional}
-              onExpand={() => setExpandedId(card.id)}
-              onSelect={() => { playSound('tick', sound); onSelect(card); }}
-            />
-          ))}
-        </TacticPickRow>
+          </footer>
+        </aside>
       </div>
-
-      <footer className="tactic-pick-stage-foot">
-        <button
-          type="button"
-          className="btn-primary tactic-pick-confirm"
-          disabled={!ready}
-          onClick={() => { playSound('tick', sound); onConfirm(); }}
-        >
-          <span className="tactic-pick-confirm-label">
-            {optional && !changed
-              ? 'Geç · mevcut taktik kalsın'
-              : ready
-                ? 'Onayla ve devam et'
-                : 'Önce formasyon ve sistem seç'}
-          </span>
-          <span className="tactic-pick-confirm-hint">
-            {optional && !changed
-              ? 'Aktif formasyon ve sistemin korunur · sonraki maçlarda geçerli'
-              : ready
-                ? 'Sonraki maçlarda aktif olur'
-                : `${effectiveFormation ? '✓ Formasyon' : '○ Formasyon'} · ${effectiveSystem ? '✓ Sistem' : '○ Sistem'}`}
-          </span>
-        </button>
-      </footer>
 
       {expanded && (
         <TacticExpandModal

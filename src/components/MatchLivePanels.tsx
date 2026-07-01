@@ -2,12 +2,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getActiveSynergies } from '@/data/synergies';
 import { getMoraleEffect } from '@/engine/contextPreview';
 import {
-  getContextualMatchTip,
   getLiveCommentary,
   getMatchMomentum,
 } from '@/engine/matchLiveContent';
 import { getSynergyBenefitText } from '@/engine/squadInsights';
-import { formatScore } from '@/engine/scoring';
 import type { MatchAnimState } from '@/engine/matchAnimSchedule';
 import { HoverTip } from '@/components/HoverTip';
 import { MatchPickPanel } from '@/components/MatchPickPanel';
@@ -122,26 +120,11 @@ interface RightProps {
 
 export function MatchRightPanel({
   anim,
-  currentMatch,
-  squad,
-  morale,
-  squadAvg,
-  activeTactics,
-  streak,
   outcomeLabel,
   outcomeColor,
   resultExplain,
 }: RightProps) {
   const momentum = getMatchMomentum(anim.goalsFor, anim.goalsAgainst, anim.minute);
-  const tip = getContextualMatchTip(
-    squad,
-    morale,
-    currentMatch.opponent.rating,
-    squadAvg,
-    activeTactics,
-    anim.minute,
-    currentMatch.opponent.style,
-  );
   const latestComment = anim.latestEvent ? getLiveCommentary(anim.latestEvent) : null;
   const ended = !anim.playing;
 
@@ -158,17 +141,6 @@ export function MatchRightPanel({
           <p className="match-live-final-score">
             Skor <strong>{anim.goalsFor} – {anim.goalsAgainst}</strong> · {anim.minute}&apos;
           </p>
-          {currentMatch.roundPoints > 0 && (
-            <motion.div
-              className="match-score-burst"
-              initial={{ opacity: 0, y: 14, scale: 0.86 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 360, damping: 18, delay: 0.12 }}
-            >
-              <span className="match-score-burst-label">Skor artışı</span>
-              <strong>+{formatScore(currentMatch.roundPoints)}</strong>
-            </motion.div>
-          )}
         </motion.div>
       ) : (
         <div className="match-live-header">
@@ -210,31 +182,22 @@ export function MatchRightPanel({
         )}
       </AnimatePresence>
 
-      <div className="match-live-feed match-live-feed--sticky">
-        <p className="match-panel-label">Maç özeti</p>
-        {anim.eventFeed.length === 0 ? (
-          <p className="match-side-hint">Maç başladı — ilk pozisyonlar geliyor…</p>
-        ) : (
-          <ul className="match-live-feed-list">
-            {[...anim.eventFeed].reverse().map((ev, i) => (
-              <li key={`${ev.minute}-${ev.type}-${i}`} className="match-live-feed-item">
-                <span className="match-live-feed-min">{ev.minute}&apos;</span>
-                {getLiveCommentary(ev)}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {anim.playing && (
-        <div className="match-tip-card">
-          <p className="match-tip-kicker"><UiIcon name="lightbulb" /> Maç ipucu</p>
-          <p className="match-tip-text">{tip}</p>
+      {!anim.showResult && (
+        <div className="match-live-feed match-live-feed--sticky">
+          <p className="match-panel-label">Maç özeti</p>
+          {anim.eventFeed.length === 0 ? (
+            <p className="match-side-hint">Maç başladı — ilk pozisyonlar geliyor…</p>
+          ) : (
+            <ul className="match-live-feed-list">
+              {[...anim.eventFeed].reverse().slice(0, 4).map((ev, i) => (
+                <li key={`${ev.minute}-${ev.type}-${i}`} className="match-live-feed-item">
+                  <span className="match-live-feed-min">{ev.minute}&apos;</span>
+                  {getLiveCommentary(ev)}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      )}
-
-      {streak >= 2 && anim.playing && (
-        <p className="match-streak-chip"><UiIcon name="flame" /> {streak} maçlık seri — galibiyet çarpanı aktif</p>
       )}
 
       {anim.halftime && (

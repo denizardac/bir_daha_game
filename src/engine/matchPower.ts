@@ -53,5 +53,5 @@ export function synergyRatingMultiplier(synergies: SynergyDefinition[]): number 
 
 export function formatMatchPowerBonusLabel(bonus: number): string {
   const pct = Math.round((matchBonusMultiplier(bonus) - 1) * 100);
-  return `Sonraki maç gücü +%${pct}`;
+  return `Sonraki maçta takım gücü +%${pct}`;
 }

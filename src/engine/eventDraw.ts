@@ -135,7 +135,8 @@ export function getEventDrawWeight(eventId: string, ctx: EventDrawContext): numb
       return squadRoom ? 2.5 : 0;
 
     case 'evt_eksik_kadro':
-      return squadSize <= maxSquadSize - 2 ? 2 : 0.4;
+      if (squadSize >= maxSquadSize) return 0;
+      return squadSize <= maxSquadSize - 2 ? 2 : 0.8;
 
     case 'evt_transfer_teklif':
       return squadSize >= 7 ? 1.5 : 0.8;

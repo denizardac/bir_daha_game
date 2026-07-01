@@ -87,6 +87,18 @@ export const POSITION_COLORS: Record<Position, string> = {
 };
 
 /** Tag varsa avatar arka planı — yoksa mevki rengi */
+export function getPositionRoleColor(position: Position): string {
+  if (position === 'KL') return '#38dcc2';
+  if (position === 'STP' || position === 'SLB' || position === 'SÖB') return '#5b9be8';
+  if (position === 'DOS' || position === 'OS' || position === 'OOS') return '#25c48f';
+  return '#ef4e5e';
+}
+
+export function getPositionRoleColorByBadge(badge: string): string {
+  const entry = Object.entries(POSITION_BADGE).find(([, value]) => value === badge);
+  return entry ? getPositionRoleColor(entry[0] as Position) : '#75b7ff';
+}
+
 export const TAG_AVATAR_BG: Record<Tag, string> = {
   HIZLI: 'linear-gradient(145deg, #c2410c 0%, #f97316 55%, #fdba74 100%)',
   GÜÇLÜ: 'linear-gradient(145deg, #991b1b 0%, #dc2626 55%, #f87171 100%)',

@@ -1,5 +1,8 @@
 import { motion } from 'framer-motion';
+import { HoverTip } from '@/components/HoverTip';
+import { UiIcon } from '@/components/UiIcon';
 import { TAG_DESCRIPTIONS } from '@/data/tags';
+import { iconForTag } from '@/utils/gameIcons';
 import type { TrainingCard as TrainingCardType } from '@/types';
 
 interface Props {
@@ -23,14 +26,12 @@ export function TrainingCard({ card, onSelect }: Props) {
       className="card-fut card-fut--pick training-card relative flex w-full flex-col text-left"
     >
       <div className="training-card-top">
-        <span className="training-card-icon" aria-hidden>🏋️</span>
+        <span className="training-card-icon" aria-hidden>
+          <UiIcon name="graduation-cap" />
+        </span>
         <div>
           <p className="training-card-category">ANTRENMAN KARTI</p>
-          <ul className="training-card-bullets">
-            <li>Kadrodan bir oyuncu seç</li>
-            <li>Nitelik ekle — kalıcı buff</li>
-            <li>Maç yok · +35 puan · +8 moral</li>
-          </ul>
+          <p className="training-card-brief">Bir oyuncuya kalıcı nitelik ekle.</p>
         </div>
       </div>
 
@@ -43,23 +44,27 @@ export function TrainingCard({ card, onSelect }: Props) {
             <div className="training-card-head">
               <p className="training-card-kind">TAKTİK BONUSU · ANTRENMAN</p>
               <h3 className="training-card-name">{card.name}</h3>
-              <p className="training-card-summary">{card.description}</p>
+              <p className="training-card-summary">Önce oyuncu, sonra eklenecek tag seçilir. Bu tur maç oynanmaz.</p>
             </div>
             <div className="card-insight card-insight--training card-pick-core">
-              <p className="card-insight-title">Seçince ne olur?</p>
+              <p className="card-insight-title">Seçersen</p>
               <p className="card-insight-line card-insight-line--lead">
-                Önce kadrodan oyuncu, sonra aşağıdaki niteliklerden birini seçersin.
+                Kalıcı tag kazanırsın. Sinerjileri tamamlamak için kullan.
               </p>
             </div>
 
             <div className="card-pick-extra training-card-tags">
               <p className="card-insight-title">Sunulan nitelikler</p>
-              {card.offeredTags.map((tag) => (
-                <div key={tag} className="training-tag-row">
-                  <span className="training-tag-chip">{tag}</span>
-                  <p className="training-tag-desc">{TAG_DESCRIPTIONS[tag]}</p>
-                </div>
-              ))}
+              <div className="training-tag-strip">
+                {card.offeredTags.map((tag) => (
+                  <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="top" className="training-tag-tip">
+                    <span className="training-tag-chip">
+                      <UiIcon name={iconForTag(tag)} />
+                      {tag}
+                    </span>
+                  </HoverTip>
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -1,11 +1,13 @@
 import type { ReactNode, SVGProps } from 'react';
 
 export type UiIconName =
+  | 'alert-triangle'
   | 'archive'
   | 'arrow-right'
   | 'book-open'
   | 'calendar'
   | 'chart'
+  | 'check'
   | 'circle-dot'
   | 'clipboard'
   | 'dice'
@@ -22,6 +24,7 @@ export type UiIconName =
   | 'refresh'
   | 'settings'
   | 'shield'
+  | 'shirt'
   | 'sparkles'
   | 'tag'
   | 'trending-down'
@@ -35,6 +38,13 @@ type UiIconProps = SVGProps<SVGSVGElement> & {
 };
 
 const paths: Record<UiIconName, ReactNode> = {
+  'alert-triangle': (
+    <>
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </>
+  ),
   archive: (
     <>
       <path d="M4 7h16" />
@@ -78,6 +88,7 @@ const paths: Record<UiIconName, ReactNode> = {
       <rect x="15" y="9" width="2.8" height="7" rx="1" />
     </>
   ),
+  check: <path d="M5 13l4 4L19 7" />,
   'circle-dot': (
     <>
       <circle cx="12" cy="12" r="9" />
@@ -175,6 +186,9 @@ const paths: Record<UiIconName, ReactNode> = {
       <path d="M12 3 20 6v6c0 4.8-3.3 7.9-8 9-4.7-1.1-8-4.2-8-9V6z" />
       <path d="m9.5 12 1.8 1.8 3.6-4" />
     </>
+  ),
+  shirt: (
+    <path d="M8 3 4 6l2 3 2-1.4V21h8V7.6L18 9l2-3-4-3-1.5 1.5a3 3 0 0 1-5 0z" />
   ),
   sparkles: (
     <>

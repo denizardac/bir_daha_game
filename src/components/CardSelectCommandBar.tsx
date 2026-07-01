@@ -1,9 +1,10 @@
-import { MORALE_CHANGE_TIPS } from '@/data/moraleTips';
 import { getMoraleEffect } from '@/engine/contextPreview';
 import type { NearSynergyProgress } from '@/engine/squadInsights';
 import { HoverTip } from '@/components/HoverTip';
 import { UiIcon } from '@/components/UiIcon';
-import type { SynergyDefinition } from '@/types';
+import { TAG_DESCRIPTIONS } from '@/data/tags';
+import { iconForTag } from '@/utils/gameIcons';
+import type { SynergyDefinition, Tag } from '@/types';
 import type { ReactNode } from 'react';
 
 export type CardPickMode = 'cards' | 'training';
@@ -19,6 +20,7 @@ interface Props {
   activeSynergies?: SynergyDefinition[];
   nearSynergies?: NearSynergyProgress[];
   rerollsRemaining?: number;
+  squadTags?: { tag: Tag; count: number }[];
 }
 
 export function CardSelectCommandBar({
@@ -30,6 +32,7 @@ export function CardSelectCommandBar({
   subtitle,
   actions,
   rerollsRemaining = 0,
+  squadTags = [],
 }: Props) {
   const fx = getMoraleEffect(morale);
   const turnKicker = title;
@@ -57,16 +60,23 @@ export function CardSelectCommandBar({
           </div>
         </div>
 
-        <div className="card-select-command-tips">
-          {MORALE_CHANGE_TIPS.map((t) => (
-            <HoverTip key={t.label} tip={t.tip} placement="bottom" className="card-select-tip-wrap">
-              <span className={`pick-morale-tip pick-morale-tip--compact card-select-tip-chip card-select-tip-chip--${t.theme}`}>
-                <span className="card-select-tip-icon" aria-hidden>{t.icon}</span>
-                <span className="card-select-tip-label">{t.label}</span>
-                <span className="pick-morale-tip-delta card-select-tip-delta">{t.delta}</span>
-              </span>
-            </HoverTip>
-          ))}
+        <div className="card-select-command-tags" aria-label="Kadrodaki tagler">
+          <span className="card-select-tags-label">Tagler</span>
+          <div className="card-select-tags-list">
+            {squadTags.length > 0 ? (
+              squadTags.slice(0, 5).map(({ tag, count }) => (
+                <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="top" className="card-select-tag-tip">
+                  <span className="card-select-tag-chip">
+                    <UiIcon name={iconForTag(tag)} />
+                    <span>{tag}</span>
+                    {count > 1 && <strong>{count}</strong>}
+                  </span>
+                </HoverTip>
+              ))
+            ) : (
+              <span className="card-select-tags-empty">Kadroda tag yok</span>
+            )}
+          </div>
         </div>
       </div>
 

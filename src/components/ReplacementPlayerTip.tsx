@@ -10,14 +10,14 @@ interface Props {
 }
 
 export function ReplacementPlayerTip({ player, children, kind = 'squad' }: Props) {
-  const tagLine = player.tags.length ? `\nNitelikler: ${player.tags.join(', ')}` : '';
   const action = kind === 'lineup'
-    ? 'Bu oyuncu ilk 11\'den çıkar, yedek kalır.'
-    : 'Bu oyuncu kadrodan çıkar.';
-  const tip = `${player.name} · ${formatPosition(player.position)} · ${player.currentRating}${tagLine}\n\n${action}`;
+    ? 'İlk 11’den çıkar, yedek kalır.'
+    : 'Kadrodan çıkar.';
+  const tags = player.tags.slice(0, 2).join(', ');
+  const tip = `${player.name} · ${formatPosition(player.position)} · ${player.currentRating}${tags ? ` · ${tags}` : ''}\n${action}`;
 
   return (
-    <HoverTip tip={tip} className="replacement-tip-wrap">
+    <HoverTip tip={tip} className="replacement-tip-wrap" placement="top">
       {children}
     </HoverTip>
   );
