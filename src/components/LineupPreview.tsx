@@ -317,7 +317,7 @@ export function LineupPreviewModal({
     <>
       <div className="lineup-preview-backdrop" onClick={onClose} aria-hidden />
       <div className="lineup-preview-modal-shell">
-      <LineupSquadPopover squad={squad} summary={summary} />
+      {window.innerWidth >= 900 && <LineupSquadPopover squad={squad} summary={summary} />}
       <div
         ref={modalRef}
         className="lineup-preview-popover lineup-preview-popover--center lineup-preview-popover--hero lineup-preview-popover--v2 lineup-preview-popover--modal"
