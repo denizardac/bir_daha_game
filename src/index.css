@@ -29646,3 +29646,346 @@ body {
     font-size: 0.58rem !important;
   }
 }
+
+/* CardSelect mobile pass: compare cards become a readable snap carousel. */
+@media (max-width: 899px) {
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-inner {
+    padding-left: max(0.65rem, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(0.65rem, env(safe-area-inset-right, 0px)) !important;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .game-top-header {
+    margin-bottom: 0.58rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-subheader {
+    position: static !important;
+    z-index: 1 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.55rem !important;
+    min-height: 0 !important;
+    margin: 0 0 0.7rem !important;
+    pointer-events: auto !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-subheader-moral {
+    min-height: 44px !important;
+    display: grid !important;
+    grid-template-columns: auto auto minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 0.42rem !important;
+    padding: 0.52rem 0.64rem !important;
+    border-radius: 12px !important;
+    background: rgba(5, 15, 13, 0.78) !important;
+    border: 1px solid rgba(88, 240, 160, 0.16) !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-subheader-moral-label,
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-subheader-moral-tier {
+    font-size: 0.68rem !important;
+    line-height: 1 !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-subheader-moral-value {
+    font-size: 1.15rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-subheader-center {
+    justify-content: flex-start !important;
+    min-height: 0 !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-subheader-center .card-compare-title {
+    font-size: 1.45rem !important;
+    line-height: 0.95 !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-subheader-right {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 0.5rem !important;
+    align-items: stretch !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-mode-tabs {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    padding: 0.2rem !important;
+    border-radius: 12px !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-mode-tab {
+    min-height: 44px !important;
+    height: auto !important;
+    justify-content: center !important;
+    padding: 0.48rem 0.42rem !important;
+    font-size: 0.72rem !important;
+    white-space: normal !important;
+    line-height: 1.1 !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-reroll-btn {
+    min-width: 4.4rem !important;
+    min-height: 44px !important;
+    justify-content: center !important;
+    padding: 0.4rem 0.55rem !important;
+    border-radius: 12px !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-reroll-btn span {
+    display: none !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-pick-center {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-layout.card-select-layout--pick,
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-inner .game-layout.card-select-layout--pick {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-select-layout--pick > .card-select-left-rail {
+    display: none !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-wrap {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-grid {
+    display: flex !important;
+    grid-template-columns: none !important;
+    align-items: stretch !important;
+    gap: 0.72rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0.05rem 0.1rem 0.8rem !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain !important;
+    scroll-snap-type: x mandatory !important;
+    scroll-padding: 0.2rem !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-labels-col {
+    display: none !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-col {
+    flex: 0 0 min(86vw, 22.4rem) !important;
+    width: min(86vw, 22.4rem) !important;
+    min-height: 31rem !important;
+    scroll-snap-align: center !important;
+    border-radius: 14px !important;
+    transform: none !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-col:hover {
+    transform: none !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-card-header {
+    height: auto !important;
+    min-height: 7.1rem !important;
+    padding: 0.72rem 0.82rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-reroll-slot {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    border-radius: 12px !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-reroll-slot .ui-icon {
+    width: 17px !important;
+    height: 17px !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-name {
+    font-size: 1.45rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-rating {
+    font-size: 2.05rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-tags {
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-mevki-row,
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-ilk11-row {
+    min-height: 3.4rem !important;
+    padding: 0.58rem 0.82rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-ilk11-status {
+    font-size: 1rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-ilk11-hint {
+    font-size: 0.76rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-synergy-section {
+    min-height: 8.4rem !important;
+    padding: 0.78rem 0.82rem 0 !important;
+    gap: 0.72rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-syn-name {
+    font-size: 0.92rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-syn-hint {
+    font-size: 0.72rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-select-area {
+    padding: 0.82rem !important;
+  }
+
+  .card-select-screen:not(.card-select-screen--tactic) .card-compare-select-btn {
+    min-height: 3.15rem !important;
+    padding: 0.72rem !important;
+    border-radius: 12px !important;
+    font-size: 1.04rem !important;
+  }
+
+  .card-select-mobile-drawer summary {
+    min-height: 44px !important;
+  }
+
+  .card-select-screen .game-header-menu-btn,
+  .card-select-screen .game-header-reset-btn {
+    min-height: 44px !important;
+    height: auto !important;
+  }
+
+  .card-select-mobile-dock .card-select-insight-rail,
+  .card-select-mobile-dock .side-panel {
+    max-height: min(54dvh, 26rem) !important;
+  }
+
+  .card-pick-center--training {
+    padding-top: 0 !important;
+  }
+
+  .card-pick-center--training .training-inline {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.7rem !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .training-inline-left,
+  .training-inline-right {
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    padding: 0.82rem !important;
+    overflow: visible !important;
+  }
+
+  .training-inline-player-list {
+    max-height: min(46dvh, 22rem) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .training-player-row {
+    grid-template-columns: 2.4rem minmax(0, 1fr) !important;
+    min-height: 3.35rem !important;
+    gap: 0.45rem 0.62rem !important;
+  }
+
+  .training-player-row-tags {
+    grid-column: 1 / -1 !important;
+    justify-content: flex-start !important;
+    max-height: none !important;
+  }
+
+  .training-tag-cards {
+    display: flex !important;
+    gap: 0.65rem !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 0.55rem !important;
+  }
+
+  .training-tag-card {
+    flex: 0 0 min(78vw, 19rem) !important;
+    min-height: 10rem !important;
+    scroll-snap-align: center !important;
+  }
+
+  .training-apply-btn {
+    min-height: 3.25rem !important;
+  }
+
+  .card-select-screen--tactic .tactic-pick-stage-head {
+    position: static !important;
+    width: auto !important;
+    margin: 0 0 0.7rem !important;
+    pointer-events: auto !important;
+  }
+
+  .card-select-screen--tactic .tactic-pick-row-cards {
+    display: flex !important;
+    grid-template-columns: none !important;
+    gap: 0.7rem !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 0.55rem !important;
+  }
+
+  .card-select-screen--tactic .tactic-pick-card {
+    flex: 0 0 min(86vw, 22rem) !important;
+    min-height: 12rem !important;
+    scroll-snap-align: center !important;
+  }
+
+  .card-select-screen--tactic .tactic-pick-card-hero {
+    grid-template-columns: minmax(0, 1fr) 5.3rem !important;
+    min-height: 8.5rem !important;
+    padding: 0.78rem !important;
+  }
+
+  .card-select-screen--tactic .tactic-pick-card-visual {
+    width: 5.2rem !important;
+    height: 6rem !important;
+  }
+}
