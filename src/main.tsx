@@ -6,7 +6,14 @@ import './index.css';
 import './styles/eventScenes.css';
 
 if ('serviceWorker' in navigator) {
-  registerSW({ immediate: true });
+  registerSW({
+    immediate: true,
+    onRegisteredSW(_url, registration) {
+      if (registration) {
+        setInterval(() => registration.update(), 60 * 60 * 1000);
+      }
+    },
+  });
 }
 
 createRoot(document.getElementById('root')!).render(

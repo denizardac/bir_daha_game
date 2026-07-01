@@ -203,10 +203,7 @@ export function getTacticPreview(
   if (card.id === 'tactic_442' && !hasFormation) {
     return {
       headline: 'Zaten varsayılan 4-4-2',
-      lines: [
-        'Şu an zaten 4-4-2 ile oynuyorsun — bu kart oyunu değiştirmez',
-        'Farklı formasyon istiyorsan 4-3-3 veya 3-5-2 seç',
-      ],
+      lines: ['Şu an zaten 4-4-2 ile oynuyorsun — bu kart oyunu değiştirmez'],
       recommend: 'weak',
     };
   }
