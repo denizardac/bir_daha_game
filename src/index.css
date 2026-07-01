@@ -29989,3 +29989,90 @@ body {
     height: 6rem !important;
   }
 }
+
+/* Match mobile pass: keep the live pitch inside the viewport and make controls touch-safe. */
+@media (max-width: 959px) {
+  .match-screen {
+    overflow-x: hidden !important;
+  }
+
+  .match-screen .match-screen-inner {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-inline: max(0.72rem, env(safe-area-inset-left, 0px)) max(0.72rem, env(safe-area-inset-right, 0px)) !important;
+  }
+
+  .match-screen .match-layout {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+
+  .match-screen .match-col--arena,
+  .match-screen .match-col--arena > .relative,
+  .match-screen .match-arena-stack,
+  .match-screen .match-mobile-dock {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+  }
+
+  .match-screen .match-vs-row,
+  .match-screen .match-odds-row {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+  }
+
+  .match-screen .match-vs-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .match-screen .match-odds-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+
+  .match-screen .match-morale-chip {
+    grid-column: 1 / -1 !important;
+  }
+
+  .match-screen .match-morale-chip,
+  .match-screen .match-odds-badge {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .match-screen .match-pitch--wide {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    aspect-ratio: 0.76 / 1 !important;
+  }
+
+  .match-screen .match-speed-control--floating {
+    top: 0.55rem !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .match-screen .match-speed-btn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding-inline: 0.65rem !important;
+  }
+
+  .match-screen .match-mobile-drawer {
+    width: 100% !important;
+  }
+
+  .match-screen .match-mobile-drawer summary {
+    min-height: 44px !important;
+  }
+}
