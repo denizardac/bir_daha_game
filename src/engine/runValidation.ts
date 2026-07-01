@@ -20,7 +20,7 @@ const MAX_EVENT_ABS_POINTS = 1_000;
 
 function selectedCardWasOffered(r: RoundResult): boolean {
   const kind = r.cardSelected?.kind;
-  if (r.isEvent || kind === 'event' || kind === 'training' || kind === 'skip') return true;
+  if (r.isEvent || r.isTacticBonus || kind === 'event' || kind === 'training' || kind === 'skip') return true;
   return r.cardsShown?.some((c) => c.id === r.cardSelected.id && c.kind === kind) ?? false;
 }
 

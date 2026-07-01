@@ -123,7 +123,7 @@ function validate(body: SubmitBody): string | null {
     if (!Number.isInteger(r.round) || r.round < 1 || r.round > 15) return 'Geçersiz round numarası';
     if (!r.cardSelected?.id) return 'Geçersiz kart seçimi';
     const selectedKind = r.cardSelected.kind ?? 'player';
-    const offerRequired = !r.isEvent && selectedKind !== 'event' && selectedKind !== 'training' && selectedKind !== 'skip';
+    const offerRequired = !r.isEvent && !r.isTacticBonus && selectedKind !== 'event' && selectedKind !== 'training' && selectedKind !== 'skip';
     if (offerRequired) {
       const shown = Array.isArray(r.cardsShown) ? r.cardsShown : [];
       const selectedWasShown = shown.some((c) => c.id === r.cardSelected.id && (c.kind ?? 'player') === selectedKind);

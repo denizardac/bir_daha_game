@@ -196,7 +196,7 @@ async function persistRunEndScore(state: GameStore, score: number, roundsComplet
   const signed = await buildSignedRunPayload(base, state.roundHistory);
   const validation = await validateRunSubmission(signed.entry, state.roundHistory, signed.digest);
   if (!validation.ok) {
-    console.warn('[leaderboard] Run doğrulanamadı:', validation.reason, { entry: signed.entry, digest: signed.digest, historyLen: state.roundHistory.length });
+    console.warn('[leaderboard] Run doğrulanamadı:', validation.reason);
     const hallEntry = { ...signed.entry, flawless: signed.entry.flawless ?? false };
     savePersisted(addToHallOfFame(p, hallEntry));
     return;
