@@ -30180,7 +30180,7 @@ body {
 /* Desktop follow-up: match controls, lineup editor pitch direction, and squad tags. */
 @media (min-width: 960px) {
   .match-speed-control--floating {
-    top: -2rem !important;
+    top: -2.45rem !important;
   }
 
   .le-pitch.lineup-pitch--center-modal .lineup-pitch-box {
