@@ -30076,3 +30076,102 @@ body {
     min-height: 44px !important;
   }
 }
+
+/* Loss v2 mobile pass: keep recovery action reachable and compress the risk queue. */
+@media (max-width: 899px) {
+  .loss-game-shell {
+    overflow-x: hidden !important;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .loss-game-shell .max-w-5xl {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .loss-v2-hero {
+    margin: 0.95rem auto 1rem !important;
+    max-width: 100% !important;
+  }
+
+  .loss-v2-title {
+    margin-block: 0.28rem 0.45rem !important;
+    font-size: clamp(2rem, 11vw, 2.75rem) !important;
+    line-height: 0.9 !important;
+  }
+
+  .loss-v2-desc {
+    font-size: 0.88rem !important;
+    line-height: 1.38 !important;
+  }
+
+  .loss-v2-grid {
+    gap: 0.82rem !important;
+    margin-bottom: 0.82rem !important;
+  }
+
+  .loss-v2-col-left {
+    gap: 0.72rem !important;
+  }
+
+  .loss-v2-card {
+    padding: 0.86rem 0.9rem !important;
+    border-radius: 14px !important;
+  }
+
+  .loss-v2-departed-row {
+    gap: 0.68rem !important;
+  }
+
+  .loss-v2-departed-avatar {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
+  .loss-v2-departed-body > strong {
+    font-size: 1.12rem !important;
+    line-height: 1.05 !important;
+  }
+
+  .loss-v2-lineup-panel .lineup-pitch--v2 {
+    min-height: min(72vw, 17.5rem) !important;
+  }
+
+  .loss-v2-next {
+    margin-bottom: 0.72rem !important;
+  }
+
+  .loss-v2-next-head {
+    margin-bottom: 0.62rem !important;
+  }
+
+  .loss-v2-next-row {
+    display: flex !important;
+    grid-template-columns: none !important;
+    gap: 0.62rem !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 0.42rem !important;
+  }
+
+  .loss-v2-next-card {
+    flex: 0 0 min(82vw, 18rem) !important;
+    min-height: 4.2rem !important;
+    scroll-snap-align: start !important;
+  }
+
+  .loss-v2-cta {
+    position: fixed !important;
+    left: max(0.75rem, env(safe-area-inset-left, 0px)) !important;
+    right: max(0.75rem, env(safe-area-inset-right, 0px)) !important;
+    bottom: calc(0.55rem + env(safe-area-inset-bottom, 0px)) !important;
+    z-index: 20 !important;
+    width: auto !important;
+    min-height: 3.2rem !important;
+    margin: 0.25rem 0 0 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38) !important;
+  }
+}
