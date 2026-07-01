@@ -555,6 +555,20 @@ export function CardSelectScreen() {
                 />
               </details>
             )}
+            <details className="card-select-mobile-drawer">
+              <summary>
+                <span>Maç Planı</span>
+                <small>Taktik slotları · olay takvimi</small>
+              </summary>
+              <SidePanel
+                squad={squad}
+                activeTactics={activeTactics}
+                usedEventIds={usedEventIds}
+                round={round}
+                currentOffers={currentOffers}
+                tacticDraft={tacticBonus ? tacticDraft : undefined}
+              />
+            </details>
           </div>
         </div>
       </div>

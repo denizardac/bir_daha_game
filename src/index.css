@@ -18606,10 +18606,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     overflow: auto;
   }
 
-  .le-squad-panel {
-    display: none;
-  }
-
+  .le-squad-panel,
   .le-modal {
     width: 100%;
     max-height: none;
@@ -25039,114 +25036,112 @@ body {
   letter-spacing: 0.22em;
 }
 
-@media (min-width: 900px) {
-  .lineup-preview-modal-shell {
-    position: fixed !important;
-    inset: auto !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    width: min(calc(100vw - 6.5rem), 92.1rem) !important;
-    height: min(calc(100dvh - 4.5rem), 49.5rem) !important;
-    max-width: min(calc(100vw - 6.5rem), 92.1rem) !important;
-    max-height: min(calc(100dvh - 4.5rem), 49.5rem) !important;
-    display: flex !important;
-    align-items: stretch !important;
-    justify-content: flex-start !important;
-    padding: 0 !important;
-    gap: 0 !important;
-    overflow: hidden !important;
-  }
+.lineup-preview-modal-shell {
+  position: fixed !important;
+  inset: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(calc(100vw - 6.5rem), 92.1rem) !important;
+  height: min(calc(100dvh - 4.5rem), 49.5rem) !important;
+  max-width: min(calc(100vw - 6.5rem), 92.1rem) !important;
+  max-height: min(calc(100dvh - 4.5rem), 49.5rem) !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+}
 
-  .lineup-preview-modal-shell .lineup-squad-popover {
-    width: 26.6rem !important;
-    flex: 0 0 26.6rem !important;
-    max-width: 29.5% !important;
-    border-radius: 0 !important;
-    border-width: 0 1px 0 0 !important;
-  }
+.lineup-preview-modal-shell .lineup-squad-popover {
+  width: 26.6rem !important;
+  flex: 0 0 26.6rem !important;
+  max-width: 29.5% !important;
+  border-radius: 0 !important;
+  border-width: 0 1px 0 0 !important;
+}
 
-  .lineup-preview-modal-shell .lineup-preview-popover--center.lineup-preview-popover--modal {
-    flex: 1 1 auto !important;
-    min-width: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    padding: 1.75rem 1.75rem 1.45rem !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-  }
+.lineup-preview-modal-shell .lineup-preview-popover--center.lineup-preview-popover--modal {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 1.75rem 1.75rem 1.45rem !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
 
-  .lineup-preview-popover--modal .lineup-preview-popover-head--v2 {
-    flex: 0 0 auto !important;
-    margin-bottom: 1.25rem !important;
-  }
+.lineup-preview-popover--modal .lineup-preview-popover-head--v2 {
+  flex: 0 0 auto !important;
+  margin-bottom: 1.25rem !important;
+}
 
-  .lineup-preview-popover--modal .lineup-modal-body--v2 {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    display: flex !important;
-  }
+.lineup-preview-popover--modal .lineup-modal-body--v2 {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+}
 
-  .lineup-preview-popover--modal .lineup-modal-grid {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    display: flex !important;
-  }
+.lineup-preview-popover--modal .lineup-modal-grid {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+}
 
-  .lineup-preview-popover--modal .lineup-pitch--v2 {
-    flex: 1 1 auto !important;
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    aspect-ratio: auto !important;
-  }
+.lineup-preview-popover--modal .lineup-pitch--v2 {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+}
 
-  .lineup-preview-modal-foot {
-    flex: 0 0 auto !important;
-    padding-top: 1.05rem !important;
-  }
+.lineup-preview-modal-foot {
+  flex: 0 0 auto !important;
+  padding-top: 1.05rem !important;
+}
 
-  .lineup-preview-modal-close-btn {
-    min-width: 7.6rem !important;
-    height: 3.25rem !important;
-    border-radius: 0.72rem !important;
-    font-family: 'Barlow Condensed', sans-serif !important;
-    font-size: 1.12rem !important;
-    font-weight: 900 !important;
-    text-transform: uppercase !important;
-  }
+.lineup-preview-modal-close-btn {
+  min-width: 7.6rem !important;
+  height: 3.25rem !important;
+  border-radius: 0.72rem !important;
+  font-family: 'Barlow Condensed', sans-serif !important;
+  font-size: 1.12rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+}
 
-  .lineup-preview-popover--modal .lineup-preview-close {
-    width: 2.75rem !important;
-    height: 2.75rem !important;
-    border-radius: 0.68rem !important;
-  }
+.lineup-preview-popover--modal .lineup-preview-close {
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  border-radius: 0.68rem !important;
+}
 
-  /* Lineup modal exact reference pass */
-  .lineup-preview-modal-shell {
-    border: 1px solid rgba(82, 96, 118, 0.52) !important;
-    border-radius: 1.05rem !important;
-    background: rgba(13, 18, 28, 0.985) !important;
-  }
+/* Lineup modal exact reference pass */
+.lineup-preview-modal-shell {
+  border: 1px solid rgba(82, 96, 118, 0.52) !important;
+  border-radius: 1.05rem !important;
+  background: rgba(13, 18, 28, 0.985) !important;
+}
 
-  .lineup-preview-modal-shell .lineup-squad-popover {
-    width: 27.35rem !important;
-    flex: 0 0 27.35rem !important;
-    max-width: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    border-right: 1px solid rgba(148, 163, 184, 0.16) !important;
-    background: rgba(13, 18, 28, 0.99) !important;
-  }
+.lineup-preview-modal-shell .lineup-squad-popover {
+  width: 27.35rem !important;
+  flex: 0 0 27.35rem !important;
+  max-width: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border-right: 1px solid rgba(148, 163, 184, 0.16) !important;
+  background: rgba(13, 18, 28, 0.99) !important;
+}
 
-  .lineup-squad-popover-head {
-    flex: 0 0 auto !important;
-    padding: 1.6rem 1.45rem 0.7rem !important;
-    border-bottom: 0 !important;
-  }
+.lineup-squad-popover-head {
+  flex: 0 0 auto !important;
+  padding: 1.6rem 1.45rem 0.7rem !important;
+  border-bottom: 0 !important;
 }
 
 .lineup-squad-popover-kicker {
@@ -25564,56 +25559,54 @@ body {
 }
 
 /* Make the interactive lineup editor visually identical to the preview modal */
-@media (min-width: 900px) {
-  .le-modal-group {
-    position: fixed !important;
-    inset: auto !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    width: min(calc(100vw - 6.5rem), 92.1rem) !important;
-    height: min(calc(100dvh - 4.5rem), 49.5rem) !important;
-    max-width: min(calc(100vw - 6.5rem), 92.1rem) !important;
-    max-height: min(calc(100dvh - 4.5rem), 49.5rem) !important;
-    display: flex !important;
-    align-items: stretch !important;
-    justify-content: flex-start !important;
-    gap: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    border: 1px solid rgba(82, 96, 118, 0.52) !important;
-    border-radius: 1.05rem !important;
-    background: rgba(13, 18, 28, 0.985) !important;
-    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.62) !important;
-  }
+.le-modal-group {
+  position: fixed !important;
+  inset: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(calc(100vw - 6.5rem), 92.1rem) !important;
+  height: min(calc(100dvh - 4.5rem), 49.5rem) !important;
+  max-width: min(calc(100vw - 6.5rem), 92.1rem) !important;
+  max-height: min(calc(100dvh - 4.5rem), 49.5rem) !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(82, 96, 118, 0.52) !important;
+  border-radius: 1.05rem !important;
+  background: rgba(13, 18, 28, 0.985) !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.62) !important;
+}
 
-  .le-squad-panel {
-    width: 27.35rem !important;
-    flex: 0 0 27.35rem !important;
-    height: 100% !important;
-    max-height: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    border: 0 !important;
-    border-right: 1px solid rgba(148, 163, 184, 0.16) !important;
-    border-radius: 0 !important;
-    background: rgba(13, 18, 28, 0.99) !important;
-    box-shadow: none !important;
-  }
+.le-squad-panel {
+  width: 27.35rem !important;
+  flex: 0 0 27.35rem !important;
+  height: 100% !important;
+  max-height: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-right: 1px solid rgba(148, 163, 184, 0.16) !important;
+  border-radius: 0 !important;
+  background: rgba(13, 18, 28, 0.99) !important;
+  box-shadow: none !important;
+}
 
-  .le-modal {
-    flex: 1 1 auto !important;
-    width: auto !important;
-    height: 100% !important;
-    max-height: none !important;
-    min-width: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    overflow: hidden !important;
-  }
+.le-modal {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  height: 100% !important;
+  max-height: none !important;
+  min-width: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
 }
 
 .le-squad-panel-head {
@@ -30274,10 +30267,5 @@ body {
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
-  }
-
-  .le-squad-panel,
-  .lineup-squad-popover {
-    display: none !important;
   }
 }
