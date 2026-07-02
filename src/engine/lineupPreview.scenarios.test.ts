@@ -626,13 +626,15 @@ describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
     expect(sfCount).toBe(2);
   });
 
-  it('44 — 7 kişilik kadro: orta saha öncelikli', () => {
+  it('44 — 7 kişilik kadro: esnek OOS kanada kayıp native OS slotunu açar', () => {
     const squad = getStartingSquad();
     const lineup = assignSquadToFormation(squad, '442');
     const filled = lineup.filter((s) => s.player).length;
     expect(filled).toBe(7);
-    const mids = lineup.filter((s) => s.player && s.slot.zone === 'orta');
-    expect(mids.length).toBeGreaterThanOrEqual(2);
+    const nativeOs = lineup.find((s) => s.player?.position === 'OS');
+    const oos = lineup.find((s) => s.player?.position === 'OOS');
+    expect(nativeOs?.slot.label).toBe('OS');
+    expect(oos?.slot.label).toBe('SĞK');
   });
 
   it('45 — 8 kişilik kadro OS/DOS kanatta değil', () => {

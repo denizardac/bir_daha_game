@@ -164,6 +164,17 @@ function isNativeOsOccupant(ctx: PlacementCtx): boolean {
   return ctx.assigned[osIdx]!.position === 'OS';
 }
 
+function includeRemainingEmptyPlayableSlots(player: PlayerCard, ctx: PlacementCtx, ordered: number[]): number[] {
+  const seen = new Set(ordered);
+  const remaining = playableSlotIndices(ctx, player)
+    .filter((i) => !ctx.assigned[i] && !seen.has(i))
+    .sort((a, b) => {
+      const fitDiff = flexRoleOrder(player, ctx.slots[a]!) - flexRoleOrder(player, ctx.slots[b]!);
+      return fitDiff !== 0 ? fitDiff : a - b;
+    });
+  return [...ordered, ...remaining];
+}
+
 /** Boş slot sırası — OOS: native OS varken kanat önce; yoksa OS → kanatlar */
 function emptySlotIndicesOrdered(player: PlayerCard, ctx: PlacementCtx): number[] {
   const playable = playableSlotIndices(ctx, player).filter((i) => !ctx.assigned[i]);
@@ -177,11 +188,13 @@ function emptySlotIndicesOrdered(player: PlayerCard, ctx: PlacementCtx): number[
     }
     const osEmpty = osIdx !== null && !ctx.assigned[osIdx] && playable.includes(osIdx);
 
-    if (isNativeOsOccupant(ctx) && wingOrder.length > 0) return wingOrder;
+    if (isNativeOsOccupant(ctx) && wingOrder.length > 0) {
+      return includeRemainingEmptyPlayableSlots(player, ctx, wingOrder);
+    }
     const order: number[] = [];
     if (osEmpty) order.push(osIdx!);
     order.push(...wingOrder);
-    return order;
+    return includeRemainingEmptyPlayableSlots(player, ctx, order);
   }
 
   if (player.position === 'OS') {
@@ -190,7 +203,7 @@ function emptySlotIndicesOrdered(player: PlayerCard, ctx: PlacementCtx): number[
       const idx = slotIndexByRole(ctx, role);
       if (idx !== null && !ctx.assigned[idx] && playable.includes(idx)) order.push(idx);
     }
-    return order;
+    return includeRemainingEmptyPlayableSlots(player, ctx, order);
   }
 
   if (player.position === 'SLK') {
@@ -199,7 +212,7 @@ function emptySlotIndicesOrdered(player: PlayerCard, ctx: PlacementCtx): number[
       const idx = slotIndexByRole(ctx, role);
       if (idx !== null && !ctx.assigned[idx] && playable.includes(idx)) order.push(idx);
     }
-    return order;
+    return includeRemainingEmptyPlayableSlots(player, ctx, order);
   }
 
   if (player.position === 'SÖK') {
@@ -208,7 +221,7 @@ function emptySlotIndicesOrdered(player: PlayerCard, ctx: PlacementCtx): number[
       const idx = slotIndexByRole(ctx, role);
       if (idx !== null && !ctx.assigned[idx] && playable.includes(idx)) order.push(idx);
     }
-    return order;
+    return includeRemainingEmptyPlayableSlots(player, ctx, order);
   }
 
   const primary = primarySlotIndex(ctx, player);
@@ -216,7 +229,7 @@ function emptySlotIndicesOrdered(player: PlayerCard, ctx: PlacementCtx): number[
   if (primary !== null && sorted.includes(primary)) {
     return [primary, ...sorted.filter((i) => i !== primary)];
   }
-  return sorted;
+  return includeRemainingEmptyPlayableSlots(player, ctx, sorted);
 }
 
 /** Tam kadro: OOS, OS slotundaki native OS’i rating ile düşürür */
@@ -364,6 +377,39 @@ function improveFieldCountByShiftingFlexiblePlayers(ctx: PlacementCtx, squad: Pl
   }
 }
 
+function improveNativeFitByShiftingFlexibleOccupants(ctx: PlacementCtx, squad: PlayerCard[]): void {
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const onPitchIds = assignedIds(ctx.assigned);
+    const nativeCandidates = squad
+      .filter((p) => p.position !== 'KL' && onPitchIds.has(p.id))
+      .sort((a, b) => b.currentRating - a.currentRating);
+
+    for (const nativePlayer of nativeCandidates) {
+      const currentIdx = ctx.assigned.findIndex((p) => p?.id === nativePlayer.id);
+      if (currentIdx < 0 || isLockedSlot(ctx, currentIdx)) continue;
+
+      const nativeIdx = primarySlotIndex(ctx, nativePlayer);
+      if (nativeIdx === null || nativeIdx === currentIdx || isLockedSlot(ctx, nativeIdx)) continue;
+
+      const occupant = ctx.assigned[nativeIdx];
+      if (!occupant || occupant.position === nativePlayer.position) continue;
+
+      const relocationIdx = emptySlotIndicesOrdered(occupant, ctx)
+        .filter((idx) => idx !== nativeIdx && idx !== currentIdx && !isLockedSlot(ctx, idx) && !ctx.assigned[idx])
+        .sort((a, b) => flexRoleOrder(occupant, ctx.slots[a]!) - flexRoleOrder(occupant, ctx.slots[b]!))[0];
+      if (relocationIdx === undefined) continue;
+
+      ctx.assigned[relocationIdx] = occupant;
+      ctx.assigned[nativeIdx] = nativePlayer;
+      ctx.assigned[currentIdx] = null;
+      changed = true;
+      break;
+    }
+  }
+}
+
 export function assignFieldPlayers(ctx: PlacementCtx, squad: PlayerCard[]): void {
   const fieldPlayers = squad.filter((p) => p.position !== 'KL');
 
@@ -404,6 +450,7 @@ export function assignFieldPlayers(ctx: PlacementCtx, squad: PlayerCard[]): void
 
   fillRemainingEmptySlots(ctx, squad);
   improveFieldCountByShiftingFlexiblePlayers(ctx, squad);
+  improveNativeFitByShiftingFlexibleOccupants(ctx, squad);
 }
 
 export function assignPlayersByRules(

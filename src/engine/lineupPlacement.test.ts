@@ -73,6 +73,21 @@ describe('lineupPlacement — genel kurallar', () => {
     expect(slotOf(squad, 'weak')).toBe('OS');
   });
 
+  it('boş SĞK varken OOS kanada kayıp native OS oyuncusuna OS açar', () => {
+    const squad = [
+      p({ id: 'kl', name: 'E. Yıldız', position: 'KL', currentRating: 65, rating: 65 }),
+      p({ id: 'slb', name: 'A. Kabakçılar', position: 'SLB', currentRating: 74, rating: 74 }),
+      p({ id: 'stp', name: 'M. Schmitt', position: 'STP', currentRating: 65, rating: 65 }),
+      p({ id: 'slk', name: 'K. Çakır', position: 'SLK', currentRating: 73, rating: 73 }),
+      p({ id: 'tosunzade', name: 'P. Tosunzade', position: 'OS', currentRating: 74, rating: 74 }),
+      p({ id: 'yilmazcan', name: 'D. Yılmazcan', position: 'OOS', currentRating: 74, rating: 74 }),
+      p({ id: 'sf', name: 'B. Aktaş', position: 'SF', currentRating: 72, rating: 72 }),
+    ];
+
+    expect(slotOf(squad, 'yilmazcan')).toBe('SĞK');
+    expect(slotOf(squad, 'tosunzade')).toBe('OS');
+  });
+
   it('OOS DOS slotuna gitmez', () => {
     const squad = [
       p({ id: 'kl', name: 'KL', position: 'KL', currentRating: 70, rating: 70 }),
@@ -190,6 +205,48 @@ describe('lineupPlacement — genel kurallar', () => {
     ];
     expect(slot352(squad, 'slk')).toBe('SLK');
     expect(slot352(squad, 'sok')).toBe('SĞK');
+  });
+
+  it('çift SF — ilk SF doluyken SLK boş ikinci SF’ye kayıp native OOS oyuncusuna OOS açar', () => {
+    const slots: PlacementSlotDef[] = [
+      { label: 'KL', preferred: ['KL'], zone: 'kaleci' },
+      { label: 'OS', preferred: ['OS', 'OOS'], zone: 'orta' },
+      { label: 'OOS', preferred: ['OOS', 'SLK'], zone: 'orta' },
+      { label: 'SF', preferred: ['SF'], zone: 'hucum' },
+      { label: 'SF', preferred: ['SF'], zone: 'hucum' },
+    ];
+    const squad = [
+      p({ id: 'kl', name: 'KL', position: 'KL', currentRating: 70, rating: 70 }),
+      p({ id: 'oos', name: 'OOS', position: 'OOS', currentRating: 57, rating: 57 }),
+      p({ id: 'slk-flex', name: 'SLK Flex', position: 'SLK', currentRating: 61, rating: 61 }),
+      p({ id: 'sf', name: 'SF', position: 'SF', currentRating: 80, rating: 80 }),
+    ];
+    const assigned = assignPlayersByRules(slots, squad);
+    const slotFor = (id: string) => slots[assigned.findIndex((x) => x?.id === id)]?.label;
+
+    expect(slotFor('oos')).toBe('OOS');
+    expect(slotFor('slk-flex')).toBe('SF');
+  });
+
+  it('4-2-3-1 — boş ikinci DOS varken OS kayıp native OOS oyuncusuna OOS açar', () => {
+    const squad = [
+      p({ id: 'kl', name: 'KL', position: 'KL', currentRating: 70, rating: 70 }),
+      p({ id: 'slb1', name: 'SLB1', position: 'SLB', currentRating: 56, rating: 56 }),
+      p({ id: 'sok1', name: 'SÖK1', position: 'SÖK', currentRating: 74, rating: 74 }),
+      p({ id: 'sok2', name: 'SÖK2', position: 'SÖK', currentRating: 68, rating: 68 }),
+      p({ id: 'sok3', name: 'SÖK3', position: 'SÖK', currentRating: 68, rating: 68 }),
+      p({ id: 'oos', name: 'OOS', position: 'OOS', currentRating: 70, rating: 70 }),
+      p({ id: 'sob1', name: 'SÖB1', position: 'SÖB', currentRating: 63, rating: 63 }),
+      p({ id: 'os-strong', name: 'OS Strong', position: 'OS', currentRating: 73, rating: 73 }),
+      p({ id: 'sob2', name: 'SÖB2', position: 'SÖB', currentRating: 81, rating: 81 }),
+      p({ id: 'slb2', name: 'SLB2', position: 'SLB', currentRating: 73, rating: 73 }),
+      p({ id: 'sok4', name: 'SÖK4', position: 'SÖK', currentRating: 77, rating: 77 }),
+      p({ id: 'os-flex', name: 'OS Flex', position: 'OS', currentRating: 72, rating: 72 }),
+    ];
+    const lineup = assignSquadToFormation(squad, '4231');
+
+    expect(lineup.find((s) => s.player?.id === 'oos')?.slot.label).toBe('OOS');
+    expect(lineup.find((s) => s.player?.id === 'os-flex')?.slot.label).toBe('DOS');
   });
 
   it('flexPositions boş = yalnızca ana mevki', () => {
