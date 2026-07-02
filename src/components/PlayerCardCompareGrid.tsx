@@ -9,6 +9,7 @@ import { RARITY_COLORS, RARITY_LABELS } from '@/types';
 import type { ActiveTactic, PlayerCard } from '@/types';
 import { POSITION_BADGE, POSITION_LABELS, TAG_AVATAR_BG, getPositionRoleColor, getPositionRoleColorByBadge } from '@/utils/positionStyle';
 import { iconForTag } from '@/utils/gameIcons';
+import { joinTooltipLines } from '@/utils/tooltipText';
 
 const RATING_COLOR: Record<string, string> = {
   normal: '#6b7280',
@@ -231,7 +232,11 @@ export function PlayerCardCompareGrid({
                     const deltaPct = Math.max(0, afterPct - beforePct);
                     const leftPct = Math.min(beforePct, 100);
                     const missing = Math.max(0, s.required - s.after);
-                    const synergyTip = `${s.description}\n${s.completes ? 'Bu seçim sinerjiyi açar.' : s.contribution}\n${s.reward}`;
+                    const synergyTip = joinTooltipLines([
+                      s.description,
+                      s.completes ? 'Bu seçim sinerjiyi açar.' : s.contribution,
+                      s.reward,
+                    ]);
                     return (
                       <div key={s.name} className={`card-compare-syn-item ${s.completes ? 'card-compare-syn-item--unlock' : ''}`}>
                         <div className="card-compare-syn-head">

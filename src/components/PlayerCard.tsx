@@ -14,6 +14,7 @@ import { RARITY_COLORS, RARITY_LABELS } from '@/types';
 import { POSITION_LABELS, POSITION_BADGE, formatPosition } from '@/utils/positionStyle';
 import { getPlayerCardThemeClass, getPlayerCardThemeVars } from '@/utils/playerCardTheme';
 import { iconForTag } from '@/utils/gameIcons';
+import { joinTooltipLines } from '@/utils/tooltipText';
 
 interface Props {
   card: PlayerCardType;
@@ -76,7 +77,7 @@ function getSynergyAfterText(s: ReturnType<typeof getPlayerCardInsight>['synergi
 function getSynergyTip(s: ReturnType<typeof getPlayerCardInsight>['synergies'][number]) {
   const remaining = Math.max(0, s.required - s.after);
   const status = s.completes ? 'Bu seçim sinerjiyi açar.' : `Bu seçimden sonra ${remaining} rol eksik kalacak.`;
-  return `${s.description}\n${status}\nÖdül: ${s.reward}`;
+  return joinTooltipLines([s.description, status, `Ödül: ${s.reward}`]);
 }
 
 function getTagTip(tag: PlayerCardType['tags'][number], synergies: ReturnType<typeof getPlayerCardInsight>['synergies']) {

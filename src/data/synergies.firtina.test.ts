@@ -51,3 +51,28 @@ describe('KARMA FIRTINA ilerleme', () => {
     expect(after?.current).toBe(5);
   });
 });
+
+describe('çok parçalı sinerji ilerleme notları', () => {
+  it('GENÇ YETENEK için eksik parçayı doğru tag olarak yazar', () => {
+    const synergy = getSynergyById('synergy_akademi')!;
+
+    const needsPotential = synergy.getProgress!([player(['MENTOR'], 'mentor')]);
+    expect(needsPotential).toMatchObject({ current: 1, required: 2 });
+    expect(needsPotential?.note).toContain('MENTOR 1/1');
+    expect(needsPotential?.note).toContain('POTANSİYEL 0/1');
+
+    const needsMentor = synergy.getProgress!([player(['POTANSİYEL'], 'potential')]);
+    expect(needsMentor).toMatchObject({ current: 1, required: 2 });
+    expect(needsMentor?.note).toContain('MENTOR 0/1');
+    expect(needsMentor?.note).toContain('POTANSİYEL 1/1');
+  });
+
+  it('GENÇ YETENEK tamamlanınca progress göstermez', () => {
+    const synergy = getSynergyById('synergy_akademi')!;
+
+    expect(synergy.getProgress!([
+      player(['MENTOR'], 'mentor'),
+      player(['POTANSİYEL'], 'potential'),
+    ])).toBeNull();
+  });
+});

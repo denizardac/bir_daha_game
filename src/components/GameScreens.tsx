@@ -206,7 +206,7 @@ function CardSelectLeftRail({
               <p>{activeSystem?.description || 'Taktik turunda bir sistem seçince burada görünür.'}</p>
             </div>
           );
-          return activeSystemTip ? <HoverTip tip={activeSystemTip} placement="top">{box}</HoverTip> : box;
+          return activeSystemTip ? <HoverTip tip={activeSystemTip} placement="right">{box}</HoverTip> : box;
         })()}
       </section>
     </aside>
@@ -1106,11 +1106,11 @@ export function MatchScreen() {
                     <small>{moraleFx.label} · {moraleFx.multiplier}</small>
                   </span>
                   <span className={`match-odds-badge match-odds-badge--${cls}`} title="Kadrona açılan oran">
-                    <span>Kadron</span>
+                    <span>Kadrona açılan oran</span>
                     <strong>{decimalOdds(homeWinPct)}</strong>
                   </span>
                   <span className={`match-odds-badge match-odds-badge--${cls === 'favorite' ? 'underdog' : cls === 'underdog' ? 'favorite' : 'even'}`} title="Rakibe açılan oran">
-                    <span>Rakip</span>
+                    <span>Rakibe açılan oran</span>
                     <strong>{decimalOdds(awayWinPct)}</strong>
                   </span>
                 </div>

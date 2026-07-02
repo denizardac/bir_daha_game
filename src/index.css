@@ -23553,6 +23553,7 @@ body {
   font-weight: 800;
   line-height: 1.45;
   text-align: left;
+  white-space: pre-line;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
 }
 
@@ -27165,10 +27166,12 @@ body {
 
 .match-morale-chip span,
 .match-screen .match-odds-badge span {
+  min-width: 0 !important;
   color: rgba(154, 178, 181, 0.86) !important;
   font-size: 0.62rem !important;
   font-weight: 900 !important;
   letter-spacing: 0.11em !important;
+  line-height: 1.05 !important;
   text-transform: uppercase !important;
 }
 
@@ -29645,6 +29648,74 @@ body {
 
   .menu-shell .menu-footer-label {
     font-size: 0.58rem !important;
+  }
+}
+
+@media (min-width: 900px) and (max-height: 900px) {
+  .menu-shell {
+    height: auto !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    align-items: flex-start !important;
+  }
+
+  .menu-shell .menu-dashboard {
+    height: auto !important;
+    min-height: 100dvh !important;
+    justify-content: flex-start !important;
+    padding-top: clamp(1rem, 2.4vh, 1.35rem) !important;
+    padding-bottom: 1rem !important;
+    gap: 1rem !important;
+  }
+
+  .menu-shell .menu-top {
+    align-items: flex-start !important;
+  }
+
+  .menu-shell .menu-main {
+    flex: 0 0 auto !important;
+    gap: 0.9rem !important;
+  }
+
+  .menu-shell .menu-body,
+  .menu-shell .menu-body.menu-body--simple {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    align-items: stretch !important;
+  }
+
+  .menu-shell .menu-body.menu-body--simple .menu-play-panel {
+    width: 100% !important;
+  }
+
+  .menu-shell .menu-play-panel-inner {
+    padding: 1.1rem 1.35rem !important;
+    gap: 0.78rem !important;
+  }
+
+  .menu-shell .menu-next-action {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.35rem !important;
+  }
+
+  .menu-shell .menu-next-action strong {
+    margin-top: 0.38rem !important;
+    font-size: clamp(1.9rem, 2.75vw, 2.45rem) !important;
+  }
+
+  .menu-shell .menu-play-hint {
+    padding: 0.72rem 0.85rem !important;
+  }
+
+  .menu-shell .menu-play-btn {
+    min-height: 4.6rem !important;
+  }
+
+  .menu-shell .menu-footer {
+    margin-top: 0 !important;
+    padding-bottom: 0.35rem !important;
   }
 }
 

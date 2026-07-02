@@ -108,8 +108,11 @@ function parseRequiredTagChips(
     if (namedChips.length > 0) return mergeNeedChips(namedChips);
   }
   const upper = description.toLocaleUpperCase('tr-TR');
-  const tag = ALL_TAGS.find((t) => upper.includes(t));
-  if (tag) return [{ tag, count: need }];
+  const missingTags = ALL_TAGS.filter((tag) => upper.includes(tag) && countTagInSquad(squad, tag) === 0);
+  if (missingTags.length > 0) {
+    const count = missingTags.length === 1 ? need : 1;
+    return missingTags.map((tag) => ({ tag, count }));
+  }
   return [];
 }
 

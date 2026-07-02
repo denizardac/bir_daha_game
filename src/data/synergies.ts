@@ -26,6 +26,12 @@ function countMidfieldWithTrait(squad: PlayerCard[], tags: string[]): number {
   ).length;
 }
 
+function tagProgressNote(parts: Array<{ label: string; current: number; required: number }>): string {
+  return parts
+    .map(({ label, current, required }) => `${label} ${Math.min(current, required)}/${required}`)
+    .join(' · ');
+}
+
 /** 4 HIZLI + 2 TEKNİK + 1 ASİSTÇİ — parça parça ilerleme */
 export function getKarmaFirtinaProgress(squad: PlayerCard[]): SynergyProgress | null {
   const hizli = countTag(squad, 'HIZLI');
@@ -100,10 +106,18 @@ export const SYNERGIES: SynergyDefinition[] = [
     check: (s) => countTag(s, 'SERBEST VURUŞ') >= 1 && countTag(s, 'PENALTI') >= 1, perGoalBonus: 45,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
-      const fk = countTag(combined, 'SERBEST VURUŞ') >= 1;
-      const pen = countTag(combined, 'PENALTI') >= 1;
-      if (fk && pen) return null;
-      return { current: (fk ? 1 : 0) + (pen ? 1 : 0), required: 2, icon: '🥅', note: 'SERBEST VURUŞ + PENALTI gerekiyor' };
+      const fk = countTag(combined, 'SERBEST VURUŞ');
+      const pen = countTag(combined, 'PENALTI');
+      if (fk >= 1 && pen >= 1) return null;
+      return {
+        current: (fk >= 1 ? 1 : 0) + (pen >= 1 ? 1 : 0),
+        required: 2,
+        icon: '🥅',
+        note: tagProgressNote([
+          { label: 'SERBEST VURUŞ', current: fk, required: 1 },
+          { label: 'PENALTI', current: pen, required: 1 },
+        ]),
+      };
     },
   },
   {
@@ -112,10 +126,18 @@ export const SYNERGIES: SynergyDefinition[] = [
     check: (s) => countTag(s, 'MENTOR') >= 1 && countTag(s, 'POTANSİYEL') >= 1, perRoundBonus: 35,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
-      const m = countTag(combined, 'MENTOR') >= 1;
-      const p = countTag(combined, 'POTANSİYEL') >= 1;
-      if (m && p) return null;
-      return { current: (m ? 1 : 0) + (p ? 1 : 0), required: 2, icon: '📚' };
+      const m = countTag(combined, 'MENTOR');
+      const p = countTag(combined, 'POTANSİYEL');
+      if (m >= 1 && p >= 1) return null;
+      return {
+        current: (m >= 1 ? 1 : 0) + (p >= 1 ? 1 : 0),
+        required: 2,
+        icon: '📚',
+        note: tagProgressNote([
+          { label: 'MENTOR', current: m, required: 1 },
+          { label: 'POTANSİYEL', current: p, required: 1 },
+        ]),
+      };
     },
   },
   {
@@ -134,9 +156,21 @@ export const SYNERGIES: SynergyDefinition[] = [
     minMorale: 68, perMatchMorale: 4, perRoundBonus: 20, perWinBonus: 50,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
-      const have = (countTag(combined, 'KAPİTAN') >= 1 ? 1 : 0) + (countTag(combined, 'SOYUNMA ODASI') >= 1 ? 1 : 0) + (countTag(combined, 'MENTOR') >= 1 ? 1 : 0);
+      const captain = countTag(combined, 'KAPİTAN');
+      const room = countTag(combined, 'SOYUNMA ODASI');
+      const mentor = countTag(combined, 'MENTOR');
+      const have = (captain >= 1 ? 1 : 0) + (room >= 1 ? 1 : 0) + (mentor >= 1 ? 1 : 0);
       if (have >= 3) return null;
-      return { current: have, required: 3, icon: '🎤', note: 'KAPİTAN + SOYUNMA ODASI + MENTOR' };
+      return {
+        current: have,
+        required: 3,
+        icon: '🎤',
+        note: tagProgressNote([
+          { label: 'KAPİTAN', current: captain, required: 1 },
+          { label: 'SOYUNMA ODASI', current: room, required: 1 },
+          { label: 'MENTOR', current: mentor, required: 1 },
+        ]),
+      };
     },
   },
   {
@@ -266,9 +300,19 @@ export const SYNERGIES: SynergyDefinition[] = [
     perRoundBonus: 32,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
-      const have = (countTag(combined, 'ASİSTÇİ') >= 2 ? 1 : 0) + (countTag(combined, 'TEKNİK') >= 2 ? 1 : 0);
+      const assist = countTag(combined, 'ASİSTÇİ');
+      const technical = countTag(combined, 'TEKNİK');
+      const have = (assist >= 2 ? 1 : 0) + (technical >= 2 ? 1 : 0);
       if (have >= 2) return null;
-      return { current: have, required: 2, icon: '🔗', note: '2 ASİSTÇİ + 2 TEKNİK' };
+      return {
+        current: have,
+        required: 2,
+        icon: '🔗',
+        note: tagProgressNote([
+          { label: 'ASİSTÇİ', current: assist, required: 2 },
+          { label: 'TEKNİK', current: technical, required: 2 },
+        ]),
+      };
     },
   },
   {
@@ -301,10 +345,20 @@ export const SYNERGIES: SynergyDefinition[] = [
     perRoundBonus: 36,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
-      const have = (countTag(combined, 'PERFORMANS DÜŞÜŞÜ') >= 2 ? 1 : 0) + (countTag(combined, 'DAYANIKLI') >= 1 ? 1 : 0);
+      const slump = countTag(combined, 'PERFORMANS DÜŞÜŞÜ');
+      const durable = countTag(combined, 'DAYANIKLI');
+      const have = (slump >= 2 ? 1 : 0) + (durable >= 1 ? 1 : 0);
       if (have >= 2) return null;
-      if (countTag(combined, 'PERFORMANS DÜŞÜŞÜ') === 0 && countTag(combined, 'DAYANIKLI') === 0) return null;
-      return { current: have, required: 2, icon: '🔄', note: '2 PERFORMANS DÜŞÜŞÜ + 1 DAYANIKLI' };
+      if (slump === 0 && durable === 0) return null;
+      return {
+        current: have,
+        required: 2,
+        icon: '🔄',
+        note: tagProgressNote([
+          { label: 'PERFORMANS DÜŞÜŞÜ', current: slump, required: 2 },
+          { label: 'DAYANIKLI', current: durable, required: 1 },
+        ]),
+      };
     },
   },
   {

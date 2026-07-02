@@ -30,6 +30,9 @@ export function HoverTip({ tip, children, className = '', placement = 'auto', ar
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
+    const popupWidth = popupRef.current?.offsetWidth ?? Math.min(288, window.innerWidth - 32);
+    const popupHeight = popupRef.current?.offsetHeight ?? 96;
+    const margin = 12;
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceLeft = rect.left;
@@ -49,20 +52,35 @@ export function HoverTip({ tip, children, className = '', placement = 'auto', ar
       }
     }
 
+    if (place === 'right' && spaceRight < popupWidth + margin && spaceLeft > spaceRight) {
+      place = 'left';
+    } else if (place === 'left' && spaceLeft < popupWidth + margin && spaceRight > spaceLeft) {
+      place = 'right';
+    }
+
+    const clampCenteredX = (value: number) => {
+      const half = popupWidth / 2;
+      return Math.min(Math.max(value, margin + half), window.innerWidth - margin - half);
+    };
+    const clampCenteredY = (value: number) => {
+      const half = popupHeight / 2;
+      return Math.min(Math.max(value, margin + half), window.innerHeight - margin - half);
+    };
+
     let x = rect.left + rect.width / 2;
     let y = rect.top + rect.height / 2;
     if (place === 'top') {
-      x = Math.min(Math.max(rect.left + rect.width / 2, 88), window.innerWidth - 88);
+      x = clampCenteredX(rect.left + rect.width / 2);
       y = rect.top - 8;
     } else if (place === 'bottom') {
-      x = Math.min(Math.max(rect.left + rect.width / 2, 88), window.innerWidth - 88);
+      x = clampCenteredX(rect.left + rect.width / 2);
       y = rect.bottom + 8;
     } else if (place === 'left') {
       x = rect.left - 10;
-      y = Math.min(Math.max(rect.top + rect.height / 2, 48), window.innerHeight - 48);
+      y = clampCenteredY(rect.top + rect.height / 2);
     } else {
       x = rect.right + 10;
-      y = Math.min(Math.max(rect.top + rect.height / 2, 48), window.innerHeight - 48);
+      y = clampCenteredY(rect.top + rect.height / 2);
     }
     setPos({ x, y, place });
   }, [placement]);
@@ -101,6 +119,12 @@ export function HoverTip({ tip, children, className = '', placement = 'auto', ar
       window.removeEventListener('scroll', onViewportChange, true);
     };
   }, [updatePosition, visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const frame = window.requestAnimationFrame(updatePosition);
+    return () => window.cancelAnimationFrame(frame);
+  }, [updatePosition, visible, tip]);
 
   return (
     <>
