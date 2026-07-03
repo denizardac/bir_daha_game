@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchRemoteLeaderboard, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { formatScore } from '@/engine/scoring';
-import { getDailyList, getWeekKey } from '@/engine/leaderboard';
+import { getDailyList, getWeekKey, mergeBestLeaderboardEntries } from '@/engine/leaderboard';
 import { getDailySeed } from '@/engine/seed';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import type { LeaderboardEntry } from '@/types';
@@ -42,7 +42,9 @@ export function LeaderboardScreen() {
     };
   }, [tab, remote]);
 
-  const list = remote && remoteList !== null ? remoteList : localLists[tab];
+  const list = remote && remoteList !== null
+    ? mergeBestLeaderboardEntries(localLists[tab], remoteList)
+    : localLists[tab];
   const labels: Record<Tab, string> = { daily: 'Günlük', weekly: 'Haftalık', allTime: 'Tüm Zamanlar', flawless: 'Namağlup' };
 
   return (

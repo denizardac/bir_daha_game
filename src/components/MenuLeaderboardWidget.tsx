@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { formatScore } from '@/engine/scoring';
-import { getDailyList, getWeekKey } from '@/engine/leaderboard';
+import { getDailyList, getWeekKey, mergeBestLeaderboardEntries } from '@/engine/leaderboard';
 import { fetchRemoteLeaderboard, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { getDailySeed } from '@/engine/seed';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
@@ -98,7 +98,9 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
     [tab, stats],
   );
 
-  const fullList = remote && remoteList !== null ? sortByScore(remoteList) : localList;
+  const fullList = remote && remoteList !== null
+    ? mergeBestLeaderboardEntries(localList, remoteList)
+    : localList;
 
   const rows = useMemo(() => buildDisplayRows(fullList, myId, expanded ? 8 : 5), [fullList, myId, expanded]);
 

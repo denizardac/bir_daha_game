@@ -26,9 +26,9 @@ export function addScoreToLeaderboards(
   const today = getTodayKey();
 
   const upsertBest = (list: LeaderboardEntry[], e: LeaderboardEntry, filter?: (x: LeaderboardEntry) => boolean) => {
-    const scope = filter ? list.filter(filter) : list;
-    const prev = scope.find((x) => x.id === e.id);
-    const rest = list.filter((x) => x.id !== e.id && (!filter || filter(x)));
+    const inScope = (x: LeaderboardEntry) => !filter || filter(x);
+    const prev = list.find((x) => x.id === e.id && inScope(x));
+    const rest = list.filter((x) => !(x.id === e.id && inScope(x)));
     if (prev && prev.totalScore >= e.totalScore) return list;
     return [...rest, e].sort((a, b) => b.totalScore - a.totalScore).slice(0, 100);
   };
@@ -112,6 +112,31 @@ export function getNearRivals(score: number, list: LeaderboardEntry[], displayNa
 export function getDailyList(data: PersistedData): LeaderboardEntry[] {
   const seed = getDailySeed();
   return data.dailyLeaderboard.filter((e) => e.seed === seed);
+}
+
+type ScoreRankEntry = {
+  id: string;
+  totalScore: number;
+  timestamp: number;
+};
+
+export function mergeBestScoreEntries<T extends ScoreRankEntry>(...lists: Array<readonly T[]>): T[] {
+  const bestByPlayer = new Map<string, T>();
+  for (const entry of lists.flat()) {
+    const prev = bestByPlayer.get(entry.id);
+    if (
+      !prev ||
+      entry.totalScore > prev.totalScore ||
+      (entry.totalScore === prev.totalScore && entry.timestamp > prev.timestamp)
+    ) {
+      bestByPlayer.set(entry.id, entry);
+    }
+  }
+  return [...bestByPlayer.values()].sort((a, b) => b.totalScore - a.totalScore);
+}
+
+export function mergeBestLeaderboardEntries(...lists: LeaderboardEntry[][]): LeaderboardEntry[] {
+  return mergeBestScoreEntries<LeaderboardEntry>(...lists);
 }
 
 export function generateFakeRivals(seed: string, count: number): LeaderboardEntry[] {

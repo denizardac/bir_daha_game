@@ -183,7 +183,6 @@ function initialRun(
 }
 
 async function persistRunEndScore(state: GameStore, score: number, roundsCompleted: number, flawless: boolean) {
-  const p = loadPersisted();
   const base = {
     id: getAnonymousId(),
     seed: state.seed,
@@ -195,14 +194,14 @@ async function persistRunEndScore(state: GameStore, score: number, roundsComplet
   };
   const signed = await buildSignedRunPayload(base, state.roundHistory);
   const validation = await validateRunSubmission(signed.entry, state.roundHistory, signed.digest);
+  const latest = loadPersisted();
+  const hallEntry = { ...signed.entry, flawless: signed.entry.flawless ?? false };
   if (!validation.ok) {
     console.warn('[leaderboard] Run doğrulanamadı:', validation.reason);
-    const hallEntry = { ...signed.entry, flawless: signed.entry.flawless ?? false };
-    savePersisted(addToHallOfFame(p, hallEntry));
+    savePersisted(addToHallOfFame(latest, hallEntry));
     return;
   }
-  const hallEntry = { ...signed.entry, flawless: signed.entry.flawless ?? false };
-  savePersisted(addToHallOfFame(addScoreToLeaderboards(p, signed.entry, state.isDailySeed), hallEntry));
+  savePersisted(addToHallOfFame(addScoreToLeaderboards(latest, signed.entry, state.isDailySeed), hallEntry));
   if (isRemoteLeaderboardEnabled()) {
     void submitRunToLeaderboard(signed, state.roundHistory, state.isDailySeed).then((result) => {
       if (!result.ok) console.warn('[leaderboard] Uzak skor gönderilemedi:', result.error);

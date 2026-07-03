@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { formatScore } from '@/engine/scoring';
 import { getSeasonLabel, listSeasonMonths, getHallOfFameForMonth, getSeasonKey } from '@/engine/hallOfFame';
+import { mergeBestScoreEntries } from '@/engine/leaderboard';
 import { fetchRemoteLeaderboard, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import type { HallOfFameEntry, LeaderboardEntry } from '@/types';
@@ -47,7 +48,9 @@ export function HallOfFameScreen() {
 
   const localEntries = getHallOfFameForMonth(stats, month);
   const entries: (HallOfFameEntry | LeaderboardEntry)[] =
-    remote && remoteEntries !== null ? remoteEntries : localEntries;
+    remote && remoteEntries !== null
+      ? mergeBestScoreEntries<HallOfFameEntry | LeaderboardEntry>(localEntries, remoteEntries)
+      : localEntries;
   const archivePlaceholders = getPlaceholderMonths(activeKey).filter((m) => !months.includes(m));
   const champion = entries[0];
   const podiumEntries = entries.slice(0, 3);

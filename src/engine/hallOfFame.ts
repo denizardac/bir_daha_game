@@ -34,6 +34,14 @@ export function addToHallOfFame(
   }
 
   const full: HallOfFameEntry = { ...entry, monthKey };
+  const previous = hallOfFame.find((e) => e.id === full.id);
+  if (
+    previous &&
+    (previous.totalScore > full.totalScore ||
+      (previous.totalScore === full.totalScore && previous.timestamp >= full.timestamp))
+  ) {
+    return { ...data, seasonKey: monthKey, hallOfFame, seasonArchive };
+  }
   const without = hallOfFame.filter((e) => e.id !== full.id);
   hallOfFame = [...without, full]
     .sort((a, b) => b.totalScore - a.totalScore)
