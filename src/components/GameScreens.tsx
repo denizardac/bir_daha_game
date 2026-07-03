@@ -14,7 +14,7 @@ import { getTacticCategory } from '@/data/tactics';
 import { fetchRemoteRank, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { SynergyRevealOverlay } from '@/components/SynergyRevealOverlay';
 import { SidePanel } from '@/components/SidePanel';
-import { SynergySideSection, SynergyFullPanel } from '@/components/SynergySideSection';
+import { SynergySideSection, SynergyFullPanel, getActiveSynergyUnlockTip } from '@/components/SynergySideSection';
 import { MatchTeamCard } from '@/components/MatchPickPanel';
 import { getActiveSynergies, getSynergyById, SYNERGIES } from '@/data/synergies';
 import { explainActiveTactic, getSidePanelNearSynergies, type NearSynergyProgress } from '@/engine/squadInsights';
@@ -134,6 +134,7 @@ function CardSelectLeftRail({
     required: 1,
     active: true,
     label: 'Aktif',
+    tip: getActiveSynergyUnlockTip(synergy, squad),
   }));
   const nearRows = nearSynergies
     .filter(({ synergy }) => !activeRows.some((row) => row.id === synergy.id))
@@ -146,6 +147,7 @@ function CardSelectLeftRail({
       required: progress.required,
       active: false,
       label: `${progress.current}/${progress.required}`,
+      tip: null,
     }));
   const synergyRows = [
     ...activeRows,
@@ -184,7 +186,7 @@ function CardSelectLeftRail({
           <div className="pick-rail-synergy-list">
             {synergyRows.map((row) => {
               const pct = row.active ? 100 : Math.min(100, Math.round((row.current / row.required) * 100));
-              return (
+              const rowContent = (
                 <div key={row.id} className={`pick-rail-synergy-row ${row.active ? 'pick-rail-synergy-row--active' : ''}`}>
                   <div className="pick-rail-synergy-line">
                     <span><UiIcon name={row.icon} /> {row.name}</span>
@@ -193,6 +195,11 @@ function CardSelectLeftRail({
                   <div className="pick-rail-synergy-bar"><span style={{ width: `${pct}%` }} /></div>
                 </div>
               );
+              return row.tip ? (
+                <HoverTip key={row.id} tip={row.tip} placement="right" className="pick-rail-active-synergy-tip">
+                  {rowContent}
+                </HoverTip>
+              ) : rowContent;
             })}
           </div>
         ) : (
@@ -1717,6 +1724,11 @@ export function RunEndScreen() {
                   <span className="run-end-stat-label">Kadro</span>
                   <span className="run-end-stat-value">{squad.length}/11</span>
                 </div>
+              </div>
+
+              <div className="run-end-summary-mobile-actions">
+                <button type="button" className="btn-primary" onClick={() => resetRun()}>Bir Daha</button>
+                <button type="button" className="btn-secondary" onClick={goToMenu}>Ana Menü</button>
               </div>
 
               {squad.length < 11 && (

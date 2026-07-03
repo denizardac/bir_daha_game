@@ -62,6 +62,71 @@ function countTagInSquad(squad: PlayerCard[], tag: Tag): number {
   return squad.reduce((total, player) => total + (player.tags.includes(tag) ? 1 : 0), 0);
 }
 
+function joinReadable(parts: string[]): string {
+  if (parts.length <= 1) return parts[0] ?? '';
+  return `${parts.slice(0, -1).join(', ')} ve ${parts[parts.length - 1]}`;
+}
+
+function countLabel(count: number, label: string): string {
+  return `${count} ${label}`;
+}
+
+export function getActiveSynergyUnlockTip(synergy: SynergyDefinition, squad: PlayerCard[]): string {
+  const benefit = getSynergyBenefitText(synergy);
+  const upperDescription = synergy.description.toLocaleUpperCase('tr-TR');
+  const lowerDescription = synergy.description.toLocaleLowerCase('tr-TR');
+  const hasSpecificUnlock = new Set([
+    'synergy_altin_defans',
+    'synergy_uc_boyut',
+    'synergy_yildiz_hucum',
+  ]).has(synergy.id);
+  const tagParts = hasSpecificUnlock ? [] : ALL_TAGS
+    .filter((tag) => upperDescription.includes(tag))
+    .map((tag) => ({ tag, count: countTagInSquad(squad, tag) }))
+    .filter(({ count }) => count > 0)
+    .map(({ tag, count }) => countLabel(count, tag));
+
+  const extraParts: string[] = [];
+  if (lowerDescription.includes('moral')) extraParts.push('moral koşulu');
+  if (lowerDescription.includes('efsane')) {
+    const legends = squad.filter((player) => player.rarity === 'efsane').length;
+    if (legends > 0) extraParts.push(countLabel(legends, 'efsane kart'));
+  }
+  if (lowerDescription.includes('imza')) {
+    const signatures = squad.filter((player) => player.signature).length;
+    if (signatures > 0) extraParts.push(countLabel(signatures, 'imza kart'));
+  }
+  if (synergy.id === 'synergy_temiz_sayfa') {
+    const keeperReady = squad.some((player) => player.position === 'KL' && player.currentRating >= 75);
+    const stoppers = squad.filter((player) => player.position === 'STP').length;
+    if (keeperReady) extraParts.push('75+ kaleci');
+    if (stoppers > 0) extraParts.push(countLabel(Math.min(stoppers, 2), 'stoper'));
+  }
+  if (synergy.id === 'synergy_altin_defans') {
+    const strongStoppers = squad.filter((player) => player.position === 'STP' && player.tags.includes('GÜÇLÜ')).length;
+    if (strongStoppers > 0) extraParts.push(countLabel(Math.min(strongStoppers, 2), 'GÜÇLÜ stoper'));
+  }
+  if (synergy.id === 'synergy_uc_boyut') {
+    const finishers = squad.filter((player) => (
+      player.position === 'SF' || player.position === 'SLK' || player.position === 'SÖK'
+    ) && player.tags.includes('FİNİŞÖR')).length;
+    if (finishers > 0) extraParts.push(countLabel(Math.min(finishers, 2), 'hücum FİNİŞÖR'));
+  }
+  if (synergy.id === 'synergy_yildiz_hucum') {
+    const stars = squad.filter((player) => (
+      player.position === 'SF' || player.position === 'SLK' || player.position === 'SÖK'
+    ) && (player.rarity === 'güçlü' || player.rarity === 'efsane')).length;
+    if (stars > 0) extraParts.push(countLabel(Math.min(stars, 2), 'yüksek nadirlikli hücumcu'));
+  }
+
+  const unlockParts = [...tagParts, ...extraParts];
+  const unlockLine = unlockParts.length > 0
+    ? `İlk 11'de ${joinReadable(unlockParts)} ile açıldı.`
+    : 'İlk 11 koşulu tamamlanınca açıldı.';
+
+  return `${unlockLine}\n${synergy.description}\n${benefit}`;
+}
+
 function mergeNeedChips(chips: Array<{ tag: Tag; count: number }>): Array<{ tag: Tag; count: number }> {
   const map = new Map<Tag, number>();
   for (const chip of chips) {
@@ -101,17 +166,18 @@ function parseRequiredTagChips(
     });
     if (numericChips.length > 0) return mergeNeedChips(numericChips);
 
-    const namedChips = ALL_TAGS.flatMap((tag) => {
-      if (!upperNote.includes(tag)) return [] as Array<{ tag: Tag; count: number }>;
-      return countTagInSquad(squad, tag) === 0 ? [{ tag, count: 1 }] : [];
-    });
+    const namedTags = ALL_TAGS.filter((tag) => upperNote.includes(tag));
+    const namedChips = namedTags.map((tag) => ({
+      tag,
+      count: namedTags.length === 1 ? Math.max(1, need) : 1,
+    }));
     if (namedChips.length > 0) return mergeNeedChips(namedChips);
   }
   const upper = description.toLocaleUpperCase('tr-TR');
-  const missingTags = ALL_TAGS.filter((tag) => upper.includes(tag) && countTagInSquad(squad, tag) === 0);
-  if (missingTags.length > 0) {
-    const count = missingTags.length === 1 ? need : 1;
-    return missingTags.map((tag) => ({ tag, count }));
+  const mentionedTags = ALL_TAGS.filter((tag) => upper.includes(tag));
+  if (mentionedTags.length > 0) {
+    const count = mentionedTags.length === 1 ? Math.max(1, need) : 1;
+    return mentionedTags.map((tag) => ({ tag, count }));
   }
   return [];
 }
@@ -162,22 +228,23 @@ function formatNeededText(synergy: SynergyDefinition, note: string | undefined, 
   return need > 0 ? `${need} rol daha lazım` : 'Açılmaya hazır';
 }
 
-function ActiveSynergyTile({ synergy }: { synergy: SynergyDefinition }) {
+function ActiveSynergyTile({ synergy, squad }: { synergy: SynergyDefinition; squad: PlayerCard[] }) {
   const benefit = shortLine(getSynergyBenefitText(synergy), 68);
+  const activeTip = getActiveSynergyUnlockTip(synergy, squad);
   return (
     <div className="syn-tile-wrap">
-      <div className="syn-tile syn-tile--active">
-        <ProgressRing pct={100} icon={iconForSynergy(synergy.icon)} active />
-        <div className="syn-tile-body">
-          <div className="syn-tile-head">
-            <HoverTip tip={`${synergy.description}\n${benefit}`} placement="top" className="syn-tile-name-tip">
+      <HoverTip tip={activeTip} placement="top" className="syn-active-tip">
+        <div className="syn-tile syn-tile--active">
+          <ProgressRing pct={100} icon={iconForSynergy(synergy.icon)} active />
+          <div className="syn-tile-body">
+            <div className="syn-tile-head">
               <span className="syn-tile-name">{synergy.name}</span>
-            </HoverTip>
-            <span className="syn-tile-badge syn-tile-badge--live">Aktif</span>
+              <span className="syn-tile-badge syn-tile-badge--live">Aktif</span>
+            </div>
+            <p className="syn-tile-reward">{benefit}</p>
           </div>
-          <p className="syn-tile-reward">{benefit}</p>
         </div>
-      </div>
+      </HoverTip>
     </div>
   );
 }
@@ -276,19 +343,22 @@ export function SynergyFullPanel({ squad, activeSynergies, near }: FullPanelProp
           </div>
           {activeSynergies.map((s) => {
             const benefit = shortLine(getSynergyBenefitText(s), 72);
+            const activeTip = getActiveSynergyUnlockTip(s, squad);
             return (
-              <div key={s.id} className="syn-full-row syn-full-row--active">
-                <div className="syn-full-row-icon syn-full-row-icon--active">
-                  <UiIcon name={iconForSynergy(s.icon)} />
-                </div>
-                <div className="syn-full-row-body">
-                  <div className="syn-full-row-top">
-                    <span className="syn-full-row-name">{s.name}</span>
-                    <span className="syn-full-badge syn-full-badge--live">Aktif</span>
+              <HoverTip key={s.id} tip={activeTip} placement="top" className="syn-full-active-tip">
+                <div className="syn-full-row syn-full-row--active">
+                  <div className="syn-full-row-icon syn-full-row-icon--active">
+                    <UiIcon name={iconForSynergy(s.icon)} />
                   </div>
-                  <p className="syn-full-row-benefit">{benefit}</p>
+                  <div className="syn-full-row-body">
+                    <div className="syn-full-row-top">
+                      <span className="syn-full-row-name">{s.name}</span>
+                      <span className="syn-full-badge syn-full-badge--live">Aktif</span>
+                    </div>
+                    <p className="syn-full-row-benefit">{benefit}</p>
+                  </div>
                 </div>
-              </div>
+              </HoverTip>
             );
           })}
         </section>
@@ -323,15 +393,16 @@ export function SynergyFullPanel({ squad, activeSynergies, near }: FullPanelProp
                         {tagChips.map(({ tag, count }) => {
                           const color = getTagPrimaryColor(tag);
                           return (
-                            <span
-                              key={tag}
-                              className="syn-full-need-chip"
-                              style={{ color, background: `${color}18`, border: `1px solid ${color}44` }}
-                            >
-                              <UiIcon name={iconForTag(tag)} />
-                              {count > 1 && <strong>{count}</strong>}
-                              {tag}
-                            </span>
+                            <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="top">
+                              <span
+                                className="syn-full-need-chip"
+                                style={{ color, background: `${color}18`, border: `1px solid ${color}44` }}
+                              >
+                                <UiIcon name={iconForTag(tag)} />
+                                {count > 1 && <strong>{count}</strong>}
+                                {tag}
+                              </span>
+                            </HoverTip>
                           );
                         })}
                         {offerHint?.includes('teklifte') && (
@@ -359,16 +430,16 @@ export function SynergyFullPanel({ squad, activeSynergies, near }: FullPanelProp
             {tagCounts.map(({ tag, count }) => {
               const color = getTagPrimaryColor(tag);
               return (
-                <span
-                  key={tag}
-                  className="syn-full-tag-chip"
-                  title={TAG_DESCRIPTIONS[tag]}
-                  style={{ color, background: `${color}18`, border: `1px solid ${color}44` }}
-                >
-                  <UiIcon name={iconForTag(tag)} />
-                  {tag}
-                  {count > 1 && <strong>{count}</strong>}
-                </span>
+                <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="top">
+                  <span
+                    className="syn-full-tag-chip"
+                    style={{ color, background: `${color}18`, border: `1px solid ${color}44` }}
+                  >
+                    <UiIcon name={iconForTag(tag)} />
+                    {tag}
+                    {count > 1 && <strong>{count}</strong>}
+                  </span>
+                </HoverTip>
               );
             })}
           </div>
@@ -414,7 +485,7 @@ export function SynergySideSection({ squad, activeSynergies, near }: Props) {
         <>
           <div className="syn-tile-list">
             {activeSynergies.map((s) => (
-              <ActiveSynergyTile key={s.id} synergy={s} />
+              <ActiveSynergyTile key={s.id} synergy={s} squad={squad} />
             ))}
             {near.map(({ synergy, progress, offerHint }) => (
               <NearSynergyTile

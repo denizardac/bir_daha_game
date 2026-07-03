@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import {
   CardSelectScreen,
@@ -11,6 +12,14 @@ import { TutorialCoach } from '@/components/TutorialCoach';
 
 export function GameScreen() {
   const phase = useGameStore((s) => s.phase);
+  const runEndStep = useGameStore((s) => s.runEndStep);
+
+  useEffect(() => {
+    if (!window.matchMedia('(max-width: 959px)').matches) {
+      return;
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [phase, runEndStep]);
 
   return (
     <div className="game-viewport">

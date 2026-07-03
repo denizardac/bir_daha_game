@@ -226,7 +226,7 @@ export function PlayerCardCompareGrid({
 
               <div className="card-compare-synergy-section">
                 {visibleSynergies.length > 0 ? (
-                  visibleSynergies.slice(0, 2).map((s) => {
+                  visibleSynergies.map((s) => {
                     const beforePct = Math.min(100, (s.before / s.required) * 100);
                     const afterPct = Math.min(100, (s.after / s.required) * 100);
                     const deltaPct = Math.max(0, afterPct - beforePct);
