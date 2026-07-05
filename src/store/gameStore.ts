@@ -20,7 +20,7 @@ import { canPassCardPick } from '@/engine/cardPass';
 import { isTacticBonusRound, TACTIC_BONUS_MORALE, TACTIC_BONUS_SCORE } from '@/engine/roundFlow';
 import { simulateMatch } from '@/engine/matchSimulation';
 import { calculateRoundPoints } from '@/engine/scoring';
-import { addToHallOfFame } from '@/engine/hallOfFame';
+import { addToHallOfFame, getHallOfFameForMonth, getSeasonKey } from '@/engine/hallOfFame';
 import { detectMatchMilestones, mergeMilestones, type Milestone } from '@/engine/milestones';
 import { createRng, getDailySeed, getRandomSeed } from '@/engine/seed';
 import {
@@ -172,6 +172,7 @@ function initialRun(
     timerSeconds: cardTimerSeconds(),
     eventResolvedThisRound: false,
     flawless: true,
+    recentlyJoinedPlayerId: null,
     runEndAnalysis: null,
     rerollsRemaining: REROLLS_PER_RUN + streakBonus.extraRerolls,
     formationRerollUsed: false,
@@ -375,6 +376,10 @@ function buildRunEndAnalysis(state: GameStore): RunEndAnalysis {
   const rankList = state.isDailySeed
     ? getDailyList(persisted)
     : persisted.allTimeLeaderboard;
+  const currentPlayerId = getAnonymousId();
+  const previousLeaderboardBest = rankList.find((entry) => entry.id === currentPlayerId)?.totalScore;
+  const monthBest = getHallOfFameForMonth(persisted, getSeasonKey())
+    .find((entry) => entry.id === currentPlayerId)?.totalScore;
   const ego = analyzeEgo(
     state.roundHistory,
     state.seed,
@@ -412,6 +417,12 @@ function buildRunEndAnalysis(state: GameStore): RunEndAnalysis {
     nearRivalBefore: rivals.before,
     nearRivalAfter: rivals.after,
     badges,
+    scoreRecord: {
+      isLeaderboardBest: previousLeaderboardBest === undefined || state.score > previousLeaderboardBest,
+      previousLeaderboardBest,
+      isHallOfFameBest: monthBest === undefined || state.score > monthBest,
+      previousHallOfFameBest: monthBest,
+    },
   };
 }
 
@@ -430,6 +441,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   pendingMilestones: [],
   lastLossBrokenSynergies: [],
   pendingSynergyReveal: [],
+  recentlyJoinedPlayerId: null,
   lineupEditorOpen: false,
   lineupEditorHighlightId: null,
   lineupEditorPrevSquad: null,
@@ -516,6 +528,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       pendingSynergyReveal: saved.pendingSynergyReveal ?? [],
       nextMatchRisk: saved.nextMatchRisk ?? 0,
       nextMatchBonus: saved.nextMatchBonus ?? 0,
+      recentlyJoinedPlayerId: saved.recentlyJoinedPlayerId ?? null,
       runEndStep: 0,
       pendingMilestones: [],
     });
@@ -678,6 +691,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (isPlayerCard(card)) {
       squad = applyPlayerToSquad(squad, card, state.maxSquadSize, state.morale, state.activeTactics, state.manualLineup);
+      const recentlyJoinedPlayerId = squad.some((p) => p.id === card.id) ? card.id : null;
       // Koleksiyon: efsane kart çekildiyse kaydet
       if (card.rarity === 'efsane') {
         const persisted = loadPersisted();
@@ -692,6 +706,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({
         squad,
         manualLineup,
+        recentlyJoinedPlayerId,
         pendingSelected: card,
         pendingOffersShown: [...state.currentOffers],
         lineupEditorOpen: true,
@@ -700,7 +715,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lineupEditorPrevSquad: state.squad,
         lineupEditorPrevManual: state.manualLineup,
       });
-      persistRun({ ...get(), squad, manualLineup });
+      persistRun({ ...get(), squad, manualLineup, recentlyJoinedPlayerId });
       return;
     } else if (isSkipCard(card)) {
       if (!canPassCardPick({
@@ -791,13 +806,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       squad,
       manualLineup,
+      recentlyJoinedPlayerId: null,
       lineupEditorOpen: false,
       lineupEditorHighlightId: null,
       lineupEditorPrevSquad: null,
       lineupEditorPrevManual: null,
       pendingSelected: null,
     });
-    persistRun({ ...get(), squad, manualLineup });
+    persistRun({ ...get(), squad, manualLineup, recentlyJoinedPlayerId: null });
   },
 
   confirmTacticRound: () => {
@@ -991,11 +1007,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (outcome.grantRerolls) {
       rerollsRemaining = Math.min(REROLLS_PER_RUN + 2, rerollsRemaining + outcome.grantRerolls);
     }
+    let recentlyJoinedPlayerId = state.recentlyJoinedPlayerId;
     if (outcome.addYouth && squad.length < state.maxSquadSize) {
       // Önizlemede gösterilen oyuncuyla birebir aynı kart eklenir (mevki dahil).
       // previewEventPlayer aynı seed+round ile deterministik aynı sonucu verir.
       const player = previewEventPlayer(state.seed, state.round, state.currentEvent.id);
       squad = [...squad, player];
+      recentlyJoinedPlayerId = player.id;
     }
     if (outcome.grantTag) {
       const tag = outcome.grantTag;
@@ -1033,7 +1051,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const formationKey = getActiveFormationKey(state.activeTactics);
     const manualLineup = reconcileManualLineup(state.manualLineup, squad, formationKey);
-    const next = startRound({ ...state, squad, morale, score, roundHistory, eventResolvedThisRound: true, usedEventIds: [...state.usedEventIds, state.currentEvent.id], manualLineup });
+    recentlyJoinedPlayerId = squad.some((p) => p.id === recentlyJoinedPlayerId) ? recentlyJoinedPlayerId : null;
+    const next = startRound({ ...state, squad, morale, score, roundHistory, eventResolvedThisRound: true, usedEventIds: [...state.usedEventIds, state.currentEvent.id], manualLineup, recentlyJoinedPlayerId });
     set({
       squad,
       manualLineup,
@@ -1046,6 +1065,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       usedEventIds: [...state.usedEventIds, state.currentEvent.id],
       nextMatchRisk: outcome.nextMatchRisk ?? 0,
       nextMatchBonus: outcome.nextMatchBonus ?? 0,
+      recentlyJoinedPlayerId,
       recoveryGuaranteed: state.lossesCount > 0 && state.lossesCount <= 2,
       ...next,
     });
@@ -1126,7 +1146,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       morale = Math.max(0, morale - 16);
       flawless = false;
       const squadBeforeLoss = squad;
-      const departing = selectDepartingPlayer(squad, morale, state.activeTactics, manualLineup);
+      const protectedJoinedPlayerIds = state.recentlyJoinedPlayerId && squad.some((p) => p.id === state.recentlyJoinedPlayerId)
+        ? [state.recentlyJoinedPlayerId]
+        : [];
+      const departing = selectDepartingPlayer(squad, morale, state.activeTactics, manualLineup, protectedJoinedPlayerIds);
       squad = squad.filter((p) => p.id !== departing.id);
       manualLineup = reconcileManualLineup(manualLineup, squad, formationKey);
       const brokenSynergies = getBrokenSynergies(squadBeforeLoss, squad, morale, state.activeTactics).map((s) => s.id);
@@ -1151,6 +1174,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           isFirstRun: false,
           runEndAnalysis: analysis,
           runEndStep: 0,
+          recentlyJoinedPlayerId: null,
           lastLossPlayer: departing,
           lastLossBrokenSynergies: brokenSynergies,
           pendingOffersShown: [],
@@ -1174,6 +1198,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // Sinerji açılışı maç ekranında (sonuç anında) zaten gösterildi —
         // kayıp ekranında ikinci kez gösterme.
         pendingSynergyReveal: [],
+        recentlyJoinedPlayerId: null,
         recoveryGuaranteed: lossesCount <= 2,
         pendingOffersShown: [],
         pendingSelected: null,
@@ -1217,6 +1242,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         isFirstRun: false,
         runEndAnalysis: analysis,
         runEndStep: 0,
+        recentlyJoinedPlayerId: null,
         pendingOffersShown: [],
         pendingSelected: null,
         pendingMilestones,
@@ -1240,6 +1266,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       discoveredSynergies: discoveries,
       dangerMode,
       recoveryGuaranteed: lossesCount <= 2 && lossesCount > 0,
+      recentlyJoinedPlayerId: null,
     });
     const nextState = {
       squad, morale, streak, score, lossesCount, flawless, round, roundHistory, discoveredSynergies: discoveries,
@@ -1247,6 +1274,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       dangerMode, currentMatch: null, lastLossPlayer: null, lastLossBrokenSynergies: [],
       pendingSynergyReveal: [],
       pendingOffersShown: [], pendingSelected: null,
+      recentlyJoinedPlayerId: null,
       isFirstRun: false, pendingMilestones, ...next,
     };
     persistRun({ ...state, ...nextState });
@@ -1269,14 +1297,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
         isRunComplete: true,
       }));
       void persistRunEndScore(state, state.score, state.round, state.flawless);
-      set({ phase: 'runEnd', isFirstRun: false, runEndAnalysis: analysis, runEndStep: 0, pendingMilestones });
+      set({ phase: 'runEnd', isFirstRun: false, runEndAnalysis: analysis, runEndStep: 0, pendingMilestones, recentlyJoinedPlayerId: null });
       clearRun();
       return;
     }
     const round = state.round + 1;
-    const next = startRound({ ...state, round, recoveryGuaranteed: state.lossesCount > 0 && state.lossesCount <= 2 });
-    persistRun({ ...state, round, ...next, lastLossPlayer: null, currentMatch: null });
-    set({ round, ...next, lastLossPlayer: null, currentMatch: null });
+    const next = startRound({ ...state, round, recoveryGuaranteed: state.lossesCount > 0 && state.lossesCount <= 2, recentlyJoinedPlayerId: null });
+    persistRun({ ...state, round, ...next, lastLossPlayer: null, currentMatch: null, recentlyJoinedPlayerId: null });
+    set({ round, ...next, lastLossPlayer: null, currentMatch: null, recentlyJoinedPlayerId: null });
   },
 
   advanceRunEnd: () => set((s) => ({ runEndStep: s.runEndStep + 1 })),

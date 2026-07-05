@@ -121,6 +121,10 @@ describe('selectDepartingPlayer override-aware (yedege dusme)', () => {
     // slot 0 (KL) -> g2 pin: g2 sahada, g1 yedekte. Kayipta yedek g1 duser.
     expect(selectDepartingPlayer(sq, 50, [], { 0: 'g2' }).id).toBe('g1');
   });
+
+  it('yeni katilan oyuncu ilk macindaki kayipta ayrilma havuzundan korunur', () => {
+    expect(selectDepartingPlayer(sq, 50, [], {}, ['g2']).id).not.toBe('g2');
+  });
 });
 
 describe('otomatik dizilis saha doluluk onceligi', () => {

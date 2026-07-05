@@ -15538,6 +15538,49 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   white-space: nowrap;
 }
 
+.run-end-record-note {
+  margin-top: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.58);
+  padding: 0.85rem 0.95rem;
+}
+
+.run-end-record-note--best {
+  border-color: rgba(52, 211, 153, 0.28);
+  background: rgba(6, 78, 59, 0.18);
+}
+
+.run-end-record-note--kept {
+  border-color: rgba(245, 158, 11, 0.28);
+  background: rgba(69, 46, 16, 0.22);
+}
+
+.run-end-record-note span {
+  display: block;
+  color: var(--tx-3);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.run-end-record-note strong {
+  display: block;
+  margin-top: 0.28rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.run-end-record-note small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--tx-2);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .run-end-viral-strip {
   margin-top: 1rem;
   border: 1px solid rgba(245, 196, 81, 0.22);

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { formatScore } from '@/engine/scoring';
 import { getSeasonLabel, listSeasonMonths, getHallOfFameForMonth, getSeasonKey } from '@/engine/hallOfFame';
 import { mergeBestScoreEntries } from '@/engine/leaderboard';
-import { fetchRemoteLeaderboard, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
+import { fetchRemoteHallOfFame, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import type { HallOfFameEntry, LeaderboardEntry } from '@/types';
 
@@ -19,15 +19,11 @@ function getPlaceholderMonths(currentKey: string, count = 2): string[] {
   return placeholders;
 }
 
-function entryMonthKey(entry: LeaderboardEntry): string {
-  return getSeasonKey(new Date(entry.timestamp));
-}
-
 export function HallOfFameScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
   const stats = getPersistedStats();
-  const activeKey = stats.seasonKey || getSeasonKey();
-  const months = listSeasonMonths(stats);
+  const activeKey = getSeasonKey();
+  const months = listSeasonMonths(stats, activeKey);
   const [month, setMonth] = useState(activeKey);
   const isActive = month === activeKey;
   const remote = isRemoteLeaderboardEnabled();
@@ -36,10 +32,10 @@ export function HallOfFameScreen() {
   useEffect(() => {
     if (!remote) { setRemoteEntries(null); return; }
     let cancelled = false;
-    fetchRemoteLeaderboard('allTime')
+    fetchRemoteHallOfFame(month)
       .then((rows) => {
         if (!cancelled) {
-          setRemoteEntries(rows.filter((row) => entryMonthKey(row) === month));
+          setRemoteEntries(rows);
         }
       })
       .catch(() => { if (!cancelled) setRemoteEntries(null); });

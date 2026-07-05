@@ -1,5 +1,5 @@
 import type { SignedRunPayload } from '@/engine/runIntegrity';
-import { getTodayKey, getWeekKey } from '@/engine/leaderboard';
+import { getTodayKey, getWeekKey, mergeBestLeaderboardEntries } from '@/engine/leaderboard';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { LeaderboardEntry, RoundResult } from '@/types';
 
@@ -206,6 +206,30 @@ export async function fetchRemoteLeaderboard(
   }
 
   return entries;
+}
+
+function nextMonthKey(monthKey: string): string {
+  const [rawYear, rawMonth] = monthKey.split('-').map(Number);
+  const year = rawYear ?? new Date().getFullYear();
+  const month = rawMonth ?? 1;
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  return `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
+}
+
+export async function fetchRemoteHallOfFame(monthKey: string): Promise<LeaderboardEntry[]> {
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('leaderboard_scores')
+    .select('*')
+    .gte('day_key', `${monthKey}-01`)
+    .lt('day_key', `${nextMonthKey(monthKey)}-01`)
+    .order('total_score', { ascending: false })
+    .limit(500);
+
+  if (error || !data) return [];
+  return mergeBestLeaderboardEntries((data as RemoteLeaderboardRow[]).map(rowToEntry)).slice(0, 50);
 }
 
 export async function fetchRemoteRank(

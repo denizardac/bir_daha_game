@@ -55,7 +55,7 @@ export function getHallOfFameForMonth(data: PersistedData, monthKey: string): Ha
   return data.seasonArchive?.[monthKey] ?? [];
 }
 
-export function listSeasonMonths(data: PersistedData): string[] {
-  const keys = new Set<string>([data.seasonKey || getSeasonKey(), ...Object.keys(data.seasonArchive ?? {})]);
+export function listSeasonMonths(data: PersistedData, currentKey = getSeasonKey()): string[] {
+  const keys = new Set<string>([currentKey, data.seasonKey || currentKey, ...Object.keys(data.seasonArchive ?? {})]);
   return [...keys].filter(Boolean).sort().reverse();
 }

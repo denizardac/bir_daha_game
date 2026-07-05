@@ -242,6 +242,12 @@ export interface RunEndAnalysis {
   nearRivalBefore?: { name: string; score: number; gap: number };
   nearRivalAfter?: { name: string; score: number; gap: number };
   badges: string[];
+  scoreRecord: {
+    isLeaderboardBest: boolean;
+    previousLeaderboardBest?: number;
+    isHallOfFameBest: boolean;
+    previousHallOfFameBest?: number;
+  };
 }
 
 export interface GameState {
@@ -268,6 +274,7 @@ export interface GameState {
   timerSeconds: number;
   eventResolvedThisRound: boolean;
   flawless: boolean;
+  recentlyJoinedPlayerId: string | null;
   runEndAnalysis: RunEndAnalysis | null;
   rerollsRemaining: number;
   /** Taktik turunda kategori başına oyun-boyu tek reroll hakkı */

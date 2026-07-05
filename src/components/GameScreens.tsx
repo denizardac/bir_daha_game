@@ -1576,6 +1576,17 @@ export function RunEndScreen() {
       ? `En iyi round: R${bestRound.round} +${formatScore(bestRound.pointsEarned)}`
       : '';
   const shareText = `BİR DAHA\n${viralHook}\nSkor: ${formatScore(score)}\n${shareRankLine}${shareBestLine ? `\n${shareBestLine}` : ''}\n#BirDaha`;
+  const scoreRecord = analysis?.scoreRecord;
+  const leaderboardRecordText = scoreRecord?.isLeaderboardBest
+    ? scoreRecord.previousLeaderboardBest
+      ? `Yeni ${isDailySeed ? 'günlük' : 'tüm zamanlar'} rekorun: eski ${formatScore(scoreRecord.previousLeaderboardBest)} geçildi.`
+      : `${isDailySeed ? 'Günlük' : 'Tüm zamanlar'} skor kaydın açıldı.`
+    : `Bu deneme kişisel en iyini geçmedi; listede ${formatScore(scoreRecord?.previousLeaderboardBest ?? 0)} korunuyor.`;
+  const hallOfFameRecordText = scoreRecord?.isHallOfFameBest
+    ? scoreRecord.previousHallOfFameBest
+      ? `Hall of Fame aylık rekorun yenilendi; eski skor ${formatScore(scoreRecord.previousHallOfFameBest)}.`
+      : 'Hall of Fame için bu ayki ilk kaydın açıldı.'
+    : `Hall of Fame'de aylık en iyi skorun ${formatScore(scoreRecord?.previousHallOfFameBest ?? 0)} korunuyor.`;
 
   return (
     <div className="game-shell min-h-screen p-4">
@@ -1630,6 +1641,14 @@ export function RunEndScreen() {
                   <small>{topScorers.slice(1).map(([name, goals]) => `${name} ${goals}`).join(' · ') || 'Bir sonraki run daha net bitebilir'}</small>
                 </div>
               </div>
+
+              {scoreRecord && (
+                <div className={`run-end-record-note ${scoreRecord.isLeaderboardBest || scoreRecord.isHallOfFameBest ? 'run-end-record-note--best' : 'run-end-record-note--kept'}`}>
+                  <span>Kayıt durumu</span>
+                  <strong>{leaderboardRecordText}</strong>
+                  <small>{hallOfFameRecordText}</small>
+                </div>
+              )}
 
               {allLoss && (
                 <p className="mt-3 rounded-lg bg-neutral-900 px-3 py-2 text-sm text-neutral-400">

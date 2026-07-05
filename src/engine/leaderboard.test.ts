@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addScoreToLeaderboards, mergeBestLeaderboardEntries } from '@/engine/leaderboard';
-import { addToHallOfFame } from '@/engine/hallOfFame';
+import { addToHallOfFame, listSeasonMonths } from '@/engine/hallOfFame';
 import type { HallOfFameEntry, LeaderboardEntry, PersistedData } from '@/types';
 
 function baseData(): PersistedData {
@@ -121,5 +121,12 @@ describe('addToHallOfFame', () => {
 
     expect(next.hallOfFame).toHaveLength(1);
     expect(next.hallOfFame[0]?.totalScore).toBe(3000);
+  });
+
+  it('lists the real current season even when local season key is stale', () => {
+    const data = baseData();
+    data.seasonKey = '2026-06';
+
+    expect(listSeasonMonths(data, '2026-07')).toEqual(['2026-07', '2026-06']);
   });
 });
