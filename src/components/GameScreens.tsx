@@ -75,7 +75,7 @@ function CardSelectLineupMini({
   onOpen: () => void;
 }) {
   return (
-    <section className="pick-rail-card pick-rail-lineup" aria-label="Diziliş özeti">
+    <section className="pick-rail-card pick-rail-lineup" aria-label="Diziliş özeti" data-tutorial-target="lineup">
       <div className="pick-rail-card-head">
         <span>Diziliş</span>
         <strong>{summary.formationLabel} · {summary.filled}/11</strong>
@@ -250,7 +250,7 @@ function CardSelectSubHeader({
       </div>
       <div className="card-select-subheader-right">
         {trainingAvailable && (
-          <div className="card-compare-mode-tabs" role="group" aria-label="Mod seç">
+          <div className="card-compare-mode-tabs" role="group" aria-label="Mod seç" data-tutorial-target="pick-mode">
             <button
               type="button"
               className={`card-compare-mode-tab card-compare-mode-tab--cards ${pickMode === 'cards' ? 'card-compare-mode-tab--active' : ''}`}
@@ -447,7 +447,10 @@ export function CardSelectScreen() {
               onOpenSynergy={() => setDetailDrawer('synergy')}
             />
           )}
-          <div className={`card-pick-center min-w-0 ${cardsLocked ? 'card-pick-center--training' : ''} ${tacticBonus ? 'card-pick-center--tactic' : ''}`}>
+          <div
+            className={`card-pick-center min-w-0 ${cardsLocked ? 'card-pick-center--training' : ''} ${tacticBonus ? 'card-pick-center--tactic' : ''}`}
+            data-tutorial-target={!tacticBonus ? 'cards' : undefined}
+          >
             <LineupPreviewModal
               open={lineupOpen}
               onClose={() => setLineupOpen(false)}
