@@ -22,16 +22,29 @@ export type PlaytestRunResult = {
   roundsPlayed: number;
   finalMorale: number;
   finalSquadSize: number;
+  /** Sinerji id → bu run'da kaç maçta aktifti (denge telemetrisi) */
+  synergyActivations: Record<string, number>;
+  /** Run boyunca seçilen taktik id'leri */
+  tacticsUsed: string[];
+  finaleReached: boolean;
+  finaleWon: boolean;
 };
 
 export type PlaytestSummary = {
   runs: number;
   avgScore: number;
   avgWins: number;
+  avgDraws: number;
   avgLosses: number;
   avgMorale: number;
   minScore: number;
   maxScore: number;
+  /** Sinerji id → run başına ortalama aktivasyon */
+  synergyUsage: Record<string, number>;
+  /** Taktik id → kaç run'da seçildi */
+  tacticUsage: Record<string, number>;
+  finaleReachedRate: number;
+  finaleWinRate: number;
 };
 
 /** Otomatik kart seçimi — en yüksek rating oyuncu */
@@ -69,7 +82,7 @@ function applyEventForPlaytest(
     nextSquad = nextSquad.filter((p) => p.id !== target.id);
   }
   if (outcome.tempRatingDelta) {
-    const target = getEventRatingTarget(event.id, choice, nextSquad);
+    const target = getEventRatingTarget(event.id, choice, nextSquad, activeTactics);
     if (target) {
       nextSquad = nextSquad.map((p) =>
         p.id === target.id ? { ...p, tempRatingMod: (p.tempRatingMod ?? 0) + outcome.tempRatingDelta! } : p,
@@ -110,6 +123,10 @@ export function simulateFullRun(seed: string, maxRounds = 15): PlaytestRunResult
   let activeTactics: ActiveTactic[] = [];
   let nextMatchRisk = 0;
   let nextMatchBonus = 0;
+  const synergyActivations: Record<string, number> = {};
+  const tacticsUsed = new Set<string>();
+  let finaleReached = false;
+  let finaleWon = false;
 
   for (let round = 1; round <= maxRounds; round++) {
     if (isEventRound(round)) {
@@ -156,6 +173,15 @@ export function simulateFullRun(seed: string, maxRounds = 15): PlaytestRunResult
     nextMatchRisk = 0;
     nextMatchBonus = 0;
 
+    for (const id of match.activeSynergies) {
+      synergyActivations[id] = (synergyActivations[id] ?? 0) + 1;
+    }
+    for (const t of activeTactics) tacticsUsed.add(t.id);
+    if (round === maxRounds) {
+      finaleReached = true;
+      finaleWon = match.outcome === 'win';
+    }
+
     if (match.outcome === 'win') {
       wins++;
       streak++;
@@ -188,6 +214,10 @@ export function simulateFullRun(seed: string, maxRounds = 15): PlaytestRunResult
     roundsPlayed: wins + draws + losses,
     finalMorale: morale,
     finalSquadSize: squad.length,
+    synergyActivations,
+    tacticsUsed: [...tacticsUsed],
+    finaleReached,
+    finaleWon,
   };
 }
 
@@ -201,13 +231,35 @@ export function runPlaytestBatch(count: number, baseSeed?: string): PlaytestSumm
   const avg = (fn: (r: PlaytestRunResult) => number) =>
     results.reduce((s, r) => s + fn(r), 0) / results.length;
 
+  const synergyUsage: Record<string, number> = {};
+  const tacticUsage: Record<string, number> = {};
+  for (const r of results) {
+    for (const [id, n] of Object.entries(r.synergyActivations)) {
+      synergyUsage[id] = (synergyUsage[id] ?? 0) + n;
+    }
+    for (const id of r.tacticsUsed) {
+      tacticUsage[id] = (tacticUsage[id] ?? 0) + 1;
+    }
+  }
+  for (const id of Object.keys(synergyUsage)) {
+    synergyUsage[id] = Math.round((synergyUsage[id]! / results.length) * 100) / 100;
+  }
+
+  const finaleReachedCount = results.filter((r) => r.finaleReached).length;
+  const finaleWonCount = results.filter((r) => r.finaleWon).length;
+
   return {
     runs: count,
     avgScore: Math.round(avg((r) => r.finalScore)),
     avgWins: Math.round(avg((r) => r.wins) * 10) / 10,
+    avgDraws: Math.round(avg((r) => r.draws) * 10) / 10,
     avgLosses: Math.round(avg((r) => r.losses) * 10) / 10,
     avgMorale: Math.round(avg((r) => r.finalMorale)),
     minScore: Math.min(...results.map((r) => r.finalScore)),
     maxScore: Math.max(...results.map((r) => r.finalScore)),
+    synergyUsage,
+    tacticUsage,
+    finaleReachedRate: Math.round((finaleReachedCount / results.length) * 100),
+    finaleWinRate: finaleReachedCount ? Math.round((finaleWonCount / finaleReachedCount) * 100) : 0,
   };
 }

@@ -44,13 +44,7 @@ Domain bağlama dışında tüm maddeler ele alındı. Durum: **deploy’a hazı
 
 ## 4. Timer
 
-| Ayar | Değer |
-|------|-------|
-| Süre | **20 sn** (`CARD_TIMER_SECONDS`) |
-| Varsayılan | **Kapalı** (casual) |
-| Açma | Ayarlar ekranı veya `VITE_CARD_TIMER=true` |
-| Bonus | Kalan sn × 5 puan (`scoring.ts`) |
-| Tick | `GameScreen` 1 sn interval + `tickTimer` |
+Kart zamanlayıcısı oyundan **tamamen kaldırıldı** (`gameStore.ts` içinde her zaman kapalı, `timerSeconds` 0 kalır). `scoring.ts`'teki kalan-saniye bonusu bu yüzden pasif; ileride geri açılırsa çalışır durumda.
 
 ---
 
@@ -66,13 +60,15 @@ Domain bağlama dışında tüm maddeler ele alındı. Durum: **deploy’a hazı
 
 ## 6. Leaderboard & anti-cheat
 
-| Mevcut | Gelecek API |
-|--------|-------------|
-| Local günlük/haftalık/all-time | `buildSignedRunPayload` + `integrityDigest` |
-| Bot rakipler | Sunucu `roundHistory` replay doğrulaması |
+| Mevcut | Notlar |
+|--------|--------|
+| Local günlük/haftalık/all-time/namağlup | localStorage, oyuncu başına en iyi skor upsert |
+| Supabase canlı leaderboard (opsiyonel) | `submit-score` + `record-start` Edge Functions, `docs/SUPABASE_SETUP.md` |
+| `buildSignedRunPayload` + `integrityDigest` | İstemci + sunucu digest karşılaştırması |
+| `validateRunSubmission` | Skor toplamı, round tutarlılığı, teklif doğrulaması |
 | `isLeaderboardEntryPlausible` | Skor sınırları |
 
-**Not:** Gerçek sosyal rekabet için backend şart; istemci paketi hazır.
+**Not:** Supabase yapılandırılmazsa oyun tamamen yerel leaderboard ile çalışır (bot dolgu kaldırıldı).
 
 ---
 

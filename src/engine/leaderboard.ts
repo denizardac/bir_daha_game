@@ -4,12 +4,14 @@ import type { LeaderboardEntry, PersistedData, PlayerCard, RoundResult } from '@
 import { getDailyDateKey, getDailySeed } from '@/engine/seed';
 
 export function getWeekKey(date = new Date()): string {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-  const yearStart = new Date(d.getFullYear(), 0, 1);
+  // Günlük anahtar gibi İstanbul takvim günü üzerinden hesapla — cihazın yerel
+  // saat dilimi gece yarısı civarında haftayı kaydırmasın (ISO hafta, UTC aritmetiği).
+  const dayKey = getDailyDateKey(date);
+  const d = new Date(`${dayKey}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  return `${d.getFullYear()}-W${week}`;
+  return `${d.getUTCFullYear()}-W${week}`;
 }
 
 export function getTodayKey(): string {
@@ -97,12 +99,13 @@ export function getNearRivals(score: number, list: LeaderboardEntry[], displayNa
   const idx = sorted.findIndex((e) => e.totalScore <= score);
   const pos = idx === -1 ? sorted.length : idx;
   const before = sorted[pos - 1];
-  const after = sorted[pos + 1] ?? sorted[pos];
+  // Arkandaki rakip = senden düşük skorlu İLK oyuncu (eşit skorlular atlanır)
+  const after = sorted.slice(pos).find((e) => e.totalScore < score);
   return {
     before: before
       ? { name: before.displayName, score: before.totalScore, gap: before.totalScore - score }
       : undefined,
-    after: after && after.totalScore < score
+    after: after
       ? { name: after.displayName, score: after.totalScore, gap: score - after.totalScore }
       : undefined,
     selfName: displayName,
@@ -137,33 +140,6 @@ export function mergeBestScoreEntries<T extends ScoreRankEntry>(...lists: Array<
 
 export function mergeBestLeaderboardEntries(...lists: LeaderboardEntry[][]): LeaderboardEntry[] {
   return mergeBestScoreEntries<LeaderboardEntry>(...lists);
-}
-
-export function generateFakeRivals(seed: string, count: number): LeaderboardEntry[] {
-  const names = ['Murat B.', 'Zeynep A.', 'Can K.', 'Elif S.', 'Deniz T.', 'Ayşe M.', 'Burak Y.'];
-  return Array.from({ length: count }, (_, i) => ({
-    id: `bot_${i}`,
-    seed,
-    displayName: names[i % names.length]!,
-    totalScore: 8000 + Math.floor((i + 1) * 420 + (seed.length * 17) % 500),
-    roundsCompleted: 12 + (i % 4),
-    timestamp: Date.now() - i * 3600000,
-    flawless: i === 0,
-  }));
-}
-
-export function ensureLeaderboardPopulation(data: PersistedData): PersistedData {
-  if (import.meta.env?.VITE_SUPABASE_URL && import.meta.env?.VITE_SUPABASE_ANON_KEY) {
-    return data;
-  }
-  const seed = getDailySeed();
-  const daily = data.dailyLeaderboard.filter((e) => e.seed === seed);
-  if (daily.length >= 8) return data;
-  const bots = generateFakeRivals(seed, 12);
-  return {
-    ...data,
-    dailyLeaderboard: [...data.dailyLeaderboard, ...bots.filter((b) => !daily.some((d) => d.id === b.id))],
-  };
 }
 
 export function analyzeEgo(

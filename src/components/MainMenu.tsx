@@ -5,6 +5,7 @@ import { formatDailyDate } from '@/engine/seed';
 import { formatScore } from '@/engine/scoring';
 import { getTodayKey } from '@/engine/leaderboard';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
+import { getWeeklyModifier } from '@/engine/weeklyModifier';
 import { MenuBiteTipsWidget } from '@/components/MenuBiteTipsWidget';
 import { MenuLeaderboardWidget } from '@/components/MenuLeaderboardWidget';
 
@@ -187,6 +188,17 @@ export function MainMenu() {
                         : '3 karttan seçim yap, kadronu büyüt, maçı kazan ve skoru yukarı taşı.'}
                     </p>
                   </div>
+
+                  {(() => {
+                    const mod = getWeeklyModifier();
+                    return (
+                      <p className="menu-weekly-mod" title={mod.description}>
+                        <span className="menu-weekly-mod-icon" aria-hidden>{mod.icon}</span>
+                        <strong>{mod.name}</strong>
+                        <span className="menu-weekly-mod-desc">{mod.description}</span>
+                      </p>
+                    );
+                  })()}
 
                   {showContinuePrompt ? (
                     <div className="menu-continue-banner">

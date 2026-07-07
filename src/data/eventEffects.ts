@@ -44,7 +44,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { moraleDelta: 5, description: 'Savunmada kalındı.' },
   ),
   evt_sakatlik: e(
-    { moraleDelta: -5, tempRatingDelta: -5, description: 'Yıldız iğneyle oynadı — rating -5 (1 maç), moral düştü.' },
+    { moraleDelta: -5, tempRatingDelta: -5, description: 'Sakat oyuncu iğneyle oynadı — rating -5 (1 maç), moral düştü.' },
     { removeWeakest: true, description: 'Sakat oyuncu kadrodan çıkarıldı, slot boşaldı.' },
   ),
   evt_yorgunluk: e(

@@ -129,7 +129,8 @@ export function analyzeEgoReplay(
       morale = Math.max(0, morale - 5);
     } else {
       streak = 0;
-      morale = Math.max(0, morale - 20);
+      // Gerçek oyunla aynı ceza (gameStore.finishMatch: -16) — replay sapmasın
+      morale = Math.max(0, morale - 16);
       flawless = false;
       const departing = selectDepartingPlayer(squad, morale);
       squad = squad.filter((p) => p.id !== departing.id);

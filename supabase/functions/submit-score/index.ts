@@ -6,6 +6,10 @@ const MAX_HISTORY_ENTRIES = 32;
 const MAX_MATCH_POINTS = 25_000;
 const MAX_TACTIC_POINTS = 500;
 const MAX_EVENT_ABS_POINTS = 1_000;
+/** Oyuncu başına gün içinde en fazla kaç leaderboard satırı (free mode seed'leri benzersiz → flood koruması) */
+const MAX_ROWS_PER_PLAYER_DAY = 30;
+/** dayKey sunucu saatinden en fazla kaç gün sapabilir (saat dilimi + gün sınırı toleransı) */
+const MAX_DAYKEY_SKEW_DAYS = 2;
 
 type RoundPick = {
   round: number;
@@ -150,6 +154,17 @@ function validate(body: SubmitBody): string | null {
 
   if (!digest || digest.length < 8) return 'Digest eksik';
 
+  // Günlük mod: seed formatı `${dayKey}-${slug}-bir-daha-v1` — gün ile eşleşmeli
+  if (body.isDaily && !entry.seed.startsWith(body.dayKey)) {
+    return 'Seed gün anahtarıyla uyuşmuyor';
+  }
+
+  // dayKey sunucu saatine makul yakın olmalı (geçmiş güne skor basılamaz)
+  const dayMs = Date.parse(`${body.dayKey}T00:00:00Z`);
+  if (Number.isNaN(dayMs)) return 'Gun anahtari cozulemedi';
+  const skewDays = Math.abs(Date.now() - dayMs) / 86_400_000;
+  if (skewDays > MAX_DAYKEY_SKEW_DAYS) return 'Gun anahtari guncel degil';
+
   return null;
 }
 
@@ -249,6 +264,34 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
+
+    // Skor, AYNI SEED için kayıtlı bir run başlangıcına bağlı olmalı (record-start) —
+    // free mode seed'leri benzersiz olduğundan bu, skoru gerçek bir run'a bağlar.
+    // Gece yarısı biten run'lar için gün değil seed eşleşmesi kullanılır.
+    const { count: startCount, error: startErr } = await supabase
+      .from('run_starts')
+      .select('id', { count: 'exact', head: true })
+      .eq('player_id', body.entry.id)
+      .eq('seed', body.entry.seed);
+    if (!startErr && (startCount ?? 0) === 0) {
+      return new Response(JSON.stringify({ ok: false, error: 'Run başlangıcı kayıtlı değil' }), {
+        status: 403,
+        headers: JSON_HEADERS,
+      });
+    }
+
+    // Flood koruması: free mode her run'da yeni seed üretir → oyuncu başına günlük satır limiti
+    const { count: rowCount, error: rowErr } = await supabase
+      .from('leaderboard_scores')
+      .select('id', { count: 'exact', head: true })
+      .eq('player_id', body.entry.id)
+      .eq('day_key', body.dayKey);
+    if (!rowErr && (rowCount ?? 0) >= MAX_ROWS_PER_PLAYER_DAY) {
+      return new Response(JSON.stringify({ ok: false, error: 'Günlük skor gönderim limiti aşıldı' }), {
+        status: 429,
+        headers: JSON_HEADERS,
+      });
+    }
 
     const { data: existing } = await supabase
       .from('leaderboard_scores')

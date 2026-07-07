@@ -16,6 +16,7 @@ export function getEventRatingTarget(
   eventId: string,
   choice: 'A' | 'B',
   squad: PlayerCard[],
+  activeTactics: ActiveTactic[] = [],
 ): PlayerCard | null {
-  return pickEventRatingTarget(eventId, choice, squad);
+  return pickEventRatingTarget(eventId, choice, squad, activeTactics);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getEventSubjects, pickEventRemovalTarget } from '@/engine/eventSubjects';
+import { getEventSubjects, pickEventRatingTarget, pickEventRemovalTarget } from '@/engine/eventSubjects';
 import type { PlayerCard } from '@/types';
 
 function p(
@@ -52,9 +52,14 @@ describe('getEventSubjects', () => {
     expect(subjects.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('sakatlık — yıldız', () => {
+  it('sakatlık — gösterilen özne, A rating hedefi ve B çıkış hedefi aynı oyuncu', () => {
     const subjects = getEventSubjects('evt_sakatlik', squad, [], { seed: 's', round: 4 });
-    expect(subjects[0]!.player.name).toBe('Yıldız');
+    const shown = subjects[0]!.player;
+    const removalTarget = pickEventRemovalTarget('evt_sakatlik', 'B', squad, []);
+    const ratingTarget = pickEventRatingTarget('evt_sakatlik', 'A', squad, []);
+    expect(removalTarget?.id).toBe(shown.id);
+    expect(ratingTarget?.id).toBe(shown.id);
+    expect(shown.position).not.toBe('KL');
   });
 
   it('acemi hata — genç oyuncu', () => {

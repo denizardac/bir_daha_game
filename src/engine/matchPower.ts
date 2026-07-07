@@ -33,9 +33,12 @@ export function lineupFillFactor(starterCount: number, round: number): number {
 export function positionFitMultiplier(
   squad: PlayerCard[],
   activeTactics: ActiveTactic[],
+  manualLineup: Record<number, string> = {},
 ): number {
   const formationKey = getActiveFormationKey(activeTactics);
-  const lineup = assignSquadToFormation(squad, formationKey);
+  // Manuel pin'ler varsa ceza gerçek (pin'li) dizilişe göre hesaplanır —
+  // aksi halde otomatik yerleşim farklı slot dağıtıp cezayı saptırabilir.
+  const lineup = assignSquadToFormation(squad, formationKey, manualLineup);
   let penalty = 0;
   for (const slot of lineup) {
     if (!slot.player) continue;

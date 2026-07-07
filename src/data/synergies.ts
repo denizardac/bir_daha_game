@@ -1,9 +1,13 @@
 import { getStartingEleven } from '@/engine/lineupPreview';
 import type { ActiveTactic, MatchContext, PlayerCard, SynergyDefinition, SynergyProgress } from '@/types';
 
-function effectiveSquad(squad: PlayerCard[], activeTactics?: ActiveTactic[]): PlayerCard[] {
+function effectiveSquad(
+  squad: PlayerCard[],
+  activeTactics?: ActiveTactic[],
+  manualLineup?: Record<number, string>,
+): PlayerCard[] {
   if (!activeTactics?.length) return squad;
-  const starters = getStartingEleven(squad, activeTactics);
+  const starters = getStartingEleven(squad, activeTactics, manualLineup ?? {});
   return starters.length ? starters : squad;
 }
 
@@ -328,26 +332,28 @@ export const SYNERGIES: SynergyDefinition[] = [
   {
     id: 'synergy_ucuz_kadro', name: 'UCUZ KADRO', icon: '📉', hidden: true,
     description: 'GERİLEYEN veteranlar risklidir; doğru kurulursa tecrübeleri hâlâ maç kazandırır.',
-    check: (s) => countTag(s, 'GERİLEYEN') >= 3, perWinBonus: 120, perRoundBonus: 12,
+    // GERİLEYEN kartlar yalnızca round 9+ çekilebilir; 3 şartı pratikte ulaşılmazdı → 2
+    check: (s) => countTag(s, 'GERİLEYEN') >= 2, perWinBonus: 120, perRoundBonus: 12,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const n = countTag(combined, 'GERİLEYEN');
-      if (n >= 3) return null;
+      if (n >= 2) return null;
       // İpucu: niş sinerji — fark edilmesi için kasıtlı "kötü" kart toplama ipucu
       if (n === 0) return null;
-      return { current: n, required: 3, icon: '📉', note: 'GERİLEYEN kartları topla (dezavantajı ödüle çevir)' };
+      return { current: n, required: 2, icon: '📉', note: 'GERİLEYEN kartları topla (dezavantajı ödüle çevir)' };
     },
   },
   {
     id: 'synergy_rotasyon_ustasi', name: 'ROTASYON USTASI', icon: '🔄', hidden: true,
-    description: 'PERFORMANS DÜŞÜŞÜ yaşayan oyuncular DAYANIKLI destekle daha verimli rotasyona girer.',
-    check: (s) => countTag(s, 'PERFORMANS DÜŞÜŞÜ') >= 2 && countTag(s, 'DAYANIKLI') >= 1,
+    description: 'PERFORMANS DÜŞÜŞÜ yaşayan oyuncu DAYANIKLI çekirdek destekle verimli rotasyona girer.',
+    // PERFORMANS DÜŞÜŞÜ round 9+ çekiliyor; 2 şartı ulaşılmazdı → 1 düşüş + 2 DAYANIKLI
+    check: (s) => countTag(s, 'PERFORMANS DÜŞÜŞÜ') >= 1 && countTag(s, 'DAYANIKLI') >= 2,
     perRoundBonus: 36,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const slump = countTag(combined, 'PERFORMANS DÜŞÜŞÜ');
       const durable = countTag(combined, 'DAYANIKLI');
-      const have = (slump >= 2 ? 1 : 0) + (durable >= 1 ? 1 : 0);
+      const have = (slump >= 1 ? 1 : 0) + (durable >= 2 ? 1 : 0);
       if (have >= 2) return null;
       if (slump === 0 && durable === 0) return null;
       return {
@@ -355,8 +361,8 @@ export const SYNERGIES: SynergyDefinition[] = [
         required: 2,
         icon: '🔄',
         note: tagProgressNote([
-          { label: 'PERFORMANS DÜŞÜŞÜ', current: slump, required: 2 },
-          { label: 'DAYANIKLI', current: durable, required: 1 },
+          { label: 'PERFORMANS DÜŞÜŞÜ', current: slump, required: 1 },
+          { label: 'DAYANIKLI', current: durable, required: 2 },
         ]),
       };
     },
@@ -395,7 +401,7 @@ export function getActiveSynergies(
   morale: number,
   ctx?: MatchContext,
 ) {
-  const lineup = effectiveSquad(squad, ctx?.activeTactics);
+  const lineup = effectiveSquad(squad, ctx?.activeTactics, ctx?.manualLineup);
   return SYNERGIES.filter((s) => s.check(lineup, morale, ctx));
 }
 

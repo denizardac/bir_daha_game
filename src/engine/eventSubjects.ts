@@ -101,6 +101,17 @@ function getWeakDepartCandidate(squad: PlayerCard[]): PlayerCard {
   return getWeakestPlayer(protectedPool.length ? protectedPool : squad);
 }
 
+/**
+ * Sakatlık olayının öznesi — ilk 11'deki en düşük ratingli saha oyuncusu.
+ * A (iğneyle oynat: rating -5) ve B (kadrodan çıkar) AYNI oyuncuyu hedefler;
+ * ekranda gösterilen özne ile mekanik birebir tutarlıdır.
+ */
+export function getInjuredStarter(squad: PlayerCard[], activeTactics: ActiveTactic[]): PlayerCard {
+  const starters = getStartingEleven(squad, activeTactics);
+  const pool = starters.filter((p) => p.position !== 'KL');
+  return pool.length ? sortByRatingAsc(pool)[0]! : getWeakestPlayer(squad);
+}
+
 function getTiredStarters(squad: PlayerCard[], activeTactics: ActiveTactic[], count = 3): PlayerCard[] {
   const starters = getStartingEleven(squad, activeTactics).filter((p) => p.position !== 'KL');
   return sortByRatingAsc(starters).slice(0, count);
@@ -172,8 +183,11 @@ export function getEventSubjects(
       break;
     }
     case 'evt_sakatlik': {
-      const star = getStarFieldPlayer(squad);
-      if (star) subjects.push({ player: star, label: 'Sakatlanan yıldız', variant: 'focus' });
+      subjects.push({
+        player: getInjuredStarter(squad, activeTactics),
+        label: 'Sakatlanan oyuncu (A: -5 ile oynar · B: ayrılır)',
+        variant: 'focus',
+      });
       break;
     }
     case 'evt_yildiz_sozlesme': {
@@ -261,10 +275,7 @@ export function pickEventRemovalTarget(
   }
 
   if (eventId === 'evt_sakatlik' && choice === 'B') {
-    const starters = getStartingEleven(squad, activeTactics);
-    const starterIds = new Set(starters.map((p) => p.id));
-    const injuredPool = squad.filter((p) => starterIds.has(p.id) && p.position !== 'KL');
-    return injuredPool.length ? sortByRatingAsc(injuredPool)[0]! : getWeakestPlayer(squad);
+    return getInjuredStarter(squad, activeTactics);
   }
 
   if (eventId === 'evt_emekli' && choice === 'B') {
@@ -302,8 +313,10 @@ export function pickEventRatingTarget(
   eventId: string,
   choice: 'A' | 'B',
   squad: PlayerCard[],
+  activeTactics: ActiveTactic[] = [],
 ): PlayerCard | null {
-  if (eventId === 'evt_sakatlik' && choice === 'A') return getStarFieldPlayer(squad);
+  // Gösterilen özneyle aynı oyuncu — B'nin çıkaracağı sakat oyuncu A'da -5 ile oynar
+  if (eventId === 'evt_sakatlik' && choice === 'A') return getInjuredStarter(squad, activeTactics);
   if (eventId === 'evt_kaleci_hata' && choice === 'A') return getGoalkeeper(squad);
   if (eventId === 'evt_kaptan' && choice === 'A') {
     return getCaptainPlayer(squad) ?? getStarFieldPlayer(squad);

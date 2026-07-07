@@ -4,6 +4,7 @@ import { formatScore } from '@/engine/scoring';
 import { getDailyList, getWeekKey, mergeBestLeaderboardEntries } from '@/engine/leaderboard';
 import { getDailySeed } from '@/engine/seed';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
+import { getAnonymousId } from '@/utils/storage';
 import type { LeaderboardEntry } from '@/types';
 
 type Tab = 'daily' | 'weekly' | 'allTime' | 'flawless';
@@ -47,6 +48,31 @@ export function LeaderboardScreen() {
     : localLists[tab];
   const labels: Record<Tab, string> = { daily: 'Günlük', weekly: 'Haftalık', allTime: 'Tüm Zamanlar', flawless: 'Namağlup' };
 
+  // Rank window: kendi satırını vurgula; top-20 dışındaysan kendi çevreni ayrıca göster
+  const TOP_COUNT = 20;
+  const myId = getAnonymousId();
+  const myIndex = list.findIndex((e) => e.id === myId);
+  const windowRows = myIndex >= TOP_COUNT
+    ? list
+        .map((entry, idx) => ({ entry, rank: idx + 1 }))
+        .slice(Math.max(TOP_COUNT, myIndex - 1), myIndex + 2)
+    : [];
+
+  const renderRow = (e: LeaderboardEntry, rank: number, key: string) => {
+    const mine = e.id === myId;
+    return (
+      <div
+        key={key}
+        className={`flex justify-between border-b border-neutral-800 py-2 text-sm last:border-0 ${
+          mine ? 'lb-row-self rounded-md border border-amber-500/50 bg-amber-500/10 px-2 font-semibold text-amber-200' : ''
+        }`}
+      >
+        <span>#{rank} {e.displayName}{e.flawless ? ' 🛡️' : ''}{mine ? ' · sen' : ''}</span>
+        <span className="font-bold">{formatScore(e.totalScore)}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="game-shell min-h-screen p-6">
       <div className="mx-auto max-w-lg">
@@ -67,12 +93,18 @@ export function LeaderboardScreen() {
         <div className="panel space-y-2">
           {loading && <p className="text-neutral-500">Yükleniyor…</p>}
           {!loading && list.length === 0 && <p className="text-neutral-500">Henüz skor yok</p>}
-          {list.slice(0, 20).map((e, idx) => (
-            <div key={`${e.id}-${e.timestamp}-${idx}`} className="flex justify-between border-b border-neutral-800 py-2 text-sm last:border-0">
-              <span>#{idx + 1} {e.displayName}{e.flawless ? ' 🛡️' : ''}</span>
-              <span className="font-bold">{formatScore(e.totalScore)}</span>
-            </div>
-          ))}
+          {list.slice(0, TOP_COUNT).map((e, idx) => renderRow(e, idx + 1, `top-${e.id}-${e.timestamp}-${idx}`))}
+          {windowRows.length > 0 && (
+            <>
+              <p className="py-1 text-center text-xs tracking-widest text-neutral-600">···</p>
+              {windowRows.map(({ entry, rank }) => renderRow(entry, rank, `win-${entry.id}-${entry.timestamp}-${rank}`))}
+            </>
+          )}
+          {!loading && list.length > 0 && myIndex === -1 && (
+            <p className="pt-2 text-center text-xs text-neutral-500">
+              Bu listede henüz skorun yok — bir run bitir, sıran burada görünsün.
+            </p>
+          )}
         </div>
       </div>
     </div>

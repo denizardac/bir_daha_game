@@ -95,6 +95,10 @@ export function LineupEditorModal({
 
   const [dragSource, setDragSource] = useState<DragSource | null>(null);
   const [dragGhost, setDragGhost] = useState<DragGhost>(null);
+  // Dokun-seç / dokun-yerleştir modu: mobilde sürüklemeye alternatif —
+  // önce oyuncuya dokun (seçilir), sonra hedef slota/yedeğe dokun (taşınır).
+  const [tapSource, setTapSource] = useState<DragSource | null>(null);
+  const justDraggedRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,6 +114,10 @@ export function LineupEditorModal({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, dismiss]);
+
+  useEffect(() => {
+    if (!open) setTapSource(null);
+  }, [open]);
 
   if (!open) return null;
 
@@ -132,6 +140,8 @@ export function LineupEditorModal({
   function handleDragEnd(e: MouseEvent | TouchEvent | PointerEvent, source: DragSource) {
     setDragSource(null);
     setDragGhost(null);
+    justDraggedRef.current = true;
+    window.setTimeout(() => { justDraggedRef.current = false; }, 0);
     const [x, y] = pointerXY(e);
     const el = document.elementFromPoint(x, y)?.closest('[data-drop]') as HTMLElement | null;
     if (!el) return;
@@ -141,7 +151,30 @@ export function LineupEditorModal({
     if (Number.isInteger(idx)) applyDrop(source, { kind: 'slot', index: idx });
   }
 
-  const dragPlayer = dragSource?.player ?? null;
+  function handleChipTap(player: PlayerCard, from: number | 'bench') {
+    if (justDraggedRef.current) return;
+    // Seçili oyuncu varken dolu bir slota (başka oyuncuya) dokunmak taşıma sayılır
+    if (tapSource && tapSource.player.id !== player.id && from !== 'bench') {
+      applyDrop(tapSource, { kind: 'slot', index: from as number });
+      setTapSource(null);
+      return;
+    }
+    setTapSource((prev) => (prev?.player.id === player.id ? null : { player, from }));
+  }
+
+  function handleSlotTap(index: number) {
+    if (!tapSource) return;
+    applyDrop(tapSource, { kind: 'slot', index });
+    setTapSource(null);
+  }
+
+  function handleBenchTap() {
+    if (!tapSource || tapSource.from === 'bench') return;
+    applyDrop(tapSource, { kind: 'bench' });
+    setTapSource(null);
+  }
+
+  const dragPlayer = dragSource?.player ?? tapSource?.player ?? null;
 
   function updateDragGhost(e: MouseEvent | TouchEvent | PointerEvent, player: PlayerCard) {
     const [x, y] = pointerXY(e);
@@ -172,6 +205,7 @@ export function LineupEditorModal({
     const tier = slot ? fitClass(player, slot) : 'ideal';
     const hoverFit = onField ? tier : 'bench';
     const dragging = dragSource?.player.id === player.id;
+    const tapSelected = tapSource?.player.id === player.id;
     return (
       <HoverTip
         tip={<LineupPlayerHoverCard player={player} slotLabel={slot?.label} fit={hoverFit} />}
@@ -181,16 +215,21 @@ export function LineupEditorModal({
         stopPropagation={false}
       >
       <motion.div
-        className={`le-chip le-chip--${onField ? `fit-${tier}` : 'bench'} ${isGk ? 'le-chip--gk' : ''} ${highlightId === player.id ? 'le-chip--highlight' : ''} ${dragging ? 'le-chip--dragging' : ''}`}
+        className={`le-chip le-chip--${onField ? `fit-${tier}` : 'bench'} ${isGk ? 'le-chip--gk' : ''} ${highlightId === player.id ? 'le-chip--highlight' : ''} ${dragging ? 'le-chip--dragging' : ''} ${tapSelected ? 'le-chip--selected' : ''}`}
         drag
         dragSnapToOrigin
         dragMomentum={false}
         onDragStart={(e) => {
+          setTapSource(null);
           setDragSource({ player, from });
           updateDragGhost(e as PointerEvent, player);
         }}
         onDrag={(e) => updateDragGhost(e as PointerEvent, player)}
         onDragEnd={(e) => handleDragEnd(e as PointerEvent, { player, from })}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleChipTap(player, from);
+        }}
         whileDrag={{
           scale: 1.02,
           zIndex: 10,
@@ -363,6 +402,7 @@ export function LineupEditorModal({
                   data-drop={slot.index}
                   className={`le-slot ${dragPlayer ? (valid ? `le-slot--valid le-slot--${tier}` : 'le-slot--invalid') : ''}`}
                   style={{ left: `${clampPct(100 - slot.y, 4, 96)}%`, top: `${clampPct(slot.x, 10, 90)}%` }}
+                  onClick={() => { if (!slot.player) handleSlotTap(slot.index); }}
                 >
                   {slot.player
                     ? <PlayerChip player={slot.player} from={slot.index} />
@@ -372,7 +412,7 @@ export function LineupEditorModal({
             })}
           </div>
 
-          <div className="le-bench" data-drop="bench">
+          <div className="le-bench" data-drop="bench" onClick={handleBenchTap}>
             <p className="le-bench-title">Yedekler {bench.length > 0 ? `(${bench.length})` : ''}</p>
             <div className="le-bench-list">
               {bench.length === 0 && <p className="le-bench-empty">Yedek yok — tüm kadro sahada</p>}

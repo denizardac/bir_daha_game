@@ -51,8 +51,8 @@ export const EVENT_CARDS: EventCard[] = [
   },
   {
     id: 'evt_sakatlik', category: 'fiziksel', icon: '🤕', title: 'Sakatlık',
-    description: 'Son antrenmanda yıldız oyuncun yere kapandı. Doktor “oynatabilirim ama risk var” diyor; yedek hazır bekliyor.',
-    optionA: { label: 'İĞNEYLE OYNAT', description: 'Yıldız 1 maç rating -5 · Moral -5' },
+    description: 'Son antrenmanda ilk 11 oyuncularından biri yere kapandı. Doktor “oynatabilirim ama risk var” diyor; yedek hazır bekliyor.',
+    optionA: { label: 'İĞNEYLE OYNAT', description: 'Sakat oyuncu 1 maç rating -5 · Moral -5' },
     optionB: { label: 'KADRODAN ÇIKAR', description: 'Sakat oyuncu ayrılır · slot boşalır' },
   },
   {

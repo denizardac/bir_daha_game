@@ -174,6 +174,7 @@ export function TutorialCoach() {
   return (
     <AnimatePresence>
       <motion.div
+        key="tutorial-highlight-ring"
         className="tutorial-coach-highlight-ring"
         style={getHighlightStyle(targetRect)}
         initial={{ opacity: 0, scale: 0.98 }}
@@ -182,6 +183,7 @@ export function TutorialCoach() {
         aria-hidden
       />
       <motion.div
+        key="tutorial-bubble"
         ref={bubbleRef}
         className={`tutorial-coach ${targetRect ? 'tutorial-coach--anchored' : ''}`}
         style={getTooltipStyle(targetRect)}

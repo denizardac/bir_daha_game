@@ -216,6 +216,8 @@ export interface SynergyDefinition {
 export interface MatchContext {
   activeTactics: ActiveTactic[];
   behindInMatch?: boolean;
+  /** Manuel ilk 11 pin'leri — sinerji kontrolü gerçek dizilişe göre yapılsın */
+  manualLineup?: Record<number, string>;
 }
 
 export interface EgoBestDecision {

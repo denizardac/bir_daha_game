@@ -112,9 +112,11 @@ export function getBrokenSynergies(
   after: PlayerCard[],
   morale: number,
   activeTactics: ActiveTactic[] = [],
+  manualBefore: Record<number, string> = {},
+  manualAfter: Record<number, string> = {},
 ): SynergyDefinition[] {
-  const lineupBefore = getStartingEleven(before, activeTactics);
-  const lineupAfter = getStartingEleven(after, activeTactics);
+  const lineupBefore = getStartingEleven(before, activeTactics, manualBefore);
+  const lineupAfter = getStartingEleven(after, activeTactics, manualAfter);
   const ctx = { activeTactics };
   const activeBefore = SYNERGIES.filter((s) => s.check(lineupBefore.length ? lineupBefore : before, morale, ctx));
   const activeAfterIds = new Set(

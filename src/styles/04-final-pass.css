@@ -1,0 +1,838 @@
+/* ============================================================
+   Final visual pass: quieter, sharper, more readable UI
+   ============================================================ */
+:root {
+  --bg: #070b0d;
+  --surface-1: #0b1117;
+  --surface-2: #111923;
+  --surface-3: #192433;
+  --surface-inset: #0a0f14;
+  --line: rgba(196, 213, 229, 0.13);
+  --line-2: rgba(213, 226, 238, 0.2);
+  --tx: #f6f8fb;
+  --tx-2: #c5d0dc;
+  --tx-3: #93a2b3;
+  --gold: #f6bf35;
+  --gold-2: #ffd25a;
+  --crimson: #ef3b57;
+  --crimson-2: #f05268;
+  --green: #2ddc7d;
+  --green-2: #58f0a0;
+  --blue: #75b7ff;
+  --red: #ff5570;
+  --sh-2: 0 18px 42px rgba(0, 0, 0, 0.34);
+  --sh-3: 0 28px 70px rgba(0, 0, 0, 0.5);
+}
+
+body {
+  background: var(--bg);
+  color: var(--tx);
+}
+
+.game-viewport,
+.game-shell,
+.menu-shell {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(45, 220, 125, 0.055), transparent 34%),
+    radial-gradient(circle at 82% 8%, rgba(117, 183, 255, 0.045), transparent 28%),
+    linear-gradient(180deg, #070b0d 0%, #090e13 54%, #06090c 100%) !important;
+}
+
+.loss-game-shell {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(239, 59, 87, 0.16), transparent 42%),
+    radial-gradient(circle at 85% 90%, rgba(180, 30, 50, 0.09), transparent 46%),
+    linear-gradient(180deg, #110608 0%, #0d0608 52%, #090507 100%) !important;
+}
+
+.pitch-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px) !important;
+  background-size: 74px 74px !important;
+}
+
+.panel,
+.card-fut,
+.menu-stat-card,
+.menu-play-panel,
+.card-select-command-left,
+.card-select-turn-card,
+.card-select-icon-action,
+.lineup-compact-btn,
+.match-pick-panel,
+.match-result-panel,
+.event-main-panel,
+.event-choice-card,
+.loss-screen-main,
+.loss-screen-right,
+.tactic-pick-card,
+.tactic-pick-stage,
+.side-panel,
+.syn-panel {
+  border-color: var(--line) !important;
+  box-shadow: none !important;
+}
+
+.ui-desc,
+.text-neutral-400,
+.text-neutral-500,
+.menu-stat-sub,
+.menu-play-btn-sub,
+.menu-next-action p,
+.card-select-turn-summary,
+.card-insight-line,
+.card-synergy-desc,
+.lineup-dot-name,
+.match-pick-impact p,
+.event-description,
+.event-choice-desc,
+.loss-hero p {
+  color: var(--tx-2) !important;
+}
+
+.text-neutral-600,
+.side-panel-muted,
+.match-pick-impact-label,
+.event-squad-card-title,
+.loss-summary-grid span,
+.menu-stat-label,
+.card-select-tags-label {
+  color: var(--tx-3) !important;
+}
+
+.btn-primary,
+.select-cta,
+.tactic-pick-confirm,
+.tactic-pick-card-select--on,
+.loss-screen-cta {
+  border: 0 !important;
+  background: var(--crimson) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 28px rgba(239, 59, 87, 0.2) !important;
+}
+
+.btn-primary:hover,
+.select-cta:hover,
+.tactic-pick-confirm:hover,
+.loss-screen-cta:hover {
+  background: var(--crimson-2) !important;
+}
+
+.btn-secondary,
+.game-header-menu-btn,
+.game-header-reset-btn,
+.menu-icon-action,
+.menu-footer-tile,
+.card-select-turn-reroll,
+.tactic-pick-reroll {
+  border: 1px solid var(--line) !important;
+  background: rgba(17, 25, 35, 0.72) !important;
+  color: var(--tx-2) !important;
+  box-shadow: none !important;
+}
+
+.btn-secondary:hover,
+.game-header-menu-btn:hover,
+.game-header-reset-btn:hover,
+.menu-icon-action:hover,
+.menu-footer-tile:hover {
+  border-color: var(--line-2) !important;
+  color: var(--tx) !important;
+  background: rgba(25, 36, 51, 0.86) !important;
+}
+
+/* Menu */
+.menu-dashboard {
+  width: min(100%, 1150px);
+  max-width: 1150px;
+  min-height: 100dvh;
+  justify-content: center;
+  padding: clamp(1rem, 4vh, 3.4rem) 1rem 1.5rem;
+  gap: 1rem;
+}
+
+.menu-pitch-deco {
+  opacity: 0.1;
+}
+
+.menu-top {
+  width: 100%;
+  align-items: center;
+  gap: clamp(1rem, 4vw, 4rem);
+}
+
+.menu-brand {
+  flex: 0 0 min(38vw, 28rem);
+}
+
+.menu-hero-badge {
+  color: var(--gold-2);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+}
+
+.menu-hero-title {
+  max-width: 18rem;
+  gap: 0.52rem;
+  flex-wrap: wrap;
+  color: #f3f7fa;
+  font-size: clamp(4.2rem, 8vw, 6.4rem);
+  line-height: 0.82;
+  letter-spacing: 0;
+}
+
+.menu-hero-ball {
+  width: 0.34em;
+  height: 0.34em;
+  margin-top: 0.08em;
+}
+
+.menu-hero-tagline {
+  color: var(--tx-3);
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+.menu-top-right {
+  gap: 0.7rem;
+}
+
+.menu-top-actions {
+  opacity: 0.88;
+}
+
+.menu-top-stats {
+  width: min(100%, 30rem);
+  gap: 0.55rem;
+}
+
+.menu-stat-card {
+  min-height: 5.15rem;
+  padding: 0.82rem 0.88rem;
+  border-radius: 12px;
+  background: rgba(17, 25, 35, 0.82) !important;
+}
+
+.menu-stat-icon-row .ui-icon {
+  display: none;
+}
+
+.menu-stat-label {
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.menu-stat-value--big {
+  color: var(--tx);
+  font-size: 1.65rem;
+  line-height: 0.95;
+}
+
+.menu-stat-value--gold {
+  color: var(--gold-2) !important;
+}
+
+.menu-body.menu-body--simple {
+  grid-template-columns: minmax(0, 100%);
+}
+
+.menu-body.menu-body--simple .menu-play-panel {
+  border-radius: 16px;
+  background: rgba(17, 25, 35, 0.88) !important;
+}
+
+.menu-play-panel-inner {
+  padding: clamp(1.2rem, 2.2vw, 2rem);
+  gap: 1rem;
+}
+
+.menu-next-action {
+  padding: 0.15rem 0 0.3rem;
+  border: 0;
+  background: transparent;
+}
+
+.menu-next-action span {
+  color: var(--green-2);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+}
+
+.menu-next-action strong {
+  margin-top: 0.55rem;
+  font-size: clamp(2rem, 3vw, 2.7rem);
+}
+
+.menu-continue-banner,
+.menu-play-hint {
+  border: 1px solid rgba(246, 191, 53, 0.22);
+  border-radius: 12px;
+  background: rgba(9, 12, 10, 0.72);
+}
+
+.menu-beta-strip {
+  border: 1px solid var(--line);
+  background: rgba(10, 15, 20, 0.72);
+}
+
+.menu-play-actions {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.7rem;
+  padding-top: 0;
+}
+
+.menu-play-btn {
+  min-height: 5.2rem;
+  border-radius: 14px !important;
+}
+
+.menu-play-btn--free {
+  border-color: var(--line-2) !important;
+  background: rgba(17, 25, 35, 0.9) !important;
+}
+
+.menu-play-btn--free:hover {
+  border-color: rgba(117, 183, 255, 0.44) !important;
+}
+
+.menu-play-btn-label {
+  color: #fff;
+  font-size: 1.16rem;
+}
+
+.menu-footer {
+  margin-top: 0.2rem;
+}
+
+.menu-footer-tile {
+  min-height: 2.3rem;
+  border-radius: 999px;
+  background: rgba(8, 13, 18, 0.7) !important;
+}
+
+/* Header */
+.game-top-header {
+  min-height: 4.7rem;
+  margin: -0.5rem -0.75rem 0.65rem;
+  padding: 0.85rem 1.2rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(9, 14, 20, 0.92);
+}
+
+.game-header-menu-btn,
+.game-header-reset-btn {
+  min-height: 2.35rem;
+  border-radius: 10px !important;
+  padding: 0.5rem 0.78rem !important;
+}
+
+.game-header-reset-btn--danger {
+  background: #c8273e !important;
+  border-color: #e23150 !important;
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+}
+
+.game-header-reset-btn--danger:hover {
+  background: #e23150 !important;
+  border-color: #f0476a !important;
+}
+
+.game-header-stat-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1;
+}
+
+.game-header-stat-label {
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--tx-3);
+  text-transform: uppercase;
+}
+
+.game-header-stat-big {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--tx-1);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.game-header-stat-denom {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--tx-3);
+}
+
+.game-header-finale-pill {
+  min-height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.28rem 0.58rem;
+  border: 1px solid rgba(246, 207, 106, 0.46);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 16% 50%, rgba(246, 207, 106, 0.18), transparent 55%),
+    rgba(38, 30, 11, 0.56);
+  color: #f6cf6a;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  box-shadow: 0 0 16px rgba(246, 207, 106, 0.12);
+}
+
+.game-header-finale-pill .ui-icon {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.game-header-score {
+  min-width: 6.4rem;
+  border: 1px solid rgba(246, 191, 53, 0.35);
+  border-radius: 11px;
+  background: rgba(246, 191, 53, 0.07);
+  padding: 0.45rem 0.8rem;
+}
+
+.game-header-score-label {
+  color: var(--gold-2);
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+}
+
+.game-header-score-value {
+  color: var(--gold-2);
+}
+
+.game-header-stat {
+  background: transparent !important;
+  color: var(--tx-2);
+}
+
+/* Card selection */
+.card-select-inner {
+  padding: 0 1.25rem 1rem !important;
+}
+
+.card-select-command-bar {
+  grid-template-columns: minmax(240px, 0.7fr) minmax(420px, 1.2fr) minmax(300px, 0.8fr) !important;
+  gap: 0.7rem;
+  margin-bottom: 0.8rem;
+}
+
+.card-select-command-left,
+.card-select-turn-card,
+.card-select-command-actions {
+  min-height: 6.65rem !important;
+}
+
+.card-select-command-left,
+.card-select-turn-card {
+  border-radius: 13px;
+  background: rgba(17, 25, 35, 0.82) !important;
+}
+
+.card-select-command-left {
+  padding: 0.78rem 0.9rem !important;
+}
+
+.card-select-moral-fx {
+  border-left-color: var(--line);
+}
+
+.pick-morale-label,
+.card-select-turn-kicker,
+.card-pick-mode-btn-text {
+  color: var(--tx) !important;
+}
+
+.pick-morale-bar,
+.pick-morale-bar--compact {
+  height: 0.35rem;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pick-morale-bar-fill {
+  background: linear-gradient(90deg, var(--crimson), var(--green-2));
+}
+
+.card-select-command-tags {
+  border-top-color: var(--line);
+}
+
+.card-select-tag-chip,
+.tag-trait-badge,
+.card-pick-trait-pill {
+  border-color: rgba(197, 208, 220, 0.16) !important;
+  background: rgba(14, 21, 29, 0.74) !important;
+  color: var(--tx-2) !important;
+}
+
+.card-pick-mode-btn--tab {
+  border-color: var(--line) !important;
+  background: rgba(9, 14, 20, 0.72) !important;
+}
+
+.card-pick-mode-btn--active {
+  border-color: rgba(45, 220, 125, 0.32) !important;
+  background: rgba(45, 220, 125, 0.12) !important;
+}
+
+.card-pick-mode-btn--active .card-pick-mode-btn-icon,
+.card-pick-mode-btn--active .card-pick-mode-btn-text {
+  color: var(--green-2) !important;
+}
+
+.card-select-turn-summary {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(7, 11, 15, 0.54);
+  padding: 0.45rem 0.58rem;
+}
+
+.card-select-turn-reroll {
+  min-height: 2rem;
+}
+
+.card-select-action-stack {
+  gap: 0.55rem;
+}
+
+.card-select-icon-action,
+.card-select-command-actions .lineup-compact-btn {
+  border-radius: 13px !important;
+  background: rgba(17, 25, 35, 0.82) !important;
+}
+
+.card-select-icon-action--synergy,
+.card-select-icon-action--synergy-live,
+.card-select-icon-action--synergy-near {
+  border-color: rgba(246, 191, 53, 0.24) !important;
+  background: rgba(246, 191, 53, 0.08) !important;
+}
+
+.card-select-command-actions .lineup-compact-btn::before,
+.card-select-command-actions .lineup-compact-btn::after,
+.card-select-icon-action--synergy::after {
+  content: none !important;
+}
+
+.card-select-command-actions .lineup-compact-btn-icon {
+  color: var(--blue) !important;
+  background: rgba(117, 183, 255, 0.1) !important;
+  box-shadow: none !important;
+}
+
+.card-select-command-actions .lineup-compact-btn-label::after {
+  content: none !important;
+}
+
+.cards-pick-grid {
+  gap: 0.95rem !important;
+}
+
+.card-fut--pick.player-pick-card {
+  overflow: hidden;
+  border-width: 1px;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(22, 31, 42, 0.97), rgba(13, 18, 25, 0.98)) !important;
+  color: var(--tx);
+}
+
+.player-pick-card::before,
+.player-pick-card::after {
+  opacity: 0.18 !important;
+}
+
+.rarity-bar.player-pick-card__bar {
+  height: 3px;
+  opacity: 0.85;
+}
+
+.player-pick-card__rarity-row {
+  min-height: 2.45rem;
+  padding: 0.65rem 0.75rem 0;
+}
+
+.card-body {
+  padding: 0.45rem 0.78rem 0 !important;
+}
+
+.card-pick-hero--compact {
+  min-height: 5.8rem;
+  align-items: center;
+}
+
+.player-name {
+  color: #fff;
+  font-size: clamp(1.25rem, 1.8vw, 1.55rem);
+  line-height: 1;
+}
+
+.card-pick-stat--rating {
+  min-width: 3.1rem;
+  min-height: 3.1rem;
+  border-radius: 10px;
+  color: var(--gold-2);
+  font-size: 1.55rem;
+}
+
+.card-pick-stat,
+.archetype-badge,
+.rarity-badge {
+  border-color: rgba(197, 208, 220, 0.14) !important;
+  background: rgba(7, 11, 15, 0.6) !important;
+}
+
+.card-pick-body-scroll {
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+.card-insight.card-pick-core {
+  border-color: rgba(197, 208, 220, 0.12) !important;
+  border-radius: 12px;
+  background: rgba(7, 11, 15, 0.62) !important;
+  padding: 0.72rem 0.78rem;
+}
+
+.card-insight-title,
+.card-insight-subtitle {
+  color: var(--tx-3) !important;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+}
+
+.card-impact-chip,
+.card-synergy-mini {
+  border-color: rgba(45, 220, 125, 0.18) !important;
+  background: rgba(45, 220, 125, 0.075) !important;
+  color: var(--tx-2) !important;
+}
+
+.card-synergy-mini-bottom,
+.card-synergy-reward,
+.card-synergy-desc,
+.signature-quote {
+  display: none !important;
+}
+
+.card-insight-toggle {
+  min-height: 2.1rem;
+  border-color: var(--line) !important;
+  background: rgba(10, 15, 20, 0.72) !important;
+  color: var(--tx-2) !important;
+}
+
+.card-select-screen .card-pick-slot-anchor .card-pick-footer {
+  border-top-color: var(--line);
+  background: rgba(8, 10, 14, 0.92) !important;
+}
+
+.card-select-screen .select-cta {
+  min-height: 3rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+/* Lineup and pitch surfaces */
+.lineup-preview-inline,
+.lineup-modal-dialog,
+.lineup-pitch--v2,
+.match-pitch,
+.match-pitch--wide {
+  border-color: rgba(45, 220, 125, 0.22) !important;
+  box-shadow: none !important;
+}
+
+.lineup-pitch--v2,
+.match-pitch,
+.match-pitch--wide {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 100px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 9%, rgba(0, 0, 0, 0.035) 9% 18%),
+    linear-gradient(180deg, #266f3a, #1d6634) !important;
+}
+
+.lineup-dot--v3,
+.lineup-player-dot,
+.match-player-dot {
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+/* Match, event, loss and tactic screens */
+.match-layout {
+  width: 100%;
+  flex: 1 1 auto;
+  max-width: 1450px;
+  margin-inline: auto;
+}
+
+@media (min-width: 1100px) {
+  .match-layout {
+    grid-template-columns: minmax(560px, 1fr) minmax(320px, 380px) !important;
+  }
+
+  .match-col--arena {
+    min-width: 0;
+  }
+
+  .match-vs-row {
+    grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
+  }
+}
+
+.match-pick-panel,
+.match-result-panel,
+.match-footer-panel,
+.match-live-panel,
+.event-main-panel,
+.event-layout > .panel,
+.loss-screen-main,
+.loss-screen-right,
+.tactic-pick-stage,
+.tactic-pick-card {
+  background: rgba(17, 25, 35, 0.86) !important;
+}
+
+.match-result-title,
+.match-pitch-score,
+.loss-hero h2,
+.event-title {
+  letter-spacing: 0 !important;
+}
+
+.match-result-title--win,
+.match-result-panel--win .match-result-title {
+  color: var(--green-2) !important;
+}
+
+.match-result-title--loss,
+.match-result-panel--loss .match-result-title,
+.loss-hero h2 {
+  color: var(--red) !important;
+}
+
+.match-result-panel .btn-primary,
+.event-confirm-btn,
+.loss-screen-cta {
+  min-height: 3.25rem;
+  border-radius: 12px !important;
+}
+
+.event-main-panel::before {
+  opacity: 0.16;
+}
+
+.event-choice-card {
+  border-radius: 14px;
+}
+
+.event-choice-card:hover:not(:disabled),
+.tactic-pick-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-2) !important;
+}
+
+.event-choice-visual {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(246, 191, 53, 0.14), transparent 58%),
+    linear-gradient(135deg, rgba(25, 36, 51, 0.78), rgba(7, 11, 15, 0.92)) !important;
+}
+
+.tactic-pick-card--selected {
+  border-color: rgba(45, 220, 125, 0.72) !important;
+  background: rgba(45, 220, 125, 0.08) !important;
+}
+
+.tactic-pick-card--system.tactic-pick-card--selected {
+  border-color: rgba(246, 191, 53, 0.72) !important;
+  background: rgba(246, 191, 53, 0.08) !important;
+}
+
+.tactic-pick-card-hero,
+.tactic-pick-card-visual {
+  background: transparent !important;
+}
+
+.loss-departed-card,
+.loss-broken-card {
+  border-color: rgba(255, 85, 112, 0.34) !important;
+  background: rgba(255, 85, 112, 0.08) !important;
+}
+
+@media (max-width: 1100px) {
+  .menu-dashboard {
+    justify-content: flex-start;
+  }
+
+  .menu-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menu-brand {
+    flex-basis: auto;
+  }
+
+  .menu-hero-title {
+    max-width: 15rem;
+    font-size: clamp(3.5rem, 16vw, 5rem);
+  }
+
+  .menu-top-stats,
+  .menu-play-actions,
+  .card-select-command-bar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .card-select-command-left,
+  .card-select-turn-card,
+  .card-select-command-actions {
+    min-height: 0 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .game-top-header {
+    margin-inline: -0.55rem;
+    padding: 0.7rem;
+  }
+
+  .menu-dashboard,
+  .card-select-inner {
+    padding-inline: 0.75rem !important;
+  }
+
+  .menu-top-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .menu-play-panel-inner {
+    padding: 1rem;
+  }
+
+  .cards-pick-grid {
+    gap: 0.75rem !important;
+  }
+}
+

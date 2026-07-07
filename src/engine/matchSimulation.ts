@@ -64,6 +64,7 @@ function squadStrength(
   round: number,
   tactics: ActiveTactic[],
   synergies: ReturnType<typeof getActiveSynergies>,
+  manualLineup: Record<number, string> = {},
 ): number {
   // Taktik-nötr takım gücü: taktik çarpanları attackPower/defensePower'da uygulanır
   // (aksi halde hücum taktiği hem burada hem attackPower'da uygulanıp karelenirdi).
@@ -71,7 +72,7 @@ function squadStrength(
   const fill = lineupFillFactor(squad.length, round);
   const moraleFactor = 0.75 + (morale / 100) * 0.4 + moraleStabilityBonus(squad, morale);
   const ratingMult = synergyRatingMultiplier(synergies);
-  const positionFit = positionFitMultiplier(squad, tactics);
+  const positionFit = positionFitMultiplier(squad, tactics, manualLineup);
   const riskPenalty = riskTagStrengthPenalty(squad, morale);
   return avg * fill * moraleFactor * ratingMult * positionFit * riskPenalty;
 }
@@ -141,16 +142,19 @@ export function simulateMatch(
   lossesCount = 0,
   isDailySeed = true,
   manualLineup: Record<number, string> = {},
+  opponentNameOverride: string | null = null,
 ): MatchResult {
   const rng = createRng(seed, 'match', round);
   const opponent = generateOpponent(rng, round === 15 ? round + 2 : round, !isDailySeed);
+  // Revanş kimliği: rng akışını BOZMADAN yalnızca isim değişir (rating aynı kalır)
+  if (opponentNameOverride) opponent.name = opponentNameOverride;
   const variation = seedVariation(rng);
 
   const starters = matchSquad(squad, activeTactics, manualLineup);
   const behindPreview = false;
-  const synergiesPreview = getActiveSynergies(starters, morale, { activeTactics, behindInMatch: behindPreview });
+  const synergiesPreview = getActiveSynergies(starters, morale, { activeTactics, behindInMatch: behindPreview, manualLineup });
 
-  let ourStrength = squadStrength(starters, morale, round, activeTactics, synergiesPreview) * variation;
+  let ourStrength = squadStrength(starters, morale, round, activeTactics, synergiesPreview, manualLineup) * variation;
   ourStrength *= matchBonusMultiplier(matchBonus);
 
   let theirStrength = opponent.rating * (0.9 + rng() * 0.2);
@@ -163,7 +167,7 @@ export function simulateMatch(
   let goalsAgainst = rollGoals(rng, theirAttack / Math.max(ourStrength * 0.95, 1));
 
   const behind = goalsAgainst > goalsFor;
-  const synergies = getActiveSynergies(starters, morale, { activeTactics, behindInMatch: behind });
+  const synergies = getActiveSynergies(starters, morale, { activeTactics, behindInMatch: behind, manualLineup });
   const synergyBoost = 1 + synergies.length * 0.04;
   const goalMult = synergies.find((s) => s.goalMultiplier)?.goalMultiplier ?? 1;
 
@@ -216,7 +220,8 @@ export function simulateMatch(
   if (synergies.length >= 3 && outcome !== 'loss') highlights.push({ text: '🌪️ SİNERJİ FIRTINASI', points: 150 });
 
   let wowMoment: string | undefined;
-  if (opponent.rating >= 90 && outcome === 'win') wowMoment = 'ŞOKCU GALİBİYET — dev rakibi yendin!';
+  if (opponentNameOverride && outcome === 'win') wowMoment = `REVANŞ ALINDI — ${opponent.name} finalde devrildi!`;
+  if (opponent.rating >= 90 && outcome === 'win') wowMoment = wowMoment ?? 'ŞOKCU GALİBİYET — dev rakibi yendin!';
   if (cleanSheet && outcome === 'win') wowMoment = wowMoment ?? 'TEMİZ SAYFA — kale kapalı!';
 
   const events = generateMatchEvents(rng, starters, goalsFor, goalsAgainst);

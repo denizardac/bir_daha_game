@@ -6,14 +6,25 @@ GitHub + Cloudflare Pages ile yayin akisi.
 
 | Adim | Durum |
 |------|-------|
-| `supabase db push` / `001_leaderboard.sql` calisti | Kontrol et |
-| `submit-score` Edge Function deploy edildi | Kontrol et |
-| `record-start` Edge Function deploy edildi | Kontrol et |
-| `LEADERBOARD_HMAC_SECRET` set edildi | Kontrol et |
-| `ALLOWED_ORIGINS` prod domainlere kisitlandi | Kontrol et |
-| Client env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | Kontrol et |
+| `supabase db push` / `001_leaderboard.sql` calisti | ✅ migration 001 remote'ta |
+| `submit-score` Edge Function deploy edildi | ✅ sertlestirilmis surum aktif |
+| `record-start` Edge Function deploy edildi | ✅ |
+| `LEADERBOARD_HMAC_SECRET` set edildi | ✅ |
+| `ALLOWED_ORIGINS` prod domainlere kisitlandi | ✅ (localhost skor GONDERIMI engellenir; okuma calisir) |
+| Client env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | ✅ (`.env` + Cloudflare env) |
 | Test run: `run_starts` satiri | Kontrol et |
 | Test run bitisi: `leaderboard_scores` satiri | Kontrol et |
+
+### submit-score sunucu korumalari (guncel)
+
+- Digest dogrulamasi: istemciyle ayni kanonik payload uzerinden SHA-256 karsilastirmasi
+- HMAC-SHA256 imza: kayit `integrity_digest` alanina sunucu gizli anahtariyla imzalanip yazilir
+- Gunluk modda seed `dayKey` ile baslamak zorunda (baska gune / uydurma seed'e skor basilamaz)
+- `dayKey` sunucu saatinden ±2 gunden fazla sapamaz (gecmise skor basilamaz)
+- Skor, ayni seed icin kayitli bir `run_starts` satirina baglidir — `record-start` cagrilmadan skor kabul edilmez
+- Oyuncu basina gunde en fazla 30 leaderboard satiri (free mode benzersiz seed flood korumasi)
+- `record-start`: oyuncu basina gunde 200 baslangic limiti
+- Gelecek adim (Asama 2 devami): sunucu tarafinda `roundHistory` replay simulasyonu — haftalik modifikatoru hafta anahtarina gore uygulamayi unutma
 
 Gerekli komutlar:
 

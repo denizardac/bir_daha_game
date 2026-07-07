@@ -7,6 +7,10 @@ type MatchScoreContext = {
   cleanSheet: boolean;
 };
 
+function findTactic(tactics: ActiveTactic[], id: string): ActiveTactic | undefined {
+  return tactics.find((t) => t.id === id);
+}
+
 function hasTactic(tactics: ActiveTactic[], id: string): boolean {
   return tactics.some((t) => t.id === id);
 }
@@ -76,47 +80,58 @@ export function getTacticScoreHighlights(
     }
   }
 
-  if (hasTactic(tactics, 'tactic_yuksek_blok') && isHighPressReady(squad)) {
-    if (match.outcome === 'win') highlights.push({ text: 'Yüksek Press · baskı galibiyeti', points: 180 });
-    if (match.goalsFor > 0) highlights.push({ text: 'Yüksek Press · top kazanımı', points: match.goalsFor * 30 });
+  // Puan değerleri ActiveTactic (tactics.ts TACTIC_EFFECTS) alanlarından okunur —
+  // burada yalnızca kartın KOŞULU tanımlanır; sayı tek kaynakta kalır.
+  const yuksekBlok = findTactic(tactics, 'tactic_yuksek_blok');
+  if (yuksekBlok && isHighPressReady(squad)) {
+    if (match.outcome === 'win' && yuksekBlok.perWinBonus) {
+      highlights.push({ text: 'Yüksek Press · baskı galibiyeti', points: yuksekBlok.perWinBonus });
+    }
+    if (match.goalsFor > 0 && yuksekBlok.perGoalBonus) {
+      highlights.push({ text: 'Yüksek Press · top kazanımı', points: match.goalsFor * yuksekBlok.perGoalBonus });
+    }
   }
 
-  if (hasTactic(tactics, 'tactic_topla_oyn') && match.outcome === 'draw' && countTag(squad, 'TEKNİK') >= 4) {
-    highlights.push({ text: 'Topla Oynama · beraberliği tuttu', points: 120 });
+  const toplaOyn = findTactic(tactics, 'tactic_topla_oyn');
+  if (toplaOyn?.drawBonus && match.outcome === 'draw' && countTag(squad, 'TEKNİK') >= 4) {
+    highlights.push({ text: 'Topla Oynama · beraberliği tuttu', points: toplaOyn.drawBonus });
   }
 
-  if (hasTactic(tactics, 'tactic_direkt') && match.goalsFor > 0 && countTag(squad, 'HIZLI') >= 3) {
-    highlights.push({ text: 'Direkt Futbol · ilk darbeyi vurdu', points: 150 });
+  const direkt = findTactic(tactics, 'tactic_direkt');
+  if (direkt?.firstGoalBonus && match.goalsFor > 0 && countTag(squad, 'HIZLI') >= 3) {
+    highlights.push({ text: 'Direkt Futbol · ilk darbeyi vurdu', points: direkt.firstGoalBonus });
   }
 
-  if (hasTactic(tactics, 'tactic_rotasyon') && squad.length >= 10) {
-    highlights.push({ text: 'Kadro Rotasyonu · geniş kadro', points: 80 });
+  const rotasyon = findTactic(tactics, 'tactic_rotasyon');
+  if (rotasyon?.squadSizeBonus && squad.length >= (rotasyon.squadSizeThreshold ?? 10)) {
+    highlights.push({ text: 'Kadro Rotasyonu · geniş kadro', points: rotasyon.squadSizeBonus });
   }
 
-  if (hasTactic(tactics, 'tactic_tekli_forvet') && hasSingleFinisherForward(squad) && match.goalsFor > 0) {
-    highlights.push({ text: 'Tek Forvet · bitirici odak', points: match.goalsFor * 60 });
+  const tekliForvet = findTactic(tactics, 'tactic_tekli_forvet');
+  if (tekliForvet?.perGoalBonus && hasSingleFinisherForward(squad) && match.goalsFor > 0) {
+    highlights.push({ text: 'Tek Forvet · bitirici odak', points: match.goalsFor * tekliForvet.perGoalBonus });
   }
 
-  if (hasTactic(tactics, 'tactic_catenaccio') && match.cleanSheet) {
-    highlights.push({
-      text: 'Alçak Blok · kale kapalı',
-      points: match.outcome === 'win' ? 220 : 100,
-    });
+  const catenaccio = findTactic(tactics, 'tactic_catenaccio');
+  if (catenaccio && match.cleanSheet) {
+    const points = match.outcome === 'win' ? catenaccio.cleanSheetWinBonus : catenaccio.cleanSheetDrawBonus;
+    if (points) highlights.push({ text: 'Alçak Blok · kale kapalı', points });
   }
 
-  if (hasTactic(tactics, 'tactic_gegenpress') && isGegenpressReady(squad) && match.goalsFor > 0) {
-    highlights.push({ text: 'Gegenpress · geri kazanım', points: match.goalsFor * 45 });
+  const gegenpress = findTactic(tactics, 'tactic_gegenpress');
+  if (gegenpress?.perGoalBonus && isGegenpressReady(squad) && match.goalsFor > 0) {
+    highlights.push({ text: 'Gegenpress · geri kazanım', points: match.goalsFor * gegenpress.perGoalBonus });
   }
 
-  if (hasTactic(tactics, 'tactic_tiki_taka') && match.outcome === 'win' && countTag(squad, 'TEKNİK') >= 5) {
-    highlights.push({ text: 'Tiki-Taka · tam kontrol', points: 250 });
+  const tikiTaka = findTactic(tactics, 'tactic_tiki_taka');
+  if (tikiTaka?.perWinBonus && match.outcome === 'win' && countTag(squad, 'TEKNİK') >= 5) {
+    highlights.push({ text: 'Tiki-Taka · tam kontrol', points: tikiTaka.perWinBonus });
   }
 
-  if (hasTactic(tactics, 'tactic_park_bus') && match.cleanSheet) {
-    highlights.push({
-      text: 'Otobüsü Çek · kilit savunma',
-      points: match.outcome === 'win' ? 260 : 120,
-    });
+  const parkBus = findTactic(tactics, 'tactic_park_bus');
+  if (parkBus && match.cleanSheet) {
+    const points = match.outcome === 'win' ? parkBus.cleanSheetWinBonus : parkBus.cleanSheetDrawBonus;
+    if (points) highlights.push({ text: 'Otobüsü Çek · kilit savunma', points });
   }
 
   return highlights;

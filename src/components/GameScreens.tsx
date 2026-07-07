@@ -21,7 +21,7 @@ import { explainActiveTactic, getSidePanelNearSynergies, type NearSynergyProgres
 import { getEventPresentation } from '@/data/eventVisuals';
 import { EventChoiceVisual, EventSceneVisual } from '@/components/EventSceneVisual';
 import { getDepartureScore, getEventPreviews, getMoraleEffect, getTacticPreview } from '@/engine/contextPreview';
-import { calculateRoundPoints, formatScore } from '@/engine/scoring';
+import { calculateRoundPoints, formatScore, streakMultiplier } from '@/engine/scoring';
 import { matchBonusMultiplier } from '@/engine/matchPower';
 import { getSquadLineupSummary, lineupSlotToMatchPitch } from '@/engine/lineupPreview';
 import { getPersistedStats, TOTAL_SYNERGIES, useGameStore } from '@/store/gameStore';
@@ -41,6 +41,7 @@ import { POSITION_BADGE, formatPosition, getPositionRoleColor, TAG_AVATAR_BG } f
 import { iconForSynergy } from '@/utils/gameIcons';
 import { DANGER_MORALE_FLOOR } from '@/constants/game';
 import { getEventChoiceTones, eventChoiceClass } from '@/engine/eventRisk';
+import { getWeeklyModifier } from '@/engine/weeklyModifier';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import type { EventOutcome } from '@/engine/events';
 
@@ -888,7 +889,7 @@ export function EventScreen() {
 export function MatchScreen() {
   const {
     currentMatch, pendingSelected, finishMatch, squad, round, maxRounds, score, streak, morale,
-    activeTactics, lossesCount, timerSeconds, flawless,
+    activeTactics, lossesCount, timerSeconds, flawless, manualLineup,
   } = useGameStore();
   const [anim, setAnim] = useState<MatchAnimState>({
     minute: 0,
@@ -1025,8 +1026,8 @@ export function MatchScreen() {
 
   const outcome = currentMatch.outcome === 'win' ? 'GALİBİYET' : currentMatch.outcome === 'draw' ? 'BERABERLİK' : 'MAĞLUBİYET';
   const outcomeColor = currentMatch.outcome === 'win' ? 'text-green-400' : currentMatch.outcome === 'draw' ? 'text-amber-400' : 'text-red-400';
-  const moraleOutcomeDelta = currentMatch.outcome === 'win' ? 10 : currentMatch.outcome === 'draw' ? -5 : -20;
-  const lineupSummary = getSquadLineupSummary(squad, activeTactics);
+  const moraleOutcomeDelta = currentMatch.outcome === 'win' ? 10 : currentMatch.outcome === 'draw' ? -5 : -16;
+  const lineupSummary = getSquadLineupSummary(squad, activeTactics, manualLineup);
   const pitchDots = lineupSummary.lineup
     .filter((slot) => slot.player)
     .map((slot) => lineupSlotToMatchPitch(slot));
@@ -1041,7 +1042,7 @@ export function MatchScreen() {
   const homeWinPct = Math.round(((100 - drawPct) * homeNoDrawPct) / 100);
   const awayWinPct = 100 - drawPct - homeWinPct;
   const moraleFx = getMoraleEffect(morale);
-  const streakMult = streak >= 4 ? 1.35 : streak === 3 ? 1.2 : streak === 2 ? 1.1 : 1;
+  const streakMult = streakMultiplier(streak);
 
   const selectionSubtitle = isPlayerCard(pendingSelected)
     ? `${formatPosition(pendingSelected.position)} · Kadroya eklendi · ${pendingSelected.currentRating} rating`
@@ -1062,6 +1063,8 @@ export function MatchScreen() {
         activeTactics,
         timerSeconds,
         flawless,
+        manualLineup,
+        getWeeklyModifier(),
       )
     : 0;
   const nextStepText = currentMatch.outcome === 'loss'

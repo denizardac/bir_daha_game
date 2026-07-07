@@ -4,6 +4,7 @@ import {
   REROLLS_PER_RUN,
 } from '@/constants/game';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
+import { getWeeklyModifier } from '@/engine/weeklyModifier';
 import { isRemoteLeaderboardEnabled, recordRunStart, submitRunToLeaderboard } from '@/api/leaderboardRemote';
 import { buildSignedRunPayload } from '@/engine/runIntegrity';
 import { validateRunSubmission } from '@/engine/runValidation';
@@ -17,7 +18,7 @@ import { getStartingSquad } from '@/data/players';
 import { drawEvent, previewEventPlayer, resolveEvent } from '@/engine/events';
 import { drawOffers, drawTacticCategoryOffers, getOfferDrawModeForRound, pickAutoOffer, rerollSinglePlayerOffer } from '@/engine/cardDraw';
 import { canPassCardPick } from '@/engine/cardPass';
-import { isTacticBonusRound, TACTIC_BONUS_MORALE, TACTIC_BONUS_SCORE } from '@/engine/roundFlow';
+import { getFinaleRivalName, isTacticBonusRound, TACTIC_BONUS_MORALE, TACTIC_BONUS_SCORE } from '@/engine/roundFlow';
 import { simulateMatch } from '@/engine/matchSimulation';
 import { calculateRoundPoints } from '@/engine/scoring';
 import { addToHallOfFame, getHallOfFameForMonth, getSeasonKey } from '@/engine/hallOfFame';
@@ -147,6 +148,7 @@ function initialRun(
   streakBonus = getDailyStreakBonus(0),
 ): GameState {
   const squad = normalizeSquadGoalkeepers(getStartingSquad(seed, isDailySeed));
+  const weeklyMod = getWeeklyModifier();
   return {
     seed,
     isDailySeed,
@@ -155,7 +157,7 @@ function initialRun(
     maxRounds: MAX_ROUNDS,
     squad,
     maxSquadSize: MAX_SQUAD,
-    morale: Math.min(100, 50 + streakBonus.startMoraleBonus),
+    morale: Math.min(100, 50 + streakBonus.startMoraleBonus + (weeklyMod.startMoraleBonus ?? 0)),
     score: 0,
     streak: 0,
     phase: 'cardSelect',
@@ -174,7 +176,7 @@ function initialRun(
     flawless: true,
     recentlyJoinedPlayerId: null,
     runEndAnalysis: null,
-    rerollsRemaining: REROLLS_PER_RUN + streakBonus.extraRerolls,
+    rerollsRemaining: REROLLS_PER_RUN + streakBonus.extraRerolls + (weeklyMod.extraRerolls ?? 0),
     formationRerollUsed: false,
     systemRerollUsed: false,
     offersRerollIndex: 0,
@@ -242,6 +244,17 @@ function drawRoundOffers(state: Pick<GameState, 'seed' | 'round' | 'lossesCount'
   );
 }
 
+/** Round geçmişindeki olay kararları — zincirleme olay ağırlıkları için */
+function pastEventChoices(roundHistory: GameState['roundHistory']): Record<string, 'A' | 'B'> {
+  const choices: Record<string, 'A' | 'B'> = {};
+  for (const r of roundHistory) {
+    if (r.isEvent && r.eventChoice && r.cardSelected.kind === 'event') {
+      choices[r.cardSelected.id] = r.eventChoice;
+    }
+  }
+  return choices;
+}
+
 function startRound(state: GameStore): Partial<GameStore> {
   if (isEventRound(state.round) && !state.eventResolvedThisRound) {
     const event = drawEvent(state.seed, state.round, state.usedEventIds, {
@@ -251,6 +264,7 @@ function startRound(state: GameStore): Partial<GameStore> {
       squadSize: state.squad.length,
       maxSquadSize: state.maxSquadSize,
       round: state.round,
+      pastChoices: pastEventChoices(state.roundHistory),
     });
     return { phase: 'event' as GamePhase, currentEvent: event, timerSeconds: cardTimerSeconds() };
   }
@@ -390,8 +404,10 @@ function buildRunEndAnalysis(state: GameStore): RunEndAnalysis {
   const rankPercent = getRankPercent(state.score, rankList);
   const rivals = getNearRivals(state.score, rankList, state.displayName || 'Sen');
 
-  const synergyStats = state.discoveredSynergies.map((id) => {
-    const s = SYNERGIES.find((x) => x.id === id)!;
+  const synergyStats = state.discoveredSynergies.flatMap((id) => {
+    // Eski sürümden persist edilmiş, artık var olmayan sinerji id'lerini atla
+    const s = SYNERGIES.find((x) => x.id === id);
+    if (!s) return [];
     let activations = 0;
     let points = 0;
     for (const r of state.roundHistory) {
@@ -399,7 +415,7 @@ function buildRunEndAnalysis(state: GameStore): RunEndAnalysis {
       activations += 1;
       points += synergyPointsFromMatch(s, r.matchResult);
     }
-    return { id, name: s.name, icon: s.icon, activations, points };
+    return [{ id, name: s.name, icon: s.icon, activations, points }];
   });
 
   const badges: string[] = [];
@@ -743,6 +759,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.lossesCount,
       state.isDailySeed,
       state.manualLineup,
+      state.round === state.maxRounds ? getFinaleRivalName(state.roundHistory) : null,
     );
 
     set({
@@ -781,6 +798,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.lossesCount,
       state.isDailySeed,
       state.manualLineup,
+      state.round === state.maxRounds ? getFinaleRivalName(state.roundHistory) : null,
     );
     set({
       currentMatch: match,
@@ -912,6 +930,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.lossesCount,
       state.isDailySeed,
       state.manualLineup,
+      state.round === state.maxRounds ? getFinaleRivalName(state.roundHistory) : null,
     );
 
     set({
@@ -997,7 +1016,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       squad = squad.filter((p) => p.id !== sellTarget.id);
     }
     if (outcome.tempRatingDelta) {
-      const target = getEventRatingTarget(state.currentEvent.id, choice, squad);
+      const target = getEventRatingTarget(state.currentEvent.id, choice, squad, state.activeTactics);
       if (target) {
         squad = squad.map((p) =>
           p.id === target.id ? { ...p, tempRatingMod: (p.tempRatingMod ?? 0) + outcome.tempRatingDelta! } : p,
@@ -1094,7 +1113,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const tacticMorale = state.activeTactics.reduce((n, t) => n + (t.moralePerMatch ?? 0), 0);
     let morale = Math.min(100, state.morale + passiveMoraleFromSquad(squad) + tacticMorale);
-    const activeSynergyList = getActiveSynergies(squad, morale, { activeTactics: state.activeTactics });
+    const activeSynergyList = getActiveSynergies(squad, morale, { activeTactics: state.activeTactics, manualLineup });
     for (const s of activeSynergyList) {
       if (s.perMatchMorale) morale = Math.min(100, morale + s.perMatchMorale);
     }
@@ -1119,6 +1138,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.timerSeconds,
       flawless,
       manualLineup,
+      getWeeklyModifier(),
     );
     score += points;
     match.roundPoints = points;
@@ -1150,9 +1170,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ? [state.recentlyJoinedPlayerId]
         : [];
       const departing = selectDepartingPlayer(squad, morale, state.activeTactics, manualLineup, protectedJoinedPlayerIds);
+      const manualBeforeLoss = manualLineup;
       squad = squad.filter((p) => p.id !== departing.id);
       manualLineup = reconcileManualLineup(manualLineup, squad, formationKey);
-      const brokenSynergies = getBrokenSynergies(squadBeforeLoss, squad, morale, state.activeTactics).map((s) => s.id);
+      const brokenSynergies = getBrokenSynergies(squadBeforeLoss, squad, morale, state.activeTactics, manualBeforeLoss, manualLineup).map((s) => s.id);
       if (squad.length <= 5) morale = Math.max(DANGER_MORALE_FLOOR, morale);
       lossesCount += 1;
       playSound('loss', loadPersisted().soundEnabled);

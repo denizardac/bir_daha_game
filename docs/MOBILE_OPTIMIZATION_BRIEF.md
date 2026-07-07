@@ -6,11 +6,11 @@ Bu belge, projeyi bir sonraki adımda **mobil web sürümüne optimize edecek ge
 
 ## 1. Proje bir bakışta
 
-**Bir Daha** — futbol temalı, günlük-seed'li roguelite/draft strateji oyunu. Vanilla React + Zustand + plain CSS (Tailwind eklendi ama neredeyse hiç kullanılmıyor — sınıflar `src/index.css` içinde ~29k satır tutuluyor).
+**Bir Daha** — futbol temalı, günlük-seed'li roguelite/draft strateji oyunu. Vanilla React + Zustand + plain CSS (Tailwind eklendi ama neredeyse hiç kullanılmıyor — sınıflar `src/index.css` içinde ~32k satır tutuluyor).
 
 - **Stack:** React 19, Zustand, TypeScript, Vite 6, plain CSS (BEM-ish class naming)
 - **Deploy:** Vercel/Netlify (`vercel.json` SPA rewrite), Capacitor da bağlı ama şu an web öncelikli
-- **Test:** Vitest, 183 test geçiyor
+- **Test:** Vitest, 195 test geçiyor (27 dosya)
 - **Ana ekranlar** ([App.tsx](../src/App.tsx)'te route yönlendirilen `screen` state'ine göre):
   - `MainMenu` (menü) — [MainMenu.tsx](../src/components/MainMenu.tsx)
   - `game` altında (in-run) fazlar → `phase` state'ine göre:
@@ -34,7 +34,7 @@ Bu belge, projeyi bir sonraki adımda **mobil web sürümüne optimize edecek ge
 ## 3. Genel yapı & derinlik (yeni geliştiricinin bilmesi gerekenler)
 
 ### CSS mimarisi
-- **Tek dosya:** [src/index.css](../src/index.css) — ~29,000 satır
+- **Tek dosya:** [src/index.css](../src/index.css) — ~32.000 satır
 - Tailwind kurulu ama nadir kullanılıyor; asıl stiller plain CSS class'ları
 - BEM-ish naming: `.event-choice-card`, `.event-choice-card--selected`, `.event-v2 .event-brief-head` gibi
 - **Önemli:** Zaman içinde birçok "override tabakası" birikmiş — aynı selector için 3-4 farklı yerde `!important` kuralı olabiliyor. Yeni bir stil eklerken dosyayı grep'lemek şart, aksi halde alt tarafta ezilir
@@ -132,7 +132,7 @@ npm run qa               # 40 headless run — denge özeti
 1. **Plan** — hangi ekrana hangi mobil stratejiyi uygulayacağın (CSS-only mi, component split mi, drawer mi tab mi)
 2. **İncremental commit'ler** — her major ekran için ayrı commit (kolay review, kolay revert)
 3. **Masaüstü testi** — her commit sonrası masaüstü hiçbir şey bozulmadığından emin ol
-4. **Testler geçmeli** — mevcut 183 test geçmeli, mümkünse mobil davranış için yenileri ekle
+4. **Testler geçmeli** — mevcut 195 test geçmeli, mümkünse mobil davranış için yenileri ekle
 
 ## 8. Ekstra bağlam
 

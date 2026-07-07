@@ -9,6 +9,8 @@ export type EventDrawContext = {
   squadSize: number;
   maxSquadSize: number;
   round: number;
+  /** Önceki olay kararları (olay id → seçim) — zincirleme olay ağırlıkları için */
+  pastChoices?: Record<string, 'A' | 'B'>;
 };
 
 /** Her zaman uygun — filtre boş kalırsa bunlardan seçilir */
@@ -54,11 +56,43 @@ function pickWeighted(rng: () => number, items: EventCard[], weights: number[]):
   return items[items.length - 1]!;
 }
 
+/**
+ * Zincirleme olay ayarı: önceki kararlar sonraki olay havuzunu şekillendirir.
+ * Çarpan döner (1 = etkisiz, 0 = bu run'da bir daha çıkmaz).
+ */
+export function getChainWeightMultiplier(eventId: string, pastChoices: Record<string, 'A' | 'B'>): number {
+  switch (eventId) {
+    // Yıldız satıldıysa (transfer A) yıldız merkezli olaylar anlamsızlaşır
+    case 'evt_yildiz_sozlesme':
+      if (pastChoices['evt_transfer_teklif'] === 'A') return 0;
+      // Prim biriktirildiyse (bonus B) yıldız huzursuz — sözleşme krizi olasılığı artar
+      if (pastChoices['evt_bonus'] === 'B') return 2;
+      return 1;
+    // Kavgada ikisi de tutulduysa gerginlik sürer — mental destek olayları öne çıkar
+    case 'evt_psikolog':
+      return pastChoices['evt_kavga'] === 'B' ? 2.5 : 1;
+    case 'evt_basin':
+      return pastChoices['evt_kavga'] === 'B' ? 1.6 : 1;
+    // Sakat oyuncu iğneyle oynadıysa (sakatlık A) sağlık ekibi olayları öne çıkar
+    case 'evt_doktor':
+    case 'evt_fizyoterapist':
+      return pastChoices['evt_sakatlik'] === 'A' ? 2.2 : 1;
+    // Menajer krizinde oyuncu gittiyse (A) başka kulüpler iştahlanır
+    case 'evt_diger_kulup':
+      return pastChoices['evt_menajer_krizi'] === 'A' ? 1.8 : 1;
+    default:
+      return 1;
+  }
+}
+
 /** Olayın mevcut run durumuna göre ağırlığı — 0 = bu turda çıkmaz */
 export function getEventDrawWeight(eventId: string, ctx: EventDrawContext): number {
   const { streak, morale, lossesCount, squadSize, maxSquadSize, round } = ctx;
   const squadRoom = squadSize < maxSquadSize;
+  const chain = getChainWeightMultiplier(eventId, ctx.pastChoices ?? {});
+  if (chain === 0) return 0;
 
+  const base = (() => {
   switch (eventId) {
     // Düşüş / baskı — galibiyet serisinde anlamsız
     case 'evt_psikolog':
@@ -144,6 +178,9 @@ export function getEventDrawWeight(eventId: string, ctx: EventDrawContext): numb
     default:
       return 1;
   }
+  })();
+
+  return base * chain;
 }
 
 export function filterEventsForDraw(

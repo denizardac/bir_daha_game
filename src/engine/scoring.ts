@@ -3,9 +3,10 @@ import { getStartingEleven } from '@/engine/lineupPreview';
 import { FINALE_MATCH_BONUS } from '@/engine/roundFlow';
 import { passiveTagRoundPoints } from '@/engine/tagMechanics';
 import { getTacticScoreHighlights } from '@/engine/tacticRules';
+import type { WeeklyModifier } from '@/engine/weeklyModifier';
 import type { ActiveTactic, MatchResult, PlayerCard } from '@/types';
 
-function streakMultiplier(streak: number): number {
+export function streakMultiplier(streak: number): number {
   if (streak >= 4) return 1.35;
   if (streak === 3) return 1.2;
   if (streak === 2) return 1.1;
@@ -27,25 +28,27 @@ export function calculateRoundPoints(
   timerSecondsLeft = 0,
   flawless = true,
   manualLineup: Record<number, string> = {},
+  weeklyMod?: WeeklyModifier,
 ): number {
   if (match.outcome === 'loss') return 0;
 
   const starters = getStartingEleven(squad, activeTactics, manualLineup);
   const scoringSquad = starters.length ? starters : squad;
   const opponentRating = match.opponent.rating;
+  const csMult = weeklyMod?.cleanSheetBonusMultiplier ?? 1;
   let points = 0;
 
   if (match.outcome === 'win') {
     points += Math.max(0, opponentRating - 50) * 10;
     points += match.goalsFor * 50;
     points -= match.goalsAgainst * 20;
-    if (match.cleanSheet) points += 100;
+    if (match.cleanSheet) points += Math.round(100 * csMult);
     const avg = scoringSquad.reduce((s, p) => s + p.currentRating, 0) / Math.max(scoringSquad.length, 1);
     if (opponentRating - avg >= 15) points += 500;
   } else {
     points += Math.floor(opponentRating * 2.5);
     // Beraberlikte gol yememe ödülü — savunma taktiklerini değerli kılar (highlight ile birebir)
-    if (match.cleanSheet) points += 30;
+    if (match.cleanSheet) points += Math.round(30 * csMult);
   }
 
   const synergies = matchSynergies(match);
@@ -78,6 +81,11 @@ export function calculateRoundPoints(
 
   points += timerSecondsLeft * 5;
   if (round === 15 && match.outcome === 'win' && flawless && lossesCount === 0) points += 2000;
+
+  // Haftalık modifikatör: galibiyet puanı çarpanı (hafta boyunca herkese aynı)
+  if (weeklyMod?.winScoreMultiplier && match.outcome === 'win') {
+    points = Math.floor(points * weeklyMod.winScoreMultiplier);
+  }
 
   return Math.max(0, Math.floor(points));
 }

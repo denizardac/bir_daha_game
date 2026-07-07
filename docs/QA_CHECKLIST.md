@@ -10,7 +10,8 @@ Otomatik: `npm run qa` (40 headless run, skor/moral dağılımı).
 - [ ] **1 tam günlük run** — round 15 finale, run sonu ego + paylaşım
 - [ ] **Kayıp hissi** — 2–3 mağlubiyet sonrası kadro inceliyor, recovery kartı geliyor
 - [ ] **Beraberlik** — puan düşük ama oyuncu kaybı yok
-- [ ] **Timer açık** (Ayarlar) — 20 sn, otomatik seçim, bonus puan
+- [ ] **Manuel ilk 11** — oyuncu seçince editör açılır, sürükle-bırak pin çalışır, iptal geri alır
+- [ ] **Dokun-seç (mobil)** — editörde oyuncuya dokun → geçerli slotlar yanar → hedefe dokun → taşınır; uyumsuz takas reddedilir
 - [ ] **Streak 3+** — menüde ödül metni, run başı +1 yenileme / moral
 - [ ] **PWA** — Chrome “Yükle”, iOS Safari “Ana Ekrana Ekle”, offline açılış (cache)
 
