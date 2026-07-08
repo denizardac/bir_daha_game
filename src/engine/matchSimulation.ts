@@ -19,7 +19,19 @@ import {
   riskTagStrengthPenalty,
 } from '@/engine/tagMechanics';
 import { createRng, generateOpponent, seedVariation } from '@/engine/seed';
-import type { ActiveTactic, MatchHighlight, MatchResult, PlayerCard } from '@/types';
+import type { ActiveTactic, MatchHighlight, MatchResult, OpponentStyle, PlayerCard } from '@/types';
+
+/**
+ * Rakip stilinin maça HAFİF etkisi (±%5) — kim kazanır çok değişmez, maçın
+ * karakteri değişir: saldırgan = açık maç (iki yönde de gol eğilimi hafif ↑),
+ * savunmacı = kapalı maç (iki yönde de ↓), dengeli = nötr. rollGoals'a giden güç
+ * argümanını çarptığı için rng akışı bozulmaz (aynı seed → aynı diziyi tüketir).
+ */
+function opponentStyleGoalMods(style: OpponentStyle): { our: number; their: number } {
+  if (style === 'saldırgan') return { our: 1.05, their: 1.05 };
+  if (style === 'savunmacı') return { our: 0.95, their: 0.95 };
+  return { our: 1, their: 1 };
+}
 
 function matchSquad(
   squad: PlayerCard[],
@@ -163,8 +175,9 @@ export function simulateMatch(
   const defense = defensePower(starters, activeTactics, synergiesPreview);
   const theirAttack = theirStrength / Math.max(defense, 0.5);
 
-  let goalsFor = rollGoals(rng, attackPower(starters, activeTactics, ourStrength, false));
-  let goalsAgainst = rollGoals(rng, theirAttack / Math.max(ourStrength * 0.95, 1));
+  const styleMod = opponentStyleGoalMods(opponent.style);
+  let goalsFor = rollGoals(rng, attackPower(starters, activeTactics, ourStrength, false) * styleMod.our);
+  let goalsAgainst = rollGoals(rng, (theirAttack / Math.max(ourStrength * 0.95, 1)) * styleMod.their);
 
   const behind = goalsAgainst > goalsFor;
   const synergies = getActiveSynergies(starters, morale, { activeTactics, behindInMatch: behind, manualLineup });

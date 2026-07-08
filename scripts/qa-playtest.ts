@@ -31,7 +31,17 @@ const tacticRows = Object.entries(summary.tacticUsage).sort((a, b) => b[1] - a[1
 const unusedTactics = TACTIC_CARDS.filter((t) => !(t.id in summary.tacticUsage)).map((t) => t.name);
 console.log(`Taktik (kaç run'da aktifti, ilk 5): ${tacticRows.slice(0, 5).map(([id, n]) => `${TACTIC_CARDS.find((t) => t.id === id)?.name ?? id}=${n}`).join(' · ') || 'yok'}`);
 console.log(`Hiç seçilmeyen taktik (${unusedTactics.length}): ${unusedTactics.join(', ') || '—'}`);
-console.log('Not: otomatik oyuncu en yüksek ratingi seçer — insan oyuncuda tag/sinerji hedefli seçimle dağılım farklıdır.');
+console.log('Not: yukarıdaki batch en yüksek ratingi seçer (greedy) — eşik kontrolü buna göre.');
+console.log('');
+
+// --- İkinci batch: sinerji-hedefli (insan-benzeri) seçim → gerçek erişilebilirlik ---
+const synSummary = runPlaytestBatch(RUNS, BASE_SEED, 'synergy');
+const synUnused = SYNERGIES.filter((s) => !(s.id in synSummary.synergyUsage)).map((s) => s.name);
+const synRows = Object.entries(synSummary.synergyUsage).sort((a, b) => b[1] - a[1]);
+console.log('=== Sinerji-hedefli oyuncu (insan-benzeri) ===');
+console.log(`Avg score: ${synSummary.avgScore} · finale galibiyeti %${synSummary.finaleWinRate}`);
+console.log(`Sinerji (ilk 8): ${synRows.slice(0, 8).map(([id, n]) => `${SYNERGIES.find((s) => s.id === id)?.name ?? id}=${n}`).join(' · ') || 'yok'}`);
+console.log(`Hedefli oyunda bile hiç açılmayan (${synUnused.length}): ${synUnused.join(', ') || '—'}`);
 console.log('');
 
 const failures: string[] = [];

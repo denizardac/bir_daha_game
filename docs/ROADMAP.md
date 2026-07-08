@@ -52,7 +52,11 @@ Güncel durum: oyun web'de oynanabilir, 206 unit test + telemetrili headless QA 
 - [x] Finale revanş rakibi: şampiyonluk maçında run içinde seni yenen ilk takım karşına çıkar (+REVANŞ wow anı; rng akışı değişmez)
 - [x] Zorluk eğrisi ölçüldü: finale ulaşma %100, finale galibiyeti %48 (agresif auto-pick ile) — sağlıklı, şimdilik ayar gerekmez
 - [x] Haftalık meydan okuma modifikatörleri: hafta anahtarından deterministik 4 modifikatör (Seri/Kale/Moral/Transfer Haftası) — menü rozeti + skor/run-başı etkileri
-- [ ] İkinci tur (ileride): YILDIZLAR GECE / KARMA DENGE erişilebilirliği, insan-benzeri (tag hedefli) auto-pick ile telemetri, rakip stilinin maç simülasyonuna etkisi
+- [x] İkinci tur:
+  - [x] İnsan-benzeri (sinerji-hedefli) auto-pick — QA raporu artık greedy vs. hedefli oyuncuyu yan yana basıyor; "hangi sinerji hedefleyen oyuncuda bile açılmıyor" ölçülüyor
+  - [x] YILDIZLAR GECE erişilebilir yapıldı: havuzda yalnızca 9 YABANCI YILDIZ var (257 kart) → "3 yıldız + 0 yerli" ulaşılmazdı; "2 yıldız + ≤1 yerli"ye çekildi (telemetride hedefli oyunda artık açılıyor). KARMA DENGE zaten hedefli oyunda açılıyordu — dokunulmadı
+  - [x] Rakip stili artık maça HAFİF etkiyor (±%5): saldırgan = açık maç (iki yönde de gol ↑), savunmacı = kapalı maç (↓), dengeli = nötr; kim kazanır çok değişmez, maçın karakteri değişir (davranış testiyle kilitlendi)
+- [ ] Üçüncü tur (ileride): rakip stiline oyuncu tepkisi (ör. savunmacıya karşı hücum taktiği ipucu), sinerji çeşitliliğini artıracak yeni YABANCI YILDIZ kartları
 
 ## Aşama 4 — Native app yayını
 

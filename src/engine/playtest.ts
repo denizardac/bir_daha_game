@@ -10,8 +10,17 @@ import { simulateMatch } from '@/engine/matchSimulation';
 import { calculateRoundPoints } from '@/engine/scoring';
 import { getWeakestPlayer, selectDepartingPlayer } from '@/engine/squadLogic';
 import { getRandomSeed } from '@/engine/seed';
+import { getActiveSynergies, SYNERGIES } from '@/data/synergies';
 import { isPlayerCard, isTacticCard } from '@/types';
 import type { ActiveTactic, PlayerCard } from '@/types';
+
+/**
+ * greedy = her zaman en yüksek ratingli kart (kaba bot).
+ * synergy = rating + sinerji açma/ilerletme birlikte tartılır (insan-benzeri;
+ * bir sinerjiyi tamamlıyorsa birkaç rating puanından feragat eder). İkincisi,
+ * "sinerji hedefleyen bir oyuncu bunu açabilir mi?" sorusunu ölçmek için.
+ */
+export type PickStrategy = 'greedy' | 'synergy';
 
 export type PlaytestRunResult = {
   seed: string;
@@ -47,11 +56,66 @@ export type PlaytestSummary = {
   finaleWinRate: number;
 };
 
-/** Otomatik kart seçimi — en yüksek rating oyuncu */
-function autoPick(offers: ReturnType<typeof drawOffers>) {
+/** Otomatik kart seçimi — en yüksek rating oyuncu (kaba bot) */
+function greedyPick(offers: ReturnType<typeof drawOffers>) {
   const players = offers.filter(isPlayerCard);
   if (players.length) return [...players].sort((a, b) => b.rating - a.rating)[0]!;
   return offers[0]!;
+}
+
+/**
+ * Sinerji-hedefli seçim: kartı eklediğinde AÇILAN sinerji başına büyük prim,
+ * ilerleyen (yaklaşan) sinerji başına küçük nudge, üstüne kartın rating'i.
+ * Böylece iyi bir oyuncu gibi bazen 1-2 rating düşük ama sinerji tamamlayan
+ * kartı seçer — telemetride "hedefli oyunda hangi sinerji açılıyor" ölçülür.
+ */
+function synergyAwarePick(
+  offers: ReturnType<typeof drawOffers>,
+  squad: PlayerCard[],
+  morale: number,
+  activeTactics: ActiveTactic[],
+) {
+  const players = offers.filter(isPlayerCard);
+  if (!players.length) return offers[0]!;
+
+  const activeBefore = new Set(getActiveSynergies(squad, morale, { activeTactics }).map((s) => s.id));
+
+  let best = players[0]!;
+  let bestScore = -Infinity;
+  for (const cand of players) {
+    const after = applyPlayerToSquad(squad, cand, 11, morale, activeTactics);
+    const activeAfter = getActiveSynergies(after, morale, { activeTactics });
+    const newlyActive = activeAfter.filter((s) => !activeBefore.has(s.id)).length;
+
+    let progressNudge = 0;
+    for (const s of SYNERGIES) {
+      if (activeBefore.has(s.id) || !s.getProgress) continue;
+      const before = s.getProgress(squad);
+      const withCand = s.getProgress(squad, cand);
+      if (before && withCand && withCand.current > before.current) progressNudge += 1;
+    }
+
+    // Sinerji açmak ~22 rating değerinde (iyi oyuncu bir sinerji için feragat eder),
+    // ilerletme ~4 rating değerinde. Beraberlikte rating tie-break yapar.
+    const score = cand.currentRating + newlyActive * 22 + progressNudge * 4;
+    if (score > bestScore) {
+      bestScore = score;
+      best = cand;
+    }
+  }
+  return best;
+}
+
+function autoPick(
+  offers: ReturnType<typeof drawOffers>,
+  strategy: PickStrategy,
+  squad: PlayerCard[],
+  morale: number,
+  activeTactics: ActiveTactic[],
+) {
+  return strategy === 'synergy'
+    ? synergyAwarePick(offers, squad, morale, activeTactics)
+    : greedyPick(offers);
 }
 
 function applyEventForPlaytest(
@@ -110,7 +174,7 @@ function applyEventForPlaytest(
   };
 }
 
-export function simulateFullRun(seed: string, maxRounds = 15): PlaytestRunResult {
+export function simulateFullRun(seed: string, maxRounds = 15, strategy: PickStrategy = 'greedy'): PlaytestRunResult {
   let squad = getStartingSquad(seed, true);
   let morale = 50;
   let score = 0;
@@ -162,7 +226,7 @@ export function simulateFullRun(seed: string, maxRounds = 15): PlaytestRunResult
       'normal',
       getOfferDrawModeForRound(round, maxRounds),
     );
-    const pick = autoPick(offers);
+    const pick = autoPick(offers, strategy, squad, morale, activeTactics);
     if (isPlayerCard(pick)) {
       squad = applyPlayerToSquad(squad, pick, 11, morale, activeTactics);
     }
@@ -221,11 +285,11 @@ export function simulateFullRun(seed: string, maxRounds = 15): PlaytestRunResult
   };
 }
 
-export function runPlaytestBatch(count: number, baseSeed?: string): PlaytestSummary {
+export function runPlaytestBatch(count: number, baseSeed?: string, strategy: PickStrategy = 'greedy'): PlaytestSummary {
   const results: PlaytestRunResult[] = [];
   for (let i = 0; i < count; i++) {
     const seed = baseSeed ? `${baseSeed}_${i}` : getRandomSeed();
-    results.push(simulateFullRun(seed));
+    results.push(simulateFullRun(seed, 15, strategy));
   }
 
   const avg = (fn: (r: PlaytestRunResult) => number) =>

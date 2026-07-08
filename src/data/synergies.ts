@@ -189,15 +189,17 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_super_yabanci', name: 'YILDIZLAR GECE', icon: '🌍', hidden: true,
-    description: 'Tamamen YABANCI YILDIZ ağırlıklı kadro bireysel kaliteyle maçları çözer.',
-    check: (s) => countTag(s, 'YABANCI YILDIZ') >= 3 && countTag(s, 'YERLİ') === 0,
+    description: 'YABANCI YILDIZ ağırlıklı, neredeyse yerlisiz kadro bireysel kaliteyle maçları çözer.',
+    // Havuzda yalnızca 9 YABANCI YILDIZ var (257 kart) → 3 şartı pratikte ulaşılmazdı;
+    // 2 nadir yıldız + en fazla 1 yerli hâlâ niş ama hedefli oyunda erişilebilir.
+    check: (s) => countTag(s, 'YABANCI YILDIZ') >= 2 && countTag(s, 'YERLİ') <= 1,
     ratingMultiplier: 1.08, perRoundBonus: 20,
     getProgress: (s, c) => {
       const combined = c ? [...s, c] : s;
       const stars = countTag(combined, 'YABANCI YILDIZ');
       const locals = countTag(combined, 'YERLİ');
-      if (stars >= 3 && locals === 0) return null;
-      return { current: Math.min(stars, 3), required: 3, icon: '🌍', note: locals > 0 ? `⚠ kadroda 0 yerli olmalı (şu an ${locals})` : 'kadroda 0 yerli olmalı' };
+      if (stars >= 2 && locals <= 1) return null;
+      return { current: Math.min(stars, 2), required: 2, icon: '🌍', note: locals > 1 ? `⚠ en fazla 1 yerli olmalı (şu an ${locals})` : 'en fazla 1 yerli · YABANCI YILDIZ topla' };
     },
   },
   {
