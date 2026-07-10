@@ -18,6 +18,7 @@ export type UiIconName =
   | 'heart-crack'
   | 'info'
   | 'lightbulb'
+  | 'lock'
   | 'medal'
   | 'minus'
   | 'play'
@@ -155,6 +156,13 @@ const paths: Record<UiIconName, ReactNode> = {
       <path d="M9 18h6" />
       <path d="M10 22h4" />
       <path d="M8.5 15.5c-1.5-1.2-2.5-3-2.5-5A6 6 0 0 1 18 10.5c0 2-1 3.8-2.5 5-.8.7-.9 1.1-.9 2.5H9.4c0-1.4-.1-1.8-.9-2.5z" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="4" y="10.5" width="16" height="9.5" rx="2" />
+      <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+      <circle cx="12" cy="15.2" r="1" />
     </>
   ),
   medal: (

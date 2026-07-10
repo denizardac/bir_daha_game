@@ -3,6 +3,7 @@ import { formatScore } from '@/engine/scoring';
 import { getSeasonLabel, listSeasonMonths, getHallOfFameForMonth, getSeasonKey } from '@/engine/hallOfFame';
 import { mergeBestScoreEntries } from '@/engine/leaderboard';
 import { fetchRemoteHallOfFame, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
+import { UiIcon } from '@/components/UiIcon';
 import { getPlayerSeasonTitles } from '@/engine/seasonTitles';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { getAnonymousId } from '@/utils/storage';
@@ -90,7 +91,7 @@ export function HallOfFameScreen() {
             <div className="hof-my-titles-list">
               {myTitles.map((t) => (
                 <span key={t.monthKey} className={`hof-title-badge hof-title-badge--p${t.placement}`}>
-                  <span aria-hidden>{t.icon}</span>
+                  <UiIcon name={t.icon} />
                   <strong>{t.label}</strong>
                   <small>{formatScore(t.score)}</small>
                 </span>
@@ -129,9 +130,9 @@ export function HallOfFameScreen() {
                 <>
                   <div className="hof-podium-header">
                     <span className="hof-podium-rank">#2</span>
-                    <span className="hof-podium-medal">🥈</span>
+                    <span className="hof-podium-medal"><UiIcon name="medal" /></span>
                   </div>
-                  <p className="hof-podium-name">{podiumEntries[1].displayName}{podiumEntries[1].flawless ? ' 🛡️' : ''}</p>
+                  <p className="hof-podium-name">{podiumEntries[1].displayName}{podiumEntries[1].flawless && <UiIcon name="shield" className="hof-flawless-icon" />}</p>
                   <p className="hof-podium-score">{formatScore(podiumEntries[1].totalScore)}</p>
                   <p className="hof-podium-meta">{podiumEntries[1].roundsCompleted} Round</p>
                 </>
@@ -144,9 +145,9 @@ export function HallOfFameScreen() {
             <div className="hof-podium-card hof-podium-card--gold">
               <div className="hof-podium-champ-pill">Aylık Şampiyon</div>
               <div className="hof-podium-header">
-                <span className="hof-podium-medal">👑</span>
+                <span className="hof-podium-medal"><UiIcon name="trophy" /></span>
               </div>
-              <p className="hof-podium-name hof-podium-name--champ">{champion!.displayName}{champion!.flawless ? ' 🛡️' : ''}</p>
+              <p className="hof-podium-name hof-podium-name--champ">{champion!.displayName}{champion!.flawless && <UiIcon name="shield" className="hof-flawless-icon" />}</p>
               <p className="hof-podium-kicker">{getSeasonLabel(month)} lideri</p>
               <p className="hof-podium-score hof-podium-score--gold">{formatScore(champion!.totalScore)}</p>
               <p className="hof-podium-meta">{champion!.roundsCompleted} round tamamlandı · sezonun en yükseği</p>
@@ -158,9 +159,9 @@ export function HallOfFameScreen() {
                 <>
                   <div className="hof-podium-header">
                     <span className="hof-podium-rank">#3</span>
-                    <span className="hof-podium-medal">🥉</span>
+                    <span className="hof-podium-medal"><UiIcon name="medal" /></span>
                   </div>
-                  <p className="hof-podium-name">{podiumEntries[2].displayName}{podiumEntries[2].flawless ? ' 🛡️' : ''}</p>
+                  <p className="hof-podium-name">{podiumEntries[2].displayName}{podiumEntries[2].flawless && <UiIcon name="shield" className="hof-flawless-icon" />}</p>
                   <p className="hof-podium-score">{formatScore(podiumEntries[2].totalScore)}</p>
                   <p className="hof-podium-meta">{podiumEntries[2].roundsCompleted} Round</p>
                 </>
@@ -189,7 +190,7 @@ export function HallOfFameScreen() {
                     <span className="hof-entry-rank">#{idx + 4}</span>
                     <span className="hof-entry-name">
                       {e.displayName}
-                      {e.flawless ? ' 🛡️' : ''}
+                      {e.flawless && <UiIcon name="shield" className="hof-flawless-icon" />}
                       <span className="hof-entry-rounds">{e.roundsCompleted}R</span>
                     </span>
                     <span className="hof-entry-score">{formatScore(e.totalScore)}</span>
@@ -207,7 +208,7 @@ export function HallOfFameScreen() {
                   const champ = getHallOfFameForMonth(stats, m)[0];
                   return (
                     <div key={m} className="hof-archive-row">
-                      <span className="hof-archive-medal">🥇</span>
+                      <span className="hof-archive-medal"><UiIcon name="trophy" /></span>
                       <div className="hof-archive-info">
                         <p className="hof-archive-month">{getSeasonLabel(m)}</p>
                         <p className="hof-archive-item">
@@ -227,7 +228,7 @@ export function HallOfFameScreen() {
                 })}
                 {archivePlaceholders.map((m) => (
                   <div key={m} className="hof-archive-row hof-archive-row--empty">
-                    <span className="hof-archive-medal" style={{ opacity: 0.35 }}>🥇</span>
+                    <span className="hof-archive-medal" style={{ opacity: 0.35 }}><UiIcon name="medal" /></span>
                     <div className="hof-archive-info">
                       <p className="hof-archive-month">{getSeasonLabel(m)}</p>
                       <p className="hof-archive-item">Kayıt yok</p>
@@ -239,7 +240,7 @@ export function HallOfFameScreen() {
               <div className="hof-archive-list">
                 {archivePlaceholders.map((m) => (
                   <div key={m} className="hof-archive-row hof-archive-row--empty">
-                    <span className="hof-archive-medal" style={{ opacity: 0.35 }}>🥇</span>
+                    <span className="hof-archive-medal" style={{ opacity: 0.35 }}><UiIcon name="medal" /></span>
                     <div className="hof-archive-info">
                       <p className="hof-archive-month">{getSeasonLabel(m)}</p>
                       <p className="hof-archive-item">Kayıt yok</p>
@@ -252,7 +253,7 @@ export function HallOfFameScreen() {
             )}
 
             <div className="hof-cta-card">
-              <p className="hof-cta-icon" aria-hidden>🔥</p>
+              <p className="hof-cta-icon" aria-hidden><UiIcon name="flame" /></p>
               <p className="hof-cta-title">Sıralamaya gir</p>
               <p className="hof-cta-desc">15 round'u tamamla, en yüksek skorunla bu ayın Hall of Fame'inde yerini al.</p>
             </div>

@@ -1664,7 +1664,9 @@ export function RunEndScreen() {
                   <div className="run-end-achievement-list">
                     {newAchievements.map((a) => (
                       <div key={a.id} className={`run-end-achievement run-end-achievement--${a.tier}`}>
-                        <span className="run-end-achievement-icon" aria-hidden>{a.icon}</span>
+                        <span className="run-end-achievement-icon" aria-hidden>
+                          <UiIcon name={a.icon} />
+                        </span>
                         <div>
                           <strong>{a.name}</strong>
                           <small>{a.description}</small>

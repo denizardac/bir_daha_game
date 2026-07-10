@@ -4,48 +4,142 @@
    yenilenen run-sonu paylaşım bölümü.
    ============================================================ */
 
-/* ---- Menü: sezon unvanı ---- */
-.menu-season-title {
+/* ---- Menü dikey akış: üst üste binmeyi bitir ----
+   .menu-dashboard flex kolon + justify-content:center + min-height:100dvh idi.
+   İçerik viewport'a sığmayınca satırlar flex-shrink ile eziliyor, grid içindeki
+   panel kendi satırından taşıp (ortalanmış overflow) marka bloğunun üstüne
+   biniyordu. Satırları sabitle; sığmazsa sayfa kaysın. */
+/* .menu-shell 100dvh + overflow:hidden idi → meydan okuma banner'ı gibi ek
+   içerikte taşan kısım (üst blok) kesiliyor ve hiç kaydırılamıyordu. */
+.menu-shell {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* Sığdığında ortala, sığmadığında üstten başlat (klasik flex centering taşma
+   hatası: `center` ile üst taraf erişilemez hâle geliyor). */
+.menu-dashboard {
+  height: auto;
+  justify-content: flex-start;
+  justify-content: safe center;
+}
+.menu-top,
+.menu-brand {
+  flex-shrink: 0;
+  min-width: 0;
+}
+/* flex:1 (basis:0) idi → yüksekliği içeriğe değil artan boşluğa göre alıyor,
+   içerideki panel satırdan taşıyordu. İçerik yüksekliğine sabitle. */
+.menu-main { flex: 0 0 auto; min-height: 0; }
+.menu-body.menu-body--simple { align-items: start; }
+.menu-brand { position: relative; z-index: 2; }
+
+/* Unvan + seri tek satırda chip olarak — iki ayrı blok yerine */
+.menu-brand-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+.menu-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
+  gap: 0.35rem;
   padding: 0.3rem 0.6rem;
-  border: 1px solid rgba(246, 207, 106, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
-  background: rgba(246, 207, 106, 0.09);
+  background: rgba(5, 15, 13, 0.72);
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(226, 234, 230, 0.9);
+}
+.menu-chip svg { width: 0.95em; height: 0.95em; }
+/* Kısa ekranlarda chip satırını iyice sıkıştır — menü tek ekranda kalsın */
+@media (max-height: 940px) and (min-width: 900px) {
+  .menu-brand-chips { margin-top: 0.3rem; }
+  .menu-chip { padding: 0.22rem 0.5rem; font-size: 0.74rem; }
+  .menu-weekly-mod { margin: 0.3rem 0 0.35rem; }
+}
+.menu-chip--title {
+  border-color: rgba(246, 207, 106, 0.42);
+  background: rgba(246, 207, 106, 0.1);
   color: #f6cf6a;
 }
-.menu-season-title-icon { font-size: 0.95rem; }
-
-/* ---- Menü: meydan okuma banner'ı ---- */
-.menu-challenge {
-  margin: 0.5rem 0 0.75rem;
-  padding: 0.85rem 0.95rem;
-  border: 1px solid rgba(232, 74, 95, 0.45);
-  border-radius: 14px;
-  background: linear-gradient(160deg, rgba(232, 74, 95, 0.13), rgba(232, 74, 95, 0.04));
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+.menu-chip--streak {
+  border-color: rgba(255, 138, 76, 0.38);
+  background: rgba(255, 138, 76, 0.09);
+  color: #ffab73;
 }
-.menu-challenge-head {
+
+/* Seed kartındaki tarih kesiliyordu — sığdır */
+.menu-stat-card { min-width: 0; }
+.menu-stat-card .menu-stat-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.menu-stat-card .menu-stat-value:not(.menu-stat-value--big) {
+  font-size: clamp(0.82rem, 0.95vw, 1rem);
+  line-height: 1.15;
+}
+
+/* ---- Menü: meydan okuma şeridi (tek satır, haftalık modifikatörle aynı dil) ---- */
+.menu-challenge {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  margin: 0.5rem 0 0.55rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid rgba(232, 74, 95, 0.45);
+  border-radius: 12px;
+  background: linear-gradient(120deg, rgba(232, 74, 95, 0.14), rgba(232, 74, 95, 0.03));
 }
 .menu-challenge-badge {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(255, 143, 160, 0.4);
+  border-radius: 999px;
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 800;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
   color: #ff8fa0;
 }
+.menu-challenge-body { flex: 1; min-width: 0; }
+.menu-challenge-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: #f4f7f5;
+}
+.menu-challenge-title strong { color: #ff8fa0; }
+.menu-challenge-score {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: #f6cf6a;
+}
+.menu-challenge-mode {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+.menu-challenge-cta {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding-inline: 0.9rem;
+  white-space: nowrap;
+}
 .menu-challenge-dismiss {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -58,23 +152,17 @@
   cursor: pointer;
 }
 .menu-challenge-dismiss:hover { color: #fff; background: rgba(255, 255, 255, 0.07); }
-.menu-challenge-title {
-  margin-top: 0.35rem;
-  font-size: 1.02rem;
-  color: #f4f7f5;
+
+/* Haftalık modifikatör şeridi: dikey ritmi sıkılaştır (menü tek ekrana sığsın) */
+.menu-weekly-mod {
+  margin: 0.4rem 0 0.45rem;
+  padding: 0.45rem 0.7rem;
 }
-.menu-challenge-title strong { color: #ff8fa0; }
-.menu-challenge-score { margin-top: 0.15rem; font-size: 0.9rem; color: rgba(255, 255, 255, 0.72); }
-.menu-challenge-score strong { color: #f6cf6a; font-variant-numeric: tabular-nums; }
-.menu-challenge-mode { margin-top: 0.3rem; font-size: 0.78rem; color: rgba(255, 255, 255, 0.45); }
-.menu-challenge-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  width: 100%;
-  min-height: 44px;
-  margin-top: 0.7rem;
+
+@media (max-width: 720px) {
+  .menu-challenge { flex-wrap: wrap; }
+  .menu-challenge-body { flex-basis: 100%; order: 2; }
+  .menu-challenge-cta { order: 3; flex: 1; min-height: 44px; }
 }
 
 /* ---- Yeni run modalı: rakip skoru ---- */
@@ -115,8 +203,28 @@
   height: 44px;
   border-radius: 11px;
   background: rgba(0, 0, 0, 0.3);
-  font-size: 1.35rem;
+  color: rgba(255, 255, 255, 0.5);
 }
+.achievement-icon svg { width: 20px; height: 20px; }
+.achievement-card--unlocked .achievement-icon { color: #f6cf6a; }
+.achievement-card--unlocked.achievement-card--bronz .achievement-icon { color: #e0913f; }
+.achievement-card--unlocked.achievement-card--gümüş .achievement-icon { color: #d8dee9; }
+
+/* Koleksiyon sekmeleri: ikon + metin */
+.collection-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Kart döşemesi ikonu artık SVG (emoji font-size'ı yerine gerçek boyut) */
+.collection-tile-icon {
+  display: grid;
+  place-items: center;
+  color: #f6cf6a;
+}
+.collection-tile-icon svg { width: 1.5rem; height: 1.5rem; }
+.collection-tile--locked .collection-tile-icon { color: rgba(255, 255, 255, 0.32); }
 .achievement-body { min-width: 0; flex: 1; }
 .achievement-head {
   display: flex;
@@ -198,6 +306,10 @@
 .hof-title-badge--p1 { border-color: rgba(246, 207, 106, 0.6); }
 .hof-title-badge--p2 { border-color: rgba(216, 222, 233, 0.45); }
 .hof-title-badge--p3 { border-color: rgba(224, 145, 63, 0.45); }
+.hof-title-badge svg { width: 15px; height: 15px; }
+.hof-title-badge--p1 svg { color: #f6cf6a; }
+.hof-title-badge--p2 svg { color: #d8dee9; }
+.hof-title-badge--p3 svg { color: #e0913f; }
 .hof-title-badge small {
   font-variant-numeric: tabular-nums;
   color: rgba(255, 255, 255, 0.45);
@@ -208,6 +320,25 @@
   letter-spacing: 0.05em;
   color: rgba(246, 207, 106, 0.72);
 }
+
+/* Emoji yerine ikon: namağlup kalkanı isim yanında satır içi durur */
+.hof-flawless-icon,
+.lb-flawless-icon {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-left: 0.3em;
+  vertical-align: -0.08em;
+  color: #7dd3fc;
+}
+
+/* Podyum madalyaları / arşiv kupası / CTA alevi — SVG ikon boyutları */
+.hof-podium-medal svg { width: 1.5rem; height: 1.5rem; }
+.hof-podium-card--gold .hof-podium-medal svg { width: 1.9rem; height: 1.9rem; color: #f6cf6a; }
+.hof-podium-card--silver .hof-podium-medal svg { color: #d8dee9; }
+.hof-podium-card--bronze .hof-podium-medal svg { color: #e0913f; }
+.hof-archive-medal svg { width: 1.15rem; height: 1.15rem; color: #f6cf6a; }
+.hof-cta-icon svg { width: 1.4rem; height: 1.4rem; color: #ff8a4c; }
 
 /* ---- Run sonu: rozetler ---- */
 .run-end-badge-row {
@@ -264,7 +395,12 @@
   background: rgba(0, 0, 0, 0.25);
 }
 .run-end-achievement--altın { border-color: rgba(246, 207, 106, 0.5); }
-.run-end-achievement-icon { font-size: 1.35rem; }
+.run-end-achievement-icon {
+  display: grid;
+  place-items: center;
+  color: #f6cf6a;
+}
+.run-end-achievement-icon svg { width: 20px; height: 20px; }
 .run-end-achievement strong { display: block; font-size: 0.92rem; color: #f0f4f2; }
 .run-end-achievement small { display: block; font-size: 0.74rem; color: rgba(255, 255, 255, 0.5); }
 

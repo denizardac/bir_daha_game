@@ -4,6 +4,7 @@ import { formatScore } from '@/engine/scoring';
 import { getDailyList, getWeekKey, mergeBestLeaderboardEntries } from '@/engine/leaderboard';
 import { getDailySeed } from '@/engine/seed';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
+import { UiIcon } from '@/components/UiIcon';
 import { getAnonymousId } from '@/utils/storage';
 import type { LeaderboardEntry } from '@/types';
 
@@ -67,7 +68,7 @@ export function LeaderboardScreen() {
           mine ? 'lb-row-self rounded-md border border-amber-500/50 bg-amber-500/10 px-2 font-semibold text-amber-200' : ''
         }`}
       >
-        <span>#{rank} {e.displayName}{e.flawless ? ' 🛡️' : ''}{mine ? ' · sen' : ''}</span>
+        <span>#{rank} {e.displayName}{e.flawless && <UiIcon name="shield" className="lb-flawless-icon" />}{mine ? ' · sen' : ''}</span>
         <span className="font-bold">{formatScore(e.totalScore)}</span>
       </div>
     );

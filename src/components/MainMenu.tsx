@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { fetchTodayRunStartCount, fetchTotalRunStartCount, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
-import { formatDailyDate } from '@/engine/seed';
+import { formatDailyDate, formatDailyDayMonth } from '@/engine/seed';
 import { formatScore } from '@/engine/scoring';
 import { getTodayKey } from '@/engine/leaderboard';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
@@ -134,7 +134,8 @@ export function MainMenu() {
     { icon: 'globe', label: 'Bugün', value: formatScore(todayRuns), sub: 'başlatılan run' },
     { icon: 'flame', label: 'Seri', value: `${stats.dailyStreak} gün`, sub: 'üst üste', hot: stats.dailyStreak > 1 },
     { icon: 'chart', label: 'Toplam', value: formatScore(totalRuns), sub: 'run oynandı' },
-    { icon: 'calendar', label: 'Seed', value: formatDailyDate(), sub: String(new Date().getFullYear()) },
+    // Yıl zaten alt satırda — değere tekrar koymak dar kartta taşmaya yol açıyordu
+    { icon: 'calendar', label: 'Seed', value: formatDailyDayMonth(), sub: String(new Date().getFullYear()) },
   ];
 
   return (
@@ -154,16 +155,21 @@ export function MainMenu() {
               Bir Daha
             </h1>
             <p className="menu-hero-tagline">Aynı seed. Farklı sen.</p>
-            {seasonTitle && (
-              <p className="menu-season-title" title={`Skor: ${formatScore(seasonTitle.score)}`}>
-                <span className="menu-season-title-icon" aria-hidden>{seasonTitle.icon}</span>
-                <span>{seasonTitle.label}</span>
-              </p>
-            )}
-            {stats.dailyStreak > 1 && getDailyStreakBonus(stats.dailyStreak).label && (
-              <p className="menu-streak">
-                <span className="menu-streak-bonus">{getDailyStreakBonus(stats.dailyStreak).label}</span>
-              </p>
+            {(seasonTitle || (stats.dailyStreak > 1 && getDailyStreakBonus(stats.dailyStreak).label)) && (
+              <div className="menu-brand-chips">
+                {seasonTitle && (
+                  <span className="menu-chip menu-chip--title" title={`Skor: ${formatScore(seasonTitle.score)}`}>
+                    <UiIcon name={seasonTitle.icon} />
+                    {seasonTitle.label}
+                  </span>
+                )}
+                {stats.dailyStreak > 1 && getDailyStreakBonus(stats.dailyStreak).label && (
+                  <span className="menu-chip menu-chip--streak" title={getDailyStreakBonus(stats.dailyStreak).label ?? undefined}>
+                    <UiIcon name="flame" />
+                    {stats.dailyStreak} gün serisi
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
@@ -213,33 +219,31 @@ export function MainMenu() {
 
                   {pendingChallenge && (
                     <div className="menu-challenge" role="status">
-                      <div className="menu-challenge-head">
-                        <span className="menu-challenge-badge">MEYDAN OKUMA</span>
-                        <button
-                          type="button"
-                          className="menu-challenge-dismiss"
-                          onClick={() => setChallenge(null)}
-                          aria-label="Meydan okumayı kapat"
-                        >
-                          <UiIcon name="x" />
-                        </button>
+                      <span className="menu-challenge-badge">MEYDAN OKUMA</span>
+                      <div className="menu-challenge-body">
+                        <p className="menu-challenge-title">
+                          <strong>{pendingChallenge.by}</strong> sana meydan okuyor
+                          {pendingChallenge.score > 0 && (
+                            <span className="menu-challenge-score">{formatScore(pendingChallenge.score)}</span>
+                          )}
+                        </p>
+                        <p className="menu-challenge-mode">
+                          {isChallengeSeedDaily(pendingChallenge.seed)
+                            ? 'Bugünün günlük seed’i — skorun günlük sıralamaya yazılır'
+                            : 'Bugünün seed’i değil — serbest mod olarak oynanır'}
+                        </p>
                       </div>
-                      <p className="menu-challenge-title">
-                        <strong>{pendingChallenge.by}</strong> sana meydan okuyor
-                      </p>
-                      <p className="menu-challenge-score">
-                        {pendingChallenge.score > 0
-                          ? <>Geçmen gereken skor: <strong>{formatScore(pendingChallenge.score)}</strong></>
-                          : 'Aynı seed ile daha iyisini yap'}
-                      </p>
-                      <p className="menu-challenge-mode">
-                        {isChallengeSeedDaily(pendingChallenge.seed)
-                          ? 'Bugünün günlük seed’i — skorun günlük sıralamaya yazılır'
-                          : 'Bu seed bugünün seed’i değil — serbest mod olarak oynanır'}
-                      </p>
                       <button type="button" className="btn-primary menu-challenge-cta" onClick={acceptChallenge}>
                         <UiIcon name="play" />
-                        Meydan okumayı kabul et
+                        Kabul et
+                      </button>
+                      <button
+                        type="button"
+                        className="menu-challenge-dismiss"
+                        onClick={() => setChallenge(null)}
+                        aria-label="Meydan okumayı kapat"
+                      >
+                        <UiIcon name="x" />
                       </button>
                     </div>
                   )}
@@ -248,7 +252,7 @@ export function MainMenu() {
                     const mod = getWeeklyModifier();
                     return (
                       <p className="menu-weekly-mod" title={mod.description}>
-                        <span className="menu-weekly-mod-icon" aria-hidden>{mod.icon}</span>
+                        <UiIcon name={mod.icon} className="menu-weekly-mod-icon" />
                         <strong>{mod.name}</strong>
                         <span className="menu-weekly-mod-desc">{mod.description}</span>
                       </p>

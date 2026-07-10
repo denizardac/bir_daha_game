@@ -1,3 +1,4 @@
+import type { UiIconName } from '@/components/UiIcon';
 import { getSeasonKey, getSeasonLabel } from '@/engine/hallOfFame';
 import type { HallOfFameEntry, PersistedData } from '@/types';
 
@@ -9,13 +10,14 @@ export type SeasonTitle = {
   label: string;
   placement: SeasonPlacement;
   score: number;
-  icon: string;
+  /** Emoji değil — ortak SVG ikon setinden ad */
+  icon: UiIconName;
 };
 
-const PLACEMENT_META: Record<SeasonPlacement, { suffix: string; icon: string }> = {
-  1: { suffix: 'Şampiyonu', icon: '👑' },
-  2: { suffix: 'İkincisi', icon: '🥈' },
-  3: { suffix: 'Üçüncüsü', icon: '🥉' },
+const PLACEMENT_META: Record<SeasonPlacement, { suffix: string; icon: UiIconName }> = {
+  1: { suffix: 'Şampiyonu', icon: 'trophy' },
+  2: { suffix: 'İkincisi', icon: 'medal' },
+  3: { suffix: 'Üçüncüsü', icon: 'medal' },
 };
 
 /**

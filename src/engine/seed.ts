@@ -52,6 +52,12 @@ export function formatDailyDate(now = new Date()): string {
   return `${d} ${TR_MONTHS[m! - 1]} ${y}`;
 }
 
+/** Yıl olmadan — dar kartlarda yıl ayrı satırda gösterilir ("10 Temmuz") */
+export function formatDailyDayMonth(now = new Date()): string {
+  const [, m, d] = getDailyDateKey(now).split('-').map(Number);
+  return `${d} ${TR_MONTHS[m! - 1]}`;
+}
+
 export function getRandomSeed(): string {
   return `free-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }

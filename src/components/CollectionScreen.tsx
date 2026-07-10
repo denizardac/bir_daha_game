@@ -3,9 +3,25 @@ import { EVENT_CARDS } from '@/data/events';
 import { PLAYER_POOL } from '@/data/players';
 import { getPlayerArchetype } from '@/data/archetypes';
 import { countUnlockedAchievements, getAchievementState } from '@/engine/achievements';
+import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 
 type Tab = 'efsane' | 'olay' | 'basarim';
+
+const TAB_META: [Tab, string, UiIconName][] = [
+  ['efsane', 'Efsaneler', 'trophy'],
+  ['olay', 'Olaylar', 'book-open'],
+  ['basarim', 'Başarımlar', 'medal'],
+];
+
+/** Olay kategorisi → ortak ikon seti (kart verisindeki emoji yerine) */
+const EVENT_CATEGORY_ICON: Record<string, UiIconName> = {
+  transfer: 'arrow-right',
+  taktik: 'clipboard',
+  moral: 'heart',
+  fiziksel: 'shield',
+  ozel: 'sparkles',
+};
 
 /** Havuzdaki benzersiz efsane kartlar (isim bazlı) */
 const LEGEND_POOL = (() => {
@@ -59,13 +75,14 @@ export function CollectionScreen() {
         </div>
 
         <div className="page-screen-tabs">
-          {([['efsane', '🏆 Efsaneler'], ['olay', '🎭 Olaylar'], ['basarim', '🎖️ Başarımlar']] as [Tab, string][]).map(([id, label]) => (
+          {TAB_META.map(([id, label, icon]) => (
             <button
               key={id}
               type="button"
-              className={`btn-secondary ${tab === id ? 'btn-secondary--active' : ''}`}
+              className={`btn-secondary collection-tab ${tab === id ? 'btn-secondary--active' : ''}`}
               onClick={() => setTab(id)}
             >
+              <UiIcon name={icon} />
               {label}
             </button>
           ))}
@@ -82,7 +99,9 @@ export function CollectionScreen() {
                   className={`collection-tile ${ok ? '' : 'collection-tile--locked'}`}
                   style={ok && p.signature && p.signatureColor ? { borderColor: p.signatureColor } : undefined}
                 >
-                  <div className="collection-tile-icon">{ok ? (p.signature ? '✒️' : '🏆') : '🔒'}</div>
+                  <div className="collection-tile-icon">
+                    <UiIcon name={ok ? (p.signature ? 'sparkles' : 'trophy') : 'lock'} />
+                  </div>
                   <div className="collection-tile-name">{ok ? p.name : '???'}</div>
                   <div className="collection-tile-sub">
                     {ok ? `${arch.label} · ${p.currentRating}` : 'Henüz çekilmedi'}
@@ -99,7 +118,9 @@ export function CollectionScreen() {
               const ok = seenEvents.has(e.id);
               return (
                 <div key={e.id} className={`collection-tile ${ok ? '' : 'collection-tile--locked'}`}>
-                  <div className="collection-tile-icon">{ok ? e.icon : '🔒'}</div>
+                  <div className="collection-tile-icon">
+                    <UiIcon name={ok ? (EVENT_CATEGORY_ICON[e.category] ?? 'circle-dot') : 'lock'} />
+                  </div>
                   <div className="collection-tile-name">{ok ? e.title : '???'}</div>
                   <div className="collection-tile-sub">{ok ? e.category : 'Henüz görülmedi'}</div>
                 </div>
@@ -115,7 +136,9 @@ export function CollectionScreen() {
                 key={achievement.id}
                 className={`achievement-card achievement-card--${achievement.tier} ${unlocked ? 'achievement-card--unlocked' : ''}`}
               >
-                <span className="achievement-icon" aria-hidden>{unlocked ? achievement.icon : '🔒'}</span>
+                <span className="achievement-icon" aria-hidden>
+                  <UiIcon name={unlocked ? achievement.icon : 'lock'} />
+                </span>
                 <div className="achievement-body">
                   <div className="achievement-head">
                     <strong className="achievement-name">{achievement.name}</strong>

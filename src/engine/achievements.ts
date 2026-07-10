@@ -1,3 +1,4 @@
+import type { UiIconName } from '@/components/UiIcon';
 import { EVENT_CARDS } from '@/data/events';
 import { PLAYER_POOL } from '@/data/players';
 import { TOTAL_SYNERGIES } from '@/data/synergies';
@@ -8,7 +9,8 @@ export type AchievementTier = 'bronz' | 'gümüş' | 'altın';
 export type Achievement = {
   id: string;
   name: string;
-  icon: string;
+  /** Emoji değil — ortak SVG ikon setinden ad */
+  icon: UiIconName;
   description: string;
   tier: AchievementTier;
   target: number;
@@ -28,87 +30,87 @@ const count = (list: unknown): number => (Array.isArray(list) ? list.length : 0)
 export const ACHIEVEMENTS: Achievement[] = [
   // Efsane kart koleksiyonu
   {
-    id: 'legend_first', name: 'İlk Efsane', icon: '🏆', tier: 'bronz',
+    id: 'legend_first', name: 'İlk Efsane', icon: 'trophy', tier: 'bronz',
     description: 'Kadrona ilk efsane kartı kat.',
     target: 1, progress: (d) => count(d.collectedLegends),
   },
   {
-    id: 'legend_ten', name: 'Efsane Avcısı', icon: '👑', tier: 'gümüş',
+    id: 'legend_ten', name: 'Efsane Avcısı', icon: 'medal', tier: 'gümüş',
     description: '10 farklı efsane kart topla.',
     target: 10, progress: (d) => count(d.collectedLegends),
   },
   {
-    id: 'legend_all', name: 'Panteon', icon: '🌟', tier: 'altın',
+    id: 'legend_all', name: 'Panteon', icon: 'sparkles', tier: 'altın',
     description: 'Tüm efsane kartları koleksiyonuna ekle.',
     target: TOTAL_LEGENDS, progress: (d) => count(d.collectedLegends),
   },
 
   // Olay koleksiyonu
   {
-    id: 'event_ten', name: 'Hikâye Avcısı', icon: '🎭', tier: 'bronz',
+    id: 'event_ten', name: 'Hikâye Avcısı', icon: 'book-open', tier: 'bronz',
     description: '10 farklı olay kartı gör.',
     target: 10, progress: (d) => count(d.seenEvents),
   },
   {
-    id: 'event_half', name: 'Soyunma Odası Kurdu', icon: '📰', tier: 'gümüş',
+    id: 'event_half', name: 'Soyunma Odası Kurdu', icon: 'clipboard', tier: 'gümüş',
     description: `${Math.ceil(TOTAL_EVENTS / 2)} farklı olay kartı gör.`,
     target: Math.ceil(TOTAL_EVENTS / 2), progress: (d) => count(d.seenEvents),
   },
   {
-    id: 'event_all', name: 'Her Şeyi Gördüm', icon: '📚', tier: 'altın',
+    id: 'event_all', name: 'Her Şeyi Gördüm', icon: 'archive', tier: 'altın',
     description: 'Tüm olay kartlarını gör.',
     target: TOTAL_EVENTS, progress: (d) => count(d.seenEvents),
   },
 
   // Sinerji keşfi
   {
-    id: 'synergy_ten', name: 'Kimyager', icon: '⚡', tier: 'bronz',
+    id: 'synergy_ten', name: 'Kimyager', icon: 'zap', tier: 'bronz',
     description: '10 sinerji keşfet.',
     target: 10, progress: (d) => count(d.discoveredSynergies),
   },
   {
-    id: 'synergy_all', name: 'Sinerji Ustası', icon: '🧪', tier: 'altın',
+    id: 'synergy_all', name: 'Sinerji Ustası', icon: 'graduation-cap', tier: 'altın',
     description: 'Tüm sinerjileri keşfet.',
     target: TOTAL_SYNERGIES, progress: (d) => count(d.discoveredSynergies),
   },
 
   // Skor
   {
-    id: 'score_5k', name: 'Formda', icon: '📈', tier: 'bronz',
+    id: 'score_5k', name: 'Formda', icon: 'chart', tier: 'bronz',
     description: 'Tek run\'da 5.000 puan yap.',
     target: 5000, progress: (d) => d.allTimeBest,
   },
   {
-    id: 'score_15k', name: 'Elit Teknik Direktör', icon: '🎖️', tier: 'gümüş',
+    id: 'score_15k', name: 'Elit Teknik Direktör', icon: 'medal', tier: 'gümüş',
     description: 'Tek run\'da 15.000 puan yap.',
     target: 15000, progress: (d) => d.allTimeBest,
   },
   {
-    id: 'score_25k', name: 'Rekortmen', icon: '💎', tier: 'altın',
+    id: 'score_25k', name: 'Rekortmen', icon: 'trophy', tier: 'altın',
     description: 'Tek run\'da 25.000 puan yap.',
     target: 25000, progress: (d) => d.allTimeBest,
   },
 
   // Namağlup
   {
-    id: 'flawless_one', name: 'Namağlup', icon: '🛡️', tier: 'altın',
+    id: 'flawless_one', name: 'Namağlup', icon: 'shield', tier: 'altın',
     description: 'Hiç oyuncu kaybetmeden bir run bitir.',
     target: 1, progress: (d) => count(d.flawlessLeaderboard),
   },
 
   // Seri / sadakat
   {
-    id: 'streak_3', name: 'Alışkanlık', icon: '🔥', tier: 'bronz',
+    id: 'streak_3', name: 'Alışkanlık', icon: 'flame', tier: 'bronz',
     description: '3 gün üst üste günlük seed oyna.',
     target: 3, progress: (d) => d.dailyStreak,
   },
   {
-    id: 'streak_7', name: 'Sadık Taraftar', icon: '🔥', tier: 'gümüş',
+    id: 'streak_7', name: 'Sadık Taraftar', icon: 'flame', tier: 'gümüş',
     description: '7 gün üst üste günlük seed oyna.',
     target: 7, progress: (d) => d.dailyStreak,
   },
   {
-    id: 'runs_25', name: 'Tecrübe', icon: '⏱️', tier: 'gümüş',
+    id: 'runs_25', name: 'Tecrübe', icon: 'calendar', tier: 'gümüş',
     description: '25 run tamamla.',
     target: 25, progress: (d) => d.totalRuns,
   },

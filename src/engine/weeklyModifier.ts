@@ -1,3 +1,4 @@
+import type { UiIconName } from '@/components/UiIcon';
 import { getWeekKey } from '@/engine/leaderboard';
 
 /**
@@ -8,7 +9,8 @@ import { getWeekKey } from '@/engine/leaderboard';
 export type WeeklyModifier = {
   id: string;
   name: string;
-  icon: string;
+  /** Emoji değil — ortak SVG ikon setinden ad */
+  icon: UiIconName;
   description: string;
   /** Galibiyet round puanı çarpanı (scoring) */
   winScoreMultiplier?: number;
@@ -24,28 +26,28 @@ export const WEEKLY_MODIFIERS: WeeklyModifier[] = [
   {
     id: 'mod_seri_haftasi',
     name: 'Seri Haftası',
-    icon: '🔥',
+    icon: 'flame',
     description: 'Bu hafta galibiyetler %10 daha çok puan verir.',
     winScoreMultiplier: 1.1,
   },
   {
     id: 'mod_kale_haftasi',
     name: 'Kale Haftası',
-    icon: '🧤',
+    icon: 'shield',
     description: 'Bu hafta gol yemeden biten maçların bonusu iki katı.',
     cleanSheetBonusMultiplier: 2,
   },
   {
     id: 'mod_moral_haftasi',
     name: 'Moral Haftası',
-    icon: '💚',
+    icon: 'heart',
     description: 'Bu hafta her run +8 moralle başlar.',
     startMoraleBonus: 8,
   },
   {
     id: 'mod_transfer_haftasi',
     name: 'Transfer Haftası',
-    icon: '🔁',
+    icon: 'refresh',
     description: 'Bu hafta her run +1 yenileme hakkıyla başlar.',
     extraRerolls: 1,
   },
