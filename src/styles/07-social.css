@@ -1,0 +1,359 @@
+/* ============================================================
+   Aşama 5 — Sosyal ve kalıcılık
+   Meydan okuma banner'ı, sezon unvanları, başarımlar,
+   yenilenen run-sonu paylaşım bölümü.
+   ============================================================ */
+
+/* ---- Menü: sezon unvanı ---- */
+.menu-season-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid rgba(246, 207, 106, 0.4);
+  border-radius: 999px;
+  background: rgba(246, 207, 106, 0.09);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #f6cf6a;
+}
+.menu-season-title-icon { font-size: 0.95rem; }
+
+/* ---- Menü: meydan okuma banner'ı ---- */
+.menu-challenge {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(232, 74, 95, 0.45);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(232, 74, 95, 0.13), rgba(232, 74, 95, 0.04));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+.menu-challenge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.menu-challenge-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: #ff8fa0;
+}
+.menu-challenge-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+}
+.menu-challenge-dismiss:hover { color: #fff; background: rgba(255, 255, 255, 0.07); }
+.menu-challenge-title {
+  margin-top: 0.35rem;
+  font-size: 1.02rem;
+  color: #f4f7f5;
+}
+.menu-challenge-title strong { color: #ff8fa0; }
+.menu-challenge-score { margin-top: 0.15rem; font-size: 0.9rem; color: rgba(255, 255, 255, 0.72); }
+.menu-challenge-score strong { color: #f6cf6a; font-variant-numeric: tabular-nums; }
+.menu-challenge-mode { margin-top: 0.3rem; font-size: 0.78rem; color: rgba(255, 255, 255, 0.45); }
+.menu-challenge-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.7rem;
+}
+
+/* ---- Yeni run modalı: rakip skoru ---- */
+.start-run-rival {
+  margin-top: 0.35rem;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+.start-run-rival strong { color: #f6cf6a; font-variant-numeric: tabular-nums; }
+
+/* ---- Başarım ızgarası (koleksiyon) ---- */
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+.achievement-card {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line-2, rgba(255, 255, 255, 0.09));
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  opacity: 0.62;
+}
+.achievement-card--unlocked { opacity: 1; background: rgba(255, 255, 255, 0.05); }
+.achievement-card--unlocked.achievement-card--bronz { border-color: rgba(224, 145, 63, 0.5); }
+.achievement-card--unlocked.achievement-card--gümüş { border-color: rgba(216, 222, 233, 0.45); }
+.achievement-card--unlocked.achievement-card--altın {
+  border-color: rgba(246, 207, 106, 0.6);
+  box-shadow: 0 0 18px rgba(246, 207, 106, 0.12);
+}
+.achievement-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 1.35rem;
+}
+.achievement-body { min-width: 0; flex: 1; }
+.achievement-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.achievement-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.06rem;
+  font-weight: 700;
+  color: #f2f5f3;
+}
+.achievement-tier {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+.achievement-desc {
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.58);
+}
+.achievement-bar {
+  margin-top: 0.55rem;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+/* Düz renk: gradyan doluluğa sıkışıp az dolu çubuğu "bitmiş" gibi göstermesin */
+.achievement-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: #2dd4bf;
+}
+.achievement-card--unlocked .achievement-bar > span { background: #f6cf6a; }
+.achievement-progress {
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ---- Hall of Fame: kalıcı unvanlar ---- */
+.hof-my-titles {
+  margin: 0.5rem 0 1rem;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgba(246, 207, 106, 0.28);
+  border-radius: 14px;
+  background: rgba(246, 207, 106, 0.06);
+}
+.hof-my-titles-kicker {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(246, 207, 106, 0.75);
+}
+.hof-my-titles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.hof-title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  font-size: 0.84rem;
+  color: #e9eeeb;
+}
+.hof-title-badge--p1 { border-color: rgba(246, 207, 106, 0.6); }
+.hof-title-badge--p2 { border-color: rgba(216, 222, 233, 0.45); }
+.hof-title-badge--p3 { border-color: rgba(224, 145, 63, 0.45); }
+.hof-title-badge small {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.45);
+}
+.hof-archive-title {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: rgba(246, 207, 106, 0.72);
+}
+
+/* ---- Run sonu: rozetler ---- */
+.run-end-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+.run-end-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(246, 207, 106, 0.45);
+  border-radius: 999px;
+  background: rgba(246, 207, 106, 0.1);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: #f6cf6a;
+}
+
+/* ---- Run sonu: yeni başarımlar ---- */
+.run-end-achievements {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  border-radius: 14px;
+  background: rgba(45, 212, 191, 0.06);
+}
+.run-end-achievements-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5eead4;
+}
+.run-end-achievement-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+.run-end-achievement {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.25);
+}
+.run-end-achievement--altın { border-color: rgba(246, 207, 106, 0.5); }
+.run-end-achievement-icon { font-size: 1.35rem; }
+.run-end-achievement strong { display: block; font-size: 0.92rem; color: #f0f4f2; }
+.run-end-achievement small { display: block; font-size: 0.74rem; color: rgba(255, 255, 255, 0.5); }
+
+/* ---- Run sonu: skor tier rengi ---- */
+.run-end-score-lockup--gold strong { color: #f6cf6a; }
+.run-end-score-lockup--silver strong { color: #d8dee9; }
+.run-end-score-lockup--bronze strong { color: #e0913f; }
+.run-end-score-lockup--default strong { color: #2dd4bf; }
+
+/* ---- Run sonu: paylaşım bölümü ---- */
+.run-end-share {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line-2, rgba(255, 255, 255, 0.09));
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.run-end-share-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+.run-end-share-kicker {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+.run-end-share-title {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f2f5f3;
+}
+.run-end-share-tier {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.run-end-share-tier--gold { color: #f6cf6a; }
+.run-end-share-tier--silver { color: #d8dee9; }
+.run-end-share-tier--bronze { color: #e0913f; }
+.run-end-share-tier--default { color: #2dd4bf; }
+
+.share-card-preview {
+  max-width: 380px;
+  margin: 0 auto;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+}
+
+.run-end-share-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.run-end-share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  font-size: 0.86rem;
+}
+.run-end-share-msg {
+  margin-top: 0.7rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #5eead4;
+}
+
+.run-end-final-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.run-end-final-actions button { min-height: 46px; }
+
+@media (max-width: 720px) {
+  .run-end-share { padding: 0.75rem; }
+  .share-card-preview { max-width: 100%; }
+  .run-end-share-actions { grid-template-columns: 1fr 1fr; }
+}

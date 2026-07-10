@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { EVENT_CARDS } from '@/data/events';
 import { PLAYER_POOL } from '@/data/players';
 import { getPlayerArchetype } from '@/data/archetypes';
+import { countUnlockedAchievements, getAchievementState } from '@/engine/achievements';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 
-type Tab = 'efsane' | 'olay';
+type Tab = 'efsane' | 'olay' | 'basarim';
 
 /** Havuzdaki benzersiz efsane kartlar (isim bazlı) */
 const LEGEND_POOL = (() => {
@@ -29,6 +30,8 @@ export function CollectionScreen() {
 
   const legendOpen = LEGEND_POOL.filter((p) => collectedLegends.has(p.name)).length;
   const eventOpen = EVENT_CARDS.filter((e) => seenEvents.has(e.id)).length;
+  const achievements = getAchievementState(stats);
+  const achievementCount = countUnlockedAchievements(stats);
 
   return (
     <div className="game-shell page-screen">
@@ -49,10 +52,14 @@ export function CollectionScreen() {
             <div className="collection-stat-value">{eventOpen}/{EVENT_CARDS.length}</div>
             <div className="collection-stat-label">Olay</div>
           </div>
+          <div className="collection-stat">
+            <div className="collection-stat-value">{achievementCount.unlocked}/{achievementCount.total}</div>
+            <div className="collection-stat-label">Başarım</div>
+          </div>
         </div>
 
         <div className="page-screen-tabs">
-          {([['efsane', '🏆 Efsaneler'], ['olay', '🎭 Olaylar']] as [Tab, string][]).map(([id, label]) => (
+          {([['efsane', '🏆 Efsaneler'], ['olay', '🎭 Olaylar'], ['basarim', '🎖️ Başarımlar']] as [Tab, string][]).map(([id, label]) => (
             <button
               key={id}
               type="button"
@@ -98,6 +105,32 @@ export function CollectionScreen() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {tab === 'basarim' && (
+          <div className="achievement-grid">
+            {achievements.map(({ achievement, current, unlocked, percent }) => (
+              <div
+                key={achievement.id}
+                className={`achievement-card achievement-card--${achievement.tier} ${unlocked ? 'achievement-card--unlocked' : ''}`}
+              >
+                <span className="achievement-icon" aria-hidden>{unlocked ? achievement.icon : '🔒'}</span>
+                <div className="achievement-body">
+                  <div className="achievement-head">
+                    <strong className="achievement-name">{achievement.name}</strong>
+                    <span className="achievement-tier">{achievement.tier}</span>
+                  </div>
+                  <p className="achievement-desc">{achievement.description}</p>
+                  <div className="achievement-bar">
+                    <span style={{ width: `${percent}%` }} />
+                  </div>
+                  <p className="achievement-progress">
+                    {unlocked ? 'Açıldı' : `${current} / ${achievement.target}`}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

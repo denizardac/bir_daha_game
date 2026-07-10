@@ -5,6 +5,8 @@ import {
 } from '@/constants/game';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
 import { getWeeklyModifier } from '@/engine/weeklyModifier';
+import { isChallengeSeedDaily, type Challenge } from '@/engine/challenge';
+import { ACHIEVEMENTS, getUnlockedAchievementIds, type Achievement } from '@/engine/achievements';
 import { isRemoteLeaderboardEnabled, recordRunStart, submitRunToLeaderboard } from '@/api/leaderboardRemote';
 import { buildSignedRunPayload } from '@/engine/runIntegrity';
 import { validateRunSubmission } from '@/engine/runValidation';
@@ -95,13 +97,21 @@ interface GameStore extends GameState {
   pendingSynergyReveal: string[];
   /** Oyuncu seçildikten sonra İlk 11 düzenleme modalı açık mı (maç onaydan sonra). */
   lineupEditorOpen: boolean;
+  /** URL ile gelen meydan okuma (menüde banner) */
+  pendingChallenge: Challenge | null;
+  /** Run başında açık olan başarım id'leri — run sonu "yeni açıldı" kıyası için */
+  unlockedAtRunStart: string[];
+  /** Bu run'da açılan başarımlar (run sonu ekranında gösterilir) */
+  newAchievements: Achievement[];
   /** Editörde vurgulanacak yeni oyuncu id'si. */
   lineupEditorHighlightId: string | null;
   /** Editör açılmadan önceki kadro/diziliş — iptal edilince geri yüklenir. */
   lineupEditorPrevSquad: GameState['squad'] | null;
   lineupEditorPrevManual: Record<number, string> | null;
   init: () => void;
-  startRun: (daily?: boolean, displayName?: string) => void;
+  /** seedOverride verilirse meydan okuma seed'iyle başlar (günlük olup olmadığı seed'den türetilir) */
+  startRun: (daily?: boolean, displayName?: string, seedOverride?: string) => void;
+  setChallenge: (challenge: Challenge | null) => void;
   continueRun: () => void;
   abandonRun: () => void;
   selectOffer: (card: GameCard) => void;
@@ -183,6 +193,13 @@ function initialRun(
     recoveryGuaranteed: false,
     manualLineup: {},
   };
+}
+
+/** Run başındaki açık başarımlarla kıyaslayıp bu run'da açılanları döner */
+function computeNewAchievements(unlockedAtRunStart: string[]): Achievement[] {
+  const before = new Set(unlockedAtRunStart);
+  const after = new Set(getUnlockedAchievementIds(loadPersisted()));
+  return ACHIEVEMENTS.filter((a) => after.has(a.id) && !before.has(a.id));
 }
 
 async function persistRunEndScore(state: GameStore, score: number, roundsCompleted: number, flawless: boolean) {
@@ -316,7 +333,8 @@ function finalizeBonusRound(
       activeTactics,
       morale,
     });
-    void persistRunEndScore({ ...state, score, roundHistory, flawless: state.flawless }, score, state.round, state.flawless);
+    void persistRunEndScore({ ...state, score, roundHistory, flawless: state.flawless }, score, state.round, state.flawless)
+      .then(() => set({ newAchievements: computeNewAchievements(state.unlockedAtRunStart) }));
     set({
       squad,
       activeTactics,
@@ -458,6 +476,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lastLossBrokenSynergies: [],
   pendingSynergyReveal: [],
   recentlyJoinedPlayerId: null,
+  pendingChallenge: null,
+  unlockedAtRunStart: [],
+  newAchievements: [],
   lineupEditorOpen: false,
   lineupEditorHighlightId: null,
   lineupEditorPrevSquad: null,
@@ -470,12 +491,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ showContinuePrompt: isResumableRun(saved), isFirstRun: p.isFirstRun });
   },
 
-  startRun: (daily = true, displayName = 'Anonim') => {
+  setChallenge: (challenge) => set({ pendingChallenge: challenge }),
+
+  startRun: (daily = true, displayName = 'Anonim', seedOverride?: string) => {
     const p = loadPersisted();
     const name = displayName.trim().slice(0, 18) || 'Anonim';
-    const seed = daily ? getDailySeed() : getRandomSeed();
-    const streakBonus = daily ? getDailyStreakBonus(p.dailyStreak) : getDailyStreakBonus(0);
-    const run = initialRun(seed, daily, p.isFirstRun, name, streakBonus);
+    const seed = seedOverride ?? (daily ? getDailySeed() : getRandomSeed());
+    // Meydan okuma seed'i bugünün günlük seed'i değilse serbest mod sayılır —
+    // sunucu da günlük skorlarda seed↔gün eşleşmesi arıyor.
+    const isDaily = seedOverride ? isChallengeSeedDaily(seed) : daily;
+    const streakBonus = isDaily ? getDailyStreakBonus(p.dailyStreak) : getDailyStreakBonus(0);
+    const run = initialRun(seed, isDaily, p.isFirstRun, name, streakBonus);
     clearRun();
     persistRun(run);
     {
@@ -489,12 +515,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
         playerId: getAnonymousId(),
         displayName: name,
         seed,
-        isDaily: daily,
+        isDaily,
       }).then((result) => {
         if (!result.ok) console.warn('[run-start] Başlangıç kaydedilemedi:', result.error);
       });
     }
-    set({ ...run, screen: 'game', showContinuePrompt: false, pendingOffersShown: [], pendingSelected: null, trainingFlow: null, tacticDraft: { formationId: null, systemId: null }, usedEventIds: [], runEndStep: 0, pendingMilestones: [], lastLossBrokenSynergies: [], pendingSynergyReveal: [], nextMatchRisk: 0, nextMatchBonus: 0 });
+    set({
+      ...run, screen: 'game', showContinuePrompt: false, pendingOffersShown: [], pendingSelected: null,
+      trainingFlow: null, tacticDraft: { formationId: null, systemId: null }, usedEventIds: [], runEndStep: 0,
+      pendingMilestones: [], lastLossBrokenSynergies: [], pendingSynergyReveal: [], nextMatchRisk: 0, nextMatchBonus: 0,
+      pendingChallenge: null,
+      unlockedAtRunStart: getUnlockedAchievementIds(p),
+      newAchievements: [],
+    });
   },
 
   continueRun: () => {
@@ -547,6 +580,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       recentlyJoinedPlayerId: saved.recentlyJoinedPlayerId ?? null,
       runEndStep: 0,
       pendingMilestones: [],
+      // Devam edilen run'da yalnızca bundan sonra açılanlar "yeni" sayılır
+      unlockedAtRunStart: getUnlockedAchievementIds(loadPersisted()),
+      newAchievements: [],
     });
   },
 
@@ -1183,7 +1219,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ...state, squad, morale, streak, score, lossesCount, flawless,
           roundHistory, discoveredSynergies: discoveries,
         });
-        void persistRunEndScore({ ...state, score, roundHistory, flawless, lossesCount }, score, state.round, flawless);
+        void persistRunEndScore({ ...state, score, roundHistory, flawless, lossesCount }, score, state.round, flawless)
+          .then(() => set({ newAchievements: computeNewAchievements(state.unlockedAtRunStart) }));
         set({
           squad, morale, streak, score, lossesCount, flawless,
           manualLineup,
@@ -1251,7 +1288,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         isRunComplete: true,
       }));
       const analysis = buildRunEndAnalysis({ ...state, score, roundHistory, discoveredSynergies: discoveries, flawless });
-      void persistRunEndScore({ ...state, score, roundHistory, flawless, lossesCount }, score, state.round, flawless);
+      void persistRunEndScore({ ...state, score, roundHistory, flawless, lossesCount }, score, state.round, flawless)
+        .then(() => set({ newAchievements: computeNewAchievements(state.unlockedAtRunStart) }));
       set({
         squad, morale, streak, score, lossesCount, flawless,
         manualLineup,
@@ -1317,7 +1355,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         maxRounds: state.maxRounds,
         isRunComplete: true,
       }));
-      void persistRunEndScore(state, state.score, state.round, state.flawless);
+      void persistRunEndScore(state, state.score, state.round, state.flawless)
+        .then(() => set({ newAchievements: computeNewAchievements(state.unlockedAtRunStart) }));
       set({ phase: 'runEnd', isFirstRun: false, runEndAnalysis: analysis, runEndStep: 0, pendingMilestones, recentlyJoinedPlayerId: null });
       clearRun();
       return;
@@ -1346,7 +1385,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     clearRun();
     const run = initialRun(s.seed, s.isDailySeed, s.isFirstRun, s.displayName || 'Anonim');
     persistRun(run);
-    set({ ...run, screen: 'game', usedEventIds: [], runEndStep: 0, pendingMilestones: [] });
+    set({
+      ...run, screen: 'game', usedEventIds: [], runEndStep: 0, pendingMilestones: [],
+      unlockedAtRunStart: getUnlockedAchievementIds(loadPersisted()),
+      newAchievements: [],
+    });
   },
 
   tickTimer: () => {

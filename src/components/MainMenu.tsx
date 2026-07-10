@@ -6,6 +6,9 @@ import { formatScore } from '@/engine/scoring';
 import { getTodayKey } from '@/engine/leaderboard';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
 import { getWeeklyModifier } from '@/engine/weeklyModifier';
+import { isChallengeSeedDaily } from '@/engine/challenge';
+import { getPrimarySeasonTitle } from '@/engine/seasonTitles';
+import { getAnonymousId } from '@/utils/storage';
 import { MenuBiteTipsWidget } from '@/components/MenuBiteTipsWidget';
 import { MenuLeaderboardWidget } from '@/components/MenuLeaderboardWidget';
 
@@ -25,9 +28,12 @@ export function MainMenu() {
   const abandonRun = useGameStore((s) => s.abandonRun);
   const setScreen = useGameStore((s) => s.setScreen);
   const showContinuePrompt = useGameStore((s) => s.showContinuePrompt);
+  const pendingChallenge = useGameStore((s) => s.pendingChallenge);
+  const setChallenge = useGameStore((s) => s.setChallenge);
   const stats = getPersistedStats();
+  const seasonTitle = getPrimarySeasonTitle(stats, getAnonymousId());
 
-  const [startPrompt, setStartPrompt] = useState<{ daily: boolean; afterAbandon?: boolean } | null>(null);
+  const [startPrompt, setStartPrompt] = useState<{ daily: boolean; afterAbandon?: boolean; seed?: string; rivalScore?: number } | null>(null);
   const [installTipVisible, setInstallTipVisible] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [menuDialog, setMenuDialog] = useState<'help' | 'score' | null>(null);
@@ -36,10 +42,20 @@ export function MainMenu() {
     setStartPrompt({ daily, afterAbandon });
   };
 
+  const acceptChallenge = () => {
+    if (!pendingChallenge) return;
+    setStartPrompt({
+      daily: isChallengeSeedDaily(pendingChallenge.seed),
+      afterAbandon: showContinuePrompt,
+      seed: pendingChallenge.seed,
+      rivalScore: pendingChallenge.score,
+    });
+  };
+
   const confirmStart = (name: string) => {
     if (!startPrompt) return;
     if (startPrompt.afterAbandon) abandonRun();
-    startRun(startPrompt.daily, name);
+    startRun(startPrompt.daily, name, startPrompt.seed);
     setStartPrompt(null);
   };
 
@@ -138,6 +154,12 @@ export function MainMenu() {
               Bir Daha
             </h1>
             <p className="menu-hero-tagline">Aynı seed. Farklı sen.</p>
+            {seasonTitle && (
+              <p className="menu-season-title" title={`Skor: ${formatScore(seasonTitle.score)}`}>
+                <span className="menu-season-title-icon" aria-hidden>{seasonTitle.icon}</span>
+                <span>{seasonTitle.label}</span>
+              </p>
+            )}
             {stats.dailyStreak > 1 && getDailyStreakBonus(stats.dailyStreak).label && (
               <p className="menu-streak">
                 <span className="menu-streak-bonus">{getDailyStreakBonus(stats.dailyStreak).label}</span>
@@ -188,6 +210,39 @@ export function MainMenu() {
                         : '3 karttan seçim yap, kadronu büyüt, maçı kazan ve skoru yukarı taşı.'}
                     </p>
                   </div>
+
+                  {pendingChallenge && (
+                    <div className="menu-challenge" role="status">
+                      <div className="menu-challenge-head">
+                        <span className="menu-challenge-badge">MEYDAN OKUMA</span>
+                        <button
+                          type="button"
+                          className="menu-challenge-dismiss"
+                          onClick={() => setChallenge(null)}
+                          aria-label="Meydan okumayı kapat"
+                        >
+                          <UiIcon name="x" />
+                        </button>
+                      </div>
+                      <p className="menu-challenge-title">
+                        <strong>{pendingChallenge.by}</strong> sana meydan okuyor
+                      </p>
+                      <p className="menu-challenge-score">
+                        {pendingChallenge.score > 0
+                          ? <>Geçmen gereken skor: <strong>{formatScore(pendingChallenge.score)}</strong></>
+                          : 'Aynı seed ile daha iyisini yap'}
+                      </p>
+                      <p className="menu-challenge-mode">
+                        {isChallengeSeedDaily(pendingChallenge.seed)
+                          ? 'Bugünün günlük seed’i — skorun günlük sıralamaya yazılır'
+                          : 'Bu seed bugünün seed’i değil — serbest mod olarak oynanır'}
+                      </p>
+                      <button type="button" className="btn-primary menu-challenge-cta" onClick={acceptChallenge}>
+                        <UiIcon name="play" />
+                        Meydan okumayı kabul et
+                      </button>
+                    </div>
+                  )}
 
                   {(() => {
                     const mod = getWeeklyModifier();
@@ -328,6 +383,7 @@ export function MainMenu() {
         open={startPrompt !== null}
         daily={startPrompt?.daily ?? true}
         defaultName={stats.lastPlayerName}
+        rivalScore={startPrompt?.rivalScore}
         onConfirm={confirmStart}
         onCancel={() => setStartPrompt(null)}
       />

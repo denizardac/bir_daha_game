@@ -5,13 +5,15 @@ interface Props {
   open: boolean;
   daily: boolean;
   defaultName?: string;
+  /** Meydan okuma kabul edildiyse geçilmesi gereken skor */
+  rivalScore?: number;
   onConfirm: (name: string) => void;
   onCancel: () => void;
 }
 
 const MAX_NAME_LEN = 18;
 
-export function StartRunModal({ open, daily, defaultName = '', onConfirm, onCancel }: Props) {
+export function StartRunModal({ open, daily, defaultName = '', rivalScore, onConfirm, onCancel }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, open, onCancel);
@@ -44,8 +46,15 @@ export function StartRunModal({ open, daily, defaultName = '', onConfirm, onCanc
         aria-labelledby="start-run-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="start-run-badge">{daily ? 'Günlük Seed' : 'Serbest Mod'}</p>
+        <p className="start-run-badge">
+          {rivalScore !== undefined ? 'Meydan Okuma' : daily ? 'Günlük Seed' : 'Serbest Mod'}
+        </p>
         <h2 id="start-run-title" className="start-run-title">Run&apos;a başlamadan önce</h2>
+        {rivalScore !== undefined && rivalScore > 0 && (
+          <p className="start-run-rival">
+            Geçmen gereken skor: <strong>{rivalScore.toLocaleString('tr-TR')}</strong>
+          </p>
+        )}
         <p className="start-run-sub">
           Leaderboard ve paylaşım kartında görünecek isim. Her run için seçebilirsin.
         </p>

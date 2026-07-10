@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GameHeader } from '@/components/GameHeader';
 import { HoverTip } from '@/components/HoverTip';
@@ -34,7 +34,19 @@ import { LineupPitchOnly, LineupPreviewCenterTrigger, LineupPreviewModal } from 
 import { LineupEditorModal } from '@/components/LineupEditorModal';
 import { TrainingPickModal } from '@/components/TrainingPickModal';
 import { FirstWinCelebration } from '@/components/FirstWinCelebration';
-import { downloadShareCard, copyShareCardImage, getShareTier, renderShareCardToCanvas } from '@/utils/shareCard';
+import {
+  buildChallengeLink,
+  buildShareText,
+  canNativeShare,
+  copyShareCardImage,
+  downloadShareCard,
+  ensureShareFonts,
+  getShareTier,
+  getShareTierLabel,
+  renderShareCardToCanvas,
+  shareShareCard,
+  type ShareCardOptions,
+} from '@/utils/shareCard';
 import { playSound } from '@/utils/sound';
 import { formatStatDisplay } from '@/utils/formatNumber';
 import { POSITION_BADGE, formatPosition, getPositionRoleColor, TAG_AVATAR_BG } from '@/utils/positionStyle';
@@ -1476,45 +1488,29 @@ export function LossScreen() {
   );
 }
 
-function ShareCardPreview({ score, analysis, displayName, flawless, roundsCompleted, squad, wins, lossesCount }: {
-  score: number;
-  analysis: import('@/types').RunEndAnalysis | null;
-  displayName: string;
-  flawless?: boolean;
-  roundsCompleted: number;
-  squad: import('@/types').PlayerCard[];
-  wins: number;
-  lossesCount: number;
-}) {
+function ShareCardPreview({ opts }: { opts: ShareCardOptions }) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const squadAvg = squad.length ? Math.round(squad.reduce((s, p) => s + p.currentRating, 0) / squad.length) : 0;
+
   useEffect(() => {
-    if (!hostRef.current) return;
-    hostRef.current.innerHTML = '';
-    const canvas = renderShareCardToCanvas({
-      score,
-      analysis,
-      displayName,
-      flawless,
-      roundsCompleted,
-      squad,
-      stats: {
-        wins,
-        losses: lossesCount,
-        synergiesFound: analysis?.synergyStats.filter((s) => s.activations > 0).length ?? 0,
-        squadAvg,
-      },
+    let cancelled = false;
+    // Web fontları yüklenmeden çizersek kart sistem fontuna düşer — önce bekle
+    void ensureShareFonts().then(() => {
+      if (cancelled || !hostRef.current) return;
+      const canvas = renderShareCardToCanvas(opts);
+      canvas.style.width = '100%';
+      canvas.style.height = 'auto';
+      canvas.style.display = 'block';
+      canvas.style.borderRadius = '14px';
+      hostRef.current.replaceChildren(canvas);
     });
-    canvas.style.width = '100%';
-    canvas.style.height = 'auto';
-    canvas.style.borderRadius = '12px';
-    hostRef.current.appendChild(canvas);
-  }, [score, analysis, displayName, flawless, roundsCompleted, squad, wins, lossesCount, squadAvg]);
+    return () => { cancelled = true; };
+  }, [opts]);
+
   return <div ref={hostRef} className="share-card-preview" />;
 }
 
 export function RunEndScreen() {
-  const { score, roundHistory, squad, goToMenu, resetRun, discoveredSynergies, round, lossesCount, runEndAnalysis, runEndStep, advanceRunEnd, flawless, displayName, isDailySeed } = useGameStore();
+  const { score, roundHistory, squad, goToMenu, resetRun, discoveredSynergies, round, lossesCount, runEndAnalysis, runEndStep, advanceRunEnd, flawless, displayName, isDailySeed, seed, newAchievements } = useGameStore();
   const analysis = runEndAnalysis;
   const playerName = displayName || 'Anonim';
   const [shareMsg, setShareMsg] = useState('');
@@ -1542,11 +1538,55 @@ export function RunEndScreen() {
   const finalRank = liveRank?.rank ?? analysis?.rank;
   const finalTotal = liveRank?.total ?? analysis?.totalPlayers;
   const finalPercent = liveRank?.percent ?? analysis?.rankPercent;
-  const shareStats = {
-    wins,
-    losses: lossesCount,
-    synergiesFound: activeSynergyStats.length,
-    squadAvg,
+  const isFlawlessRun = flawless && lossesCount === 0;
+  // Kart canlı sıralamayı göstermeli — yerel analiz tek kayıtlı liste görebilir.
+  // Memo'lanmazsa her render'da yeni nesne çıkar ve kart boşuna yeniden çizilir.
+  const analysisForShare = useMemo(
+    () => (analysis && liveRank
+      ? { ...analysis, rank: liveRank.rank, totalPlayers: liveRank.total, rankPercent: liveRank.percent }
+      : analysis),
+    [analysis, liveRank],
+  );
+  const shareOpts: ShareCardOptions = useMemo(() => ({
+    score,
+    analysis: analysisForShare,
+    displayName: playerName,
+    flawless: isFlawlessRun,
+    roundsCompleted: round,
+    squad,
+    seed,
+    isDailySeed,
+    stats: {
+      wins,
+      losses: lossesCount,
+      synergiesFound: activeSynergyStats.length,
+      squadAvg,
+    },
+  }), [score, analysisForShare, playerName, isFlawlessRun, round, squad, seed, isDailySeed, wins, lossesCount, activeSynergyStats.length, squadAvg]);
+
+  const challengeUrl = buildChallengeLink(shareOpts);
+  const runBadges = analysis?.badges ?? [];
+
+  const flash = (msg: string) => {
+    setShareMsg(msg);
+    window.setTimeout(() => setShareMsg(''), 2600);
+  };
+
+  const handleNativeShare = async () => {
+    const result = await shareShareCard(shareOpts);
+    if (result === 'shared') flash('Paylaşıldı!');
+    else if (result === 'failed') flash('Paylaşılamadı — PNG indirmeyi dene.');
+    // 'cancelled' ve 'unsupported' sessiz
+  };
+
+  const handleCopyLink = async () => {
+    if (!challengeUrl) return;
+    try {
+      await navigator.clipboard.writeText(challengeUrl);
+      flash('Meydan okuma linki kopyalandı!');
+    } catch {
+      flash('Kopyalanamadı.');
+    }
   };
   const outcomeLine = flawless && lossesCount === 0
     ? 'Namağlup tamamlandı'
@@ -1573,15 +1613,7 @@ export function RunEndScreen() {
   const viralHook = score > 0
     ? `${formatScore(score)} puan yaptım. Aynı seed'de geçebilir misin?`
     : `${round} round hayatta kaldım. Aynı seed'de daha iyisini yapabilir misin?`;
-  const shareRankLine = finalRank && finalTotal
-    ? `Sıra: #${finalRank}/${finalTotal}${finalPercent ? ` · yüzdelik %${finalPercent}` : ''}`
-    : 'Sıra: skor kaydedildi';
-  const shareBestLine = analysis?.bestDecision
-    ? `En iyi karar: R${analysis.bestDecision.round} ${analysis.bestDecision.cardName}`
-    : bestRound
-      ? `En iyi round: R${bestRound.round} +${formatScore(bestRound.pointsEarned)}`
-      : '';
-  const shareText = `BİR DAHA\n${viralHook}\nSkor: ${formatScore(score)}\n${shareRankLine}${shareBestLine ? `\n${shareBestLine}` : ''}\n#BirDaha`;
+  const shareText = buildShareText(shareOpts, challengeUrl ?? undefined);
   const scoreRecord = analysis?.scoreRecord;
   const leaderboardRecordText = scoreRecord?.isLeaderboardBest
     ? scoreRecord.previousLeaderboardBest
@@ -1606,11 +1638,42 @@ export function RunEndScreen() {
                   <h1 className="run-end-hero-title">{playerName}</h1>
                   <p className="run-end-hero-sub">{outcomeLine}</p>
                 </div>
-                <div className="run-end-score-lockup">
+                <div className={`run-end-score-lockup run-end-score-lockup--${getShareTier(finalPercent ?? 50)}`}>
                   <span>Final skor</span>
                   <strong>{formatScore(score)}</strong>
                 </div>
               </div>
+
+              {runBadges.length > 0 && (
+                <div className="run-end-badge-row" aria-label="Run rozetleri">
+                  {runBadges.map((badge) => (
+                    <span key={badge} className="run-end-badge">
+                      <UiIcon name="medal" />
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {newAchievements.length > 0 && (
+                <div className="run-end-achievements" aria-label="Yeni açılan başarımlar">
+                  <p className="run-end-achievements-kicker">
+                    <UiIcon name="sparkles" />
+                    Yeni başarım{newAchievements.length > 1 ? 'lar' : ''}
+                  </p>
+                  <div className="run-end-achievement-list">
+                    {newAchievements.map((a) => (
+                      <div key={a.id} className={`run-end-achievement run-end-achievement--${a.tier}`}>
+                        <span className="run-end-achievement-icon" aria-hidden>{a.icon}</span>
+                        <div>
+                          <strong>{a.name}</strong>
+                          <small>{a.description}</small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="run-end-hero-metrics">
                 <div className="run-end-hero-metric">
@@ -1804,7 +1867,9 @@ export function RunEndScreen() {
               </div>
 
               <div className="run-end-history max-h-48 overflow-y-auto">
-                {roundHistory.map((r) => {
+                {/* Olay roundlarında (4/8/11/14) aynı round hem olay hem maç kaydı üretir —
+                    key yalnızca r.round olursa çakışır ve satırlar atlanır. */}
+                {roundHistory.map((r, historyIndex) => {
                   const icon = r.isTacticBonus
                     ? 'T'
                     : r.matchResult?.outcome === 'win'
@@ -1820,7 +1885,7 @@ export function RunEndScreen() {
                         ? 'text-amber-500'
                         : 'text-red-400';
                   return (
-                    <div key={r.round} className="flex justify-between border-b border-neutral-800 py-2 text-sm">
+                    <div key={`${r.round}-${historyIndex}`} className="flex justify-between border-b border-neutral-800 py-2 text-sm">
                       <span>
                         <span className={`mr-2 font-bold ${iconColor}`}>{icon}</span>
                         R{r.round}{' '}
@@ -1848,64 +1913,75 @@ export function RunEndScreen() {
                 {squad.slice(0, 6).map((p) => <PlayerCardMini key={p.id} card={p} />)}
               </div>
 
-              {analysis && (
-                <div>
-                  <p className="mb-2 text-xs uppercase text-neutral-500">
-                    Meydan okuma kartı · {getShareTier(analysis.rankPercent).toUpperCase()}
-                  </p>
-                  <ShareCardPreview
-                    score={score}
-                    analysis={analysis}
-                    displayName={playerName}
-                    flawless={flawless && lossesCount === 0}
-                    roundsCompleted={round}
-                    squad={squad}
-                    wins={wins}
-                    lossesCount={lossesCount}
-                  />
+              <section className="run-end-share" aria-label="Paylaşım">
+                <div className="run-end-share-head">
+                  <div>
+                    <p className="run-end-share-kicker">Meydan okuma kartı</p>
+                    <strong className="run-end-share-title">Arkadaşına bu seed’i gönder</strong>
+                  </div>
+                  <span className={`run-end-share-tier run-end-share-tier--${getShareTier(finalPercent ?? 50)}`}>
+                    {getShareTierLabel(getShareTier(finalPercent ?? 50))}
+                  </span>
                 </div>
-              )}
 
-              {shareMsg && <p className="text-center text-sm text-green-400">{shareMsg}</p>}
+                <ShareCardPreview opts={shareOpts} />
 
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={async () => {
-                    await downloadShareCard({
-                      score,
-                      analysis,
-                      displayName: playerName,
-                      flawless: flawless && lossesCount === 0,
-                      roundsCompleted: round,
-                      squad,
-                      stats: shareStats,
-                    });
-                    setShareMsg('PNG indirildi!');
-                  }}
-                >
-                  Paylaşım Kartını İndir (PNG)
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={async () => {
-                    const ok = await copyShareCardImage({
-                      score,
-                      analysis,
-                      displayName: playerName,
-                      flawless: flawless && lossesCount === 0,
-                      roundsCompleted: round,
-                      squad,
-                      stats: shareStats,
-                    });
-                    setShareMsg(ok ? 'Görsel panoya kopyalandı!' : 'Kopyalama desteklenmiyor — PNG indir.');
-                  }}
-                >
-                  Görseli Kopyala
-                </button>
-                <button type="button" className="btn-secondary" onClick={() => navigator.clipboard.writeText(shareText)}>Paylaş Metnini Kopyala</button>
+                <div className="run-end-share-actions">
+                  {canNativeShare() && (
+                    <button type="button" className="btn-primary run-end-share-btn" onClick={handleNativeShare}>
+                      <UiIcon name="arrow-right" />
+                      Paylaş
+                    </button>
+                  )}
+                  {challengeUrl && (
+                    <button type="button" className="btn-secondary run-end-share-btn" onClick={handleCopyLink}>
+                      <UiIcon name="globe" />
+                      Meydan okuma linki
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="btn-secondary run-end-share-btn"
+                    onClick={async () => {
+                      const ok = await copyShareCardImage(shareOpts);
+                      flash(ok ? 'Görsel panoya kopyalandı!' : 'Kopyalama desteklenmiyor — PNG indir.');
+                    }}
+                  >
+                    <UiIcon name="archive" />
+                    Görseli kopyala
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary run-end-share-btn"
+                    onClick={async () => {
+                      await downloadShareCard(shareOpts);
+                      flash('PNG indirildi!');
+                    }}
+                  >
+                    <UiIcon name="chart" />
+                    PNG indir
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary run-end-share-btn"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(shareText);
+                        flash('Paylaşım metni kopyalandı!');
+                      } catch {
+                        flash('Kopyalanamadı.');
+                      }
+                    }}
+                  >
+                    <UiIcon name="info" />
+                    Metni kopyala
+                  </button>
+                </div>
+
+                {shareMsg && <p className="run-end-share-msg" role="status">{shareMsg}</p>}
+              </section>
+
+              <div className="run-end-final-actions">
                 <button type="button" className="btn-primary" onClick={() => resetRun()}>Bir Daha</button>
                 <button type="button" className="btn-secondary" onClick={goToMenu}>Ana Menü</button>
               </div>

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { parseChallengeFromSearch, stripChallengeParams } from '@/engine/challenge';
 import { useGameStore } from '@/store/gameStore';
 import { MainMenu } from '@/components/MainMenu';
 import { GameScreen } from '@/components/GameScreen';
@@ -16,6 +17,14 @@ export default function App() {
   useEffect(() => {
     init();
   }, [init]);
+
+  // Meydan okuma linki: ?seed=...&score=...&by=... → menüde banner, sonra URL temizlenir
+  useEffect(() => {
+    const challenge = parseChallengeFromSearch(window.location.search);
+    if (!challenge) return;
+    useGameStore.getState().setChallenge(challenge);
+    window.history.replaceState({}, '', stripChallengeParams(window.location.href));
+  }, []);
 
   useEffect(() => {
     const flush = () => useGameStore.getState().saveCurrentRun();

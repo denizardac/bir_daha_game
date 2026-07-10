@@ -68,6 +68,14 @@ PWA: service worker + `public/icons/` PNG seti — mobilde ana ekrana eklenebili
 - Anti-frustration: recovery garantisi, ilk round galibiyet koruması, tehlike modu (moral tabanı 50), kaleci teklif garantisi
 - Rehberli tutorial (TutorialCoach) + oyun rehberi ekranı
 
+### V4 — sosyal ve kalıcılık
+- **Meydan okuma linki:** `?seed=&score=&by=` ile arkadaşına aynı seed'i gönder; menüde banner ile karşılanır
+- **Native paylaşım:** mobilde Web Share API (kart görseli + metin + link), masaüstünde PNG indir / panoya kopyala
+- **Başarımlar:** 15 başarım (koleksiyon, skor, namağlup, seri) — koleksiyon ekranında ilerleme, run sonunda bildirim
+- **Sezonluk kalıcı unvanlar:** bitmiş sezonların kürsüsü ("Haziran 2026 Şampiyonu") menüde ve Hall of Fame'de
+- **Haftalık modifikatörler:** hafta anahtarından deterministik (Seri/Kale/Moral/Transfer Haftası)
+- Yeniden tasarlanmış run sonu ekranı ve 1280×1600 paylaşım kartı
+
 ### Notlar / bilinçli kararlar
 - Kart zamanlayıcısı **tamamen kaldırıldı** (kod içinde kapalı; skor bonusu pasif)
 - Sunucu leaderboard: Supabase Edge Functions (`submit-score`, `record-start`) + `integrityDigest`; Supabase yoksa tamamen yerel çalışır

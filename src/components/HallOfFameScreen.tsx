@@ -3,7 +3,9 @@ import { formatScore } from '@/engine/scoring';
 import { getSeasonLabel, listSeasonMonths, getHallOfFameForMonth, getSeasonKey } from '@/engine/hallOfFame';
 import { mergeBestScoreEntries } from '@/engine/leaderboard';
 import { fetchRemoteHallOfFame, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
+import { getPlayerSeasonTitles } from '@/engine/seasonTitles';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
+import { getAnonymousId } from '@/utils/storage';
 import type { HallOfFameEntry, LeaderboardEntry } from '@/types';
 
 function getPlaceholderMonths(currentKey: string, count = 2): string[] {
@@ -48,6 +50,7 @@ export function HallOfFameScreen() {
       ? mergeBestScoreEntries<HallOfFameEntry | LeaderboardEntry>(localEntries, remoteEntries)
       : localEntries;
   const archivePlaceholders = getPlaceholderMonths(activeKey).filter((m) => !months.includes(m));
+  const myTitles = getPlayerSeasonTitles(stats, getAnonymousId(), activeKey);
   const champion = entries[0];
   const podiumEntries = entries.slice(0, 3);
   const tableEntries = entries.slice(3);
@@ -80,6 +83,21 @@ export function HallOfFameScreen() {
             )}
           </div>
         </header>
+
+        {myTitles.length > 0 && (
+          <div className="hof-my-titles" aria-label="Kazandığın kalıcı unvanlar">
+            <p className="hof-my-titles-kicker">Kalıcı unvanların</p>
+            <div className="hof-my-titles-list">
+              {myTitles.map((t) => (
+                <span key={t.monthKey} className={`hof-title-badge hof-title-badge--p${t.placement}`}>
+                  <span aria-hidden>{t.icon}</span>
+                  <strong>{t.label}</strong>
+                  <small>{formatScore(t.score)}</small>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="hof-season-tabs-row">
           <div className="hof-hero-tabs">
@@ -198,7 +216,10 @@ export function HallOfFameScreen() {
                           ) : 'Kayıt yok'}
                         </p>
                         {champ && (
-                          <p className="hof-archive-score">{formatScore(champ.totalScore)}</p>
+                          <>
+                            <p className="hof-archive-score">{formatScore(champ.totalScore)}</p>
+                            <p className="hof-archive-title">{getSeasonLabel(m)} Şampiyonu</p>
+                          </>
                         )}
                       </div>
                     </div>

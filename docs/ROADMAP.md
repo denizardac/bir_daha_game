@@ -68,13 +68,23 @@ Güncel durum: oyun web'de oynanabilir, 206 unit test + telemetrili headless QA 
 - [ ] Native dokunuşlar: haptics (Capacitor Haptics), safe-area, splash
 - [ ] Store varlıkları: ekran görüntüleri, açıklama metinleri (`docs/MARKETING_VIDEO_IDEAS.md` ile birlikte)
 
-## Aşama 5 — Sosyal ve kalıcılık
+## Aşama 5 — Sosyal ve kalıcılık ✅ (hesap bağlama hariç tamamlandı)
 
-- [ ] Arkadaşına meydan oku linki: seed + skor URL parametresi ile "aynı seed'i oyna" akışı
-- [ ] Paylaşım kartının Web Share API ile native paylaşımı (mobil)
-- [ ] Koleksiyon hedefleri: efsane kartlar ve olaylar için rozet/başarım sistemi
-- [ ] Sezonluk (aylık) ödül vitrini: Hall of Fame şampiyonlarına kalıcı unvan
+- [x] **Meydan okuma linki:** `?seed=&score=&by=` → menüde banner, "kabul et" ile aynı seed'de run başlar. Seed bugünün günlüğü değilse serbest mod olarak oynanır (sunucu seed↔gün kuralıyla tutarlı). URL okunduktan sonra temizlenir; bozuk parametreler sessizce yok sayılır (`engine/challenge.ts`, 7 test)
+- [x] **Web Share API:** mobilde kart görseli + metin + link tek dokunuşla paylaşılır; dosya paylaşımı desteklenmiyorsa metin+link'e, hiç desteklenmiyorsa buton gizlenip PNG indir / görseli kopyala fallback'ine düşer. Kullanıcı iptali hata sayılmaz
+- [x] **Başarım sistemi:** 15 başarım (efsane/olay/sinerji koleksiyonu, skor eşikleri, namağlup, seri, tecrübe) — koleksiyon ekranında ilerleme çubuklu sekme, run sonunda "yeni başarım" bildirimi (`engine/achievements.ts`, 12 test)
+- [x] **Sezonluk kalıcı unvanlar:** bitmiş sezonlarda kürsüye giren oyuncuya unvan ("Haziran 2026 Şampiyonu") — menüde rozet, Hall of Fame'de "Kalıcı unvanların" bölümü ve arşivde şampiyon etiketi. Aktif sezon unvan vermez (`engine/seasonTitles.ts`)
+- [x] **Run sonu + paylaşım kartı yeniden tasarlandı** (aşağıya bkz.)
 - [ ] Opsiyonel hesap bağlama (Supabase auth) — cihazlar arası ilerleme taşıma
+
+### Run sonu ve paylaşım kartı elden geçirmesi
+
+- Kart sıfırdan yeniden çizildi: 1280×1600 (4:5 sosyal medya oranı), oyunun `Barlow Condensed` tipografisi, tier'a göre ışıma, sıralama barı, 2×2 istatistik ızgarası, "en iyi karar" ve kadro şeridi, meydan okuma alt bandı
+- Kart artık **canlı sıralamayı** kullanıyor (önceden yerel analizi gösteriyordu)
+- Web fontları yüklenmeden çizim yapılmıyor (`ensureShareFonts`)
+- Run rozetleri (`SÜPER RUN` / `NAMAĞLUP` / `ELİT SKOR`) **artık gösteriliyor** — hesaplanıyor ama hiç render edilmiyordu
+- Paylaşım bölümü tek panelde: Paylaş (native) · Meydan okuma linki · Görseli kopyala · PNG indir · Metni kopyala
+- Yol boyunca düzeltilen hatalar: run sonu geçmiş listesinde yinelenen React key'i (olay roundlarında satırlar atlanabiliyordu), kartta metin/saha çizgisi çakışması, `"ANONIM"` yerine Türkçe `"ANONİM"`, alt sıralarda yanıltıcı "en iyi %95" ibaresi
 
 ---
 
