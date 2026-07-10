@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useRef } from 'react';
+import { UiIcon } from '@/components/UiIcon';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface Props {
@@ -23,7 +24,7 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
 }: Props) {
-  const icon = danger ? '⚠️' : menu ? '🏠' : '❓';
+  const icon = danger ? 'alert-triangle' : menu ? 'home' : 'info';
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, true, onCancel);
 
@@ -46,7 +47,7 @@ export function ConfirmModal({
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
       >
-        <span className="confirm-modal-icon" aria-hidden>{icon}</span>
+        <span className="confirm-modal-icon" aria-hidden><UiIcon name={icon} /></span>
         <h2 id="confirm-modal-title" className="confirm-modal-title">{title}</h2>
         <p className="confirm-modal-message">{message}</p>
         <div className="confirm-modal-actions">

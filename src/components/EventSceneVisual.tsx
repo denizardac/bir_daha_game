@@ -1,5 +1,6 @@
 import { getEventPresentation } from '@/data/eventVisuals';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
+import { iconForEmoji } from '@/utils/gameIcons';
 import type { EventCard } from '@/types';
 
 interface Props {
@@ -14,7 +15,8 @@ function iconForEventCategory(category: EventCard['category']): UiIconName {
   return 'sparkles';
 }
 
-function iconForChoiceScene(scene: string): UiIconName {
+/** Sahne adından ikon; eşleşme yoksa null → çağıran seçenek emojisine düşer */
+function iconForChoiceScene(scene: string): UiIconName | null {
   if (/^choice-check$/.test(scene)) return 'check';
   if (/(gamble|risk)/.test(scene)) return 'dice';
   if (/(cash|pay|gift|save|bonus|sponsor)/.test(scene)) return 'chart';
@@ -33,13 +35,12 @@ function iconForChoiceScene(scene: string): UiIconName {
   if (/(door|exit|leave|release|empty)/.test(scene)) return 'x';
   if (/(heat|warm)/.test(scene)) return 'flame';
   if (/^choice-in$/.test(scene)) return 'circle-dot';
-  return 'arrow-right';
+  return null;
 }
 
 export function EventSceneVisual({ event }: Props) {
   const presentation = getEventPresentation(event.id);
   const categoryIcon = iconForEventCategory(event.category);
-  const propIcons: UiIconName[] = [categoryIcon, 'circle-dot', 'sparkles'];
 
   return (
     <div
@@ -57,9 +58,10 @@ export function EventSceneVisual({ event }: Props) {
       <div className="event-scene-vignette" aria-hidden />
       <div className="event-scene-scanlines" aria-hidden />
 
+      {/* Sahne süsleri: veri emojisinin ikon karşılığı (title'a emoji koyma) */}
       {presentation.props.map((prop, i) => (
         <span key={`${event.id}-prop-${i}`} className={`event-scene-prop event-scene-prop--${i}`} aria-hidden>
-          <UiIcon name={propIcons[i] ?? categoryIcon} title={prop} />
+          <UiIcon name={iconForEmoji(prop, categoryIcon)} />
         </span>
       ))}
 
@@ -87,7 +89,7 @@ export function EventChoiceVisual({ scene, icon, flavor, choice }: ChoiceVisualP
       <span className="event-choice-deco event-choice-deco--left">
         <UiIcon name="arrow-right" />
       </span>
-      <UiIcon name={iconForChoiceScene(scene)} className="event-choice-visual-icon" title={icon} />
+      <UiIcon name={iconForChoiceScene(scene) ?? iconForEmoji(icon)} className="event-choice-visual-icon" />
       <span className="event-choice-deco event-choice-deco--right">
         <UiIcon name="circle-dot" />
       </span>

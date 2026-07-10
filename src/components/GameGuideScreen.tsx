@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react';
+import { UiIcon } from '@/components/UiIcon';
+import { iconForEmoji } from '@/utils/gameIcons';
 import { EVENT_CARDS, EVENT_ROUNDS } from '@/data/events';
 import { getEventPresentation } from '@/data/eventVisuals';
 import {
@@ -34,7 +36,7 @@ function SectionNav({
           className={`guide-nav-btn ${active === s.id ? 'guide-nav-btn--active' : ''}`}
           onClick={() => onChange(s.id)}
         >
-          <span className="guide-nav-icon" aria-hidden>{s.icon}</span>
+          <span className="guide-nav-icon" aria-hidden><UiIcon name={iconForEmoji(s.icon)} /></span>
           {s.label}
         </button>
       ))}
@@ -200,14 +202,14 @@ function EventsSection() {
             const p = getEventPresentation(e.id);
             return (
               <div key={e.id} className="guide-event-row">
-                <span className="guide-event-icon" aria-hidden>{e.icon}</span>
+                <span className="guide-event-icon" aria-hidden><UiIcon name={iconForEmoji(e.icon)} /></span>
                 <div className="guide-event-body">
                   <p className="guide-event-title">{e.title}</p>
                   <p className="guide-text guide-text--muted">{p.atmosphere}</p>
                   <p className="guide-text">{p.narrative}</p>
                   <p className="guide-event-options">
-                    <span>A {p.choiceA.icon}: {e.optionA.label} — {p.choiceA.flavor}</span>
-                    <span>B {p.choiceB.icon}: {e.optionB.label} — {p.choiceB.flavor}</span>
+                    <span><UiIcon name={iconForEmoji(p.choiceA.icon)} /> A: {e.optionA.label} — {p.choiceA.flavor}</span>
+                    <span><UiIcon name={iconForEmoji(p.choiceB.icon)} /> B: {e.optionB.label} — {p.choiceB.flavor}</span>
                   </p>
                 </div>
               </div>
@@ -251,7 +253,7 @@ export function GameGuideScreen() {
           <SectionNav active={section} onChange={setSection} />
           <main className="guide-main">
             <div className="guide-main-head">
-              <span className="guide-main-icon" aria-hidden>{active.icon}</span>
+              <span className="guide-main-icon" aria-hidden><UiIcon name={iconForEmoji(active.icon)} /></span>
               <h2 className="guide-main-title">{active.label}</h2>
             </div>
             <Content />

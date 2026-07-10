@@ -493,3 +493,70 @@
   .share-card-preview { max-width: 100%; }
   .run-end-share-actions { grid-template-columns: 1fr 1fr; }
 }
+
+/* ============================================================
+   Emoji → SVG ikon geçişi
+   Bu kaplar eskiden emoji'yi font-size ile boyutluyordu; SVG
+   font-size'a uymaz, açık boyut vermek gerekir.
+   ============================================================ */
+.confirm-modal-icon,
+.first-win-celebration-icon,
+.first-win-confetti-piece,
+.opponent-style-icon,
+.match-pick-tactic-icon,
+.menu-widget-icon,
+.guide-nav-icon,
+.pick-morale-icon,
+.synergies-catalog-icon,
+.run-end-synergy-icon,
+.tactic-board-clipboard,
+.match-pitch-ball,
+.milestone-toast-icon,
+.player-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.confirm-modal-icon svg { width: 2rem; height: 2rem; }
+.first-win-celebration-icon svg { width: 2.6rem; height: 2.6rem; color: #f6cf6a; }
+.first-win-confetti-piece svg { width: 1rem; height: 1rem; color: #f6cf6a; }
+.opponent-style-icon svg { width: 1.2rem; height: 1.2rem; }
+.match-pick-tactic-icon svg { width: 1.3rem; height: 1.3rem; }
+.menu-widget-icon svg { width: 1.25rem; height: 1.25rem; }
+.guide-nav-icon svg { width: 1.05rem; height: 1.05rem; }
+.pick-morale-icon svg { width: 1.1rem; height: 1.1rem; color: #ff8fa0; }
+.synergies-catalog-icon svg { width: 1.4rem; height: 1.4rem; }
+.run-end-synergy-icon svg { width: 1.15rem; height: 1.15rem; }
+.tactic-board-clipboard svg { width: 1.2rem; height: 1.2rem; }
+.match-pitch-ball svg { width: 1.1rem; height: 1.1rem; color: #f4f7f5; }
+
+/* Maç anlatım pop-up'ı: gol topu / sarı-kırmızı kart ikonları */
+.match-pitch-popup-icon {
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.3em;
+  vertical-align: -0.12em;
+}
+.match-pitch-popup-icon--yellow { color: #facc15; fill: rgba(250, 204, 21, 0.28); }
+.match-pitch-popup-icon--red { color: #ef4444; fill: rgba(239, 68, 68, 0.3); }
+
+/* Olay sahnesi süs ikonları (eskiden emoji) */
+.event-scene-prop svg { width: 1.35rem; height: 1.35rem; opacity: 0.8; }
+
+/* Diziliş modalı kapatma butonu: ✕ karakteri yerine ikon */
+.lineup-preview-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.lineup-preview-close svg { width: 1.05rem; height: 1.05rem; }
+.guide-event-icon,
+.guide-main-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.guide-event-icon svg { width: 1.2rem; height: 1.2rem; }
+.guide-main-icon svg { width: 1.6rem; height: 1.6rem; }

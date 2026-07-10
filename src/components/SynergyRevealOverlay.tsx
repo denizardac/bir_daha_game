@@ -2,6 +2,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getSynergyById } from '@/data/synergies';
 import { getSynergyBenefitText } from '@/engine/squadInsights';
 import { useGameStore } from '@/store/gameStore';
+import { UiIcon } from '@/components/UiIcon';
+import { iconForSynergy } from '@/utils/gameIcons';
 
 const SPARKLES = Array.from({ length: 12 }, (_, i) => ({
   id: i,
@@ -50,7 +52,7 @@ export function SynergyRevealOverlay() {
             animate={{ letterSpacing: '0.12em', opacity: 1 }}
             transition={{ duration: 0.6 }}
           >
-            ★ Sinerji açıldı
+            <UiIcon name="sparkles" /> Sinerji açıldı
           </motion.p>
           {ids.map((id, idx) => {
             const synergy = getSynergyById(id);
@@ -69,7 +71,7 @@ export function SynergyRevealOverlay() {
                   animate={{ scale: [1, 1.15, 1], rotate: [0, 6, -4, 0] }}
                   transition={{ duration: 0.9, delay: 0.2 }}
                 >
-                  {synergy.icon}
+                  <UiIcon name={iconForSynergy(synergy.icon)} />
                 </motion.span>
                 <div>
                   <p className="synergy-reveal-name">{synergy.name}</p>

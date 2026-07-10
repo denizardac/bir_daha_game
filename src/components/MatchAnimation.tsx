@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { MatchEvent, MatchOutcome, OpponentStyle } from '@/types';
+import { UiIcon } from '@/components/UiIcon';
 
 export type PitchDot = { x: number; y: number; gk?: boolean };
 
@@ -224,10 +225,9 @@ export function MatchAnimation({
             exit={{ opacity: 0, y: -6 }}
             className={`match-pitch-popup ${eventClass(latestEvent)}`}
           >
-            {latestEvent.type === 'goal_for' && '⚽ '}
-            {latestEvent.type === 'goal_against' && '⚽ '}
-            {(latestEvent.type === 'yellow_for' || latestEvent.type === 'yellow_against') && '🟨 '}
-            {latestEvent.type === 'red_for' && '🟥 '}
+            {(latestEvent.type === 'goal_for' || latestEvent.type === 'goal_against') && <UiIcon name="circle-dot" className="match-pitch-popup-icon" />}
+            {(latestEvent.type === 'yellow_for' || latestEvent.type === 'yellow_against') && <UiIcon name="square" className="match-pitch-popup-icon match-pitch-popup-icon--yellow" />}
+            {latestEvent.type === 'red_for' && <UiIcon name="square" className="match-pitch-popup-icon match-pitch-popup-icon--red" />}
             {eventLabel(latestEvent)}
             {latestEvent.assistName && latestEvent.type === 'goal_for' && (
               <span className="match-pitch-popup-assist"> · Asist: {latestEvent.assistName}</span>
@@ -268,7 +268,7 @@ export function MatchAnimation({
         animate={{ left: ballPos.left, top: ballPos.top }}
         transition={{ type: 'spring', stiffness: playing ? 140 : 80, damping: playing ? 16 : 22 }}
       >
-        ⚽
+        <UiIcon name="circle-dot" className="match-pitch-ball-icon" />
       </motion.div>
 
       {!wide && feedLines && (

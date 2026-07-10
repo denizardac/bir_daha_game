@@ -335,7 +335,7 @@ export function LineupPreviewModal({
             <span className="le-legend le-legend--flex">yan mevki</span>
           </div>
           <button type="button" className="lineup-preview-close" onClick={onClose} aria-label="Kapat">
-            ✕
+            <UiIcon name="x" />
           </button>
         </div>
         <LineupPitchContent summary={summary} squad={squad} activeTactics={activeTactics} showBench />

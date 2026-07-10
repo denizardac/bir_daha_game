@@ -1,5 +1,6 @@
 import { getTagBite } from '@/data/biteTips';
 import { PlayerPortrait } from '@/components/PlayerPortrait';
+import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import type { GameCard } from '@/types';
 import { isPlayerCard, isSkipCard, isTacticCard } from '@/types';
 import type { OpponentStyle } from '@/types';
@@ -7,22 +8,22 @@ import { formatPosition } from '@/utils/positionStyle';
 
 const OPPONENT_STYLE_META: Record<
   OpponentStyle,
-  { icon: string; label: string; desc: string; className: string }
+  { icon: UiIconName; label: string; desc: string; className: string }
 > = {
   savunmacı: {
-    icon: '🛡️',
+    icon: 'shield',
     label: 'Savunmacı',
     desc: 'Rakip oyun tarzı — az gol yer, kontra bekler',
     className: 'opponent-style-badge--defensive',
   },
   saldırgan: {
-    icon: '⚔️',
+    icon: 'flame',
     label: 'Saldırgan',
     desc: 'Rakip oyun tarzı — yüksek baskı, savunma açık',
     className: 'opponent-style-badge--aggressive',
   },
   dengeli: {
-    icon: '⚖️',
+    icon: 'scale',
     label: 'Dengeli',
     desc: 'Rakip oyun tarzı — standart tempo',
     className: 'opponent-style-badge--balanced',
@@ -33,7 +34,7 @@ export function OpponentStyleBadge({ style }: { style: OpponentStyle }) {
   const meta = OPPONENT_STYLE_META[style];
   return (
     <div className={`opponent-style-badge ${meta.className}`} title={meta.desc}>
-      <span className="opponent-style-icon" aria-hidden>{meta.icon}</span>
+      <span className="opponent-style-icon" aria-hidden><UiIcon name={meta.icon} /></span>
       <div className="opponent-style-text">
         <span className="opponent-style-kicker">Rakip tarzı</span>
         <span className="opponent-style-label">{meta.label}</span>
@@ -87,7 +88,7 @@ export function MatchPickPanel({ selection, subtitle }: Props) {
           <span className="match-pick-pill match-pick-pill--tactic">Taktik</span>
         </div>
         <div className="match-pick-row match-pick-row--hero">
-          <div className="match-pick-tactic-icon">📋</div>
+          <div className="match-pick-tactic-icon"><UiIcon name="clipboard" /></div>
           <div className="match-pick-info">
             <h3 className="match-pick-name">{selection.name}</h3>
             <p className="match-pick-meta">{selection.effectSummary}</p>

@@ -2,6 +2,8 @@ import { SYNERGIES, TOTAL_SYNERGIES } from '@/data/synergies';
 import { getSynergyGuideTags, getSynergyGuideTeaser } from '@/data/synergyGuideHints';
 import { getSynergyBenefitText } from '@/engine/squadInsights';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
+import { UiIcon } from '@/components/UiIcon';
+import { iconForSynergy } from '@/utils/gameIcons';
 
 export function SynergiesScreen() {
   const discovered = getPersistedStats().discoveredSynergies;
@@ -27,7 +29,7 @@ export function SynergiesScreen() {
                 key={s.id}
                 className={`synergies-catalog-item ${ok ? 'synergies-catalog-item--open' : 'synergies-catalog-item--locked'}`}
               >
-                <span className="synergies-catalog-icon" aria-hidden>{ok ? s.icon : '🔒'}</span>
+                <span className="synergies-catalog-icon" aria-hidden><UiIcon name={ok ? iconForSynergy(s.icon) : 'lock'} /></span>
                 <div className="synergies-catalog-body">
                   <h2>{ok ? s.name : (s.hidden ? 'Gizli sinerji' : '???')}</h2>
                   {ok ? (

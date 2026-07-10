@@ -1,6 +1,7 @@
 import type { GameCard, PlayerCard } from '@/types';
 import { PlayerPortrait } from '@/components/PlayerPortrait';
 import { formatPosition } from '@/utils/positionStyle';
+import { UiIcon } from '@/components/UiIcon';
 
 interface Props {
   selection: GameCard | null;
@@ -35,7 +36,7 @@ export function PlayerHero({ selection, subtitle, size = 'lg' }: Props) {
     return (
       <div className="player-hero text-center">
         <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-2xl border border-purple-500/50 bg-purple-950/40 text-5xl shadow-lg">
-          📋
+          <UiIcon name="clipboard" />
         </div>
         <p className="mt-2 text-xs font-bold uppercase tracking-wide text-purple-400">Taktik · Sistem</p>
         <p className="text-3xl font-extrabold">{selection.name}</p>

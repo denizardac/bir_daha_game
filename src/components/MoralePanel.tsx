@@ -38,7 +38,7 @@ export function MoralePanel({ morale, compact, inline }: Props) {
       {!compact && (
         <>
           <p className="morale-panel-micro">
-            ⚡ Düşük moral = zayıf maç · maç gücünü ~%±20 etkiler (×0.75–×1.15)
+            Düşük moral = zayıf maç · maç gücünü ~%±20 etkiler (×0.75–×1.15)
           </p>
           <p className="morale-panel-detail">{fullDetail}</p>
         </>

@@ -4,6 +4,7 @@ import {
   getTacticHeroCopy,
 } from '@/engine/tacticVisual';
 import type { TacticCard } from '@/types';
+import { UiIcon } from '@/components/UiIcon';
 
 interface Props {
   card: TacticCard;
@@ -41,7 +42,7 @@ export function TacticBoardVisual({ card, preview = false }: Props) {
               <div className="tactic-board-chalk tactic-board-chalk--2" />
               <div className="tactic-board-arrow tactic-board-arrow--1" />
               <div className="tactic-board-arrow tactic-board-arrow--2" />
-              <span className="tactic-board-clipboard">📋</span>
+              <span className="tactic-board-clipboard"><UiIcon name="clipboard" /></span>
             </div>
           )}
         </div>
@@ -73,7 +74,7 @@ export function TacticBoardVisual({ card, preview = false }: Props) {
             <div className="tactic-board-chalk tactic-board-chalk--2" />
             <div className="tactic-board-arrow tactic-board-arrow--1" />
             <div className="tactic-board-arrow tactic-board-arrow--2" />
-            <span className="tactic-board-clipboard">📋</span>
+            <span className="tactic-board-clipboard"><UiIcon name="clipboard" /></span>
           </div>
         )}
       </div>

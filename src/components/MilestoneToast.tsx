@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Milestone } from '@/engine/milestones';
 import { useGameStore } from '@/store/gameStore';
+import { UiIcon } from '@/components/UiIcon';
+import { iconForEmoji } from '@/utils/gameIcons';
 
 const EPIC_IDS = new Set(['ilk_galibiyet', 'serit_5', 'namaglup', 'dayanma']);
 
@@ -44,7 +46,7 @@ function MilestoneToast({ milestone, onDone }: { milestone: Milestone; onDone: (
         animate={epic ? { scale: [1, 1.3, 1], rotate: [0, -12, 12, 0] } : undefined}
         transition={{ duration: 0.7, repeat: epic ? 2 : 0 }}
       >
-        {milestone.icon}
+        <UiIcon name={iconForEmoji(milestone.icon)} />
       </motion.span>
       <div>
         <p className={`text-sm font-extrabold uppercase tracking-wide ${epic ? 'text-amber-200' : 'text-amber-300'}`}>
@@ -54,7 +56,7 @@ function MilestoneToast({ milestone, onDone }: { milestone: Milestone; onDone: (
       </div>
       {epic && (
         <div className="milestone-toast-sparkles" aria-hidden>
-          ✨
+          <UiIcon name="sparkles" />
         </div>
       )}
     </motion.div>

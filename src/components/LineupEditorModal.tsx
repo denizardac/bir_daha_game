@@ -383,7 +383,7 @@ export function LineupEditorModal({
             <span className="le-legend le-legend--ideal">ana mevki</span>
             <span className="le-legend le-legend--flex">yan mevki</span>
           </div>
-          <button type="button" className="lineup-preview-close" onClick={dismiss} aria-label="İptal et — kart seçimine dön">✕</button>
+          <button type="button" className="lineup-preview-close" onClick={dismiss} aria-label="İptal et — kart seçimine dön"><UiIcon name="x" /></button>
         </div>
 
         <div className="le-body">

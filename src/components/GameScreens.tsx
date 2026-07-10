@@ -1851,7 +1851,7 @@ export function RunEndScreen() {
                         key={s.id}
                         className={`run-end-synergy-chip ${s.activations > 0 ? 'run-end-synergy-chip--active' : 'run-end-synergy-chip--idle'}`}
                       >
-                        <span className="run-end-synergy-icon">{s.icon}</span>
+                        <span className="run-end-synergy-icon"><UiIcon name={iconForSynergy(s.icon)} /></span>
                         <div className="run-end-synergy-body">
                           <p className="run-end-synergy-name">{s.name}</p>
                           <p className="run-end-synergy-detail">

@@ -1,6 +1,8 @@
 import { MORALE_CHANGE_TIPS } from '@/data/moraleTips';
 import { getMoraleEffect } from '@/engine/contextPreview';
 import { HoverTip } from '@/components/HoverTip';
+import { UiIcon } from '@/components/UiIcon';
+import { iconForEmoji } from '@/utils/gameIcons';
 
 interface Props {
   morale: number;
@@ -17,7 +19,7 @@ export function PickMoraleBanner({ morale, compact }: Props) {
       <div className="pick-morale-banner pick-morale-banner--compact">
         <div className="pick-morale-compact-row">
           <div className="pick-morale-compact-core">
-            <span className="pick-morale-icon" aria-hidden>❤️</span>
+            <span className="pick-morale-icon" aria-hidden><UiIcon name="heart" /></span>
             <div className="pick-morale-compact-stats">
               <div className="pick-morale-compact-head">
                 <span className="pick-morale-label">Moral</span>
@@ -38,7 +40,7 @@ export function PickMoraleBanner({ morale, compact }: Props) {
             {MORALE_CHANGE_TIPS.map((t) => (
               <HoverTip key={t.label} tip={t.tip} placement="bottom">
                 <span className="pick-morale-tip pick-morale-tip--compact">
-                  <span aria-hidden>{t.icon}</span>
+                  <span aria-hidden><UiIcon name={iconForEmoji(t.icon)} /></span>
                   <span>{t.label}</span>
                   <span className="pick-morale-tip-delta">{t.delta}</span>
                 </span>
@@ -53,7 +55,7 @@ export function PickMoraleBanner({ morale, compact }: Props) {
   return (
     <div className="pick-morale-banner">
       <div className="pick-morale-main">
-        <span className="pick-morale-icon" aria-hidden>❤️</span>
+        <span className="pick-morale-icon" aria-hidden><UiIcon name="heart" /></span>
         <div className="pick-morale-stats">
           <div className="pick-morale-head">
             <span className="pick-morale-label">Moral</span>
@@ -70,7 +72,7 @@ export function PickMoraleBanner({ morale, compact }: Props) {
         {MORALE_CHANGE_TIPS.map((t) => (
           <HoverTip key={t.label} tip={t.tip} placement="bottom">
             <span className="pick-morale-tip">
-              <span aria-hidden>{t.icon}</span>
+              <span aria-hidden><UiIcon name={iconForEmoji(t.icon)} /></span>
               <span>{t.label}</span>
               <span className="pick-morale-tip-delta">{t.delta}</span>
             </span>
