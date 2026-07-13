@@ -48,6 +48,7 @@ function TacticExpandModal({
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const scrollbar = window.innerWidth - document.documentElement.clientWidth;
@@ -69,6 +70,14 @@ function TacticExpandModal({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  useEffect(() => {
+    const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (window.matchMedia('(pointer: fine)').matches) {
+      requestAnimationFrame(() => closeButtonRef.current?.focus());
+    }
+    return () => trigger?.focus();
+  }, []);
+
   return createPortal(
     <>
       <div className="tactic-expand-backdrop" onClick={onClose} aria-hidden />
@@ -83,7 +92,7 @@ function TacticExpandModal({
           <p className="tactic-expand-modal-kicker">
             {getTacticCategory(card.id) === 'formasyon' ? 'Formasyon kartı' : 'Oyun sistemi kartı'}
           </p>
-          <button type="button" className="lineup-preview-close" onClick={onClose} aria-label="Kapat">
+          <button ref={closeButtonRef} type="button" className="lineup-preview-close" onClick={onClose} aria-label="Kapat">
             <UiIcon name="x" />
           </button>
         </div>
@@ -94,6 +103,7 @@ function TacticExpandModal({
               squad={squad}
               activeTactics={activeTactics}
               selected={selected}
+              expanded
             />
           </div>
         </div>
@@ -153,7 +163,7 @@ function TacticPickCard({
           <h3 className="tactic-pick-card-name">{card.name}</h3>
           <p className="tactic-pick-card-effect">{card.effectSummary}</p>
           <p className="tactic-pick-card-detail-hint">
-            <UiIcon name="info" /> Detay
+            <UiIcon name="info" /> Detayı incele
           </p>
         </div>
         {selected && <span className="tactic-pick-card-badge" aria-hidden>✓</span>}

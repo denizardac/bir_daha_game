@@ -116,8 +116,8 @@ describe('LineupEditorModal critical flow', () => {
     render(<BenchHarness />);
 
     const benchFocus = screen.getByRole('region', { name: 'Yedekten sahaya al' });
-    expect(within(benchFocus).getByText('Sahaya almak için oyuncuyu seç')).toBeTruthy();
-    expect(within(benchFocus).getByText('Sonra sahadaki hedef mevkiye dokun.')).toBeTruthy();
+    expect(within(benchFocus).getByText('Yedekten oyuna al')).toBeTruthy();
+    expect(within(benchFocus).getByText(/Oyuncuyu seç.*Sahadaki hedefe dokun/)).toBeTruthy();
     expect(within(benchFocus).getByText('Yedeğe düştü')).toBeTruthy();
     expect(within(benchFocus).getByText('YERLİ')).toBeTruthy();
 

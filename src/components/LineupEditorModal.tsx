@@ -443,9 +443,9 @@ export function LineupEditorModal({
               <div className="le-bench-focus-head">
                 <div>
                   <span className="le-bench-focus-kicker">YEDEK KULÜBESİ</span>
-                  <strong>Sahaya almak için oyuncuyu seç</strong>
+                  <strong>Yedekten oyuna al</strong>
                 </div>
-                <p>Sonra sahadaki hedef mevkiye dokun.</p>
+                <p><span>1</span> Oyuncuyu seç <i>→</i> <span>2</span> Sahadaki hedefe dokun</p>
               </div>
               <div className="le-bench-focus-list">
                 {benchPlayersForList.map((player) => {

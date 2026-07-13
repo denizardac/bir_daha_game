@@ -49,7 +49,7 @@ export function TrainingPickModal({
     <div className="training-inline">
       <div className="training-inline-left">
         <div className="training-inline-list-head">
-          <span className="training-inline-label">Oyuncu Seç</span>
+          <span className="training-inline-label"><b>1</b> Oyuncu Seç</span>
           <span className="training-inline-count">{squad.length} oyuncu</span>
         </div>
         <div className="training-inline-player-list">
@@ -98,8 +98,8 @@ export function TrainingPickModal({
         {selected && step === 'tag' ? (
           <>
             <div className="training-inline-right-head">
-              <span className="training-inline-label">Seçili <strong>{selected.name}</strong></span>
-              <span className="training-inline-right-sub">— üç tag'den birini kazandır</span>
+              <span className="training-inline-label"><b>2</b> Tag Seç <strong>{selected.name}</strong></span>
+              <span className="training-inline-right-sub">Üç oyun özelliğinden birini kazandır.</span>
             </div>
             <div className="training-tag-cards">
               {offeredTags.map((tag) => {
@@ -148,8 +148,19 @@ export function TrainingPickModal({
           </>
         ) : (
           <div className="training-inline-empty">
-            <UiIcon name="graduation-cap" className="training-inline-empty-icon" />
-            <p>Sol taraftan geliştirmek istediğin oyuncuyu seç</p>
+            <div className="training-inline-empty-mark" aria-hidden>
+              <UiIcon name="graduation-cap" className="training-inline-empty-icon" />
+            </div>
+            <span className="training-inline-empty-kicker">ANTRENMAN PLANI</span>
+            <h3>Önce bir oyuncu seç</h3>
+            <p>Oyuncunun mevcut tag’lerine göre üç uyumlu gelişim seçeneği hazırlayacağız.</p>
+            <div className="training-inline-empty-steps" aria-hidden>
+              <span className="is-current"><b>1</b> Oyuncu</span>
+              <i>→</i>
+              <span><b>2</b> Tag</span>
+              <i>→</i>
+              <span><b>3</b> Uygula</span>
+            </div>
           </div>
         )}
       </div>

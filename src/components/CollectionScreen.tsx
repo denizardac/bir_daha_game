@@ -48,6 +48,11 @@ export function CollectionScreen() {
   const eventOpen = EVENT_CARDS.filter((e) => seenEvents.has(e.id)).length;
   const achievements = getAchievementState(stats);
   const achievementCount = countUnlockedAchievements(stats);
+  const collectionStats = [
+    { label: 'Efsane', value: legendOpen, total: LEGEND_POOL.length, tone: 'gold' },
+    { label: 'Olay', value: eventOpen, total: EVENT_CARDS.length, tone: 'cyan' },
+    { label: 'Başarım', value: achievementCount.unlocked, total: achievementCount.total, tone: 'rose' },
+  ] as const;
 
   return (
     <div className="game-shell page-screen">
@@ -55,23 +60,29 @@ export function CollectionScreen() {
         <button type="button" className="btn-secondary page-screen-back" onClick={() => setScreen('menu')}>← Ana Menü</button>
 
         <header className="page-screen-header">
+          <span className="page-screen-eyebrow">Kulüp arşivi</span>
           <h1>Koleksiyon</h1>
-          <p>Açtıklarını topla — keşfettikçe dolar.</p>
+          <p>Her run, kulüp arşivinde kalıcı bir iz bırakır.</p>
         </header>
 
         <div className="collection-progress-head">
-          <div className="collection-stat">
-            <div className="collection-stat-value">{legendOpen}/{LEGEND_POOL.length}</div>
-            <div className="collection-stat-label">Efsane</div>
-          </div>
-          <div className="collection-stat">
-            <div className="collection-stat-value">{eventOpen}/{EVENT_CARDS.length}</div>
-            <div className="collection-stat-label">Olay</div>
-          </div>
-          <div className="collection-stat">
-            <div className="collection-stat-value">{achievementCount.unlocked}/{achievementCount.total}</div>
-            <div className="collection-stat-label">Başarım</div>
-          </div>
+          {collectionStats.map((item) => {
+            const percent = item.total > 0 ? Math.round((item.value / item.total) * 100) : 0;
+            return (
+              <div key={item.label} className={`collection-stat collection-stat--${item.tone}`}>
+                <div className="collection-stat-top">
+                  <div>
+                    <div className="collection-stat-value">{item.value}<span>/{item.total}</span></div>
+                    <div className="collection-stat-label">{item.label}</div>
+                  </div>
+                  <span className="collection-stat-percent">%{percent}</span>
+                </div>
+                <div className="collection-stat-bar" aria-label={`${item.label} ilerlemesi yüzde ${percent}`}>
+                  <span style={{ width: `${percent}%` }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="page-screen-tabs">
@@ -81,11 +92,17 @@ export function CollectionScreen() {
               type="button"
               className={`btn-secondary collection-tab ${tab === id ? 'btn-secondary--active' : ''}`}
               onClick={() => setTab(id)}
+              aria-pressed={tab === id}
             >
               <UiIcon name={icon} />
               {label}
             </button>
           ))}
+        </div>
+
+        <div className="collection-section-intro">
+          <span>{tab === 'efsane' ? 'Oyuncu vitrini' : tab === 'olay' ? 'Sezon günlüğü' : 'Kariyer hedefleri'}</span>
+          <p>{tab === 'efsane' ? 'Çektiğin efsaneler burada görünür.' : tab === 'olay' ? 'Karşılaştığın olay kartları arşive eklenir.' : 'Hedefleri tamamladıkça rozetler açılır.'}</p>
         </div>
 
         {tab === 'efsane' && (

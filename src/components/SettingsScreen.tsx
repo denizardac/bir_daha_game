@@ -3,6 +3,7 @@ import { savePartial, loadPersisted } from '@/utils/storage';
 import { useGameStore } from '@/store/gameStore';
 import { createDebugCode } from '@/engine/debugCode';
 import { copyText } from '@/utils/clipboard';
+import { UiIcon } from '@/components/UiIcon';
 
 export function SettingsScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
@@ -40,18 +41,34 @@ export function SettingsScreen() {
         </button>
 
         <header className="page-screen-header">
+          <span className="page-screen-eyebrow">Oyun merkezi</span>
           <h1>Ayarlar</h1>
-          <p>Oyun tercihlerini buradan yönet.</p>
+          <p>Maç günü deneyimini kendine göre düzenle.</p>
         </header>
 
-        <div className="panel settings-panel space-y-4">
-          <label>
+        <div className="panel settings-panel">
+          <div className="settings-section-head">
+            <span className="settings-section-icon" aria-hidden><UiIcon name="zap" /></span>
+            <div>
+              <span>Ses</span>
+              <strong>Maç atmosferi</strong>
+              <p>Gol, kart seçimi ve sonuç anlarındaki sesleri yönet.</p>
+            </div>
+          </div>
+
+          <label className="settings-toggle-row">
+            <span className="settings-toggle-copy">
+              <strong>Ses efektleri</strong>
+              <small>{sound ? 'Saha ve menü sesleri açık' : 'Tüm oyun sesleri kapalı'}</small>
+            </span>
             <input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} />
-            <span>Ses efektleri</span>
+            <span className="settings-toggle-track" aria-hidden><span /></span>
           </label>
+
           {stats.currentRun?.seed && (
             <div className="settings-diagnostic">
-              <div>
+              <span className="settings-diagnostic-icon" aria-hidden><UiIcon name="clipboard" /></span>
+              <div className="settings-diagnostic-copy">
                 <strong>Sorun bildirme kodu</strong>
                 <p>Bir hata yaşarsan bu kodu bize gönder. Kişisel bilgi ve skor içermez.</p>
               </div>
@@ -60,7 +77,14 @@ export function SettingsScreen() {
               </button>
             </div>
           )}
-          <button type="button" className="btn-primary w-full" onClick={save}>Kaydet</button>
+
+          <div className="settings-panel-foot">
+            <span>Tercihler bu cihazda saklanır.</span>
+            <button type="button" className="btn-primary settings-save" onClick={save}>
+              <UiIcon name="check" />
+              Değişiklikleri kaydet
+            </button>
+          </div>
         </div>
       </div>
     </div>

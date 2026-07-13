@@ -67,6 +67,7 @@ export function HallOfFameScreen() {
         <header className="page-screen-header hof-screen-header">
           <div className="hof-header-content">
             <div>
+              <span className="page-screen-eyebrow">Sezon arşivi</span>
               <h1>Hall of Fame</h1>
               <p>Aylık sezon — her ay sıfırlanır, geçmiş şampiyonlar ebediyen arşivde kalır.</p>
             </div>

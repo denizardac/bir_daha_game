@@ -8,6 +8,7 @@ import { iconForSynergy } from '@/utils/gameIcons';
 export function SynergiesScreen() {
   const discovered = getPersistedStats().discoveredSynergies;
   const setScreen = useGameStore((s) => s.setScreen);
+  const progress = Math.round((discovered.length / TOTAL_SYNERGIES) * 100);
 
   return (
     <div className="game-shell page-screen">
@@ -17,9 +18,21 @@ export function SynergiesScreen() {
         </button>
 
         <header className="page-screen-header">
+          <span className="page-screen-eyebrow">Taktik laboratuvarı</span>
           <h1>Sinerjiler</h1>
-          <p>Keşfedilen: {discovered.length}/{TOTAL_SYNERGIES} — tag ve mevki kombinasyonlarıyla maç bonusu kazan.</p>
+          <p>Doğru tag ve mevki kombinasyonlarını kur, maç bonuslarını aç.</p>
         </header>
+
+        <div className="synergies-progress-panel">
+          <div className="synergies-progress-copy">
+            <span>Keşif ilerlemesi</span>
+            <strong>{discovered.length}<small> / {TOTAL_SYNERGIES}</small></strong>
+          </div>
+          <div className="synergies-progress-track" aria-label={`Sinerji keşif ilerlemesi yüzde ${progress}`}>
+            <span style={{ width: `${progress}%` }} />
+          </div>
+          <p>{discovered.length === TOTAL_SYNERGIES ? 'Tüm sinerjiler keşfedildi.' : `${TOTAL_SYNERGIES - discovered.length} kombinasyon keşfedilmeyi bekliyor.`}</p>
+        </div>
 
         <div className="synergies-catalog">
           {SYNERGIES.map((s) => {

@@ -35,6 +35,7 @@ function SectionNav({
           type="button"
           className={`guide-nav-btn ${active === s.id ? 'guide-nav-btn--active' : ''}`}
           onClick={() => onChange(s.id)}
+          aria-current={active === s.id ? 'page' : undefined}
         >
           <span className="guide-nav-icon" aria-hidden><UiIcon name={iconForEmoji(s.icon)} /></span>
           {s.label}
@@ -234,6 +235,7 @@ export function GameGuideScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
   const [section, setSection] = useState<GuideSectionId>('genel');
   const active = GUIDE_SECTIONS.find((s) => s.id === section)!;
+  const activeIndex = GUIDE_SECTIONS.findIndex((s) => s.id === section);
   const Content = SECTION_CONTENT[section];
 
   return (
@@ -244,8 +246,14 @@ export function GameGuideScreen() {
             ← Ana Menü
           </button>
           <div className="guide-header-text">
+            <span className="page-screen-eyebrow">Teknik direktör el kitabı</span>
             <h1 className="guide-title">Oyun Rehberi</h1>
             <p className="guide-subtitle">Sistem, tag, taktik, sinerji ve olaylar hakkında detaylı bilgi</p>
+          </div>
+          <div className="guide-header-progress" aria-label={`${activeIndex + 1}. bölüm, toplam ${GUIDE_SECTIONS.length}`}>
+            <span>{String(activeIndex + 1).padStart(2, '0')}</span>
+            <i />
+            <small>{String(GUIDE_SECTIONS.length).padStart(2, '0')}</small>
           </div>
         </header>
 
