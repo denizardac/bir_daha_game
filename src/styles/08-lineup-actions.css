@@ -26,7 +26,7 @@
 }
 
 .le-bench-focus-kicker {
-  color: #55f0b0;
+  color: #f6cf6a;
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.56rem;
   font-weight: 900;
@@ -57,12 +57,52 @@
 }
 
 .le-bench-focus .le-squad-row--bench-feature {
-  grid-template-columns: 2.35rem minmax(0, 1fr) minmax(6.4rem, auto) !important;
+  grid-template-columns: 2.15rem minmax(0, 1fr) minmax(5.45rem, auto) !important;
   gap: 0.62rem !important;
-  min-height: 4rem !important;
+  min-height: 4.55rem !important;
   border-color: rgba(85, 240, 176, 0.38) !important;
   background: rgba(5, 12, 16, 0.86) !important;
   overflow: visible !important;
+}
+
+.le-bench-focus .le-squad-info {
+  position: static !important;
+  display: grid !important;
+  grid-template-columns: minmax(5.7rem, 1fr) auto !important;
+  grid-template-rows: auto auto !important;
+  align-items: center !important;
+  gap: 0.32rem 0.48rem !important;
+}
+
+.le-bench-focus .le-squad-name-row {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+}
+
+.le-bench-focus .le-squad-role-row {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+  justify-self: end !important;
+}
+
+.le-bench-focus .le-squad-tags {
+  position: static !important;
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  display: flex !important;
+  width: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  justify-content: flex-start !important;
+  flex-wrap: wrap !important;
+  overflow: visible !important;
+}
+
+.le-bench-focus .le-squad-tags .le-squad-tag-tip {
+  display: inline-flex !important;
 }
 
 .le-bench-focus .le-squad-row--bench-feature:hover,
@@ -73,20 +113,20 @@
 
 .le-bench-focus .le-squad-place-btn {
   position: static !important;
-  align-self: stretch;
+  align-self: center;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.42rem;
-  min-width: 6.4rem;
-  min-height: 2.7rem;
-  padding: 0.48rem 0.66rem;
+  min-width: 5.45rem;
+  min-height: 2.3rem;
+  padding: 0.4rem 0.56rem;
   border: 1px solid rgba(85, 240, 176, 0.62);
   border-radius: 0.52rem;
   background: linear-gradient(180deg, rgba(24, 128, 91, 0.92), rgba(13, 91, 68, 0.96));
   color: #effff9;
   box-shadow: 0 5px 16px rgba(10, 91, 67, 0.22);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   letter-spacing: 0.02em;
   line-height: 1;
   text-transform: uppercase;
@@ -149,16 +189,42 @@
   }
 
   .le-bench-focus .le-squad-row--bench-feature {
-    grid-template-columns: 1.75rem minmax(0, 1fr) minmax(5.8rem, auto) !important;
-    min-height: 3.55rem !important;
+    grid-template-columns: 1.75rem minmax(0, 1fr) minmax(5.15rem, auto) !important;
+    min-height: 4.35rem !important;
     padding: 0.44rem 0.52rem !important;
   }
 
+  .le-bench-focus .le-squad-info {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto auto !important;
+    gap: 0.2rem !important;
+  }
+
+  .le-bench-focus .le-squad-name-row,
+  .le-bench-focus .le-squad-role-row,
+  .le-bench-focus .le-squad-tags {
+    grid-column: 1 !important;
+  }
+
+  .le-bench-focus .le-squad-name-row {
+    grid-row: 1 !important;
+  }
+
+  .le-bench-focus .le-squad-role-row {
+    grid-row: 2 !important;
+    justify-self: start !important;
+    margin-top: 0 !important;
+  }
+
+  .le-bench-focus .le-squad-tags {
+    grid-row: 3 !important;
+  }
+
   .le-bench-focus .le-squad-place-btn {
-    min-width: 5.8rem;
-    min-height: 2.45rem;
-    padding-inline: 0.5rem;
-    font-size: 0.66rem;
+    min-width: 5.15rem;
+    min-height: 2.25rem;
+    padding-inline: 0.44rem;
+    font-size: 0.64rem;
   }
 }
 
@@ -173,14 +239,14 @@
   }
 
   .le-bench-focus .le-squad-row--bench-feature {
-    grid-template-columns: 1.55rem minmax(0, 1fr) minmax(5.35rem, auto) !important;
+    grid-template-columns: 1.55rem minmax(0, 1fr) minmax(4.9rem, auto) !important;
     gap: 0.42rem !important;
   }
 
   .le-bench-focus .le-squad-place-btn {
-    min-width: 5.35rem;
-    min-height: 2.35rem;
-    font-size: 0.62rem;
+    min-width: 4.9rem;
+    min-height: 2.2rem;
+    font-size: 0.6rem;
   }
 }
 

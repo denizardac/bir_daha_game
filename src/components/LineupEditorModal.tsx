@@ -439,13 +439,13 @@ export function LineupEditorModal({
         )}
         <div className="le-squad-panel-list">
           {benchPlayersForList.length > 0 && (
-            <section className="le-bench-focus" aria-labelledby="le-bench-focus-title">
+            <section className="le-bench-focus" aria-label="Yedekten sahaya al">
               <div className="le-bench-focus-head">
                 <div>
-                  <span className="le-bench-focus-kicker">HAMLE HAZIR</span>
-                  <strong id="le-bench-focus-title">Sahaya alınabilir</strong>
+                  <span className="le-bench-focus-kicker">YEDEK KULÜBESİ</span>
+                  <strong>Sahaya almak için oyuncuyu seç</strong>
                 </div>
-                <p>Oyuncuyu seç, sonra sahadaki hedef mevkiye dokun.</p>
+                <p>Sonra sahadaki hedef mevkiye dokun.</p>
               </div>
               <div className="le-bench-focus-list">
                 {benchPlayersForList.map((player) => {
@@ -468,7 +468,7 @@ export function LineupEditorModal({
                           {player.position === 'KL' ? <span className="le-squad-only">sadece kalede</span> : <SecondaryPositions player={player} />}
                         </div>
                         <div className="le-squad-tags">
-                          <span className="le-squad-bench-badge">Yedek</span>
+                          <span className="le-squad-bench-badge">Yedeğe düştü</span>
                           {player.tags.map((tag) => (
                             <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="le-squad-tag-tip">
                               <span className="le-squad-tag" style={tagChipStyle(tag)}>

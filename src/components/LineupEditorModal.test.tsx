@@ -115,8 +115,11 @@ describe('LineupEditorModal critical flow', () => {
     const user = userEvent.setup();
     render(<BenchHarness />);
 
-    const benchFocus = screen.getByRole('region', { name: 'Sahaya alınabilir' });
-    expect(within(benchFocus).getByText('Oyuncuyu seç, sonra sahadaki hedef mevkiye dokun.')).toBeTruthy();
+    const benchFocus = screen.getByRole('region', { name: 'Yedekten sahaya al' });
+    expect(within(benchFocus).getByText('Sahaya almak için oyuncuyu seç')).toBeTruthy();
+    expect(within(benchFocus).getByText('Sonra sahadaki hedef mevkiye dokun.')).toBeTruthy();
+    expect(within(benchFocus).getByText('Yedeğe düştü')).toBeTruthy();
+    expect(within(benchFocus).getByText('YERLİ')).toBeTruthy();
 
     const action = within(benchFocus).getByRole('button', { name: /oyuncusunu sahaya al/ });
     await user.click(action);
