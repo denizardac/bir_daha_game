@@ -98,8 +98,17 @@ export function TrainingPickModal({
         {selected && step === 'tag' ? (
           <>
             <div className="training-inline-right-head">
-              <span className="training-inline-label"><b>2</b> Tag Seç <strong>{selected.name}</strong></span>
-              <span className="training-inline-right-sub">Üç oyun özelliğinden birini kazandır.</span>
+              <div className="training-plan-heading">
+                <span className="training-inline-label"><b>2</b> Gelişim Planı</span>
+                <span className="training-inline-right-sub">Üç oyun özelliğinden birini kazandır.</span>
+              </div>
+              <div className="training-selected-player" aria-label={`Seçili oyuncu: ${selected.name}`}>
+                <strong>{selected.currentRating}</strong>
+                <span>
+                  <b>{selected.name}</b>
+                  <small>{POSITION_BADGE[selected.position]} · ANTRENMAN ADAYI</small>
+                </span>
+              </div>
             </div>
             <div className="training-tag-cards">
               {offeredTags.map((tag) => {
@@ -151,9 +160,9 @@ export function TrainingPickModal({
             <div className="training-inline-empty-mark" aria-hidden>
               <UiIcon name="graduation-cap" className="training-inline-empty-icon" />
             </div>
-            <span className="training-inline-empty-kicker">ANTRENMAN PLANI</span>
-            <h3>Önce bir oyuncu seç</h3>
-            <p>Oyuncunun mevcut tag’lerine göre üç uyumlu gelişim seçeneği hazırlayacağız.</p>
+            <span className="training-inline-empty-kicker">ANTRENMAN MASASI</span>
+            <h3>Plan oyuncuyla başlar</h3>
+            <p>Soldan bir oyuncu seç; mevcut özelliklerine göre üç uyumlu gelişim planı hazırlayalım.</p>
             <div className="training-inline-empty-steps" aria-hidden>
               <span className="is-current"><b>1</b> Oyuncu</span>
               <i>→</i>

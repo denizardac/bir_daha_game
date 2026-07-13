@@ -1677,11 +1677,24 @@ summary,
   color: var(--studio-teal) !important;
 }
 
-/* Training: clear 1 → 2 → apply flow and a useful empty state. */
+/* Training workbench: one stable shell for player, plan and apply states. */
+.card-select-screen--training .card-select-layout--training {
+  align-items: stretch !important;
+}
+
+.card-select-screen--training .card-pick-center--training {
+  min-width: 0;
+  padding-top: 2.1rem !important;
+}
+
 .card-pick-center--training .training-inline {
   grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1.28fr) !important;
   gap: 0.75rem !important;
+  width: 100% !important;
   min-height: 0 !important;
+  height: clamp(26rem, calc(100dvh - 8.4rem), 32rem) !important;
+  max-height: 32rem !important;
+  flex: 0 0 auto !important;
 }
 
 .training-inline-left,
@@ -1731,14 +1744,24 @@ summary,
 
 .training-inline-player-list {
   gap: 0.38rem !important;
-  max-height: min(49dvh, 25rem) !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  scrollbar-gutter: stable;
 }
 
 .training-player-row {
+  grid-template-columns: 2.35rem minmax(0, 1fr) auto !important;
   min-height: 44px !important;
   padding: 0.42rem 0.55rem !important;
   border-color: var(--line) !important;
   background: rgba(3, 10, 8, 0.58) !important;
+}
+
+.training-player-row-tags {
+  min-width: 0 !important;
+  max-width: 8.4rem;
+  flex-wrap: nowrap !important;
+  overflow: hidden !important;
 }
 
 .training-player-row:hover:not(:disabled) {
@@ -1753,11 +1776,79 @@ summary,
 }
 
 .training-inline-right {
+  position: relative;
   padding: 0.8rem !important;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 0.5px), rgba(47, 208, 195, 0.045) 50%, transparent calc(50% + 0.5px)),
+    radial-gradient(circle at 100% 0%, rgba(47, 208, 195, 0.08), transparent 34%),
+    linear-gradient(145deg, rgba(11, 23, 19, 0.96), rgba(5, 13, 11, 0.96)) !important;
+}
+
+.training-inline-right-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center !important;
+  gap: 0.9rem !important;
+}
+
+.training-plan-heading {
+  display: grid;
+  min-width: 0;
+  gap: 0.3rem;
+}
+
+.training-selected-player {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 11rem;
+  padding: 0.42rem 0.58rem;
+  border: 1px solid rgba(47, 208, 195, 0.24);
+  border-radius: 10px;
+  background: rgba(47, 208, 195, 0.07);
+}
+
+.training-selected-player > strong {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--studio-teal);
+  color: #03100e;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.training-selected-player > span {
+  display: grid;
+  min-width: 0;
+}
+
+.training-selected-player b {
+  overflow: hidden;
+  color: var(--tx);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.training-selected-player small {
+  margin-top: 0.2rem;
+  color: rgba(179, 215, 201, 0.58);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
 .training-inline-empty {
-  min-height: 292px !important;
+  min-height: 0 !important;
+  height: 100%;
   padding: 1.8rem !important;
   border: 1px dashed rgba(47, 208, 195, 0.22);
   border-radius: 12px;
@@ -1841,7 +1932,7 @@ summary,
 
 .training-tag-cards {
   gap: 0.55rem !important;
-  flex: 0 0 auto !important;
+  flex: 1 1 auto !important;
   align-items: stretch !important;
   min-height: 0 !important;
 }
@@ -2024,6 +2115,33 @@ button,
   color: #fff1b4 !important;
 }
 
+@media (max-width: 1100px) {
+  .card-select-screen--training .card-select-inner .game-layout.card-select-layout--focused.card-select-layout--training {
+    display: block !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .card-select-screen--training .card-select-layout--training > .card-select-left-rail {
+    display: none !important;
+  }
+
+  .card-select-screen--training .card-select-layout--training > .card-pick-center--training {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding-top: 0.8rem !important;
+  }
+
+  .card-select-screen--training .card-pick-center--training .training-inline {
+    grid-template-columns: minmax(17.5rem, 0.72fr) minmax(0, 1.35fr) !important;
+  }
+}
+
 @media (max-width: 720px) {
   .tactic-expand-modal {
     inset: max(0.45rem, env(safe-area-inset-top)) max(0.45rem, env(safe-area-inset-right)) max(0.45rem, env(safe-area-inset-bottom)) max(0.45rem, env(safe-area-inset-left)) !important;
@@ -2085,10 +2203,26 @@ button,
 
   .card-pick-center--training .training-inline {
     grid-template-columns: 1fr !important;
+    height: auto !important;
+    max-height: none !important;
   }
 
   .training-inline-player-list {
     max-height: 260px !important;
+  }
+
+  .training-inline-left,
+  .training-inline-right {
+    height: auto !important;
+  }
+
+  .training-inline-right-head {
+    grid-template-columns: 1fr !important;
+  }
+
+  .training-selected-player {
+    width: 100%;
+    min-width: 0;
   }
 
   .training-tag-cards {

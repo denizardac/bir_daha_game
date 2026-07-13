@@ -433,7 +433,7 @@ export function CardSelectScreen() {
   };
 
   return (
-    <div className={`game-shell pitch-bg card-select-screen ${tacticBonus ? 'card-select-screen--tactic' : ''} ${dangerMode ? 'danger-pulse' : ''}`}>
+    <div className={`game-shell pitch-bg card-select-screen ${tacticBonus ? 'card-select-screen--tactic' : ''} ${cardsLocked ? 'card-select-screen--training' : ''} ${dangerMode ? 'danger-pulse' : ''}`}>
       <div className="card-select-inner w-full px-3 py-2 md:px-4 md:py-3">
         <GameHeader round={round} maxRounds={maxRounds} score={score} streak={streak} trackRecord={roundHistory} />
 
@@ -456,7 +456,7 @@ export function CardSelectScreen() {
           </p>
         )}
 
-        <div className={`game-layout card-select-layout card-select-layout--focused ${tacticBonus ? 'card-select-layout--tactic' : 'card-select-layout--pick'}`}>
+        <div className={`game-layout card-select-layout card-select-layout--focused ${tacticBonus ? 'card-select-layout--tactic' : 'card-select-layout--pick'} ${cardsLocked ? 'card-select-layout--training' : ''}`}>
           {!tacticBonus && (
             <CardSelectLeftRail
               morale={morale}
