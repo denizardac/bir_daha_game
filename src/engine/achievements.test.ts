@@ -19,6 +19,7 @@ function baseData(overrides: Partial<PersistedData> = {}): PersistedData {
     cardTimerEnabled: false, tutorialCompleted: true, totalRuns: 0, todayRuns: 0, todayRunsDate: '',
     seasonKey: '2026-07', hallOfFame: [], seasonArchive: {}, seenEvents: [], collectedLegends: [],
     ...overrides,
+    saveVersion: overrides.saveVersion ?? 2,
   };
 }
 

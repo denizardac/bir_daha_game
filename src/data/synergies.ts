@@ -205,7 +205,23 @@ export const SYNERGIES: SynergyDefinition[] = [
   {
     id: 'synergy_karma_guc', name: 'KARMA DENGE', icon: '⚖️', hidden: true,
     description: 'YERLİ omurga ve YABANCI YILDIZ kalitesi dengelenirse kadro daha güvenilir olur.',
-    check: (s) => countTag(s, 'YERLİ') >= 3 && countTag(s, 'YABANCI YILDIZ') >= 3, perWinBonus: 90,
+    // YABANCI YILDIZ havuzu yalnızca 9 kart; 3 yıldız koşulu hedefli botta bile
+    // hiç gerçekleşmiyordu. 3 YERLİ + 2 yıldız, YILDIZLAR GECE'nin (≤1 YERLİ)
+    // karşıt ve erişilebilir kadro kurma yolu olarak çalışır.
+    check: (s) => countTag(s, 'YERLİ') >= 3 && countTag(s, 'YABANCI YILDIZ') >= 2,
+    perWinBonus: 90,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const locals = countTag(combined, 'YERLİ');
+      const stars = countTag(combined, 'YABANCI YILDIZ');
+      if (locals >= 3 && stars >= 2) return null;
+      return {
+        current: Math.min(locals, 3) + Math.min(stars, 2),
+        required: 5,
+        icon: '⚖️',
+        note: `YERLİ ${Math.min(locals, 3)}/3 · YABANCI YILDIZ ${Math.min(stars, 2)}/2`,
+      };
+    },
   },
   {
     id: 'synergy_temiz_sayfa', name: 'DEMİR KALE', icon: '🧱', hidden: false,
@@ -381,8 +397,24 @@ export const SYNERGIES: SynergyDefinition[] = [
   },
   {
     id: 'synergy_yenisezon_patlama', name: 'YENİ SEZON PATLAMASI', icon: '🌱', hidden: true,
-    description: 'YENİ SEZON oyuncuları MENTOR ile daha çabuk oyuna alışır.',
-    check: (s) => countTag(s, 'YENİ SEZON') >= 2 && countTag(s, 'MENTOR') >= 1, perRoundBonus: 28,
+    description: 'YENİ SEZON oyuncusu MENTOR ile daha çabuk oyuna alışır.',
+    // İki etiket de havuzun yaklaşık %4'ünde. 2 genç + 1 mentor koşulu hedefli
+    // oyunda dahi pratikte hiç oluşmuyordu; 1+1 hâlâ bilinçli kadro kurmayı ister.
+    check: (s) => countTag(s, 'YENİ SEZON') >= 1 && countTag(s, 'MENTOR') >= 1,
+    perRoundBonus: 28,
+    getProgress: (s, c) => {
+      const combined = c ? [...s, c] : s;
+      const newcomers = countTag(combined, 'YENİ SEZON');
+      const mentors = countTag(combined, 'MENTOR');
+      const current = Math.min(newcomers, 1) + Math.min(mentors, 1);
+      if (current >= 2) return null;
+      return {
+        current,
+        required: 2,
+        icon: '🌱',
+        note: `YENİ SEZON ${Math.min(newcomers, 1)}/1 · MENTOR ${Math.min(mentors, 1)}/1`,
+      };
+    },
   },
   {
     id: 'synergy_imza_kadrosu', name: 'İMZA KADROSU', icon: '✒️', hidden: true,

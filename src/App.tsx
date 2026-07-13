@@ -1,14 +1,20 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { parseChallengeFromSearch, stripChallengeParams } from '@/engine/challenge';
 import { useGameStore } from '@/store/gameStore';
 import { MainMenu } from '@/components/MainMenu';
-import { GameScreen } from '@/components/GameScreen';
-import { SynergiesScreen } from '@/components/SynergiesScreen';
-import { LeaderboardScreen } from '@/components/LeaderboardScreen';
-import { HallOfFameScreen } from '@/components/HallOfFameScreen';
-import { SettingsScreen } from '@/components/SettingsScreen';
-import { GameGuideScreen } from '@/components/GameGuideScreen';
-import { CollectionScreen } from '@/components/CollectionScreen';
+import { PwaUpdateToast } from '@/components/PwaUpdateToast';
+
+const GameScreen = lazy(() => import('@/components/GameScreen').then((module) => ({ default: module.GameScreen })));
+const SynergiesScreen = lazy(() => import('@/components/SynergiesScreen').then((module) => ({ default: module.SynergiesScreen })));
+const LeaderboardScreen = lazy(() => import('@/components/LeaderboardScreen').then((module) => ({ default: module.LeaderboardScreen })));
+const HallOfFameScreen = lazy(() => import('@/components/HallOfFameScreen').then((module) => ({ default: module.HallOfFameScreen })));
+const SettingsScreen = lazy(() => import('@/components/SettingsScreen').then((module) => ({ default: module.SettingsScreen })));
+const GameGuideScreen = lazy(() => import('@/components/GameGuideScreen').then((module) => ({ default: module.GameGuideScreen })));
+const CollectionScreen = lazy(() => import('@/components/CollectionScreen').then((module) => ({ default: module.CollectionScreen })));
+
+function ScreenLoading() {
+  return <div className="game-shell page-screen app-screen-loading" role="status">Ekran hazırlanıyor…</div>;
+}
 
 export default function App() {
   const screen = useGameStore((s) => s.screen);
@@ -39,22 +45,31 @@ export default function App() {
     };
   }, []);
 
+  let content;
   switch (screen) {
     case 'game':
-      return <GameScreen />;
+      content = <GameScreen />;
+      break;
     case 'synergies':
-      return <SynergiesScreen />;
+      content = <SynergiesScreen />;
+      break;
     case 'leaderboard':
-      return <LeaderboardScreen />;
+      content = <LeaderboardScreen />;
+      break;
     case 'hallOfFame':
-      return <HallOfFameScreen />;
+      content = <HallOfFameScreen />;
+      break;
     case 'settings':
-      return <SettingsScreen />;
+      content = <SettingsScreen />;
+      break;
     case 'gameGuide':
-      return <GameGuideScreen />;
+      content = <GameGuideScreen />;
+      break;
     case 'collection':
-      return <CollectionScreen />;
+      content = <CollectionScreen />;
+      break;
     default:
-      return <MainMenu />;
+      return <><MainMenu /><PwaUpdateToast /></>;
   }
+  return <><Suspense fallback={<ScreenLoading />}>{content}</Suspense><PwaUpdateToast /></>;
 }

@@ -146,7 +146,7 @@ describe('lineupPlacement — genel kurallar', () => {
     expect(slotOf(squad, 'sgk')).toBe('SĞK');
   });
 
-  it('OS 433 — boş DOS varken OS oyuncusu DOS’a oturur (Gökhan Taş)', () => {
+  it('OS 433 — boş DOS varken OS oyuncusu boş ana mevkisinde kalır (Gökhan Taş)', () => {
     const slots433: PlacementSlotDef[] = [
       { label: 'KL', preferred: ['KL'], zone: 'kaleci' },
       { label: 'SLB', preferred: ['SLB', 'STP'], zone: 'savunma' },
@@ -178,7 +178,7 @@ describe('lineupPlacement — genel kurallar', () => {
       ),
       p({ id: 'gokhan', name: 'Gökhan Taş', position: 'OS', currentRating: 75, rating: 75 }),
     ];
-    expect(slot433(squad, 'gokhan')).toBe('DOS');
+    expect(slot433(squad, 'gokhan')).toBe('OS');
     expect(slot433(squad, 'oos')).toBe('OOS');
   });
 

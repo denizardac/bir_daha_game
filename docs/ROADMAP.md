@@ -1,7 +1,7 @@
 # Bir Daha — Yol Haritası
 
 Aşama aşama ilerleme planı. Zaman tahmini yok; her aşama bir öncekinin üstüne kurulur.
-Güncel durum: oyun web'de oynanabilir, 206 unit test + telemetrili headless QA + CI yeşil, Supabase leaderboard altyapısı hazır (deploy opsiyonel), Capacitor Android/iOS kabukları bağlı.
+Güncel durum: oyun web'de oynanabilir, 245 otomatik test + telemetrili headless QA + CI yeşil, Supabase leaderboard altyapısı hazır (deploy opsiyonel), Capacitor Android/iOS kabukları bağlı.
 
 ---
 
@@ -27,6 +27,17 @@ Güncel durum: oyun web'de oynanabilir, 206 unit test + telemetrili headless QA 
 - [x] `index.css` (~32k satır) 6 sıralı katman dosyasına bölündü (`src/styles/01-core.css` … `06-event-v2.css`, build çıktısı bayt-bayt aynı)
 - [x] TutorialCoach `AnimatePresence` çift-key hatası düzeltildi (ilk run'da konsol spam'i + potansiyel animasyon bozulması)
 - [ ] Gerçek cihaz QA turu (iOS Safari + Android Chrome) — `docs/QA_CHECKLIST.md` üzerinden manuel tur (kullanıcı)
+
+### Kadro kararı ve teknik sağlamlık — Temmuz 2026 ✅
+
+- [x] Oyuncu ekleme/çıkarma, ilk 11 uzlaştırma ve sinerji etkisi tek simülatörde toplandı (`engine/rosterDecision.ts`); kart, yan panel, transfer editörü ve store aynı sonucu kullanıyor
+- [x] Dolu kadroda çıkan oyuncu kaybolmuyor; kullanıcı ayrılacak oyuncuyu değiştirebiliyor ve açılacak/kapanacak sinerjiyi karar vermeden görüyor
+- [x] Yeni oyuncunun otomatik yer değişimi sahada hareket göstergesiyle açıklanıyor
+- [x] Diziliş yerleştirme öncelikleri ana mevki boşken gereksiz yan mevki kullanımını engelliyor; edge-case senaryoları testlerle kilitli
+- [x] Kayıt şeması sürümlendi; eski/bozuk kayıtlarda yinelenen oyuncu, geçersiz pin ve teklif kayıtları güvenli biçimde onarılıyor
+- [x] Tek tıkla kişisel veri içermeyen hata tanı kodu üretimi eklendi
+- [x] Lineup editörü klavye ile kullanılabilir hale getirildi; transfer ve klavye akışları jsdom bileşen testleriyle kapsandı
+- [x] Ekranlar lazy-load, büyük bağımlılıklar ayrı paket parçaları; kontrollü PWA güncellemesi aktif oyunu habersiz yenilemiyor
 
 ## Aşama 2 — Canlı leaderboard'un devreye alınması ✅ (replay hariç tamamlandı)
 
@@ -54,7 +65,8 @@ Güncel durum: oyun web'de oynanabilir, 206 unit test + telemetrili headless QA 
 - [x] Haftalık meydan okuma modifikatörleri: hafta anahtarından deterministik 4 modifikatör (Seri/Kale/Moral/Transfer Haftası) — menü rozeti + skor/run-başı etkileri
 - [x] İkinci tur:
   - [x] İnsan-benzeri (sinerji-hedefli) auto-pick — QA raporu artık greedy vs. hedefli oyuncuyu yan yana basıyor; "hangi sinerji hedefleyen oyuncuda bile açılmıyor" ölçülüyor
-  - [x] YILDIZLAR GECE erişilebilir yapıldı: havuzda yalnızca 9 YABANCI YILDIZ var (257 kart) → "3 yıldız + 0 yerli" ulaşılmazdı; "2 yıldız + ≤1 yerli"ye çekildi (telemetride hedefli oyunda artık açılıyor). KARMA DENGE zaten hedefli oyunda açılıyordu — dokunulmadı
+  - [x] YILDIZLAR GECE erişilebilir yapıldı: havuzda yalnızca 9 YABANCI YILDIZ var (257 kart) → "3 yıldız + 0 yerli" ulaşılmazdı; "2 yıldız + ≤1 yerli"ye çekildi
+  - [x] KARMA DENGE "3 YERLİ + 2 YABANCI YILDIZ", YENİ SEZON PATLAMASI "1 YENİ SEZON + 1 MENTOR" oldu; greedy ve hedefli QA batch'lerinde artık hiç açılmayan sinerji yok
   - [x] Rakip stili artık maça HAFİF etkiyor (±%5): saldırgan = açık maç (iki yönde de gol ↑), savunmacı = kapalı maç (↓), dengeli = nötr; kim kazanır çok değişmez, maçın karakteri değişir (davranış testiyle kilitlendi)
 - [ ] Üçüncü tur (ileride): rakip stiline oyuncu tepkisi (ör. savunmacıya karşı hücum taktiği ipucu), sinerji çeşitliliğini artıracak yeni YABANCI YILDIZ kartları
 

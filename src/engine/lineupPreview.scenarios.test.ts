@@ -54,6 +54,63 @@ function base442Ten(): PlayerCard[] {
 }
 
 describe('lineup scenarios — mevki × formasyon (18+ koşul)', () => {
+  it('00 — bütün formasyonlarda boş ana mevki, oyuncunun yan mevkisinden önce gelir', () => {
+    const formations = ['442', '433', '352', '532', '4231', '343', 'diamond', '4411', '3412', '451'];
+    const positions = ['STP', 'SLB', 'SÖB', 'DOS', 'OS', 'SLK', 'SÖK', 'OOS', 'SF'] as const;
+
+    for (const formation of formations) {
+      for (const position of positions) {
+        const player = p({
+          id: `${formation}-${position}`,
+          name: `${formation} ${position}`,
+          position,
+          currentRating: 70,
+          rating: 70,
+        });
+        const lineup = assignSquadToFormation([player], formation);
+        const nativeSlots = lineup.filter((entry) => entry.slot.preferred[0] === position);
+        if (!nativeSlots.length) continue;
+
+        expect(
+          lineup.find((entry) => entry.player?.id === player.id)?.slot.preferred[0],
+          `${formation} içinde ${position} oyuncusu boş ana mevkisine yerleşmeli`,
+        ).toBe(position);
+      }
+    }
+  });
+
+  it('00b — formasyon değişimi ve yeni oyuncu sonrası hiçbir boş ana slotun önünde yan mevki kalmaz', () => {
+    const formations = ['442', '433', '352', '532', '4231', '343', 'diamond', '4411', '3412', '451'];
+    const positions = ['STP', 'SLB', 'SÖB', 'DOS', 'OS', 'SLK', 'SÖK', 'OOS', 'SF'] as const;
+
+    for (let seedIndex = 0; seedIndex < 36; seedIndex++) {
+      const incomingPosition = positions[seedIndex % positions.length]!;
+      const incoming = p({
+        id: `incoming-${seedIndex}`,
+        name: `Yeni ${incomingPosition}`,
+        position: incomingPosition,
+        currentRating: 62 + (seedIndex % 17),
+        rating: 62 + (seedIndex % 17),
+      });
+      const squad = [...getStartingSquad(`native-slot-seed-${seedIndex}`, false), incoming];
+
+      for (const formation of formations) {
+        const lineup = assignSquadToFormation(squad, formation);
+        for (const entry of lineup) {
+          const player = entry.player;
+          if (!player || entry.slot.preferred[0] === player.position) continue;
+          const emptyNative = lineup.find(
+            (candidate) => !candidate.player && candidate.slot.preferred[0] === player.position,
+          );
+          expect(
+            emptyNative,
+            `${formation}: ${player.name} ${entry.slot.label} yan mevkiindeyken ${player.position} boş kalmamalı`,
+          ).toBeUndefined();
+        }
+      }
+    }
+  });
+
   it('01 — OS asla SĞK/SLK slotuna yazılmaz (442)', () => {
     const incoming = p({ id: 'efe', name: 'Efe Polat', position: 'OS', currentRating: 76, rating: 76 });
     const squad = [...base442Ten(), p({ id: 'sgk', name: 'Kanat', position: 'SÖK', currentRating: 67, rating: 67 }), incoming];

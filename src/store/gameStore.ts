@@ -35,7 +35,14 @@ import {
   getRankPercent,
   getTodayKey,
 } from '@/engine/leaderboard';
-import { applyPlayerToSquad, getActiveFormationKey, normalizeSquadGoalkeepers, reconcileManualLineup } from '@/engine/lineupPreview';
+import {
+  canSelectTransferDeparture,
+  finalizePlayerTransfer,
+  getActiveFormationKey,
+  normalizeSquadGoalkeepers,
+  reconcileManualLineup,
+} from '@/engine/lineupPreview';
+import { simulateRosterDecision } from '@/engine/rosterDecision';
 import {
   applyGerileyen,
   applyInjuryRisk,
@@ -105,6 +112,8 @@ interface GameStore extends GameState {
   newAchievements: Achievement[];
   /** Editörde vurgulanacak yeni oyuncu id'si. */
   lineupEditorHighlightId: string | null;
+  /** Transfer taslağında kadrodan ayrılması önerilen mevcut oyuncu. */
+  lineupEditorOutgoingId: string | null;
   /** Editör açılmadan önceki kadro/diziliş — iptal edilince geri yüklenir. */
   lineupEditorPrevSquad: GameState['squad'] | null;
   lineupEditorPrevManual: Record<number, string> | null;
@@ -120,6 +129,8 @@ interface GameStore extends GameState {
   confirmLineupAndPlay: () => void;
   /** İlk 11 editörünü iptal eder — seçilen oyuncu geri alınır, kart seçimine dönülür. */
   cancelLineupEditor: () => void;
+  /** Dolu kadroda otomatik çıkış önerisini başka bir mevcut oyuncuyla değiştirir. */
+  setLineupEditorOutgoing: (playerId: string) => void;
   /** Manuel ilk 11 override'ını günceller (editör sürükle-bırak sonrası). */
   setManualLineup: (manualLineup: Record<number, string>) => void;
   /** Manuel override'ı temizler — saf otomatik yerleşime döner. */
@@ -481,6 +492,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   newAchievements: [],
   lineupEditorOpen: false,
   lineupEditorHighlightId: null,
+  lineupEditorOutgoingId: null,
   lineupEditorPrevSquad: null,
   lineupEditorPrevManual: null,
 
@@ -527,6 +539,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       pendingChallenge: null,
       unlockedAtRunStart: getUnlockedAchievementIds(p),
       newAchievements: [],
+      lineupEditorOpen: false,
+      lineupEditorHighlightId: null,
+      lineupEditorOutgoingId: null,
+      lineupEditorPrevSquad: null,
+      lineupEditorPrevManual: null,
     });
   },
 
@@ -583,12 +600,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Devam edilen run'da yalnızca bundan sonra açılanlar "yeni" sayılır
       unlockedAtRunStart: getUnlockedAchievementIds(loadPersisted()),
       newAchievements: [],
+      lineupEditorOpen: false,
+      lineupEditorHighlightId: null,
+      lineupEditorOutgoingId: null,
+      lineupEditorPrevSquad: null,
+      lineupEditorPrevManual: null,
     });
   },
 
   saveCurrentRun: () => {
     const s = get();
     if (s.screen !== 'game' || s.phase === 'runEnd') return;
+    // Transfer editörü açıkken state geçici olarak kapasitenin bir üstünde aday
+    // taşıyabilir. Kayda yalnızca son onaylı kadroyu yaz; yarım kalmış karar yüklenmesin.
+    if (s.lineupEditorOpen && s.lineupEditorPrevSquad) {
+      persistRun({
+        ...s,
+        squad: s.lineupEditorPrevSquad,
+        manualLineup: s.lineupEditorPrevManual ?? {},
+        pendingSelected: null,
+      });
+      return;
+    }
     persistRun(s);
   },
 
@@ -742,7 +775,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     playSound('select', loadPersisted().soundEnabled);
 
     if (isPlayerCard(card)) {
-      squad = applyPlayerToSquad(squad, card, state.maxSquadSize, state.morale, state.activeTactics, state.manualLineup);
+      const transferDecision = simulateRosterDecision(squad, card, {
+        maxSquadSize: state.maxSquadSize,
+        morale: state.morale,
+        activeTactics: state.activeTactics,
+        manualLineup: state.manualLineup,
+      });
+      squad = transferDecision.draftSquad;
       const recentlyJoinedPlayerId = squad.some((p) => p.id === card.id) ? card.id : null;
       // Koleksiyon: efsane kart çekildiyse kaydet
       if (card.rarity === 'efsane') {
@@ -753,8 +792,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
       // Yeni oyuncu otomatik yerleşti; pin'leri yeni kadroya göre temizle ve
       // İlk 11 düzenleme modalını aç — maç ancak onaylanınca oynanır.
-      const formationKey = getActiveFormationKey(state.activeTactics);
-      const manualLineup = reconcileManualLineup(state.manualLineup, squad, formationKey);
+      const manualLineup = transferDecision.manualLineup;
       set({
         squad,
         manualLineup,
@@ -763,11 +801,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pendingOffersShown: [...state.currentOffers],
         lineupEditorOpen: true,
         lineupEditorHighlightId: card.id,
+        lineupEditorOutgoingId: transferDecision.outgoingPlayerId,
         // İptal edilirse bu kadroya/dizilişe dönülür.
         lineupEditorPrevSquad: state.squad,
         lineupEditorPrevManual: state.manualLineup,
       });
-      persistRun({ ...get(), squad, manualLineup, recentlyJoinedPlayerId });
+      // Transfer taslağı (geçici 12 aday) onaylanana kadar persist edilmez.
       return;
     } else if (isSkipCard(card)) {
       if (!canPassCardPick({
@@ -821,10 +860,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
   confirmLineupAndPlay: () => {
     const state = get();
     if (!state.lineupEditorOpen || state.phase !== 'cardSelect') return;
+    const incoming = state.lineupEditorHighlightId
+      ? state.squad.find((player) => player.id === state.lineupEditorHighlightId)
+      : null;
+    const previousSquad = state.lineupEditorPrevSquad;
+    if (!incoming || !previousSquad) return;
+    const transferDecision = simulateRosterDecision(previousSquad, incoming, {
+      maxSquadSize: state.maxSquadSize,
+      morale: state.morale,
+      activeTactics: state.activeTactics,
+      manualLineup: state.manualLineup,
+      outgoingPlayerId: state.lineupEditorOutgoingId,
+    });
+    const squad = transferDecision.finalSquad;
+    const manualLineup = transferDecision.manualLineup;
     const match = simulateMatch(
       state.seed,
       state.round,
-      state.squad,
+      squad,
       state.morale,
       state.maxSquadSize,
       state.discoveredSynergies,
@@ -833,10 +886,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.nextMatchBonus,
       state.lossesCount,
       state.isDailySeed,
-      state.manualLineup,
+      manualLineup,
       state.round === state.maxRounds ? getFinaleRivalName(state.roundHistory) : null,
     );
     set({
+      squad,
+      manualLineup,
       currentMatch: match,
       phase: 'match',
       currentOffers: [],
@@ -844,10 +899,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       nextMatchBonus: 0,
       lineupEditorOpen: false,
       lineupEditorHighlightId: null,
+      lineupEditorOutgoingId: null,
       lineupEditorPrevSquad: null,
       lineupEditorPrevManual: null,
     });
-    persistRun({ ...get(), currentMatch: match, phase: 'match', currentOffers: [] });
+    persistRun({ ...get(), squad, manualLineup, currentMatch: match, phase: 'match', currentOffers: [] });
   },
 
   cancelLineupEditor: () => {
@@ -863,11 +919,31 @@ export const useGameStore = create<GameStore>((set, get) => ({
       recentlyJoinedPlayerId: null,
       lineupEditorOpen: false,
       lineupEditorHighlightId: null,
+      lineupEditorOutgoingId: null,
       lineupEditorPrevSquad: null,
       lineupEditorPrevManual: null,
       pendingSelected: null,
     });
     persistRun({ ...get(), squad, manualLineup, recentlyJoinedPlayerId: null });
+  },
+
+  setLineupEditorOutgoing: (playerId) => {
+    const state = get();
+    const incomingId = state.lineupEditorHighlightId;
+    if (!state.lineupEditorOpen || !incomingId) return;
+    if (!canSelectTransferDeparture(state.squad, incomingId, playerId, state.maxSquadSize)) return;
+
+    const incoming = state.squad.find((player) => player.id === incomingId);
+    const previousSquad = state.lineupEditorPrevSquad;
+    if (!incoming || !previousSquad) return;
+    const transferDecision = simulateRosterDecision(previousSquad, incoming, {
+      maxSquadSize: state.maxSquadSize,
+      morale: state.morale,
+      activeTactics: state.activeTactics,
+      manualLineup: state.manualLineup,
+      outgoingPlayerId: playerId,
+    });
+    set({ lineupEditorOutgoingId: transferDecision.outgoingPlayerId, manualLineup: transferDecision.manualLineup });
   },
 
   confirmTacticRound: () => {
@@ -898,14 +974,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setManualLineup: (manualLineup) => {
     const state = get();
     const formationKey = getActiveFormationKey(state.activeTactics);
-    const clean = reconcileManualLineup(manualLineup, state.squad, formationKey);
+    const effectiveSquad = state.lineupEditorOpen
+      ? finalizePlayerTransfer(state.squad, state.lineupEditorOutgoingId)
+      : state.squad;
+    const clean = reconcileManualLineup(manualLineup, effectiveSquad, formationKey);
     set({ manualLineup: clean });
-    persistRun({ ...get(), manualLineup: clean });
+    if (!state.lineupEditorOpen) persistRun({ ...get(), manualLineup: clean });
   },
 
   resetManualLineup: () => {
     set({ manualLineup: {} });
-    persistRun({ ...get(), manualLineup: {} });
+    if (!get().lineupEditorOpen) persistRun({ ...get(), manualLineup: {} });
   },
 
   beginTraining: () => {

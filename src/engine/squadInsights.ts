@@ -1,4 +1,5 @@
-import { buildOfferSynergyHint } from '@/engine/runValidation';
+import { buildOfferSynergyHint, simulateRosterDecision } from '@/engine/rosterDecision';
+import { getStartingEleven, type ManualLineup } from '@/engine/lineupPreview';
 import type { ActiveTactic, GameCard, PlayerCard, Tag } from '@/types';
 import type { SynergyDefinition } from '@/types';
 import { SYNERGIES } from '@/data/synergies';
@@ -15,33 +16,57 @@ export type NearSynergyProgress = {
   offerHint?: string | null;
 };
 
+export type SidePanelSynergyOptions = {
+  limit?: number;
+  maxSquadSize?: number;
+  activeTactics?: ActiveTactic[];
+  manualLineup?: ManualLineup;
+};
+
 export function getSidePanelNearSynergies(
   squad: PlayerCard[],
   morale: number,
   discoveredIds: string[],
   currentOffers?: GameCard[],
-  limit = 2,
+  options: SidePanelSynergyOptions = {},
 ): NearSynergyProgress[] {
   const playerOffers = currentOffers?.filter(isPlayerCard) ?? [];
+  const limit = options.limit ?? 2;
+  const maxSquadSize = options.maxSquadSize ?? 11;
+  const activeTactics = options.activeTactics ?? [];
+  const manualLineup = options.manualLineup ?? {};
+  const evaluationSquad = activeTactics.length
+    ? getStartingEleven(squad, activeTactics, manualLineup)
+    : squad;
+  const simulations = new Map(playerOffers.map((offer) => [
+    offer.id,
+    simulateRosterDecision(squad, offer, { maxSquadSize, morale, activeTactics, manualLineup }),
+  ]));
 
   return SYNERGIES.filter((s) => {
-    if (s.check(squad, morale)) return false;
+    if (s.check(evaluationSquad, morale, { activeTactics, manualLineup })) return false;
     if (s.hidden && !discoveredIds.includes(s.id)) return false;
-    return Boolean(s.getProgress?.(squad));
+    return Boolean(s.getProgress?.(evaluationSquad));
   })
     .map((s) => {
-      const progress = s.getProgress!(squad)!;
+      const progress = s.getProgress!(evaluationSquad)!;
       return {
         synergy: s,
         progress,
-        offerHint: buildOfferSynergyHint(s, squad, progress, playerOffers),
+        offerHint: buildOfferSynergyHint(s, squad, progress, playerOffers, {
+          maxSquadSize,
+          morale,
+          activeTactics,
+          manualLineup,
+        }),
       };
     })
     .filter(({ synergy, progress }) => {
       if (progress.current > 0) return true;
       return playerOffers.some((offer) => {
-        const after = synergy.getProgress?.(squad, offer);
-        return after != null && after.current > progress.current;
+        const impact = simulations.get(offer.id)?.synergyImpacts
+          .find((candidate) => candidate.synergy.id === synergy.id);
+        return impact?.status === 'activated' || impact?.status === 'progressed';
       });
     })
     .sort((a, b) => b.progress.current / b.progress.required - a.progress.current / a.progress.required)

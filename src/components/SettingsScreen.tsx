@@ -1,15 +1,35 @@
 import { useState } from 'react';
 import { savePartial, loadPersisted } from '@/utils/storage';
 import { useGameStore } from '@/store/gameStore';
+import { createDebugCode } from '@/engine/debugCode';
+import { copyText } from '@/utils/clipboard';
 
 export function SettingsScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
   const stats = loadPersisted();
   const [sound, setSound] = useState(stats.soundEnabled);
+  const [debugCopied, setDebugCopied] = useState(false);
 
   const save = () => {
     savePartial({ soundEnabled: sound });
     setScreen('menu');
+  };
+
+  const copyDebugCode = async () => {
+    const run = loadPersisted().currentRun;
+    if (!run?.seed || !run.squad || !run.round) return;
+    const copied = await copyText(createDebugCode({
+      seed: run.seed,
+      round: run.round,
+      phase: run.phase,
+      squad: run.squad,
+      activeTactics: run.activeTactics,
+      manualLineup: run.manualLineup,
+    }));
+    if (copied) {
+      setDebugCopied(true);
+      window.setTimeout(() => setDebugCopied(false), 1800);
+    }
   };
 
   return (
@@ -29,6 +49,17 @@ export function SettingsScreen() {
             <input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} />
             <span>Ses efektleri</span>
           </label>
+          {stats.currentRun?.seed && (
+            <div className="settings-diagnostic">
+              <div>
+                <strong>Hata tanı kodu</strong>
+                <p>Seed, kadro ve dizilişi içerir; oyuncu adını ve skorunu içermez.</p>
+              </div>
+              <button type="button" className="btn-secondary" onClick={() => void copyDebugCode()}>
+                {debugCopied ? 'Kopyalandı' : 'Kodu kopyala'}
+              </button>
+            </div>
+          )}
           <button type="button" className="btn-primary w-full" onClick={save}>Kaydet</button>
         </div>
       </div>

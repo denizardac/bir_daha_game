@@ -1,6 +1,5 @@
 import { computeRunDigest, isLeaderboardEntryPlausible } from '@/engine/runIntegrity';
-import type { LeaderboardEntry, PlayerCard, RoundResult } from '@/types';
-import type { SynergyDefinition } from '@/types';
+import type { LeaderboardEntry, RoundResult } from '@/types';
 
 /** roundHistory'deki kazanılan puanların toplamı — client skoru ile karşılaştırılır */
 export function sumRoundHistoryPoints(roundHistory: RoundResult[]): number {
@@ -112,44 +111,4 @@ export async function validateRunSubmission(
   }
 
   return { ok: true };
-}
-
-/** Teklifte hangi tag sinerji ilerlemesini tetikliyor */
-export function getOfferProgressTag(
-  squad: PlayerCard[],
-  offer: PlayerCard,
-  synergy: SynergyDefinition,
-): string | null {
-  const before = synergy.getProgress?.(squad);
-  const after = synergy.getProgress?.(squad, offer);
-  if (!before || !after || after.current <= before.current) return null;
-
-  for (const tag of offer.tags) {
-    const countBefore = squad.reduce((n, p) => n + (p.tags.includes(tag) ? 1 : 0), 0);
-    const countAfter = [...squad, offer].reduce((n, p) => n + (p.tags.includes(tag) ? 1 : 0), 0);
-    if (countAfter > countBefore) return tag;
-  }
-
-  return offer.tags[0] ?? null;
-}
-
-export function buildOfferSynergyHint(
-  synergy: SynergyDefinition,
-  squad: PlayerCard[],
-  progress: { current: number; required: number },
-  offers: PlayerCard[],
-): string | null {
-  if (progress.current > 0) return null;
-
-  for (const offer of offers) {
-    const after = synergy.getProgress?.(squad, offer);
-    if (!after || after.current <= progress.current) continue;
-    const tag = getOfferProgressTag(squad, offer, synergy);
-    if (tag) {
-      return `Tekliflerde ${tag} var — seçersen ${after.current}/${after.required}`;
-    }
-    return `Tekliflerde uygun kart var — seçersen ${after.current}/${after.required}`;
-  }
-
-  return null;
 }

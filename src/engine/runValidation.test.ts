@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildOfferSynergyHint, sumRoundHistoryPoints, validateRunSubmissionSync } from '@/engine/runValidation';
+import { sumRoundHistoryPoints, validateRunSubmissionSync } from '@/engine/runValidation';
+import { buildOfferSynergyHint } from '@/engine/rosterDecision';
 import { SYNERGIES } from '@/data/synergies';
 import type { RoundResult } from '@/types';
 
@@ -90,7 +91,13 @@ describe('runValidation', () => {
       rarity: 'iyi' as const,
       tags: ['HIZLI' as const],
     };
-    const hint = buildOfferSynergyHint(synergy, squad, { current: 0, required: 3 }, [offer]);
+    const hint = buildOfferSynergyHint(
+      synergy,
+      squad,
+      { current: 0, required: 3, icon: synergy.icon },
+      [offer],
+      { maxSquadSize: 11 },
+    );
     expect(hint).toContain('HIZLI');
     expect(hint).toContain('1/3');
   });

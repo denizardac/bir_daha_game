@@ -1879,6 +1879,15 @@
     overflow: hidden !important;
   }
 
+  .le-transfer-decision {
+    margin: 0.1rem 1rem 0.25rem;
+    max-width: calc(100% - 2rem);
+  }
+
+  .le-transfer-candidates {
+    max-height: 7.8rem;
+  }
+
   .le-squad-panel-list {
     max-height: 13.2rem !important;
     padding: 0.45rem 1rem 0.55rem !important;
@@ -1959,6 +1968,17 @@
     row-gap: 0.55rem !important;
   }
 
+  .le-new-placement-notice {
+    max-width: calc(100vw - 7.2rem);
+    margin-top: 0.48rem;
+    overflow: hidden;
+  }
+
+  .le-new-placement-notice > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .le-head .lineup-preview-head-legend {
     grid-column: 1 / -1 !important;
     justify-content: flex-start !important;
@@ -2001,6 +2021,20 @@
 
   .le-squad-panel-legend {
     gap: 0.55rem !important;
+  }
+
+  .le-transfer-decision {
+    margin-inline: 0.82rem;
+    max-width: calc(100% - 1.64rem);
+    padding: 0.68rem;
+  }
+
+  .le-transfer-candidates {
+    grid-template-columns: 1fr;
+  }
+
+  .le-transfer-outgoing-body small {
+    display: none;
   }
 }
 
@@ -2215,6 +2249,21 @@
     gap: 0.38rem !important;
   }
 
+  .le-transfer-decision {
+    margin-inline: 0.92rem;
+    max-width: calc(100% - 1.84rem);
+    padding: 0.58rem 0.64rem;
+  }
+
+  .le-transfer-decision-head strong,
+  .le-transfer-incoming-mini small {
+    display: none;
+  }
+
+  .le-transfer-outgoing {
+    margin-top: 0.45rem;
+  }
+
   .le-squad-row {
     min-height: 3rem !important;
     padding: 0.36rem 0.5rem !important;
@@ -2236,6 +2285,17 @@
 
   .le-kicker {
     font-size: 1.18rem !important;
+  }
+
+  .le-new-placement-notice {
+    max-width: calc(100vw - 5.9rem);
+    margin-top: 0.34rem;
+    padding: 0.3rem 0.42rem;
+    font-size: 0.66rem;
+  }
+
+  .le-new-placement-notice-kicker {
+    display: none;
   }
 
   .le-body {

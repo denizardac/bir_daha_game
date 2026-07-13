@@ -6,8 +6,13 @@ import './index.css';
 import './styles/eventScenes.css';
 
 if ('serviceWorker' in navigator) {
-  registerSW({
+  const updateSW = registerSW({
     immediate: true,
+    onNeedRefresh() {
+      window.dispatchEvent(new CustomEvent('bir-daha-update-ready', {
+        detail: { apply: () => updateSW(true) },
+      }));
+    },
     onRegisteredSW(_url, registration) {
       if (registration) {
         setInterval(() => registration.update(), 60 * 60 * 1000);

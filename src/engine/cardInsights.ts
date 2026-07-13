@@ -3,6 +3,7 @@ import { SYNERGIES } from '@/data/synergies';
 import { getTacticEffect } from '@/data/tactics';
 import { getPlayerPickSummary, getTacticPreview } from '@/engine/contextPreview';
 import { applyPlayerToSquad, getPositionHints, getStartingEleven, type PositionHint } from '@/engine/lineupPreview';
+import { simulateRosterDecision } from '@/engine/rosterDecision';
 import { explainActiveTactic } from '@/engine/squadInsights';
 import { getSynergyBenefitText } from '@/engine/squadInsights';
 import type { ActiveTactic, PlayerCard, Tag, TacticCard } from '@/types';
@@ -18,6 +19,8 @@ export type PlayerSynergyHint = {
   contribution: string;
   reward: string;
   completes: boolean;
+  /** Kadro doluysa sonuç, editörde seçilen ayrılacak oyuncuya bağlıdır. */
+  decisionDependent: boolean;
 };
 
 export type TagBite = { tag: Tag; desc: string };
@@ -73,16 +76,19 @@ function contributionLabel(synergyId: string, card: PlayerCard): string {
 
 function resolveSynergyProgress(
   synergy: (typeof SYNERGIES)[number],
-  squad: PlayerCard[],
+  beforeSquad: PlayerCard[],
+  afterSquad: PlayerCard[],
   card: PlayerCard,
   morale: number,
+  decisionDependent: boolean,
 ): PlayerSynergyHint | null {
-  if (synergy.check(squad, morale)) return null;
+  if (synergy.check(beforeSquad, morale)) return null;
 
-  const before = synergy.getProgress?.(squad);
-  const after = synergy.getProgress?.(squad, card);
+  const before = synergy.getProgress?.(beforeSquad);
+  const after = synergy.getProgress?.(afterSquad);
+  const activeAfter = synergy.check(afterSquad, morale);
 
-  if (!before && !after) return null;
+  if (!before && !after && !activeAfter) return null;
 
   const required = before?.required ?? after?.required ?? 0;
   const beforeCount = before?.current ?? 0;
@@ -90,12 +96,12 @@ function resolveSynergyProgress(
   let afterCount: number;
   let completes: boolean;
 
-  if (after) {
-    afterCount = after.current;
-    completes = afterCount >= required;
-  } else if (before) {
+  if (activeAfter && required > 0) {
     afterCount = required;
     completes = true;
+  } else if (after) {
+    afterCount = after.current;
+    completes = afterCount >= required;
   } else {
     return null;
   }
@@ -112,6 +118,7 @@ function resolveSynergyProgress(
     contribution: contributionLabel(synergy.id, card),
     reward: getSynergyBenefitText(synergy),
     completes,
+    decisionDependent,
   };
 }
 
@@ -158,10 +165,23 @@ export function getPlayerCardInsight(
 ): PlayerCardInsight {
   const pick = getPlayerPickSummary(card, squad, maxSquadSize, morale, activeTactics);
   const positionHints = getPositionHints(card, squad, activeTactics, maxSquadSize, morale);
+  const simulation = simulateRosterDecision(squad, card, {
+    maxSquadSize,
+    morale,
+    activeTactics,
+  });
+  const decisionDependent = simulation.outgoingPlayerId !== null;
 
   const synergies = SYNERGIES
     .filter((s) => !s.hidden || discovered.includes(s.id))
-    .map((s) => resolveSynergyProgress(s, squad, card, morale))
+    .map((s) => resolveSynergyProgress(
+      s,
+      simulation.beforeSynergySquad,
+      simulation.afterSynergySquad,
+      card,
+      morale,
+      decisionDependent,
+    ))
     .filter((x): x is PlayerSynergyHint => x !== null)
     .sort((a, b) => {
       const aPct = a.after / a.required;

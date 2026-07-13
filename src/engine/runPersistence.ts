@@ -1,4 +1,7 @@
 import type { GameCard, GameState, Tag, TrainingCard } from '@/types';
+import { normalizeSquadGoalkeepers, reconcileManualLineup } from '@/engine/lineupPreview';
+import { getActiveFormationKey } from '@/engine/lineupPreview';
+import type { PlayerCard } from '@/types';
 
 export interface PersistedTrainingFlow {
   card: TrainingCard;
@@ -95,4 +98,83 @@ export function toRunSnapshot(source: SnapshotSource & Record<string, unknown>):
 
 export function isResumableRun(saved: Partial<RunSnapshot> | null | undefined): boolean {
   return !!(saved?.seed && saved.phase !== 'runEnd');
+}
+
+const PHASES = new Set(['cardSelect', 'event', 'match', 'loss', 'runEnd']);
+const POSITIONS = new Set(['KL', 'STP', 'SLB', 'SÖB', 'DOS', 'OS', 'OOS', 'SLK', 'SÖK', 'SF']);
+const RARITIES = new Set(['normal', 'iyi', 'güçlü', 'efsane']);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isPlayer(value: unknown): value is PlayerCard {
+  if (!isRecord(value)) return false;
+  return value.kind === 'player'
+    && typeof value.id === 'string'
+    && value.id.length > 0
+    && typeof value.name === 'string'
+    && typeof value.rating === 'number'
+    && Number.isFinite(value.rating)
+    && typeof value.currentRating === 'number'
+    && Number.isFinite(value.currentRating)
+    && typeof value.position === 'string'
+    && POSITIONS.has(value.position)
+    && typeof value.rarity === 'string'
+    && RARITIES.has(value.rarity)
+    && Array.isArray(value.tags);
+}
+
+function uniqueCards(cards: unknown, squadIds: Set<string>): GameCard[] {
+  if (!Array.isArray(cards)) return [];
+  const seen = new Set<string>();
+  return cards.filter((card): card is GameCard => {
+    if (!isRecord(card) || typeof card.id !== 'string' || typeof card.kind !== 'string') return false;
+    if (seen.has(card.id)) return false;
+    if (card.kind === 'player' && squadIds.has(card.id)) return false;
+    seen.add(card.id);
+    return ['player', 'tactic', 'training', 'skip'].includes(card.kind);
+  });
+}
+
+/** Eski veya kısmen bozulmuş bir run'ı güvenli oyun invariant'larına geri çeker. */
+export function repairRunSnapshot(input: unknown): Partial<RunSnapshot> | null {
+  if (!isRecord(input) || typeof input.seed !== 'string' || input.seed.length === 0) return null;
+  const maxSquadSize = Number.isInteger(input.maxSquadSize)
+    ? Math.min(11, Math.max(1, Number(input.maxSquadSize)))
+    : 11;
+  const rawSquad = Array.isArray(input.squad) ? input.squad.filter(isPlayer) : [];
+  const normalized = normalizeSquadGoalkeepers(rawSquad);
+  const squad = normalized.length > maxSquadSize ? normalized.slice(0, maxSquadSize) : normalized;
+  const squadIds = new Set(squad.map((player) => player.id));
+  const activeTactics = Array.isArray(input.activeTactics)
+    ? input.activeTactics.filter((tactic) => isRecord(tactic) && typeof tactic.id === 'string') as GameState['activeTactics']
+    : [];
+  const rawManual = isRecord(input.manualLineup)
+    ? Object.fromEntries(Object.entries(input.manualLineup).flatMap(([slot, playerId]) => {
+      const index = Number(slot);
+      return Number.isInteger(index) && index >= 0 && index < 11 && typeof playerId === 'string' && squadIds.has(playerId)
+        ? [[index, playerId]]
+        : [];
+    }))
+    : {};
+  const manualLineup = reconcileManualLineup(rawManual, squad, getActiveFormationKey(activeTactics));
+  const round = Number.isInteger(input.round) ? Math.min(15, Math.max(1, Number(input.round))) : 1;
+  const phase = typeof input.phase === 'string' && PHASES.has(input.phase) ? input.phase : 'cardSelect';
+
+  return {
+    ...(input as Partial<RunSnapshot>),
+    seed: input.seed,
+    round,
+    maxRounds: 15,
+    maxSquadSize,
+    phase: phase as GameState['phase'],
+    squad,
+    activeTactics,
+    manualLineup,
+    currentOffers: uniqueCards(input.currentOffers, squadIds),
+    roundHistory: Array.isArray(input.roundHistory)
+      ? input.roundHistory.filter(isRecord) as unknown as GameState['roundHistory']
+      : [],
+  };
 }

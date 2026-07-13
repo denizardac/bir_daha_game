@@ -397,12 +397,17 @@ export function CardSelectScreen() {
   const sound = getPersistedStats().soundEnabled;
 
   const lineupSummary = getSquadLineupSummary(squad, activeTactics, manualLineup);
-  const activeSynergies = getActiveSynergies(squad, morale, { activeTactics });
+  const activeSynergies = getActiveSynergies(squad, morale, { activeTactics, manualLineup });
   // Kompakt rayda sadece birkaç satır gösterilir (CardSelectLeftRail kendi içinde
   // ayrıca kısıtlar) ama sayaç ve detay popup'ı TÜM yakın sinerjileri görmeli —
   // limiti düşük tutmak, gerçekten yakın olan ama sırada geride kalan bir sinerjinin
   // (ör. ORTA DUVAR) popup'ta hiç görünmemesine yol açıyordu.
-  const nearSynergies = getSidePanelNearSynergies(squad, morale, discoveredSynergies, currentOffers, 8);
+  const nearSynergies = getSidePanelNearSynergies(squad, morale, discoveredSynergies, currentOffers, {
+    limit: 8,
+    maxSquadSize,
+    activeTactics,
+    manualLineup,
+  });
   const tacticBonus = isTacticBonusRound(round, maxRounds);
   const finaleMatch = isFinaleRound(round, maxRounds);
   const pickTitle = tacticBonus
@@ -646,11 +651,18 @@ export function CardSelectScreen() {
       {state.lineupEditorOpen && (
         <LineupEditorModal
           open
+          seed={state.seed}
+          round={state.round}
           squad={squad}
           activeTactics={activeTactics}
+          morale={morale}
+          discoveredSynergies={discoveredSynergies}
           manualLineup={state.manualLineup}
           highlightId={state.lineupEditorHighlightId}
+          outgoingId={state.lineupEditorOutgoingId}
+          maxSquadSize={maxSquadSize}
           onChange={state.setManualLineup}
+          onOutgoingChange={state.setLineupEditorOutgoing}
           onReset={state.resetManualLineup}
           onConfirm={state.confirmLineupAndPlay}
           onCancel={state.cancelLineupEditor}

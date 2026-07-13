@@ -234,7 +234,11 @@ export function PlayerCardCompareGrid({
                     const missing = Math.max(0, s.required - s.after);
                     const synergyTip = joinTooltipLines([
                       s.description,
-                      s.completes ? 'Bu seçim sinerjiyi açar.' : s.contribution,
+                      s.completes
+                        ? s.decisionDependent
+                          ? 'Önerilen kadro değişimi korunursa sinerji açılır.'
+                          : 'Bu seçim sinerjiyi açar.'
+                        : s.contribution,
                       s.reward,
                     ]);
                     return (
@@ -255,7 +259,9 @@ export function PlayerCardCompareGrid({
                           />
                         </div>
                         <span className={`card-compare-syn-hint ${s.completes ? 'card-compare-syn-hint--unlock' : ''}`}>
-                          {s.completes ? 'Seçince açılır' : `${missing} eksik kalır`}
+                          {s.completes
+                            ? s.decisionDependent ? 'Önerilen değişimle açılır' : 'Seçince açılır'
+                            : `${missing} eksik kalır`}
                         </span>
                       </div>
                     );

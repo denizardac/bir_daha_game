@@ -6,11 +6,11 @@ import { drawEvent, previewEventPlayer, resolveEvent } from '@/engine/events';
 import { getEventRatingTarget, resolveEventRemoval } from '@/engine/eventRemoval';
 import { isTacticBonusRound, TACTIC_BONUS_MORALE, TACTIC_BONUS_SCORE } from '@/engine/roundFlow';
 import { applyPlayerToSquad } from '@/engine/lineupPreview';
+import { simulateRosterDecision } from '@/engine/rosterDecision';
 import { simulateMatch } from '@/engine/matchSimulation';
 import { calculateRoundPoints } from '@/engine/scoring';
 import { getWeakestPlayer, selectDepartingPlayer } from '@/engine/squadLogic';
 import { getRandomSeed } from '@/engine/seed';
-import { getActiveSynergies, SYNERGIES } from '@/data/synergies';
 import { isPlayerCard, isTacticCard } from '@/types';
 import type { ActiveTactic, PlayerCard } from '@/types';
 
@@ -78,22 +78,16 @@ function synergyAwarePick(
   const players = offers.filter(isPlayerCard);
   if (!players.length) return offers[0]!;
 
-  const activeBefore = new Set(getActiveSynergies(squad, morale, { activeTactics }).map((s) => s.id));
-
   let best = players[0]!;
   let bestScore = -Infinity;
   for (const cand of players) {
-    const after = applyPlayerToSquad(squad, cand, 11, morale, activeTactics);
-    const activeAfter = getActiveSynergies(after, morale, { activeTactics });
-    const newlyActive = activeAfter.filter((s) => !activeBefore.has(s.id)).length;
-
-    let progressNudge = 0;
-    for (const s of SYNERGIES) {
-      if (activeBefore.has(s.id) || !s.getProgress) continue;
-      const before = s.getProgress(squad);
-      const withCand = s.getProgress(squad, cand);
-      if (before && withCand && withCand.current > before.current) progressNudge += 1;
-    }
+    const decision = simulateRosterDecision(squad, cand, {
+      maxSquadSize: 11,
+      morale,
+      activeTactics,
+    });
+    const newlyActive = decision.synergyImpacts.filter((impact) => impact.status === 'activated').length;
+    const progressNudge = decision.synergyImpacts.filter((impact) => impact.status === 'progressed').length;
 
     // Sinerji açmak ~22 rating değerinde (iyi oyuncu bir sinerji için feragat eder),
     // ilerletme ~4 rating değerinde. Beraberlikte rating tie-break yapar.

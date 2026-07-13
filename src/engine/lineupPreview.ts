@@ -397,10 +397,26 @@ export function getReplacementPlayer(
 
 /** Kadroda en fazla bir kaleci — fazlası düşük ratingli olarak çıkar */
 export function normalizeSquadGoalkeepers(squad: PlayerCard[]): PlayerCard[] {
-  const gks = squad.filter((p) => p.position === 'KL');
-  if (gks.length <= 1) return squad;
+  // Eski kayitlarda ayni oyuncu kimligi birden fazla kez bulunabilir. Dizilis ve
+  // manuel pin'ler id ile calistigi icin bir kopyayi cikarmak hepsini kaybettirebilir.
+  const unique: PlayerCard[] = [];
+  const indexById = new Map<string, number>();
+  for (const player of squad) {
+    const existingIndex = indexById.get(player.id);
+    if (existingIndex === undefined) {
+      indexById.set(player.id, unique.length);
+      unique.push(player);
+      continue;
+    }
+    if (player.currentRating > unique[existingIndex]!.currentRating) {
+      unique[existingIndex] = player;
+    }
+  }
+
+  const gks = unique.filter((p) => p.position === 'KL');
+  if (gks.length <= 1) return unique;
   const keep = [...gks].sort((a, b) => b.currentRating - a.currentRating)[0]!;
-  return squad.filter((p) => p.position !== 'KL' || p.id === keep.id);
+  return unique.filter((p) => p.position !== 'KL' || p.id === keep.id);
 }
 
 export function applyPlayerToSquad(
@@ -412,6 +428,12 @@ export function applyPlayerToSquad(
   manualLineup: ManualLineup = EMPTY_MANUAL_LINEUP,
 ): PlayerCard[] {
   const cloned = clonePlayer(incoming);
+
+  // Teklif havuzu normalde kadrodaki id'leri dislar. Bozuk/eski bir state ayni
+  // karti yeniden uygularsa da kadroda iki ayni kimlik birakma.
+  if (squad.some((player) => player.id === cloned.id)) {
+    return [...squad.filter((player) => player.id !== cloned.id), cloned];
+  }
 
   // Tek kaleci — yeni KL gelince mevcut kaleci kadrodan çıkar
   if (cloned.position === 'KL') {
@@ -425,6 +447,74 @@ export function applyPlayerToSquad(
   if (squad.length < maxSquadSize) return [...squad, cloned];
   const out = getReplacementPlayer(squad, incoming, morale, activeTactics, manualLineup);
   return [...squad.filter((p) => p.id !== out.id), cloned];
+}
+
+export type PlayerTransferDraft = {
+  /** Editörün göreceği aday havuzu; çıkış gerekiyorsa geçici olarak 12 olabilir. */
+  squad: PlayerCard[];
+  /** Motorun varsayılan çıkış önerisi. null ise kadroda yer vardır. */
+  outgoingPlayerId: string | null;
+};
+
+/**
+ * Oyuncu seçimini hemen geri döndürülemez biçimde uygulamak yerine editör için
+ * bir transfer taslağı hazırlar. Böylece otomatik çıkan oyuncu kaybolmaz ve
+ * kullanıcı onaydan önce kimi göndereceğini değiştirebilir.
+ */
+export function createPlayerTransferDraft(
+  squad: PlayerCard[],
+  incoming: PlayerCard,
+  maxSquadSize: number,
+  morale = 50,
+  activeTactics: ActiveTactic[] = [],
+  manualLineup: ManualLineup = EMPTY_MANUAL_LINEUP,
+): PlayerTransferDraft {
+  const automatic = applyPlayerToSquad(
+    squad,
+    incoming,
+    maxSquadSize,
+    morale,
+    activeTactics,
+    manualLineup,
+  );
+  const automaticIds = new Set(automatic.map((player) => player.id));
+  const outgoing = squad.find((player) => !automaticIds.has(player.id)) ?? null;
+
+  if (!outgoing) return { squad: automatic, outgoingPlayerId: null };
+
+  const incomingClone = automatic.find((player) => player.id === incoming.id) ?? clonePlayer(incoming);
+  return {
+    squad: [...squad, incomingClone],
+    outgoingPlayerId: outgoing.id,
+  };
+}
+
+export function finalizePlayerTransfer(
+  draftSquad: PlayerCard[],
+  outgoingPlayerId: string | null,
+): PlayerCard[] {
+  return outgoingPlayerId
+    ? draftSquad.filter((player) => player.id !== outgoingPlayerId)
+    : draftSquad;
+}
+
+/** Tek kaleci ve kadro kapasitesi kurallarını bozacak çıkış seçimlerini engeller. */
+export function canSelectTransferDeparture(
+  draftSquad: PlayerCard[],
+  incomingPlayerId: string,
+  candidatePlayerId: string,
+  maxSquadSize: number,
+): boolean {
+  if (candidatePlayerId === incomingPlayerId) return false;
+  if (!draftSquad.some((player) => player.id === candidatePlayerId)) return false;
+  const finalSquad = finalizePlayerTransfer(draftSquad, candidatePlayerId);
+  if (finalSquad.length > maxSquadSize) return false;
+
+  const draftGoalkeepers = draftSquad.filter((player) => player.position === 'KL').length;
+  const finalGoalkeepers = finalSquad.filter((player) => player.position === 'KL').length;
+  if (finalGoalkeepers > 1) return false;
+  if (draftGoalkeepers > 0 && finalGoalkeepers === 0) return false;
+  return true;
 }
 
 export type BenchExplanation = {

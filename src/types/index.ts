@@ -319,6 +319,8 @@ export interface HallOfFameEntry {
 }
 
 export interface PersistedData {
+  /** Yerel kayıt migration sürümü. */
+  saveVersion: number;
   anonymousId: string;
   /** Son run'da kullanılan isim — yeni run modalında öneri olarak gösterilir */
   lastPlayerName: string;

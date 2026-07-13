@@ -50,7 +50,11 @@ function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergi
         <span className="card-synergy-count">{s.before}/{s.required}</span>
         <span className="card-synergy-arrow">→</span>
         <span className="card-synergy-count card-synergy-count--after">{s.after}/{s.required}</span>
-        <span className="card-synergy-remaining">{s.completes ? 'seçince açılır' : `${remaining} eksik kalacak`}</span>
+        <span className="card-synergy-remaining">
+          {s.completes
+            ? s.decisionDependent ? 'önerilen kadroyla açılır' : 'seçince açılır'
+            : `${remaining} eksik kalacak`}
+        </span>
       </div>
       {tokens.length > 1 && <SynergyRequirementChips tokens={tokens} />}
       <div className="card-synergy-bar-track">
@@ -66,7 +70,9 @@ function SynergyRow({ s }: { s: ReturnType<typeof getPlayerCardInsight>['synergi
 }
 
 function getSynergyDeltaText(s: ReturnType<typeof getPlayerCardInsight>['synergies'][number]) {
-  return s.completes ? `Seçince açılır` : `Seçince ${s.after}/${s.required}`;
+  return s.completes
+    ? s.decisionDependent ? 'Önerilen kadroyla açılır' : 'Seçince açılır'
+    : `Seçince ${s.after}/${s.required}`;
 }
 
 function getSynergyAfterText(s: ReturnType<typeof getPlayerCardInsight>['synergies'][number]) {
@@ -76,7 +82,11 @@ function getSynergyAfterText(s: ReturnType<typeof getPlayerCardInsight>['synergi
 
 function getSynergyTip(s: ReturnType<typeof getPlayerCardInsight>['synergies'][number]) {
   const remaining = Math.max(0, s.required - s.after);
-  const status = s.completes ? 'Bu seçim sinerjiyi açar.' : `Bu seçimden sonra ${remaining} rol eksik kalacak.`;
+  const status = s.completes
+    ? s.decisionDependent
+      ? 'Önerilen ayrılık kararı korunursa bu seçim sinerjiyi açar.'
+      : 'Bu seçim sinerjiyi açar.'
+    : `Bu seçimden sonra ${remaining} rol eksik kalacak.`;
   return joinTooltipLines([s.description, status, `Ödül: ${s.reward}`]);
 }
 

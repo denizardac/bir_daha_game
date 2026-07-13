@@ -11,7 +11,7 @@ export const SYNERGY_GUIDE_HINTS: Record<string, { teaser: string; tags?: string
   synergy_soyunma_odasi: { teaser: 'Kaptan, mentor ve soyunma odası tag\'leri birlikte.', tags: ['KAPİTAN', 'MENTOR', 'SOYUNMA ODASI'] },
   synergy_ev_sahibi: { teaser: 'Yerli oyuncu sayısını artır (5+).', tags: ['YERLİ'] },
   synergy_super_yabanci: { teaser: 'Tamamen yabancı yıldızlarla özel bir denge…', tags: ['YABANCI YILDIZ'] },
-  synergy_karma_guc: { teaser: 'Yerli ve yabancı yıldızları dengeli tut (3+3).', tags: ['YERLİ', 'YABANCI YILDIZ'] },
+  synergy_karma_guc: { teaser: 'Yerli omurgayı üçe, yabancı yıldızları ikiye tamamla (3+2).', tags: ['YERLİ', 'YABANCI YILDIZ'] },
   synergy_temiz_sayfa: { teaser: 'İyi kaleci + 2 stoper = demir savunma.', tags: ['KL', 'STP'] },
   synergy_uc_boyut: { teaser: 'Forvet ve kanatlarda finişör tag\'i aranır.', tags: ['FİNİŞÖR'] },
   synergy_saglam_orta: { teaser: 'Orta sahadan 2 oyuncu TEKNİK veya GÜÇLÜ.', tags: ['DOS', 'OS', 'OOS', 'TEKNİK', 'GÜÇLÜ'] },

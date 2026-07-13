@@ -199,7 +199,9 @@ function emptySlotIndicesOrdered(player: PlayerCard, ctx: PlacementCtx): number[
 
   if (player.position === 'OS') {
     const order: number[] = [];
-    for (const role of ['DOS', 'OS', 'OOS'] as const) {
+    // Ana mevki her zaman önce gelir. Eski DOS → OS sırası, özellikle 4-3-3'e
+    // geçildiğinde OS slotunu boş bırakıp native OS oyuncusunu DOS'a taşıyabiliyordu.
+    for (const role of ['OS', 'DOS', 'OOS'] as const) {
       const idx = slotIndexByRole(ctx, role);
       if (idx !== null && !ctx.assigned[idx] && playable.includes(idx)) order.push(idx);
     }
@@ -286,14 +288,8 @@ export function placePlayerOnPitch(player: PlayerCard, ctx: PlacementCtx): boole
       .filter((i) => !isLockedSlot(ctx, i) && ctx.assigned[i] && canBeatOccupant(player, ctx.assigned[i]!)),
   );
 
-  // A) Boş ana mevki — OS/SÖK/SLK kendi boş slot sırasını kullanır
-  if (
-    primaryIdx !== null
-    && !ctx.assigned[primaryIdx]
-    && player.position !== 'OS'
-    && player.position !== 'SÖK'
-    && player.position !== 'SLK'
-  ) {
+  // A) Boş ana mevki her rol için ilk tercihtir.
+  if (primaryIdx !== null && !ctx.assigned[primaryIdx]) {
     ctx.assigned[primaryIdx] = player;
     return true;
   }
@@ -389,6 +385,23 @@ function improveNativeFitByShiftingFlexibleOccupants(ctx: PlacementCtx, squad: P
     for (const nativePlayer of nativeCandidates) {
       const currentIdx = ctx.assigned.findIndex((p) => p?.id === nativePlayer.id);
       if (currentIdx < 0 || isLockedSlot(ctx, currentIdx)) continue;
+      if (ctx.slots[currentIdx]!.preferred[0] === nativePlayer.position) continue;
+
+      // Bir formasyonda aynı rolden birden fazla slot olabilir. Oyuncu yan
+      // mevkideyken bunlardan herhangi biri boşsa doğrudan ana mevkisine dönsün.
+      // Bu son kontrol, zincir yer değiştirmelerinden sonra da invarianti korur.
+      const emptyNativeIdx = ctx.fieldIndices.find(
+        (idx) => idx !== currentIdx
+          && !ctx.assigned[idx]
+          && !isLockedSlot(ctx, idx)
+          && ctx.slots[idx]!.preferred[0] === nativePlayer.position,
+      );
+      if (emptyNativeIdx !== undefined) {
+        ctx.assigned[emptyNativeIdx] = nativePlayer;
+        ctx.assigned[currentIdx] = null;
+        changed = true;
+        break;
+      }
 
       const nativeIdx = primarySlotIndex(ctx, nativePlayer);
       if (nativeIdx === null || nativeIdx === currentIdx || isLockedSlot(ctx, nativeIdx)) continue;
@@ -422,12 +435,6 @@ export function assignFieldPlayers(ctx: PlacementCtx, squad: PlayerCard[]): void
       const slot = ctx.slots[slotIdx]!;
       const ideal = slot.preferred[0];
       if (!ideal) continue;
-
-      // Boş DOS varken native OS’i pass-1’de OS slotuna kilitleme — flex DOS önce dolsun
-      if (ideal === 'OS') {
-        const dosIdx = slotIndexByRole(ctx, 'DOS');
-        if (dosIdx !== null && !ctx.assigned[dosIdx]) continue;
-      }
 
       const matches = fieldPlayers.filter((p) => p.position === ideal && !used.has(p.id));
       if (!matches.length) continue;

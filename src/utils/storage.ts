@@ -2,8 +2,10 @@ import type { PersistedData } from '@/types';
 import { getSeasonKey } from '@/engine/hallOfFame';
 import { getDailySeed } from '@/engine/seed';
 import { getTodayKey } from '@/engine/leaderboard';
+import { repairRunSnapshot } from '@/engine/runPersistence';
 
 const STORAGE_KEY = 'bir-daha-save';
+export const CURRENT_SAVE_VERSION = 2;
 
 export function getAnonymousId(): string {
   const data = loadPersisted();
@@ -33,7 +35,23 @@ function sanitizePersisted(base: PersistedData, parsed: Record<string, unknown>)
   for (const key of numberKeys) {
     if (typeof merged[key] !== 'number' || Number.isNaN(merged[key])) merged[key] = base[key];
   }
+  merged.currentRun = repairRunSnapshot(merged.currentRun);
+  merged.saveVersion = CURRENT_SAVE_VERSION;
   return merged as unknown as PersistedData;
+}
+
+/** Kayıt şekli değiştiğinde eski alanları kaybetmeden güncel şemaya taşır. */
+export function migratePersistedRecord(parsed: Record<string, unknown>): Record<string, unknown> {
+  const version = typeof parsed.saveVersion === 'number' ? parsed.saveVersion : 0;
+  const migrated = { ...parsed };
+  if (version < 1 && !migrated.lastPlayerName && typeof migrated.displayName === 'string') {
+    migrated.lastPlayerName = migrated.displayName;
+  }
+  if (version < 2) {
+    migrated.currentRun = repairRunSnapshot(migrated.currentRun);
+  }
+  migrated.saveVersion = CURRENT_SAVE_VERSION;
+  return migrated;
 }
 
 export function loadPersisted(): PersistedData {
@@ -62,7 +80,7 @@ export function loadPersisted(): PersistedData {
     return base;
   }
 
-  const merged = sanitizePersisted(base, parsed) as PersistedData & { displayName?: string };
+  const merged = sanitizePersisted(base, migratePersistedRecord(parsed)) as PersistedData & { displayName?: string };
   if (!merged.lastPlayerName && merged.displayName) {
     merged.lastPlayerName = merged.displayName;
   }
@@ -89,6 +107,7 @@ export function savePartial(partial: Partial<PersistedData>) {
 
 function defaultPersisted(): PersistedData {
   return {
+    saveVersion: CURRENT_SAVE_VERSION,
     anonymousId: '',
     lastPlayerName: '',
     currentRun: null,

@@ -37,6 +37,10 @@ Domain bağlama dışında tüm maddeler ele alındı. Durum: **deploy’a hazı
 - `matchSimulation.test.ts` — maç sonucu
 - `cardDraw.test.ts` — teklif çekimi, determinism
 - `lineupPreview.test.ts` — kadro yerleşimi
+- `playerTransferDecision.test.ts` — dolu kadro transferi ve gerçek sinerji etkisi
+- `LineupEditorModal.test.tsx` — çıkan oyuncu seçimi ve klavye erişilebilirliği
+- `runPersistence.test.ts` — sürümlü kayıt onarımı ve migration
+- `debugCode.test.ts` — kişisel veri içermeyen hata tanı kodu
 - `egoAnalysis.test.ts` — replay ego
 - `playtest.test.ts` — batch simülasyon
 
@@ -54,7 +58,8 @@ Kart zamanlayıcısı oyundan **tamamen kaldırıldı** (`gameStore.ts` içinde 
 - `public/icons/` — 192, 512, apple-touch-icon (PNG, `npm run icons`)
 - `manifest.json` güncellendi
 - `index.html` — apple-touch-icon, viewport-fit
-- `main.tsx` — SW kayıt
+- `main.tsx` — SW kayıt; güncelleme hazır olduğunda kullanıcıya sorulur
+- Aktif maç/transfer kararı sırasında güncelleme ertelenir; güvenli ekranda kullanıcı onayıyla uygulanır
 
 ---
 

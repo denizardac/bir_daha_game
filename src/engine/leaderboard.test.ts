@@ -5,6 +5,7 @@ import type { HallOfFameEntry, LeaderboardEntry, PersistedData } from '@/types';
 
 function baseData(): PersistedData {
   return {
+    saveVersion: 2,
     anonymousId: 'anon',
     lastPlayerName: '',
     currentRun: null,
