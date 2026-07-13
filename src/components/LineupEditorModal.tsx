@@ -438,6 +438,74 @@ export function LineupEditorModal({
           </section>
         )}
         <div className="le-squad-panel-list">
+          {benchPlayersForList.length > 0 && (
+            <section className="le-bench-focus" aria-labelledby="le-bench-focus-title">
+              <div className="le-bench-focus-head">
+                <div>
+                  <span className="le-bench-focus-kicker">HAMLE HAZIR</span>
+                  <strong id="le-bench-focus-title">Sahaya alınabilir</strong>
+                </div>
+                <p>Oyuncuyu seç, sonra sahadaki hedef mevkiye dokun.</p>
+              </div>
+              <div className="le-bench-focus-list">
+                {benchPlayersForList.map((player) => {
+                  const selected = tapSource?.player.id === player.id;
+                  return (
+                    <div
+                      key={player.id}
+                      className={`le-squad-row le-squad-row--bench le-squad-row--bench-feature ${player.position === 'KL' ? 'le-squad-row--gk' : ''} ${highlightId === player.id ? 'le-squad-row--highlight' : ''}`}
+                    >
+                      <div className={`le-squad-rating-badge ${ratingBadgeClass(player.position)}`}>
+                        <span className="le-squad-rating">{player.currentRating}</span>
+                        <span className="le-squad-pos">{POSITION_BADGE[player.position]}</span>
+                      </div>
+                      <div className="le-squad-info">
+                        <div className="le-squad-name-row">
+                          <span className="le-squad-name" title={player.name}>{formatSquadListName(player.name)}</span>
+                        </div>
+                        <div className="le-squad-role-row">
+                          <span className="le-squad-primary-pos" style={positionChipStyle(player.position, true)}>{POSITION_BADGE[player.position]}</span>
+                          {player.position === 'KL' ? <span className="le-squad-only">sadece kalede</span> : <SecondaryPositions player={player} />}
+                        </div>
+                        <div className="le-squad-tags">
+                          <span className="le-squad-bench-badge">Yedek</span>
+                          {player.tags.map((tag) => (
+                            <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="le-squad-tag-tip">
+                              <span className="le-squad-tag" style={tagChipStyle(tag)}>
+                                <UiIcon name={iconForTag(tag)} />
+                                {tag}
+                              </span>
+                            </HoverTip>
+                          ))}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className={`le-squad-place-btn ${selected ? 'le-squad-place-btn--active' : ''}`}
+                        aria-pressed={selected}
+                        aria-label={selected
+                          ? `${player.name} seçildi; hedef mevkiyi seç`
+                          : `${player.name} oyuncusunu sahaya al`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setTapSource((current) => current?.player.id === player.id ? null : { player, from: 'bench' });
+                        }}
+                      >
+                        <span>{selected ? 'Hedefi seç' : 'Sahaya al'}</span>
+                        <UiIcon name="arrow-right" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+          {benchPlayersForList.length > 0 && (
+            <div className="le-field-list-label">
+              <span>SAHADAKİLER</span>
+              <small>{fieldPlayersForList.length} oyuncu</small>
+            </div>
+          )}
           {fieldPlayersForList.map((player) => {
             const onField = lineupIds.has(player.id);
             return (
@@ -477,54 +545,6 @@ export function LineupEditorModal({
               </div>
             );
           })}
-          {benchPlayersForList.length > 0 && (
-            <>
-              <div className="le-squad-section-label">YEDEKLER</div>
-              {benchPlayersForList.map((player) => {
-                return (
-                  <div
-                    key={player.id}
-                    className={`le-squad-row le-squad-row--bench ${player.position === 'KL' ? 'le-squad-row--gk' : ''} ${highlightId === player.id ? 'le-squad-row--highlight' : ''}`}
-                  >
-                    <div className={`le-squad-rating-badge ${ratingBadgeClass(player.position)}`}>
-                      <span className="le-squad-rating">{player.currentRating}</span>
-                      <span className="le-squad-pos">{POSITION_BADGE[player.position]}</span>
-                    </div>
-                    <div className="le-squad-info">
-                      <div className="le-squad-name-row">
-                        <span className="le-squad-name" title={player.name}>{formatSquadListName(player.name)}</span>
-                        <button
-                          type="button"
-                          className={`le-squad-place-btn ${tapSource?.player.id === player.id ? 'le-squad-place-btn--active' : ''}`}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setTapSource((current) => current?.player.id === player.id ? null : { player, from: 'bench' });
-                          }}
-                        >
-                          {tapSource?.player.id === player.id ? 'Slot seç' : 'Sahaya al'}
-                        </button>
-                      </div>
-                      <div className="le-squad-role-row">
-                        <span className="le-squad-primary-pos" style={positionChipStyle(player.position, true)}>{POSITION_BADGE[player.position]}</span>
-                        {player.position === 'KL' ? <span className="le-squad-only">sadece kalede</span> : <SecondaryPositions player={player} />}
-                      </div>
-                      <div className="le-squad-tags">
-                        <span className="le-squad-bench-badge">Yedek</span>
-                        {player.tags.map((tag) => (
-                          <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="le-squad-tag-tip">
-                            <span className="le-squad-tag" style={tagChipStyle(tag)}>
-                              <UiIcon name={iconForTag(tag)} />
-                              {tag}
-                            </span>
-                          </HoverTip>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </>
-          )}
         </div>
         <div className="le-squad-panel-foot">
           <span>Yedek: <strong>{bench.length}</strong></span>

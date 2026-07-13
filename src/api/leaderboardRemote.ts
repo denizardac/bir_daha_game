@@ -1,6 +1,6 @@
 import type { SignedRunPayload } from '@/engine/runIntegrity';
 import { getTodayKey, getWeekKey, mergeBestLeaderboardEntries } from '@/engine/leaderboard';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import type { LeaderboardEntry, RoundResult } from '@/types';
 
 export type RemoteLeaderboardRow = {
@@ -82,6 +82,7 @@ export async function submitRunToLeaderboard(
   roundHistory: RoundResult[],
   isDaily: boolean,
 ): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await getSupabaseClient();
   if (!supabase) return { ok: false, error: 'Supabase yapılandırılmamış' };
 
   const { data, error } = await supabase.functions.invoke('submit-score', {
@@ -109,6 +110,7 @@ export async function submitRunToLeaderboard(
 }
 
 export async function recordRunStart(payload: RunStartPayload): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await getSupabaseClient();
   if (!supabase) return { ok: false, error: 'Supabase yapılandırılmamış' };
 
   const { data, error } = await supabase.functions.invoke('record-start', {
@@ -128,6 +130,7 @@ export async function recordRunStart(payload: RunStartPayload): Promise<{ ok: bo
 }
 
 export async function fetchTodayRunStartCount(): Promise<number | null> {
+  const supabase = await getSupabaseClient();
   if (!supabase) return null;
 
   const { count, error } = await supabase
@@ -140,6 +143,7 @@ export async function fetchTodayRunStartCount(): Promise<number | null> {
 }
 
 export async function fetchTotalRunStartCount(): Promise<number | null> {
+  const supabase = await getSupabaseClient();
   if (!supabase) return null;
 
   const { count, error } = await supabase
@@ -154,6 +158,7 @@ export async function fetchRemoteLeaderboard(
   period: LeaderboardPeriod,
   dailySeed?: string,
 ): Promise<LeaderboardEntry[]> {
+  const supabase = await getSupabaseClient();
   if (!supabase) return [];
 
   const today = getTodayKey();
@@ -218,6 +223,7 @@ function nextMonthKey(monthKey: string): string {
 }
 
 export async function fetchRemoteHallOfFame(monthKey: string): Promise<LeaderboardEntry[]> {
+  const supabase = await getSupabaseClient();
   if (!supabase) return [];
 
   const { data, error } = await supabase
@@ -237,6 +243,7 @@ export async function fetchRemoteRank(
   score: number,
   dailySeed?: string,
 ): Promise<{ rank: number; total: number; percent: number } | null> {
+  const supabase = await getSupabaseClient();
   if (!supabase) return null;
   const { data, error } = await supabase.rpc('get_leaderboard_rank', {
     p_period: period,

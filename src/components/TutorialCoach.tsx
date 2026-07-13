@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useShallow } from 'zustand/react/shallow';
 import { savePartial, loadPersisted } from '@/utils/storage';
 import { useGameStore } from '@/store/gameStore';
 import { UiIcon } from '@/components/UiIcon';
+
+type GameStoreState = ReturnType<typeof useGameStore.getState>;
+type TutorialState = Pick<GameStoreState, 'phase' | 'round' | 'trainingFlow' | 'isFirstRun'>;
 
 type TutorialStep = {
   id: string;
@@ -14,7 +18,7 @@ type TutorialStep = {
   body: string;
   highlight: string;
   final?: boolean;
-  when?: (state: ReturnType<typeof useGameStore.getState>) => boolean;
+  when?: (state: TutorialState) => boolean;
 };
 
 type Rect = Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>;
@@ -76,7 +80,7 @@ const STEPS: TutorialStep[] = [
   },
 ];
 
-function matchesStep(step: TutorialStep, state: ReturnType<typeof useGameStore.getState>): boolean {
+function matchesStep(step: TutorialStep, state: TutorialState): boolean {
   if (step.phase !== state.phase) return false;
   if (step.round !== undefined && step.round !== state.round) return false;
   if (step.minRound !== undefined && state.round < step.minRound) return false;
@@ -113,14 +117,19 @@ function getHighlightStyle(rect: Rect | null): CSSProperties {
 }
 
 export function TutorialCoach() {
-  const state = useGameStore();
-  const persisted = loadPersisted();
+  const state = useGameStore(useShallow((store) => ({
+    phase: store.phase,
+    round: store.round,
+    trainingFlow: store.trainingFlow,
+    isFirstRun: store.isFirstRun,
+  })));
+  const [tutorialCompleted] = useState(() => loadPersisted().tutorialCompleted);
   const [dismissedSteps, setDismissedSteps] = useState<Set<string>>(() => new Set());
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
 
   const step = STEPS.find((candidate) => matchesStep(candidate, state) && !dismissedSteps.has(candidate.id));
-  const visible = state.isFirstRun && !persisted.tutorialCompleted && Boolean(step);
+  const visible = state.isFirstRun && !tutorialCompleted && Boolean(step);
 
   useEffect(() => {
     if (!visible || !step?.target) {

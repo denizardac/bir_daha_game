@@ -1,21 +1,22 @@
-import type { PlayerCard, RunEndAnalysis } from '@/types';
 import { formatScore } from '@/engine/scoring';
-import { buildChallengeUrl } from '@/engine/challenge';
 import { POSITION_BADGE } from '@/utils/positionStyle';
+import {
+  buildChallengeLink,
+  buildShareText,
+  canNativeShare,
+  getShareTier,
+  type ShareCardOptions,
+  type ShareTier,
+} from '@/utils/shareCardMeta';
 
-export type ShareTier = 'gold' | 'silver' | 'bronze' | 'default';
-
-export function getShareTier(rankPercent: number): ShareTier {
-  if (rankPercent >= 90) return 'gold';
-  if (rankPercent >= 75) return 'silver';
-  if (rankPercent >= 50) return 'bronze';
-  return 'default';
-}
-
-/** Arayüzde gösterilecek Türkçe tier etiketi ("DEFAULT" yerine "YOLDA") */
-export function getShareTierLabel(tier: ShareTier): string {
-  return TIER[tier].label;
-}
+export {
+  buildChallengeLink,
+  buildShareText,
+  canNativeShare,
+  getShareTier,
+  getShareTierLabel,
+} from '@/utils/shareCardMeta';
+export type { ShareCardOptions, ShareCardStats, ShareTier } from '@/utils/shareCardMeta';
 
 type TierPalette = {
   accent: string;
@@ -38,26 +39,6 @@ const SCALE = 2;
 
 const DISPLAY = "'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif";
 const BODY = "'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif";
-
-export interface ShareCardStats {
-  wins: number;
-  losses: number;
-  synergiesFound: number;
-  squadAvg: number;
-}
-
-export interface ShareCardOptions {
-  score: number;
-  analysis: RunEndAnalysis | null;
-  displayName: string;
-  flawless?: boolean;
-  roundsCompleted: number;
-  squad?: PlayerCard[];
-  stats?: ShareCardStats;
-  /** Kartın altına basılacak meydan okuma seed'i (link üretimi için) */
-  seed?: string;
-  isDailySeed?: boolean;
-}
 
 /** Web fontları yüklenmeden çizersek sistem fontuna düşer — önce bekle */
 export async function ensureShareFonts(): Promise<void> {
@@ -379,24 +360,6 @@ async function toBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   });
 }
 
-/** Paylaşım metni — meydan okuma linki dahil */
-export function buildShareText(opts: ShareCardOptions, challengeUrl?: string): string {
-  const hook = opts.score > 0
-    ? `${formatScore(opts.score)} puan yaptım. Aynı seed'de geçebilir misin?`
-    : `${opts.roundsCompleted} round hayatta kaldım. Aynı seed'de daha iyisini yapabilir misin?`;
-  const rankLine = opts.analysis && opts.analysis.totalPlayers > 1
-    ? `Sıra: #${opts.analysis.rank}/${opts.analysis.totalPlayers}`
-    : 'Skor kaydedildi';
-  return ['BİR DAHA', hook, rankLine, challengeUrl ?? '', '#BirDaha']
-    .filter(Boolean)
-    .join('\n');
-}
-
-export function buildChallengeLink(opts: ShareCardOptions, origin = window.location.origin): string | null {
-  if (!opts.seed) return null;
-  return buildChallengeUrl(origin, { seed: opts.seed, score: opts.score, by: opts.displayName });
-}
-
 export async function downloadShareCard(opts: ShareCardOptions, filename = 'bir-daha-skor.png'): Promise<void> {
   await ensureShareFonts();
   const blob = await toBlob(renderShareCardToCanvas(opts));
@@ -414,10 +377,6 @@ export async function copyShareCardImage(opts: ShareCardOptions): Promise<boolea
   const blob = await toBlob(renderShareCardToCanvas(opts));
   await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
   return true;
-}
-
-export function canNativeShare(): boolean {
-  return typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 }
 
 export type ShareResult = 'shared' | 'cancelled' | 'unsupported' | 'failed';

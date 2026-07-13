@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { fetchTodayRunStartCount, fetchTotalRunStartCount, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { formatDailyDate, formatDailyDayMonth } from '@/engine/seed';
 import { formatScore } from '@/engine/scoring';
@@ -8,14 +7,15 @@ import { getDailyStreakBonus } from '@/engine/dailyStreak';
 import { getWeeklyModifier } from '@/engine/weeklyModifier';
 import { isChallengeSeedDaily } from '@/engine/challenge';
 import { getPrimarySeasonTitle } from '@/engine/seasonTitles';
-import { getAnonymousId } from '@/utils/storage';
-import { MenuBiteTipsWidget } from '@/components/MenuBiteTipsWidget';
-import { MenuLeaderboardWidget } from '@/components/MenuLeaderboardWidget';
-
 import { StartRunModal } from '@/components/StartRunModal';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
-import { loadPersisted } from '@/utils/storage';
+import { getAnonymousId, loadPersisted } from '@/utils/storage';
+
+const MenuBiteTipsWidget = lazy(() => import('@/components/MenuBiteTipsWidget')
+  .then((module) => ({ default: module.MenuBiteTipsWidget })));
+const MenuLeaderboardWidget = lazy(() => import('@/components/MenuLeaderboardWidget')
+  .then((module) => ({ default: module.MenuLeaderboardWidget })));
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -30,8 +30,8 @@ export function MainMenu() {
   const showContinuePrompt = useGameStore((s) => s.showContinuePrompt);
   const pendingChallenge = useGameStore((s) => s.pendingChallenge);
   const setChallenge = useGameStore((s) => s.setChallenge);
-  const stats = getPersistedStats();
-  const seasonTitle = getPrimarySeasonTitle(stats, getAnonymousId());
+  const [stats] = useState(() => getPersistedStats());
+  const [seasonTitle] = useState(() => getPrimarySeasonTitle(stats, getAnonymousId()));
 
   const [startPrompt, setStartPrompt] = useState<{ daily: boolean; afterAbandon?: boolean; seed?: string; rivalScore?: number } | null>(null);
   const [installTipVisible, setInstallTipVisible] = useState(false);
@@ -59,7 +59,7 @@ export function MainMenu() {
     setStartPrompt(null);
   };
 
-  const savedRun = loadPersisted().currentRun;
+  const [savedRun] = useState(() => loadPersisted().currentRun);
 
   const localTodayRuns = stats.todayRunsDate === getTodayKey() ? stats.todayRuns : 0;
   const [remoteTodayRuns, setRemoteTodayRuns] = useState<number | null>(null);
@@ -67,13 +67,33 @@ export function MainMenu() {
   useEffect(() => {
     if (!isRemoteLeaderboardEnabled()) return;
     let cancelled = false;
-    fetchTodayRunStartCount()
-      .then((count) => { if (!cancelled) setRemoteTodayRuns(count); })
-      .catch(() => { /* sessiz */ });
-    fetchTotalRunStartCount()
-      .then((count) => { if (!cancelled) setRemoteTotalRuns(count); })
-      .catch(() => { /* sessiz */ });
-    return () => { cancelled = true; };
+    const loadRemoteCounts = async () => {
+      const [todayCount, totalCount] = await Promise.all([
+        fetchTodayRunStartCount(),
+        fetchTotalRunStartCount(),
+      ]);
+      if (cancelled) return;
+      setRemoteTodayRuns(todayCount);
+      setRemoteTotalRuns(totalCount);
+    };
+
+    let cancelScheduledLoad: () => void;
+    const idleApi = window as unknown as {
+      requestIdleCallback?: Window['requestIdleCallback'];
+      cancelIdleCallback?: Window['cancelIdleCallback'];
+    };
+    if (idleApi.requestIdleCallback && idleApi.cancelIdleCallback) {
+      const idleId = idleApi.requestIdleCallback(() => void loadRemoteCounts(), { timeout: 2_000 });
+      cancelScheduledLoad = () => idleApi.cancelIdleCallback!(idleId);
+    } else {
+      const timeoutId = globalThis.setTimeout(() => void loadRemoteCounts(), 1);
+      cancelScheduledLoad = () => globalThis.clearTimeout(timeoutId);
+    }
+
+    return () => {
+      cancelled = true;
+      cancelScheduledLoad();
+    };
   }, []);
   const todayRuns = remoteTodayRuns ?? localTodayRuns;
   const totalRuns = remoteTotalRuns ?? stats.totalRuns;
@@ -146,7 +166,7 @@ export function MainMenu() {
         <div className="menu-pitch-line menu-pitch-line--box" />
       </div>
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="menu-dashboard">
+      <div className="menu-dashboard">
         <header className="menu-top">
           <div className="menu-brand">
             <p className="menu-hero-badge">Futbol Roguelite</p>
@@ -347,25 +367,18 @@ export function MainMenu() {
             ))}
           </footer>
         </div>
-      </motion.div>
+      </div>
 
-      <AnimatePresence>
-        {menuDialog && (
-          <motion.div
+      {menuDialog && (
+          <div
             className="menu-dialog-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
             onClick={() => setMenuDialog(null)}
           >
-            <motion.div
+            <div
               className={`menu-dialog menu-dialog--${menuDialog}`}
               role="dialog"
               aria-modal="true"
               aria-label={menuDialog === 'help' ? 'Bilmen gerekenler' : 'Skor tablosu'}
-              initial={{ opacity: 0, y: 12, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.98 }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="menu-dialog-head">
@@ -377,11 +390,12 @@ export function MainMenu() {
                   <UiIcon name="x" />
                 </button>
               </div>
-              {menuDialog === 'help' ? <MenuBiteTipsWidget /> : <MenuLeaderboardWidget initialExpanded />}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <Suspense fallback={<div className="menu-dialog-loading" role="status">Hazırlanıyor…</div>}>
+                {menuDialog === 'help' ? <MenuBiteTipsWidget /> : <MenuLeaderboardWidget initialExpanded />}
+              </Suspense>
+            </div>
+          </div>
+      )}
 
       <StartRunModal
         open={startPrompt !== null}

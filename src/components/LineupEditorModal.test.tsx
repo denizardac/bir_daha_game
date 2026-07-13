@@ -60,6 +60,24 @@ function Harness({ onCancel = vi.fn() }: { onCancel?: () => void }) {
   );
 }
 
+function BenchHarness() {
+  return (
+    <LineupEditorModal
+      open
+      squad={[...original, incoming]}
+      activeTactics={[]}
+      morale={50}
+      discoveredSynergies={[]}
+      manualLineup={{}}
+      maxSquadSize={11}
+      onChange={vi.fn()}
+      onOutgoingChange={vi.fn()}
+      onReset={vi.fn()}
+      onConfirm={vi.fn()}
+    />
+  );
+}
+
 describe('LineupEditorModal critical flow', () => {
   it('keeps the outgoing player visible and updates live synergy impact after changing departure', async () => {
     const user = userEvent.setup();
@@ -91,5 +109,19 @@ describe('LineupEditorModal critical flow', () => {
 
     await user.click(screen.getByRole('button', { name: 'İptal et — kart seçimine dön' }));
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it('surfaces bench players before the starting XI and explains the placement step', async () => {
+    const user = userEvent.setup();
+    render(<BenchHarness />);
+
+    const benchFocus = screen.getByRole('region', { name: 'Sahaya alınabilir' });
+    expect(within(benchFocus).getByText('Oyuncuyu seç, sonra sahadaki hedef mevkiye dokun.')).toBeTruthy();
+
+    const action = within(benchFocus).getByRole('button', { name: /oyuncusunu sahaya al/ });
+    await user.click(action);
+
+    expect(within(benchFocus).getByRole('button', { name: /seçildi; hedef mevkiyi seç/ }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText('SAHADAKİLER')).toBeTruthy();
   });
 });

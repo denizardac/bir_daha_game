@@ -38,15 +38,10 @@ import {
   buildChallengeLink,
   buildShareText,
   canNativeShare,
-  copyShareCardImage,
-  downloadShareCard,
-  ensureShareFonts,
   getShareTier,
   getShareTierLabel,
-  renderShareCardToCanvas,
-  shareShareCard,
   type ShareCardOptions,
-} from '@/utils/shareCard';
+} from '@/utils/shareCardMeta';
 import { playSound } from '@/utils/sound';
 import { formatStatDisplay } from '@/utils/formatNumber';
 import { POSITION_BADGE, formatPosition, getPositionRoleColor, TAG_AVATAR_BG } from '@/utils/positionStyle';
@@ -396,18 +391,27 @@ export function CardSelectScreen() {
   } = state;
   const sound = getPersistedStats().soundEnabled;
 
-  const lineupSummary = getSquadLineupSummary(squad, activeTactics, manualLineup);
-  const activeSynergies = getActiveSynergies(squad, morale, { activeTactics, manualLineup });
+  const lineupSummary = useMemo(
+    () => getSquadLineupSummary(squad, activeTactics, manualLineup),
+    [squad, activeTactics, manualLineup],
+  );
+  const activeSynergies = useMemo(
+    () => getActiveSynergies(squad, morale, { activeTactics, manualLineup }),
+    [squad, morale, activeTactics, manualLineup],
+  );
   // Kompakt rayda sadece birkaç satır gösterilir (CardSelectLeftRail kendi içinde
   // ayrıca kısıtlar) ama sayaç ve detay popup'ı TÜM yakın sinerjileri görmeli —
   // limiti düşük tutmak, gerçekten yakın olan ama sırada geride kalan bir sinerjinin
   // (ör. ORTA DUVAR) popup'ta hiç görünmemesine yol açıyordu.
-  const nearSynergies = getSidePanelNearSynergies(squad, morale, discoveredSynergies, currentOffers, {
-    limit: 8,
-    maxSquadSize,
-    activeTactics,
-    manualLineup,
-  });
+  const nearSynergies = useMemo(
+    () => getSidePanelNearSynergies(squad, morale, discoveredSynergies, currentOffers, {
+      limit: 8,
+      maxSquadSize,
+      activeTactics,
+      manualLineup,
+    }),
+    [squad, morale, discoveredSynergies, currentOffers, maxSquadSize, activeTactics, manualLineup],
+  );
   const tacticBonus = isTacticBonusRound(round, maxRounds);
   const finaleMatch = isFinaleRound(round, maxRounds);
   const pickTitle = tacticBonus
@@ -935,6 +939,54 @@ export function MatchScreen() {
   speedRef.current = speed;
   animRef.current = anim;
 
+  const lineupSummary = useMemo(
+    () => getSquadLineupSummary(squad, activeTactics, manualLineup),
+    [squad, activeTactics, manualLineup],
+  );
+  const pitchDots = useMemo(
+    () => lineupSummary.lineup
+      .filter((slot) => slot.player)
+      .map((slot) => lineupSlotToMatchPitch(slot)),
+    [lineupSummary],
+  );
+  const squadAvg = useMemo(
+    () => Math.round(
+      lineupSummary.lineup
+        .filter((slot) => slot.player)
+        .reduce((sum, slot) => sum + slot.player!.currentRating, 0) / Math.max(lineupSummary.filled, 1),
+    ),
+    [lineupSummary],
+  );
+
+  const selectionSubtitle = useMemo(() => {
+    if (!pendingSelected) return '';
+    if (isPlayerCard(pendingSelected)) {
+      return `${formatPosition(pendingSelected.position)} · Kadroya eklendi · ${pendingSelected.currentRating} rating`;
+    }
+    if (isSkipCard(pendingSelected)) return 'Kadro değişmedi · mevcut 11 ile maça çıkıyorsun';
+    if (isTacticCard(pendingSelected)) {
+      return `${getTacticPreview(pendingSelected, squad, activeTactics).headline} — sonraki maçlarda bonus`;
+    }
+    return 'Antrenman uygulandı';
+  }, [pendingSelected, squad, activeTactics]);
+
+  const previewRoundPoints = useMemo(() => {
+    if (!anim.showHighlights || !currentMatch) return 0;
+    return calculateRoundPoints(
+      currentMatch,
+      squad,
+      morale,
+      streak,
+      round,
+      lossesCount,
+      activeTactics,
+      timerSeconds,
+      flawless,
+      manualLineup,
+      getWeeklyModifier(),
+    );
+  }, [anim.showHighlights, currentMatch, squad, morale, streak, round, lossesCount, activeTactics, timerSeconds, flawless, manualLineup]);
+
   useEffect(() => {
     if (!currentMatch) return;
     speedReadyRef.current = false;
@@ -1049,15 +1101,6 @@ export function MatchScreen() {
   const outcome = currentMatch.outcome === 'win' ? 'GALİBİYET' : currentMatch.outcome === 'draw' ? 'BERABERLİK' : 'MAĞLUBİYET';
   const outcomeColor = currentMatch.outcome === 'win' ? 'text-green-400' : currentMatch.outcome === 'draw' ? 'text-amber-400' : 'text-red-400';
   const moraleOutcomeDelta = currentMatch.outcome === 'win' ? 10 : currentMatch.outcome === 'draw' ? -5 : -16;
-  const lineupSummary = getSquadLineupSummary(squad, activeTactics, manualLineup);
-  const pitchDots = lineupSummary.lineup
-    .filter((slot) => slot.player)
-    .map((slot) => lineupSlotToMatchPitch(slot));
-  const squadAvg = Math.round(
-    lineupSummary.lineup
-      .filter((s) => s.player)
-      .reduce((sum, s) => sum + s.player!.currentRating, 0) / Math.max(lineupSummary.filled, 1),
-  );
   const matchEdge = squadAvg - currentMatch.opponent.rating;
   const drawPct = Math.max(8, Math.min(22, Math.round(18 - Math.abs(matchEdge) * 0.35)));
   const homeNoDrawPct = Math.max(10, Math.min(90, Math.round(50 + matchEdge * 2)));
@@ -1066,29 +1109,6 @@ export function MatchScreen() {
   const moraleFx = getMoraleEffect(morale);
   const streakMult = streakMultiplier(streak);
 
-  const selectionSubtitle = isPlayerCard(pendingSelected)
-    ? `${formatPosition(pendingSelected.position)} · Kadroya eklendi · ${pendingSelected.currentRating} rating`
-    : isSkipCard(pendingSelected)
-      ? 'Kadro değişmedi · mevcut 11 ile maça çıkıyorsun'
-      : isTacticCard(pendingSelected)
-        ? `${getTacticPreview(pendingSelected, squad, activeTactics).headline} — sonraki maçlarda bonus`
-        : 'Antrenman uygulandı';
-
-  const previewRoundPoints = anim.showHighlights
-    ? calculateRoundPoints(
-        currentMatch,
-        squad,
-        morale,
-        streak,
-        round,
-        lossesCount,
-        activeTactics,
-        timerSeconds,
-        flawless,
-        manualLineup,
-        getWeeklyModifier(),
-      )
-    : 0;
   const nextStepText = currentMatch.outcome === 'loss'
     ? 'Devam edince kadrodan ayrılan oyuncuyu göreceksin.'
     : round >= maxRounds
@@ -1504,7 +1524,8 @@ function ShareCardPreview({ opts }: { opts: ShareCardOptions }) {
   useEffect(() => {
     let cancelled = false;
     // Web fontları yüklenmeden çizersek kart sistem fontuna düşer — önce bekle
-    void ensureShareFonts().then(() => {
+    void import('@/utils/shareCard').then(async ({ ensureShareFonts, renderShareCardToCanvas }) => {
+      await ensureShareFonts();
       if (cancelled || !hostRef.current) return;
       const canvas = renderShareCardToCanvas(opts);
       canvas.style.width = '100%';
@@ -1583,6 +1604,7 @@ export function RunEndScreen() {
   };
 
   const handleNativeShare = async () => {
+    const { shareShareCard } = await import('@/utils/shareCard');
     const result = await shareShareCard(shareOpts);
     if (result === 'shared') flash('Paylaşıldı!');
     else if (result === 'failed') flash('Paylaşılamadı — PNG indirmeyi dene.');
@@ -1955,6 +1977,7 @@ export function RunEndScreen() {
                     type="button"
                     className="btn-secondary run-end-share-btn"
                     onClick={async () => {
+                      const { copyShareCardImage } = await import('@/utils/shareCard');
                       const ok = await copyShareCardImage(shareOpts);
                       flash(ok ? 'Görsel panoya kopyalandı!' : 'Kopyalama desteklenmiyor — PNG indir.');
                     }}
@@ -1966,6 +1989,7 @@ export function RunEndScreen() {
                     type="button"
                     className="btn-secondary run-end-share-btn"
                     onClick={async () => {
+                      const { downloadShareCard } = await import('@/utils/shareCard');
                       await downloadShareCard(shareOpts);
                       flash('PNG indirildi!');
                     }}
