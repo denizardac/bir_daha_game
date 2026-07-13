@@ -234,9 +234,12 @@ function emptySlotIndicesOrdered(player: PlayerCard, ctx: PlacementCtx): number[
   return includeRemainingEmptyPlayableSlots(player, ctx, sorted);
 }
 
-/** Tam kadro: OOS, OS slotundaki native OS’i rating ile düşürür */
+/** Tam kadro: OOS, OS slotundaki native OS’i rating ile düşürür. */
 function tryDisplaceNativeOs(player: PlayerCard, ctx: PlacementCtx): boolean {
   if (player.position !== 'OOS') return false;
+  // Sahada boş yer varken doğrudan oyuncu düşürmek, doldurulabilecek bir slotu
+  // boş bırakabilir. Önce aşağıdaki genel zincir taşıma bütün hedefleri denesin.
+  if (ctx.fieldIndices.some((i) => !ctx.assigned[i])) return false;
   const osIdx = osSlotIndex(ctx);
   if (osIdx === null || !ctx.assigned[osIdx] || isLockedSlot(ctx, osIdx)) return false;
   const occupant = ctx.assigned[osIdx]!;
@@ -307,11 +310,22 @@ export function placePlayerOnPitch(player: PlayerCard, ctx: PlacementCtx): boole
   // D) Tam kadro: zayıf native OS’i düşür (77 OOS → OS, 62 yedek)
   if (tryDisplaceNativeOs(player, ctx)) return true;
 
-  // E) Yer değiştirme — flex occupant önceliği, sonra SLK → SĞK → OS
+  // E) Yer değiştirme — flex occupant önceliği, sonra düşük rating.
+  // Boş slot varsa ilk başarısız hedefte oyuncu düşürme: diğer hedeflerden biri
+  // zincirle boş slota kayabiliyor olabilir (Hasan → Bilgin → Vinícius → Taş).
+  let fallbackSlotIdx: number | null = null;
   for (const slotIdx of upgradeSlotIndices) {
     const displaced = ctx.assigned[slotIdx]!;
     ctx.assigned[slotIdx] = player;
-    tryRelocatePlayer(displaced, ctx, new Set([slotIdx]), 0);
+    if (tryRelocatePlayer(displaced, ctx, new Set([slotIdx]), 0)) return true;
+    ctx.assigned[slotIdx] = displaced;
+    fallbackSlotIdx ??= slotIdx;
+  }
+
+  // Hiçbir zincir alan açamıyorsa gelen güçlü oyuncu en uygun zayıf oyuncuyu
+  // yine düşürebilir; yalnızca sahadaki oyuncu sayısını artırma şansını önceledik.
+  if (fallbackSlotIdx !== null) {
+    ctx.assigned[fallbackSlotIdx] = player;
     return true;
   }
 
@@ -371,6 +385,49 @@ function improveFieldCountByShiftingFlexiblePlayers(ctx: PlacementCtx, squad: Pl
       if (changed) break;
     }
   }
+}
+
+/**
+ * Mevcut kaliteli yerleşimi başlangıç eşleşmesi kabul edip yedekteki her oyuncu
+ * için boş slota ulaşan bir zincir arar. Standart augmenting-path geçişi olduğu
+ * için, oynanabilirlik grafiğinin izin verdiği maksimum saha oyuncusu sayısına
+ * ulaşır; yalnızca sayıyı artırabilen bir yol bulduğunda yerleşimi değiştirir.
+ */
+function maximizeFieldCountWithAugmentingPaths(ctx: PlacementCtx, squad: PlayerCard[]): void {
+  function augment(player: PlayerCard, visitedSlots: Set<number>): boolean {
+    const targets = playableSlotIndices(ctx, player)
+      .filter((slotIdx) => !visitedSlots.has(slotIdx) && !isLockedSlot(ctx, slotIdx))
+      .sort((a, b) => {
+        const occupantA = ctx.assigned[a];
+        const occupantB = ctx.assigned[b];
+        if (!occupantA && occupantB) return -1;
+        if (occupantA && !occupantB) return 1;
+        if (occupantA && occupantB) {
+          const nativeA = isNativeInSlot(occupantA, ctx.slots[a]!) ? 1 : 0;
+          const nativeB = isNativeInSlot(occupantB, ctx.slots[b]!) ? 1 : 0;
+          if (nativeA !== nativeB) return nativeA - nativeB;
+          const ratingDiff = occupantA.currentRating - occupantB.currentRating;
+          if (ratingDiff !== 0) return ratingDiff;
+        }
+        return flexRoleOrder(player, ctx.slots[a]!) - flexRoleOrder(player, ctx.slots[b]!);
+      });
+
+    for (const slotIdx of targets) {
+      visitedSlots.add(slotIdx);
+      const displaced = ctx.assigned[slotIdx];
+      ctx.assigned[slotIdx] = player;
+      if (!displaced || augment(displaced, visitedSlots)) return true;
+      ctx.assigned[slotIdx] = displaced;
+    }
+    return false;
+  }
+
+  const used = assignedIds(ctx.assigned);
+  const benchPlayers = squad
+    .filter((player) => player.position !== 'KL' && !used.has(player.id))
+    .sort((a, b) => b.currentRating - a.currentRating);
+
+  for (const player of benchPlayers) augment(player, new Set<number>());
 }
 
 function improveNativeFitByShiftingFlexibleOccupants(ctx: PlacementCtx, squad: PlayerCard[]): void {
@@ -457,6 +514,7 @@ export function assignFieldPlayers(ctx: PlacementCtx, squad: PlayerCard[]): void
 
   fillRemainingEmptySlots(ctx, squad);
   improveFieldCountByShiftingFlexiblePlayers(ctx, squad);
+  maximizeFieldCountWithAugmentingPaths(ctx, squad);
   improveNativeFitByShiftingFlexibleOccupants(ctx, squad);
 }
 

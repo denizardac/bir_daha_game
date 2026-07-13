@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { assignPlayersByRules, type PlacementSlotDef } from '@/engine/lineupPlacement';
+import { PLAYER_POOL } from '@/data/players';
+import {
+  assignPlayersByRules,
+  slotAcceptsPlayerForPlacement,
+  type PlacementSlotDef,
+} from '@/engine/lineupPlacement';
 import { assignSquadToFormation } from '@/engine/lineupPreview';
 import type { PlayerCard } from '@/types';
 
@@ -34,6 +39,35 @@ function slotOf(squad: PlayerCard[], id: string) {
   const assigned = assignPlayersByRules(SLOTS_442, squad);
   const idx = assigned.findIndex((x) => x?.id === id);
   return idx >= 0 ? SLOTS_442[idx]!.label : null;
+}
+
+function maximumPlayableCount(squad: PlayerCard[], formation: string): number {
+  const slots = assignSquadToFormation([], formation).map((item) => item.slot);
+  const slotMatch = Array<number>(slots.length).fill(-1);
+
+  function augment(playerIndex: number, seen: boolean[]): boolean {
+    const player = squad[playerIndex]!;
+    for (let slotIndex = 0; slotIndex < slots.length; slotIndex++) {
+      if (seen[slotIndex]) continue;
+      const slot = slots[slotIndex]!;
+      const accepted = slot.zone === 'kaleci'
+        ? player.position === 'KL'
+        : player.position !== 'KL' && slotAcceptsPlayerForPlacement(player, slot);
+      if (!accepted) continue;
+      seen[slotIndex] = true;
+      if (slotMatch[slotIndex] === -1 || augment(slotMatch[slotIndex]!, seen)) {
+        slotMatch[slotIndex] = playerIndex;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  let count = 0;
+  for (let playerIndex = 0; playerIndex < squad.length; playerIndex++) {
+    if (augment(playerIndex, Array<boolean>(slots.length).fill(false))) count++;
+  }
+  return count;
 }
 
 describe('lineupPlacement — genel kurallar', () => {
@@ -264,5 +298,46 @@ describe('lineupPlacement — genel kurallar', () => {
       ),
     ];
     expect(slotOf(squad, 'os')).toBe('OS');
+  });
+
+  it('Hasan zinciri — native orta saha korunur, zayıf kanat SF’ye kayar ve herkes sahada kalır', () => {
+    const squad = [
+      p({ id: 'kl', name: 'KL', position: 'KL' }),
+      p({ id: 'slb', name: 'SLB', position: 'SLB' }),
+      p({ id: 'stp1', name: 'STP1', position: 'STP' }),
+      p({ id: 'stp2', name: 'STP2', position: 'STP' }),
+      p({ id: 'sgb', name: 'SĞB', position: 'SÖB' }),
+      p({ id: 'gokhan', name: 'Gökhan Taş', position: 'SLK', rating: 67, currentRating: 67 }),
+      p({ id: 'tuncay', name: 'Tuncay Bilgin', position: 'OS', rating: 68, currentRating: 68 }),
+      p({ id: 'vinicius', name: 'İsmail Vinicius', position: 'OOS', rating: 69, currentRating: 69 }),
+      p({ id: 'tyler', name: 'Tyler Özcanlar', position: 'SÖK', rating: 75, currentRating: 75 }),
+      p({ id: 'sf', name: 'Mevcut SF', position: 'SF', rating: 74, currentRating: 74 }),
+      p({ id: 'hasan', name: 'Hasan Demirci', position: 'DOS', rating: 76, currentRating: 76 }),
+    ];
+    const lineup = assignSquadToFormation(squad, '442');
+    const placedAt = (id: string) => lineup.find((slot) => slot.player?.id === id)?.slot.label;
+
+    expect(lineup.filter((slot) => slot.player)).toHaveLength(11);
+    expect(placedAt('hasan')).toBe('DOS');
+    expect(placedAt('tuncay')).toBe('OS');
+    expect(placedAt('vinicius')).toBe('SLK');
+    expect(placedAt('tyler')).toBe('SĞK');
+    expect(placedAt('gokhan')).toBe('SF');
+  });
+
+  it('bütün formasyonlarda oynayabilen maksimum oyuncu sayısına ulaşır', () => {
+    const formations = ['442', '433', '352', '532', '4231', '343', 'diamond', '4411', '3412', '451'];
+
+    for (let sample = 0; sample < 120; sample++) {
+      const squad = Array.from({ length: 11 }, (_, index) => {
+        const source = PLAYER_POOL[(sample * 17 + index * 31) % PLAYER_POOL.length]!;
+        return { ...source, id: `${source.id}-matching-${sample}-${index}` };
+      });
+      for (const formation of formations) {
+        const lineup = assignSquadToFormation(squad, formation);
+        const actual = lineup.filter((slot) => slot.player).length;
+        expect(actual, `${formation} · örnek ${sample}`).toBe(maximumPlayableCount(squad, formation));
+      }
+    }
   });
 });

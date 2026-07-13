@@ -17,8 +17,6 @@ import {
   type ManualLineup,
 } from '@/engine/lineupPreview';
 import { simulateRosterDecision } from '@/engine/rosterDecision';
-import { createDebugCode } from '@/engine/debugCode';
-import { copyText } from '@/utils/clipboard';
 import type { ActiveTactic, PlayerCard, Position } from '@/types';
 import { POSITION_BADGE, TAG_AVATAR_BG, formationSlotLabel, getPositionRoleColor } from '@/utils/positionStyle';
 import { iconForTag } from '@/utils/gameIcons';
@@ -26,8 +24,6 @@ import { formatSquadListName } from '@/utils/squadDisplayName';
 
 interface Props {
   open: boolean;
-  seed: string;
-  round: number;
   squad: PlayerCard[];
   activeTactics: ActiveTactic[];
   morale: number;
@@ -85,8 +81,6 @@ function positionChipStyle(position: Position, filled: boolean): CSSProperties {
 
 export function LineupEditorModal({
   open,
-  seed,
-  round,
   squad,
   activeTactics,
   morale,
@@ -159,7 +153,6 @@ export function LineupEditorModal({
   // önce oyuncuya dokun (seçilir), sonra hedef slota/yedeğe dokun (taşınır).
   const [tapSource, setTapSource] = useState<DragSource | null>(null);
   const [departurePickerOpen, setDeparturePickerOpen] = useState(false);
-  const [debugCopied, setDebugCopied] = useState(false);
   const justDraggedRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -244,23 +237,6 @@ export function LineupEditorModal({
   function updateDragGhost(e: MouseEvent | TouchEvent | PointerEvent, player: PlayerCard) {
     const [x, y] = pointerXY(e);
     setDragGhost({ player, x, y });
-  }
-
-  async function copyDebugCode() {
-    const code = createDebugCode({
-      seed,
-      round,
-      phase: 'cardSelect',
-      squad,
-      activeTactics,
-      manualLineup,
-      incomingPlayerId: highlightId,
-      outgoingPlayerId: outgoingId,
-    });
-    if (await copyText(code)) {
-      setDebugCopied(true);
-      window.setTimeout(() => setDebugCopied(false), 1800);
-    }
   }
 
   function SecondaryPositions({ player }: { player: PlayerCard }) {
@@ -553,10 +529,6 @@ export function LineupEditorModal({
         <div className="le-squad-panel-foot">
           <span>Yedek: <strong>{bench.length}</strong></span>
           <span>Ø Ort: <strong className="le-squad-avg">{squadAvg}</strong></span>
-          <button type="button" className="le-debug-copy" onClick={() => void copyDebugCode()}>
-            <UiIcon name="clipboard" />
-            {debugCopied ? 'Kopyalandı' : 'Tanı kodu'}
-          </button>
         </div>
       </div>
 

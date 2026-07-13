@@ -349,7 +349,7 @@ function gk(r = 70) {
 
 /** Kullanıcı raporu: 77 OOS tam kadro → OS; kısmi kadro → OS (SĞK değil) */
 describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
-  it('23 — 77 OOS tam 11/11: OS slotuna girer, 62 OS yedek', () => {
+  it('23 — 11 kişilik kadro: uygun zincir varken OS yedeğe atılmaz ve SF boş bırakılmaz', () => {
     const squad = [
       gk(88),
       ...['slb', 'stp1', 'stp2', 'sgb'].map((id, i) =>
@@ -362,9 +362,12 @@ describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
       p({ id: 'oos74', name: 'SĞK OOS', position: 'OOS', currentRating: 74, rating: 74 }),
       p({ id: 'new', name: '77 OOS', position: 'OOS', currentRating: 77, rating: 77 }),
     ];
-    expect(slotOf(squad, 'new', '442')).toBe('OS');
-    expect(slotOf(squad, 'oos74', '442')).toBe('SĞK');
-    expect(slotOf(squad, 'os62', '442')).toBeUndefined();
+    const lineup = assignSquadToFormation(squad, '442');
+    expect(lineup.filter((slot) => slot.player)).toHaveLength(11);
+    expect(slotOf(squad, 'new', '442')).toBe('SĞK');
+    expect(slotOf(squad, 'oos74', '442')).toBe('SLK');
+    expect(slotOf(squad, 'os62', '442')).toBe('OS');
+    expect(slotOf(squad, 'slk', '442')).toBe('SF');
   });
 
   it('24 — 77 OOS kısmi kadro: OS upgrade, SĞK kanat doldurma önceliği yok', () => {
@@ -383,7 +386,7 @@ describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
     expect(slotOf(partial, 'oos74', '442')).toBe('SĞK');
   });
 
-  it('25 — 77 OOS önizleme tam kadro: OS metni', () => {
+  it('25 — 77 OOS önizleme: boş SF’yi zincirle dolduran kanat yerleşimini söyler', () => {
     const squad = [
       gk(88),
       p({ id: 'os62', name: 'OS', position: 'OS', currentRating: 62, rating: 62 }),
@@ -400,8 +403,7 @@ describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
     ];
     const incoming = p({ id: 'g', name: 'Gökhan', position: 'OOS', currentRating: 77, rating: 77 });
     const summary = getPlayerPickSummary(incoming, squad, 11, 50, []);
-    expect(summary.text).toMatch(/OS slotuna girer/);
-    expect(summary.text).not.toContain('SĞK');
+    expect(summary.text).toMatch(/SĞK( \(OOS\))? slotuna girer/);
   });
 
   it('26 — 77 OOS önizleme kısmi kadro: OS metni (SĞK değil)', () => {
@@ -489,7 +491,7 @@ describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
     expect(hakan?.reason).toMatch(/Orta saha dolu|yedek/i);
   });
 
-  it('31b — DOS yedek: SLK uygun sanılmaz, orta saha dolu / rating yetersiz', () => {
+  it('31b — zayıf DOS da uygun zincir varsa OS’ye kayar ve kanat SF’yi doldurur', () => {
     const squad = [
       gk(74),
       p({ id: 'slb', name: 'Sol', position: 'SLB', currentRating: 65, rating: 65 }),
@@ -504,12 +506,11 @@ describe('lineup scenarios — 50 koşul (regresyon paketi)', () => {
       p({ id: 'nik', name: 'Nikolai Adeyemi', position: 'DOS', currentRating: 61, rating: 61 }),
       p({ id: 'kl2', name: 'Can Arslan', position: 'KL', currentRating: 71, rating: 71 }),
     ];
-    expect(slotOf(squad, 'nik', '442')).toBeUndefined();
-    const bench = getBenchExplanations(squad, []);
-    const nik = bench.find((b) => b.player.id === 'nik');
-    expect(nik?.reason).toBeDefined();
-    expect(nik!.reason).not.toMatch(/SLK slotuna uygun/);
-    expect(nik!.reason).toMatch(/Orta saha dolu|Rating yetersiz/);
+    const lineup = assignSquadToFormation(squad, '442');
+    expect(lineup.filter((slot) => slot.player)).toHaveLength(11);
+    expect(slotOf(squad, 'nik', '442')).toBe('OS');
+    expect(slotOf(squad, 'oos', '442')).toBe('SĞK');
+    expect(slotOf(squad, 'sgk', '442')).toBe('SF');
   });
 
   it('32 — OS asla kanatta kalmaz (100 seed)', () => {

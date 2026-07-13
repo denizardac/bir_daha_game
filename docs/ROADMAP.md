@@ -1,7 +1,7 @@
 # Bir Daha — Yol Haritası
 
 Aşama aşama ilerleme planı. Zaman tahmini yok; her aşama bir öncekinin üstüne kurulur.
-Güncel durum: oyun web'de oynanabilir, 245 otomatik test + telemetrili headless QA + CI yeşil, Supabase leaderboard altyapısı hazır (deploy opsiyonel), Capacitor Android/iOS kabukları bağlı.
+Güncel durum: oyun web'de oynanabilir, 247 otomatik test + telemetrili headless QA + CI yeşil, Supabase leaderboard altyapısı hazır (deploy opsiyonel), Capacitor Android/iOS kabukları bağlı.
 
 ---
 
@@ -34,6 +34,7 @@ Güncel durum: oyun web'de oynanabilir, 245 otomatik test + telemetrili headless
 - [x] Dolu kadroda çıkan oyuncu kaybolmuyor; kullanıcı ayrılacak oyuncuyu değiştirebiliyor ve açılacak/kapanacak sinerjiyi karar vermeden görüyor
 - [x] Yeni oyuncunun otomatik yer değişimi sahada hareket göstergesiyle açıklanıyor
 - [x] Diziliş yerleştirme öncelikleri ana mevki boşken gereksiz yan mevki kullanımını engelliyor; edge-case senaryoları testlerle kilitli
+- [x] Yerleştirme motoru önce oynayabilen maksimum oyuncu sayısını sahaya çıkarıyor; 10 formasyon × 120 deterministik kadro bağımsız maksimum eşleştirme hesabıyla doğrulanıyor
 - [x] Kayıt şeması sürümlendi; eski/bozuk kayıtlarda yinelenen oyuncu, geçersiz pin ve teklif kayıtları güvenli biçimde onarılıyor
 - [x] Tek tıkla kişisel veri içermeyen hata tanı kodu üretimi eklendi
 - [x] Lineup editörü klavye ile kullanılabilir hale getirildi; transfer ve klavye akışları jsdom bileşen testleriyle kapsandı

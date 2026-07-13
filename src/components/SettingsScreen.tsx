@@ -52,8 +52,8 @@ export function SettingsScreen() {
           {stats.currentRun?.seed && (
             <div className="settings-diagnostic">
               <div>
-                <strong>Hata tanı kodu</strong>
-                <p>Seed, kadro ve dizilişi içerir; oyuncu adını ve skorunu içermez.</p>
+                <strong>Sorun bildirme kodu</strong>
+                <p>Bir hata yaşarsan bu kodu bize gönder. Kişisel bilgi ve skor içermez.</p>
               </div>
               <button type="button" className="btn-secondary" onClick={() => void copyDebugCode()}>
                 {debugCopied ? 'Kopyalandı' : 'Kodu kopyala'}

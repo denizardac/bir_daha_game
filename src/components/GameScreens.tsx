@@ -651,8 +651,6 @@ export function CardSelectScreen() {
       {state.lineupEditorOpen && (
         <LineupEditorModal
           open
-          seed={state.seed}
-          round={state.round}
           squad={squad}
           activeTactics={activeTactics}
           morale={morale}

@@ -43,8 +43,6 @@ function Harness({ onCancel = vi.fn() }: { onCancel?: () => void }) {
   return (
     <LineupEditorModal
       open
-      seed="ui-test"
-      round={5}
       squad={[...original, incoming]}
       activeTactics={[]}
       morale={50}
