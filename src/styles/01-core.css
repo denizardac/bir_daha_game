@@ -12776,6 +12776,32 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   flex: 0 0 auto;
 }
 
+.pwa-update-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.pwa-update-later {
+  min-height: 2.55rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.65rem;
+  background: rgba(148, 163, 184, 0.06);
+  color: var(--text-muted);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.pwa-update-later:hover {
+  border-color: rgba(148, 163, 184, 0.38);
+  color: var(--text-primary);
+}
+
 .hof-layout {
   display: grid;
   gap: 1rem;

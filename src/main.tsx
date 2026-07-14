@@ -2,16 +2,22 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
+import { getServiceWorkerUpdateVersion } from '@/pwa/updatePrompt';
 import './index.css';
 import './styles/eventScenes.css';
 
 if ('serviceWorker' in navigator) {
+  let updatePromptAnnounced = false;
   const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
-      window.dispatchEvent(new CustomEvent('bir-daha-update-ready', {
-        detail: { apply: () => updateSW(true) },
-      }));
+      if (updatePromptAnnounced) return;
+      updatePromptAnnounced = true;
+      void getServiceWorkerUpdateVersion().then((version) => {
+        window.dispatchEvent(new CustomEvent('bir-daha-update-ready', {
+          detail: { apply: () => updateSW(true), version },
+        }));
+      });
     },
     onRegisteredSW(_url, registration) {
       if (registration) {
