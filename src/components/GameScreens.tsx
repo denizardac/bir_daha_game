@@ -235,6 +235,8 @@ function CardSelectSubHeader({
   onPickModeChange,
   trainingAvailable,
   rerollsRemaining,
+  targetedScoutAvailable,
+  onTargetedScout,
 }: {
   morale: number;
   title: string;
@@ -242,6 +244,8 @@ function CardSelectSubHeader({
   onPickModeChange: (mode: CardPickMode) => void;
   trainingAvailable: boolean;
   rerollsRemaining: number;
+  targetedScoutAvailable: boolean;
+  onTargetedScout: () => void;
 }) {
   const fx = getMoraleEffect(morale);
   return (
@@ -257,6 +261,16 @@ function CardSelectSubHeader({
         <h2 className="card-compare-title">{title}</h2>
       </div>
       <div className="card-select-subheader-right">
+        {targetedScoutAvailable && pickMode === 'cards' && (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={onTargetedScout}
+            title="Ücretsiz yenile: en az bir aday mevcut kadronun bir Sinerjisini ilerletir"
+          >
+            <UiIcon name="sparkles" /> Hedefli Scout
+          </button>
+        )}
         {trainingAvailable && (
           <div className="card-compare-mode-tabs" role="group" aria-label="Mod seç" data-tutorial-target="pick-mode">
             <button
@@ -382,12 +396,13 @@ export function CardSelectScreen() {
   const {
     round, maxRounds, squad, maxSquadSize, morale, score, streak, roundHistory,
     currentOffers, selectOffer,
-    dangerMode, discoveredSynergies, activeTactics, usedEventIds,
+    dangerMode, discoveredSynergies, activeTactics, usedEventIds, crisisContractTriggered,
     manualLineup,
     rerollsRemaining, rerollSingleOffer, offersRerollIndex,
     trainingFlow, beginTraining, pickTrainingPlayer, completeTraining, cancelTraining, backTrainingPlayer,
     tacticDraft, confirmTacticRound, rerollFormationOffers, rerollSystemOffers,
     formationRerollUsed, systemRerollUsed,
+    targetedScoutAvailable, useTargetedScout,
   } = state;
   const sound = getPersistedStats().soundEnabled;
 
@@ -447,12 +462,15 @@ export function CardSelectScreen() {
             onPickModeChange={handlePickModeChange}
             trainingAvailable={!finaleMatch}
             rerollsRemaining={rerollsRemaining}
+            targetedScoutAvailable={targetedScoutAvailable}
+            onTargetedScout={useTargetedScout}
           />
         )}
 
         {dangerMode && (
           <p className="card-select-danger-banner">
             TEHLİKE MODU — {squad.length} oyuncu · Moral {DANGER_MORALE_FLOOR}&apos;nin altına düşmez
+            {crisisContractTriggered && ' · Kriz Kontratı kullanıldı: +1 yenileme ve toparlanma adayı'}
           </p>
         )}
 

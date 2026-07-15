@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { drawOffers, drawTacticCategoryOffers, getPlayerPoolForAccess, rerollSinglePlayerOffer } from '@/engine/cardDraw';
+import { drawOffers, drawTargetedScoutOffers, drawTacticCategoryOffers, getPlayerPoolForAccess, getScoutImprovementScore, rerollSinglePlayerOffer } from '@/engine/cardDraw';
 import { PLAYER_POOL, clonePlayer } from '@/data/players';
 import { isPlayerCard } from '@/types';
 
@@ -27,6 +27,41 @@ describe('drawOffers', () => {
     expect(freeLocked).not.toContain('player_geri_donuscu');
     expect(freeUnlocked).toContain('legend_01');
     expect(freeUnlocked).toContain('player_geri_donuscu');
+  });
+
+  it('puts the queued unlocked player into a Free Mode offer without duplicating the squad', () => {
+    const access = {
+      isDailySeed: false,
+      unlockedPlayerIds: ['legend_01'],
+      guaranteedPlayerId: 'legend_01',
+    };
+    const offers = drawOffers('guarantee-seed', 1, 0, [], [], false, 0, 'normal', 'players', access);
+    expect(offers.map((card) => card.id)).toContain('legend_01');
+
+    const guaranteed = PLAYER_POOL.find((player) => player.id === 'legend_01')!;
+    const blocked = drawOffers('guarantee-seed', 2, 0, [guaranteed], [], false, 0, 'normal', 'players', access);
+    expect(blocked.map((card) => card.id)).not.toContain('legend_01');
+  });
+
+  it('Kriz Kontratı teklifinde 78+ toparlanma profili ve gerekli kaleci seçeneğini korur', () => {
+    const offers = drawOffers(
+      'crisis-seed', 7, 2, [], [], true, 0, 'normal', 'players',
+      { isDailySeed: false, unlockedPlayerIds: [], guaranteeRecoveryPlayer: true },
+    ).filter(isPlayerCard);
+    const recoveryTags = new Set(['POTANSİYEL', 'MENTOR', 'LİDER', 'KAPİTAN', 'DAYANIKLI']);
+    expect(offers.some((player) => player.position === 'KL')).toBe(true);
+    expect(offers.some((player) => player.currentRating >= 78 && player.tags.some((tag) => recoveryTags.has(tag)))).toBe(true);
+  });
+
+  it('Hedefli Scout en az bir Sinerji ilerleten benzersiz teklif üretir', () => {
+    const squad = [PLAYER_POOL.find((player) => player.tags.includes('HIZLI') && player.position !== 'KL')!];
+    const offers = drawTargetedScoutOffers(
+      'scout-seed', 5, 0, squad, [], false, 1,
+      { isDailySeed: false, unlockedPlayerIds: [] },
+    ).filter(isPlayerCard);
+    expect(offers).toHaveLength(3);
+    expect(new Set(offers.map((player) => player.name.toLocaleLowerCase('tr-TR'))).size).toBe(3);
+    expect(offers.some((player) => getScoutImprovementScore(squad, player) > 0)).toBe(true);
   });
 
   it('returns 3 offers for normal round', () => {

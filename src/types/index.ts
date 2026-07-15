@@ -297,6 +297,14 @@ export interface GameState {
   manualLineup: Record<number, string>;
   /** Run içinde unlock koşulları için gereken, snapshot ile taşınan maksimumlar. */
   unlockTelemetry: RunUnlockTelemetry;
+  /** Bu Serbest Mod Runına ayrılmış, teklif edilene kadar kuyrukta kalan ödül. */
+  activeUnlockGuarantee: UnlockGuarantee | null;
+  unlockGuaranteeOffered: boolean;
+  /** Açılmış Hedefli Scout'un bu Run'daki tek kullanımı. */
+  targetedScoutAvailable: boolean;
+  /** Kriz Kontratı bu Run'da bir kez tetiklenebilir. */
+  crisisContractTriggered: boolean;
+  crisisRecoveryPending: boolean;
 }
 
 export interface LeaderboardEntry {

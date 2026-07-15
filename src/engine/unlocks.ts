@@ -356,3 +356,16 @@ export function dismissUnlockNotifications(state: UnlockState, unlockIds: readon
   const normalized = normalizeUnlockState(state);
   return { ...normalized, pendingNotificationIds: normalized.pendingNotificationIds.filter((id) => !dismissed.has(id)) };
 }
+
+export function getNextUnlockGuarantee(state: UnlockState, isDailySeed: boolean): UnlockGuarantee | null {
+  if (isDailySeed) return null;
+  return normalizeUnlockState(state).pendingGuarantees[0] ?? null;
+}
+
+export function consumeUnlockGuarantee(state: UnlockState, guarantee: UnlockGuarantee): UnlockState {
+  const normalized = normalizeUnlockState(state);
+  return {
+    ...normalized,
+    pendingGuarantees: normalized.pendingGuarantees.filter((item) => item.unlockId !== guarantee.unlockId),
+  };
+}

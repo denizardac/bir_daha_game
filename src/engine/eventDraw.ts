@@ -16,6 +16,7 @@ export type EventDrawContext = {
 export type EventContentAccess = {
   isDailySeed: boolean;
   unlockedEventIds: readonly string[];
+  guaranteedEventId?: string;
 };
 
 export function getEventPoolForAccess(access?: EventContentAccess): EventCard[] {
@@ -228,6 +229,10 @@ export function drawEvent(
 ): EventCard {
   const rng = createRng(seed, 'event', round);
   const available = getEventPoolForAccess(access);
+  const guaranteed = access?.guaranteedEventId
+    ? available.find((event) => event.id === access.guaranteedEventId && !usedIds.includes(event.id))
+    : undefined;
+  if (guaranteed) return guaranteed;
   let pool = available.filter((e) => !usedIds.includes(e.id));
   if (!pool.length) pool = [...available];
 

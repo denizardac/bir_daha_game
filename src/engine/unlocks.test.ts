@@ -5,6 +5,8 @@ import {
   createRunUnlockTelemetry,
   getUnlockStatuses,
   normalizeUnlockState,
+  consumeUnlockGuarantee,
+  getNextUnlockGuarantee,
   updateRunUnlockTelemetry,
 } from '@/engine/unlocks';
 import type { CompletedRunForUnlocks } from '@/engine/unlocks';
@@ -105,6 +107,14 @@ describe('unlock çekirdeği', () => {
     expect(first.newlyUnlocked.map((unlock) => unlock.id)).toContain('score_5k_gokhan');
     expect(second.newlyUnlocked).toEqual([]);
     expect(second.state).toEqual(first.state);
+  });
+
+  it('garantiyi Günlük Seed için ayırmaz ve yalnız teklif sonrası kuyruktan tüketir', () => {
+    const unlocked = applyCompletedRunToUnlocks(createInitialUnlockState(), run({ score: 6_000 })).state;
+    expect(getNextUnlockGuarantee(unlocked, true)).toBeNull();
+    const guarantee = getNextUnlockGuarantee(unlocked, false)!;
+    expect(guarantee.contentId).toBe('legend_01');
+    expect(consumeUnlockGuarantee(unlocked, guarantee).pendingGuarantees).toEqual([]);
   });
 
   it('Run içinde görülüp final Kadrosunda kalmayan maksimum trait/YERLİ/morali korur', () => {

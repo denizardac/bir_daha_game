@@ -6,6 +6,7 @@ import {
   clonePlayer,
 } from '@/data/players';
 import { filterPoolByRound } from '@/data/playerPoolMeta';
+import { SYNERGIES } from '@/data/synergies';
 import { cloneTactic, TACTIC_CARDS } from '@/data/tactics';
 import { createRng, getRarityWeights, pickOne, weightedPick } from '@/engine/seed';
 import type { GameCard, PlayerCard, Rarity, TacticCard } from '@/types';
@@ -28,6 +29,10 @@ export type OfferDrawMode = 'players' | 'tacticBonus';
 export type PlayerContentAccess = {
   isDailySeed: boolean;
   unlockedPlayerIds: readonly string[];
+  /** Bu teklifte kesin gösterilecek, açılmış kişisel içerik. */
+  guaranteedPlayerId?: string;
+  /** Kriz Kontratı için 78+ toparlanma profili garanti eder. */
+  guaranteeRecoveryPlayer?: boolean;
 };
 
 /** Günlük havuz kişisel kayıttan bağımsız; Serbest Mod yalnızca açık ödülleri ekler. */
@@ -300,6 +305,85 @@ function ensureGoalkeeperOffer(
   return result;
 }
 
+function replaceOfferPreservingGoalkeeper(
+  cards: PlayerCard[],
+  candidate: PlayerCard,
+  squad: SquadRef[],
+  protectedIds: ReadonlySet<string> = new Set(),
+): PlayerCard[] {
+  if (cards.some((card) => card.id === candidate.id || nameKey(card.name) === nameKey(candidate.name))) return cards;
+  const result = [...cards];
+  const squadHasGk = squad.some((player) => player.position === 'KL');
+  const replaceable = result
+    .map((card, index) => ({ card, index }))
+    .filter(({ card }) => !protectedIds.has(card.id))
+    .filter(({ card }) => squadHasGk || candidate.position === 'KL' || card.position !== 'KL');
+  if (!replaceable.length) return cards;
+  const target = replaceable.sort((a, b) => a.card.currentRating - b.card.currentRating || a.index - b.index)[0]!;
+  result[target.index] = clonePlayer(candidate);
+  return result;
+}
+
+function recoveryCandidate(
+  seed: string,
+  round: number,
+  pool: PlayerCard[],
+  squad: SquadRef[],
+  offers: PlayerCard[],
+): PlayerCard | null {
+  const recoveryTags = new Set(['POTANSİYEL', 'MENTOR', 'LİDER', 'KAPİTAN', 'DAYANIKLI']);
+  const blockedIds = new Set([...squad.map((player) => player.id), ...offers.map((player) => player.id)]);
+  const blockedNames = new Set([...squad.map((player) => nameKey(player.name)), ...offers.map((player) => nameKey(player.name))]);
+  const hasGk = squad.some((player) => player.position === 'KL') || offers.some((player) => player.position === 'KL');
+  const candidates = filterPoolByRound(pool, round).filter((player) =>
+    player.currentRating >= 78
+    && player.tags.some((tag) => recoveryTags.has(tag))
+    && !blockedIds.has(player.id)
+    && !blockedNames.has(nameKey(player.name))
+    && (!hasGk || player.position !== 'KL'),
+  );
+  if (!candidates.length) return null;
+  const rng = createRng(seed, 'crisis-recovery', round);
+  return candidates[Math.floor(rng() * candidates.length)]!;
+}
+
+export function getScoutImprovementScore(squad: PlayerCard[], candidate: PlayerCard): number {
+  let best = 0;
+  for (const synergy of SYNERGIES) {
+    if (!synergy.getProgress || synergy.check(squad, 50, { activeTactics: [] })) continue;
+    const before = synergy.getProgress(squad);
+    if (!before) continue;
+    const after = synergy.getProgress(squad, candidate);
+    const gain = after === null
+      ? before.required - before.current + 4
+      : after.current - before.current;
+    best = Math.max(best, gain);
+  }
+  return best;
+}
+
+function targetedScoutCandidate(
+  seed: string,
+  round: number,
+  pool: PlayerCard[],
+  squad: PlayerCard[],
+  offers: PlayerCard[],
+): PlayerCard | null {
+  const blockedIds = new Set([...squad.map((player) => player.id), ...offers.map((player) => player.id)]);
+  const blockedNames = new Set([...squad.map((player) => nameKey(player.name)), ...offers.map((player) => nameKey(player.name))]);
+  const hasGk = squad.some((player) => player.position === 'KL') || offers.some((player) => player.position === 'KL');
+  const candidates = filterPoolByRound(pool, round)
+    .filter((player) => !blockedIds.has(player.id) && !blockedNames.has(nameKey(player.name)))
+    .filter((player) => !hasGk || player.position !== 'KL')
+    .map((player) => ({ player, score: getScoutImprovementScore(squad, player) }))
+    .filter((item) => item.score > 0);
+  if (!candidates.length) return null;
+  const bestScore = Math.max(...candidates.map((item) => item.score));
+  const finalists = candidates.filter((item) => item.score === bestScore);
+  const rng = createRng(seed, 'targeted-scout', round);
+  return finalists[Math.floor(rng() * finalists.length)]!.player;
+}
+
 export function drawOffers(
   seed: string,
   round: number,
@@ -331,7 +415,41 @@ export function drawOffers(
   const rawPool = getPoolForRound(round, seed, lossesCount, recoveryGuaranteed, basePool);
   const gkRng = createRng(seed, 'gk-guarantee', round, rerollIndex);
   const withGk = ensureGoalkeeperOffer(players, squad, rawPool, basePool, gkRng);
-  return withGk.slice(0, 3);
+  let result = withGk.slice(0, 3);
+  const protectedIds = new Set<string>();
+  if (access?.guaranteedPlayerId) {
+    const guaranteed = basePool.find((player) => player.id === access.guaranteedPlayerId);
+    if (guaranteed && !squad.some((player) => player.id === guaranteed.id || nameKey(player.name) === nameKey(guaranteed.name))) {
+      result = replaceOfferPreservingGoalkeeper(result, guaranteed, squad, protectedIds);
+      if (result.some((card) => card.id === guaranteed.id)) protectedIds.add(guaranteed.id);
+    }
+  }
+  if (access?.guaranteeRecoveryPlayer) {
+    const recovery = recoveryCandidate(seed, round, basePool, squad, result);
+    if (recovery) result = replaceOfferPreservingGoalkeeper(result, recovery, squad, protectedIds);
+  }
+  return result;
+}
+
+/** Hedefli Scout: normal teklif üretir ve bir slotu Sinerji ilerleten adayla değiştirir. */
+export function drawTargetedScoutOffers(
+  seed: string,
+  round: number,
+  lossesCount: number,
+  squad: PlayerCard[],
+  activeTacticIds: string[],
+  recoveryGuaranteed: boolean,
+  rerollIndex: number,
+  access?: PlayerContentAccess,
+): GameCard[] {
+  const baseAccess = access ? { ...access, guaranteedPlayerId: undefined, guaranteeRecoveryPlayer: false } : access;
+  const regular = drawOffers(
+    seed, round, lossesCount, squad, activeTacticIds, recoveryGuaranteed,
+    rerollIndex, 'normal', 'players', baseAccess,
+  ).filter((card): card is PlayerCard => card.kind === 'player');
+  const pool = getPlayerPoolForAccess(access);
+  const candidate = targetedScoutCandidate(seed, round, pool, squad, regular);
+  return candidate ? replaceOfferPreservingGoalkeeper(regular, candidate, squad) : regular;
 }
 
 /** Tek slot için yeni oyuncu çek — diğer teklifler ve kadro hariç */

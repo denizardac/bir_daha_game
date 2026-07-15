@@ -52,6 +52,8 @@ const GAME_STATE_KEYS: (keyof GameState)[] = [
   'dangerMode', 'isFirstRun', 'timerSeconds', 'eventResolvedThisRound', 'flawless',
   'recentlyJoinedPlayerId', 'runEndAnalysis', 'rerollsRemaining', 'formationRerollUsed', 'systemRerollUsed',
   'offersRerollIndex', 'recoveryGuaranteed', 'manualLineup', 'unlockTelemetry',
+  'activeUnlockGuarantee', 'unlockGuaranteeOffered', 'targetedScoutAvailable',
+  'crisisContractTriggered', 'crisisRecoveryPending',
 ];
 
 export function mergeRunSnapshot(
@@ -179,6 +181,16 @@ export function repairRunSnapshot(input: unknown): Partial<RunSnapshot> | null {
       squad,
       typeof input.morale === 'number' ? input.morale : 50,
     ),
+    activeUnlockGuarantee: isRecord(input.activeUnlockGuarantee)
+      && (input.activeUnlockGuarantee.kind === 'player' || input.activeUnlockGuarantee.kind === 'event')
+      && typeof input.activeUnlockGuarantee.unlockId === 'string'
+      && typeof input.activeUnlockGuarantee.contentId === 'string'
+      ? input.activeUnlockGuarantee as unknown as GameState['activeUnlockGuarantee']
+      : null,
+    unlockGuaranteeOffered: input.unlockGuaranteeOffered === true,
+    targetedScoutAvailable: input.targetedScoutAvailable === true,
+    crisisContractTriggered: input.crisisContractTriggered === true,
+    crisisRecoveryPending: input.crisisRecoveryPending === true,
     activeTactics,
     manualLineup,
     currentOffers: uniqueCards(input.currentOffers, squadIds),

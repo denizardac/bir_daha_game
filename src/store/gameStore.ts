@@ -18,7 +18,7 @@ import { createTrainingCard, MAX_PLAYER_TAGS } from '@/data/training';
 import { getActiveSynergies, SYNERGIES, TOTAL_SYNERGIES } from '@/data/synergies';
 import { getStartingSquad } from '@/data/players';
 import { applyRandomEventTags, drawEvent, previewEventPlayer, resolveEvent } from '@/engine/events';
-import { drawOffers, drawTacticCategoryOffers, getOfferDrawModeForRound, pickAutoOffer, rerollSinglePlayerOffer } from '@/engine/cardDraw';
+import { drawOffers, drawTargetedScoutOffers, drawTacticCategoryOffers, getOfferDrawModeForRound, pickAutoOffer, rerollSinglePlayerOffer } from '@/engine/cardDraw';
 import { canPassCardPick } from '@/engine/cardPass';
 import { getFinaleRivalName, isTacticBonusRound, TACTIC_BONUS_MORALE, TACTIC_BONUS_SCORE } from '@/engine/roundFlow';
 import { simulateMatch } from '@/engine/matchSimulation';
@@ -69,8 +69,11 @@ import { getAnonymousId, loadPersisted, savePartial, savePersisted } from '@/uti
 import { playSound } from '@/utils/sound';
 import {
   applyCompletedRunToUnlocks,
+  consumeUnlockGuarantee,
   createRunUnlockTelemetry,
+  getNextUnlockGuarantee,
   getUnlockedContentIds,
+  hasUnlockedContent,
   updateRunUnlockTelemetry,
   type UnlockDefinition,
 } from '@/engine/unlocks';
@@ -96,20 +99,31 @@ function isCardTimerEnabled() {
   return false;
 }
 
-function getPlayerContentAccess(isDailySeed: boolean) {
+function getPlayerContentAccess(
+  isDailySeed: boolean,
+  options: { guaranteedPlayerId?: string; guaranteeRecoveryPlayer?: boolean } = {},
+) {
   const unlocks = loadPersisted().unlocks;
   return {
     isDailySeed,
     unlockedPlayerIds: getUnlockedContentIds(unlocks, 'player'),
+    ...options,
   };
 }
 
-function getEventContentAccess(isDailySeed: boolean) {
+function getEventContentAccess(isDailySeed: boolean, guaranteedEventId?: string) {
   const unlocks = loadPersisted().unlocks;
   return {
     isDailySeed,
     unlockedEventIds: getUnlockedContentIds(unlocks, 'event'),
+    guaranteedEventId,
   };
+}
+
+function consumeOfferedGuarantee(guarantee: GameState['activeUnlockGuarantee']): void {
+  if (!guarantee) return;
+  const persisted = loadPersisted();
+  savePersisted({ ...persisted, unlocks: consumeUnlockGuarantee(persisted.unlocks, guarantee) });
 }
 
 interface TrainingFlow {
@@ -175,6 +189,7 @@ interface GameStore extends GameState {
   backTrainingPlayer: () => void;
   autoSelectOffer: () => void;
   resolveEventChoice: (choice: 'A' | 'B') => void;
+  useTargetedScout: () => void;
   finishMatch: () => void;
   finishLoss: () => void;
   advanceRunEnd: () => void;
@@ -203,6 +218,17 @@ function initialRun(
 ): GameState {
   const squad = normalizeSquadGoalkeepers(getStartingSquad(seed, isDailySeed));
   const weeklyMod = getWeeklyModifier();
+  const persistedUnlocks = loadPersisted().unlocks;
+  const activeUnlockGuarantee = getNextUnlockGuarantee(persistedUnlocks, isDailySeed);
+  const guaranteedPlayerId = activeUnlockGuarantee?.kind === 'player' ? activeUnlockGuarantee.contentId : undefined;
+  const startMorale = Math.min(100, 50 + streakBonus.startMoraleBonus + (weeklyMod.startMoraleBonus ?? 0));
+  const currentOffers = drawOffers(
+    seed, 1, 0, squad, [], false, 0, 'normal', 'players',
+    getPlayerContentAccess(isDailySeed, { guaranteedPlayerId }),
+  );
+  const unlockGuaranteeOffered = Boolean(
+    guaranteedPlayerId && currentOffers.some((card) => card.kind === 'player' && card.id === guaranteedPlayerId),
+  );
   return {
     runId: createRunId(seed),
     seed,
@@ -212,12 +238,12 @@ function initialRun(
     maxRounds: MAX_ROUNDS,
     squad,
     maxSquadSize: MAX_SQUAD,
-    morale: Math.min(100, 50 + streakBonus.startMoraleBonus + (weeklyMod.startMoraleBonus ?? 0)),
+    morale: startMorale,
     score: 0,
     streak: 0,
     phase: 'cardSelect',
     roundHistory: [],
-    currentOffers: drawOffers(seed, 1, 0, squad, [], false, 0, 'normal', 'players', getPlayerContentAccess(isDailySeed)),
+    currentOffers,
     currentMatch: null,
     currentEvent: null,
     activeTactics: [],
@@ -237,7 +263,12 @@ function initialRun(
     offersRerollIndex: 0,
     recoveryGuaranteed: false,
     manualLineup: {},
-    unlockTelemetry: createRunUnlockTelemetry(squad, Math.min(100, 50 + streakBonus.startMoraleBonus + (weeklyMod.startMoraleBonus ?? 0))),
+    unlockTelemetry: createRunUnlockTelemetry(squad, startMorale),
+    activeUnlockGuarantee,
+    unlockGuaranteeOffered,
+    targetedScoutAvailable: !isDailySeed && hasUnlockedContent(persistedUnlocks, 'mechanic_hedefli_scout'),
+    crisisContractTriggered: false,
+    crisisRecoveryPending: false,
   };
 }
 
@@ -314,7 +345,7 @@ function clearRun() {
   savePersisted({ ...loadPersisted(), currentRun: null });
 }
 
-function drawRoundOffers(state: Pick<GameState, 'seed' | 'isDailySeed' | 'round' | 'lossesCount' | 'squad' | 'activeTactics' | 'recoveryGuaranteed' | 'offersRerollIndex' | 'maxRounds'>) {
+function drawRoundOffers(state: Pick<GameState, 'seed' | 'isDailySeed' | 'round' | 'lossesCount' | 'squad' | 'activeTactics' | 'recoveryGuaranteed' | 'offersRerollIndex' | 'maxRounds' | 'activeUnlockGuarantee' | 'unlockGuaranteeOffered' | 'crisisRecoveryPending'>) {
   const mode = getOfferDrawModeForRound(state.round, state.maxRounds ?? MAX_ROUNDS);
   return drawOffers(
     state.seed,
@@ -326,8 +357,35 @@ function drawRoundOffers(state: Pick<GameState, 'seed' | 'isDailySeed' | 'round'
     state.offersRerollIndex ?? 0,
     'normal',
     mode,
-    getPlayerContentAccess(state.isDailySeed),
+    getPlayerContentAccess(state.isDailySeed, {
+      guaranteedPlayerId: !state.unlockGuaranteeOffered && state.activeUnlockGuarantee?.kind === 'player'
+        ? state.activeUnlockGuarantee.contentId
+        : undefined,
+      guaranteeRecoveryPlayer: state.crisisRecoveryPending,
+    }),
   );
+}
+
+function activateCrisisContract(
+  state: Pick<GameState, 'isDailySeed' | 'crisisContractTriggered'>,
+  squadSize: number,
+  rerollsRemaining: number,
+) {
+  const activated = squadSize === 5
+    && !state.isDailySeed
+    && !state.crisisContractTriggered
+    && hasUnlockedContent(loadPersisted().unlocks, 'mechanic_kriz_kontrati');
+  return activated
+    ? {
+        rerollsRemaining: Math.min(REROLLS_PER_RUN + 2, rerollsRemaining + 1),
+        crisisContractTriggered: true,
+        crisisRecoveryPending: true,
+      }
+    : {
+        rerollsRemaining,
+        crisisContractTriggered: state.crisisContractTriggered,
+        crisisRecoveryPending: false,
+      };
 }
 
 /** Round geçmişindeki olay kararları — zincirleme olay ağırlıkları için */
@@ -343,6 +401,9 @@ function pastEventChoices(roundHistory: GameState['roundHistory']): Record<strin
 
 function startRound(state: GameStore): Partial<GameStore> {
   if (isEventRound(state.round) && !state.eventResolvedThisRound) {
+    const guaranteedEventId = !state.unlockGuaranteeOffered && state.activeUnlockGuarantee?.kind === 'event'
+      ? state.activeUnlockGuarantee.contentId
+      : undefined;
     const event = drawEvent(state.seed, state.round, state.usedEventIds, {
       streak: state.streak,
       morale: state.morale,
@@ -351,15 +412,32 @@ function startRound(state: GameStore): Partial<GameStore> {
       maxSquadSize: state.maxSquadSize,
       round: state.round,
       pastChoices: pastEventChoices(state.roundHistory),
-    }, getEventContentAccess(state.isDailySeed));
-    return { phase: 'event' as GamePhase, currentEvent: event, timerSeconds: cardTimerSeconds() };
+    }, getEventContentAccess(state.isDailySeed, guaranteedEventId));
+    const unlockGuaranteeOffered = Boolean(guaranteedEventId && event.id === guaranteedEventId);
+    if (unlockGuaranteeOffered) consumeOfferedGuarantee(state.activeUnlockGuarantee);
+    return {
+      phase: 'event' as GamePhase,
+      currentEvent: event,
+      timerSeconds: cardTimerSeconds(),
+      unlockGuaranteeOffered: state.unlockGuaranteeOffered || unlockGuaranteeOffered,
+    };
   }
+  const currentOffers = drawRoundOffers(state);
+  const guaranteedPlayerId = !state.unlockGuaranteeOffered && state.activeUnlockGuarantee?.kind === 'player'
+    ? state.activeUnlockGuarantee.contentId
+    : undefined;
+  const unlockGuaranteeOffered = Boolean(
+    guaranteedPlayerId && currentOffers.some((card) => card.kind === 'player' && card.id === guaranteedPlayerId),
+  );
+  if (unlockGuaranteeOffered) consumeOfferedGuarantee(state.activeUnlockGuarantee);
   return {
     phase: 'cardSelect' as GamePhase,
-    currentOffers: drawRoundOffers(state),
+    currentOffers,
     timerSeconds: cardTimerSeconds(),
     eventResolvedThisRound: false,
     offersRerollIndex: 0,
+    unlockGuaranteeOffered: state.unlockGuaranteeOffered || unlockGuaranteeOffered,
+    crisisRecoveryPending: false,
   };
 }
 
@@ -585,6 +663,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const run = initialRun(seed, isDaily, p.isFirstRun, name, streakBonus);
     clearRun();
     persistRun(run);
+    if (run.unlockGuaranteeOffered) consumeOfferedGuarantee(run.activeUnlockGuarantee);
     {
       const p2 = loadPersisted();
       const today = getTodayKey();
@@ -657,6 +736,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       offersRerollIndex: saved.offersRerollIndex ?? 0,
       manualLineup: saved.manualLineup ?? {},
       unlockTelemetry: saved.unlockTelemetry ?? createRunUnlockTelemetry(squad, saved.morale ?? 50),
+      activeUnlockGuarantee: saved.activeUnlockGuarantee ?? null,
+      unlockGuaranteeOffered: saved.unlockGuaranteeOffered ?? false,
+      targetedScoutAvailable: saved.targetedScoutAvailable ?? false,
+      crisisContractTriggered: saved.crisisContractTriggered ?? false,
+      crisisRecoveryPending: saved.crisisRecoveryPending ?? false,
       timerSeconds: 0,
       usedEventIds: saved.usedEventIds ?? [],
       trainingFlow: saved.trainingFlow ?? null,
@@ -1184,6 +1268,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (get().lineupEditorOpen) get().confirmLineupAndPlay();
   },
 
+  useTargetedScout: () => {
+    const state = get();
+    if (
+      state.isDailySeed
+      || !state.targetedScoutAvailable
+      || state.phase !== 'cardSelect'
+      || state.lineupEditorOpen
+      || state.trainingFlow
+      || isTacticBonusRound(state.round, state.maxRounds)
+      || !state.currentOffers.every(isPlayerCard)
+    ) return;
+    const offersRerollIndex = state.offersRerollIndex + 1;
+    const currentOffers = drawTargetedScoutOffers(
+      state.seed,
+      state.round,
+      state.lossesCount,
+      state.squad,
+      state.activeTactics.map((tactic) => tactic.id),
+      state.recoveryGuaranteed,
+      offersRerollIndex,
+      getPlayerContentAccess(state.isDailySeed),
+    );
+    const next = { currentOffers, offersRerollIndex, targetedScoutAvailable: false };
+    playSound('tick', loadPersisted().soundEnabled);
+    set(next);
+    persistRun({ ...state, ...next });
+  },
+
   resolveEventChoice: (choice) => {
     const state = get();
     if (!state.currentEvent) return;
@@ -1221,6 +1333,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (outcome.grantRerolls) {
       rerollsRemaining = Math.min(REROLLS_PER_RUN + 2, rerollsRemaining + outcome.grantRerolls);
     }
+    const crisisContract = activateCrisisContract(state, squad.length, rerollsRemaining);
+    rerollsRemaining = crisisContract.rerollsRemaining;
     let recentlyJoinedPlayerId = state.recentlyJoinedPlayerId;
     if (outcome.addYouth && squad.length < state.maxSquadSize) {
       // Önizlemede gösterilen oyuncuyla birebir aynı kart eklenir (mevki dahil).
@@ -1278,7 +1392,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const formationKey = getActiveFormationKey(state.activeTactics);
     const manualLineup = reconcileManualLineup(state.manualLineup, squad, formationKey);
     recentlyJoinedPlayerId = squad.some((p) => p.id === recentlyJoinedPlayerId) ? recentlyJoinedPlayerId : null;
-    const next = startRound({ ...state, squad, morale, score, roundHistory, unlockTelemetry, eventResolvedThisRound: true, usedEventIds: [...state.usedEventIds, state.currentEvent.id], manualLineup, recentlyJoinedPlayerId });
+    const next = startRound({
+      ...state,
+      squad,
+      morale,
+      score,
+      roundHistory,
+      unlockTelemetry,
+      eventResolvedThisRound: true,
+      usedEventIds: [...state.usedEventIds, state.currentEvent.id],
+      manualLineup,
+      recentlyJoinedPlayerId,
+      ...crisisContract,
+    });
     set({
       squad,
       manualLineup,
@@ -1287,6 +1413,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       unlockTelemetry,
       roundHistory,
       rerollsRemaining,
+      crisisContractTriggered: crisisContract.crisisContractTriggered,
+      crisisRecoveryPending: crisisContract.crisisRecoveryPending,
       currentEvent: null,
       eventResolvedThisRound: true,
       usedEventIds: [...state.usedEventIds, state.currentEvent.id],
@@ -1330,6 +1458,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     let { streak, lossesCount, score, flawless } = state;
     let unlockTelemetry = state.unlockTelemetry;
+    let rerollsRemaining = state.rerollsRemaining;
+    let crisisContractTriggered = state.crisisContractTriggered;
+    let crisisRecoveryPending = state.crisisRecoveryPending;
     const discoveries = [...state.discoveredSynergies];
     for (const id of match.newlyDiscoveredSynergies) {
       if (!discoveries.includes(id)) discoveries.push(id);
@@ -1388,6 +1519,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (squad.length <= 5) morale = Math.max(DANGER_MORALE_FLOOR, morale);
       lossesCount += 1;
       unlockTelemetry = updateRunUnlockTelemetry(unlockTelemetry, squad, morale, 'loss');
+      const crisisContract = activateCrisisContract(
+        { isDailySeed: state.isDailySeed, crisisContractTriggered },
+        squad.length,
+        rerollsRemaining,
+      );
+      rerollsRemaining = crisisContract.rerollsRemaining;
+      crisisContractTriggered = crisisContract.crisisContractTriggered;
+      crisisRecoveryPending ||= crisisContract.crisisRecoveryPending;
       playSound('loss', loadPersisted().soundEnabled);
 
       if (squad.length <= 4) {
@@ -1404,6 +1543,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           }));
         set({
           squad, morale, streak, score, lossesCount, flawless, unlockTelemetry,
+          rerollsRemaining, crisisContractTriggered, crisisRecoveryPending,
           manualLineup,
           phase: 'runEnd',
           roundHistory,
@@ -1426,6 +1566,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       const lossState = {
         squad, morale, streak, score, lossesCount, flawless, unlockTelemetry,
+        rerollsRemaining, crisisContractTriggered, crisisRecoveryPending,
         manualLineup,
         phase: 'loss' as GamePhase,
         roundHistory,
@@ -1478,6 +1619,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }));
       set({
         squad, morale, streak, score, lossesCount, flawless, unlockTelemetry,
+        rerollsRemaining, crisisContractTriggered, crisisRecoveryPending,
         manualLineup,
         phase: 'runEnd',
         roundHistory,
@@ -1507,6 +1649,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lossesCount,
       flawless,
       unlockTelemetry,
+      rerollsRemaining,
+      crisisContractTriggered,
+      crisisRecoveryPending,
       round,
       roundHistory,
       discoveredSynergies: discoveries,
@@ -1515,7 +1660,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       recentlyJoinedPlayerId: null,
     });
     const nextState = {
-      squad, morale, streak, score, lossesCount, flawless, unlockTelemetry, round, roundHistory, discoveredSynergies: discoveries,
+      squad, morale, streak, score, lossesCount, flawless, unlockTelemetry,
+      rerollsRemaining, crisisContractTriggered, crisisRecoveryPending,
+      round, roundHistory, discoveredSynergies: discoveries,
       manualLineup,
       dangerMode, currentMatch: null, lastLossPlayer: null, lastLossBrokenSynergies: [],
       pendingSynergyReveal: [],
@@ -1575,6 +1722,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     clearRun();
     const run = initialRun(s.seed, s.isDailySeed, s.isFirstRun, s.displayName || 'Anonim');
     persistRun(run);
+    if (run.unlockGuaranteeOffered) consumeOfferedGuarantee(run.activeUnlockGuarantee);
     set({
       ...run, screen: 'game', usedEventIds: [], runEndStep: 0, pendingMilestones: [],
       unlockedAtRunStart: getUnlockedAchievementIds(loadPersisted()),

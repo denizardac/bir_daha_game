@@ -38,6 +38,17 @@ describe('eventDraw — bağlama göre ağırlık', () => {
     expect(freeUnlocked).toContain('evt_unlock_efsane_dokunusu');
   });
 
+  it('offers a queued unlocked event exactly once before returning to the normal pool', () => {
+    const access = {
+      isDailySeed: false,
+      unlockedEventIds: ['evt_unlock_efsane_dokunusu'],
+      guaranteedEventId: 'evt_unlock_efsane_dokunusu',
+    };
+    expect(drawEvent('event-guarantee', 4, [], losingCtx, access).id).toBe('evt_unlock_efsane_dokunusu');
+    expect(drawEvent('event-guarantee', 8, ['evt_unlock_efsane_dokunusu'], losingCtx, access).id)
+      .not.toBe('evt_unlock_efsane_dokunusu');
+  });
+
   it('galibiyet serisinde spor psikoloğu çıkmaz', () => {
     expect(getEventDrawWeight('evt_psikolog', winStreakCtx)).toBe(0);
     expect(isEventEligible('evt_psikolog', winStreakCtx)).toBe(false);
