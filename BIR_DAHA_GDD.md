@@ -1266,6 +1266,30 @@ const KONTR_ATILIGI: Synergy = {
 
 ---
 
+## Uygulanan Kalıcı İçerik Katmanı (V5)
+
+Güncel build, ana oyun döngüsünü veya mod adlarını değiştirmeden Runlar arası
+oynanabilir içerik açar:
+
+- 5.000 / 10.000 / 15.000 / 20.000 / 25.000 tek-Run skor zinciri; bir Run yalnız
+  sıradaki tek skor ödülünü açar.
+- Trait, YERLİ Kadro, gol, Sinerji, moral, geri dönüş ve dar Kadro hedefleriyle
+  toplam 12 kalıcı hedef: 8 Oyuncu Kartı, 2 Olay ve 2 Serbest Mod mekaniği.
+- Yeni oyuncu ve Olay, açıldıktan sonraki ilk uygun Serbest Mod Runında bir kez
+  garanti görünür; sonra normal havuz şansına döner.
+- Kişisel unlock'lar Günlük Seed'i değiştirmez. Hedefli Scout ve Kriz Kontratı
+  yalnız Serbest Modda aktiftir.
+- Önceki ayın doğrulanmış leaderboard liderinden üretilen Ayın Efsanesi kişisel
+  değildir; aktif ay boyunca iki modun ortak havuzuna aynı deterministik kart girer.
+- İlerleme Koleksiyon, Ana Menü ve Run Sonunda görünür; bildirim/garanti durumu
+  save v6 ile resume ve ağ hatalarına karşı korunur.
+
+Güncel içerik sayıları: 260 sabit Oyuncu Kartı + aktif ayda 1 global kart, 58 Olay,
+29 Sinerji, 20 Taktik ve 26 trait/tag. Ayrıntılı kurallar için
+`docs/UNLOCKABLES_PLAN.md`, doğrulama için `docs/UNLOCKABLES_QA.md` esas alınır.
+
+---
+
 ## EKLER
 
 ### Ek A — Kısaltmalar & Mevki Kodları

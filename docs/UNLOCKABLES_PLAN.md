@@ -4,6 +4,9 @@ Bu plan `docs/UNLOCK_SYSTEM_AUDIT.md` bulgularını uygular. Mevcut **Günlük
 Seed** ve **Serbest Mod** adları korunur; “Kulüp Runı” adında üçüncü bir mod
 oluşturulmaz.
 
+> Uygulama durumu: Faz 0–7 tamamlandı. Son doğrulama sonuçları
+> `docs/UNLOCKABLES_QA.md` içindedir.
+
 ## Ürün hedefi
 
 Her Run sonunda Menajere “bir sonraki Run'da görebileceğim yeni bir şey var”
@@ -91,7 +94,7 @@ kendi sabit profilidir.
 
 - Yalnız Serbest Modda ve normal oyuncu teklifinde görünür.
 - Run başına bir kullanım hakkı vardır; mevcut üç teklifi ücretsiz yeniler.
-- En az bir yeni teklif, mevcut İlk 11'in etkin olmayan fakat erişilebilir
+- En az bir yeni teklif, mevcut Kadronun etkin olmayan fakat erişilebilir
   Sinerjilerinden birine en yüksek ilerlemeyi sağlayan Oyuncu Kartıdır.
 - Kadrodaki veya yan tekliflerdekiler tekrar gelemez; kaleci garanti kuralı
   korunur. Eşit adaylar seed ile deterministik çözülür.
@@ -101,7 +104,7 @@ kendi sabit profilidir.
 ### Kriz Kontratı
 
 - Yalnız Serbest Modda aktiftir ve Run başına bir kez tetiklenir.
-- Kadro bir maç mağlubiyeti sonunda ilk kez 5 kişiye düştüğünde +1 yenileme
+- Kadro maç mağlubiyeti veya oyuncu ayrılığı yaratan Olay sonunda ilk kez 5 kişiye düştüğünde +1 yenileme
   hakkı verir (global üst sınırı aşmaz).
 - Takip eden ilk normal oyuncu teklifinde en az bir 78+ ve POTANSİYEL, MENTOR,
   LİDER, KAPİTAN veya DAYANIKLI trait'lerinden birini taşıyan uygun kart sunar.
@@ -113,15 +116,16 @@ kendi sabit profilidir.
 1. İstanbul takvimine göre önceki ay aralığı hesaplanır.
 2. Yalnız Edge Function üzerinden yazılmış leaderboard kayıtları arasından her
    Menajerin en iyi skoru alınır ve en yüksek doğrulanmış kayıt seçilir.
-3. Görünen ad NFC normalize edilir; kontrol karakterleri ve izin verilmeyen
+3. Görünen ad NFKC normalize edilir; kontrol karakterleri, markup ve izin verilmeyen
    işaretler kaldırılır, 18 karaktere kesilir. Uygunsuz/boş ad
    **Ayın Şampiyonu** fallback'ine döner.
 4. Kart id'si `monthly_legend_YYYY-MM`, profil seed'i `ay + player_id` olur.
-   Rating 89'dur; mevki ve üç uyumlu pozitif trait deterministik seçilir.
+   Rating doğrulanmış skora göre 88–91 bandındadır; mevki ve üç uyumlu pozitif
+   trait deterministik seçilir.
 5. Kart yalnız takip eden ay boyunca iki modun standart havuzuna eklenir.
 6. Ağ yoksa son doğrulanmış aynı-ay cache kullanılır. Cache yoksa kart havuza
-   eklenmez; günlük determinism cihazdan cihaza değişmesin diye yarım/farklı kart
-   üretilmez.
+   eklenmez; yarım veya yerel Hall of Fame'den uydurulmuş kart üretilmez. Kart
+   Run başında snapshot'a alınır; geç gelen ağ cevabı devam eden seed akışını değiştirmez.
 7. Menü ve Koleksiyon kartın hangi ayın şampiyonundan geldiğini gösterir.
 
 ## Fazlar ve commit sınırları

@@ -14,12 +14,13 @@ npm run dev
 ## Test & QA
 
 ```bash
-npm test          # unit testler (27 dosya / 195 test)
+npm test          # unit/component testleri (43 dosya / 285 test)
 npm run qa        # 40 headless run (denge özeti, CI eşik kontrolü)
 npm run build     # production build (+ PWA + ikonlar)
+# Ağır denge kapısı: $env:QA_RUNS='1000'; npm run qa
 ```
 
-Yol haritası: [docs/ROADMAP.md](./docs/ROADMAP.md) · Canlıya hazırlık özeti: [docs/LAUNCH.md](./docs/LAUNCH.md) · Manuel QA: [docs/QA_CHECKLIST.md](./docs/QA_CHECKLIST.md) · Supabase kurulumu: [docs/SUPABASE_SETUP.md](./docs/SUPABASE_SETUP.md) · Native app: [docs/NATIVE_APP_ROADMAP.md](./docs/NATIVE_APP_ROADMAP.md) · Mobil optimizasyon brief'i: [docs/MOBILE_OPTIMIZATION_BRIEF.md](./docs/MOBILE_OPTIMIZATION_BRIEF.md)
+Yol haritası: [docs/ROADMAP.md](./docs/ROADMAP.md) · Unlock tasarımı: [docs/UNLOCKABLES_PLAN.md](./docs/UNLOCKABLES_PLAN.md) · Unlock QA raporu: [docs/UNLOCKABLES_QA.md](./docs/UNLOCKABLES_QA.md) · Manuel QA: [docs/QA_CHECKLIST.md](./docs/QA_CHECKLIST.md) · Supabase kurulumu: [docs/SUPABASE_SETUP.md](./docs/SUPABASE_SETUP.md)
 
 Deploy: Vercel/Netlify/Cloudflare Pages — `vercel.json` SPA rewrite, CI: `.github/workflows/ci.yml` (test + qa + build). Domain akışı: [docs/DEPLOY_BIRDAHA_TECH.md](./docs/DEPLOY_BIRDAHA_TECH.md)
 
@@ -27,7 +28,7 @@ PWA: service worker + `public/icons/` PNG seti — mobilde ana ekrana eklenebili
 
 ## Oyun içeriği (güncel sayılar)
 
-- **260 oyuncu kartı** (37'si efsane/imza kartı), **26 tag**, **29 sinerji**
+- **260 sabit oyuncu kartı** (37'si efsane/imza kartı) + aktif ayda **1 global Ayın Efsanesi**, **26 tag**, **29 sinerji**
 - **20 taktik kartı** (10 formasyon + 10 oyun sistemi)
 - **58 olay kartı** — olay roundları: **4 / 8 / 11 / 14** (bağlama duyarlı ağırlıklı çekim)
 - **15 round** run; taktik/antrenman bonus roundları: **3 / 6 / 9 / 12**; round 15 = şampiyonluk finali
@@ -75,6 +76,14 @@ PWA: service worker + `public/icons/` PNG seti — mobilde ana ekrana eklenebili
 - **Sezonluk kalıcı unvanlar:** bitmiş sezonların kürsüsü ("Haziran 2026 Şampiyonu") menüde ve Hall of Fame'de
 - **Haftalık modifikatörler:** hafta anahtarından deterministik (Seri/Kale/Moral/Transfer Haftası)
 - Yeniden tasarlanmış run sonu ekranı ve 1280×1600 paylaşım kartı
+
+### V5 — kalıcı oynanabilir içerik
+- **12 hedeflik unlock kataloğu:** 8 oyuncu, 2 olay ve 2 yeni Serbest Mod mekaniği
+- **5k / 10k / 15k / 20k / 25k skor zinciri:** Run başına yalnız sıradaki tek ödül
+- Oyuncu ve olay ödüllerinde sonraki uygun Serbest Mod Runı için kaybolmayan ilk-görünüm garantisi
+- **Hedefli Scout** ve **Kriz Kontratı**; kişisel unlock'lar Günlük Seed havuzunu değiştirmez
+- Koleksiyon, ana menü ve Run Sonunda kalıcı ilerleme, yeni ödüller ve sıradaki hedefler
+- Önceki ayın doğrulanmış liderinden deterministik **Ayın Efsanesi**; iki modun ortak aylık kartı
 
 ### Notlar / bilinçli kararlar
 - Kart zamanlayıcısı **tamamen kaldırıldı** (kod içinde kapalı; skor bonusu pasif)
