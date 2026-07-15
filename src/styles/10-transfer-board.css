@@ -1,0 +1,483 @@
+/* Two-stage transfer decision: departure first, starting XI second. */
+.le-transfer-board-intro {
+  max-width: 23rem;
+  margin: 0.72rem 0 0;
+  color: rgba(203, 213, 225, 0.66);
+  font: 700 0.7rem/1.4 'Barlow', sans-serif;
+}
+
+.le-squad-panel-list--transfer {
+  gap: 0 !important;
+  padding-top: 0.2rem !important;
+}
+
+.le-transfer-board {
+  --departure: #f87171;
+  --incoming: #55f0b0;
+  --bench: #f6cf6a;
+  display: grid;
+  gap: 0.8rem;
+  min-width: 0;
+  padding-bottom: 0.25rem;
+}
+
+.le-transfer-board-incoming {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.7rem minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0.06rem 0.68rem;
+  min-height: 4.15rem;
+  padding: 0.7rem 0.8rem;
+  overflow: hidden;
+  border: 1px solid rgba(85, 240, 176, 0.42);
+  border-radius: 0.72rem;
+  background:
+    linear-gradient(102deg, rgba(22, 104, 78, 0.58), rgba(8, 25, 25, 0.92) 72%),
+    #081513;
+  box-shadow: inset 3px 0 0 rgba(85, 240, 176, 0.84);
+}
+
+.le-transfer-board-incoming-label {
+  grid-column: 2;
+  color: var(--incoming);
+  font: 900 0.58rem/1 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.13em;
+}
+
+.le-transfer-board-incoming-rating {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  color: #eafff7;
+  font: 900 1.75rem/1 'Barlow Condensed', sans-serif;
+  text-align: center;
+}
+
+.le-transfer-board-incoming-body {
+  grid-column: 2;
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+
+.le-transfer-board-incoming-body strong,
+.le-transfer-board-incoming-body small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.le-transfer-board-incoming-body strong {
+  color: #fff;
+  font: 900 1rem/1 'Barlow Condensed', sans-serif;
+}
+
+.le-transfer-board-incoming-body small {
+  color: rgba(210, 255, 238, 0.68);
+  font: 700 0.62rem/1.1 'Barlow', sans-serif;
+}
+
+.le-transfer-board-incoming-mark {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  color: rgba(85, 240, 176, 0.25);
+  font: 900 3.5rem/1 'Barlow Condensed', sans-serif;
+}
+
+.le-transfer-board-question,
+.le-transfer-board-impact-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.le-transfer-board-question {
+  padding: 0.15rem 0.15rem 0;
+}
+
+.le-transfer-board-question span,
+.le-transfer-board-impact-head span {
+  color: #f8fafc;
+  font: 900 0.74rem/1 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.11em;
+}
+
+.le-transfer-board-question small,
+.le-transfer-board-impact-head small {
+  color: rgba(148, 163, 184, 0.64);
+  font: 700 0.58rem/1 'Barlow', sans-serif;
+}
+
+.le-transfer-board-candidates {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.le-transfer-board-candidate {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 3.4rem;
+  display: grid;
+  grid-template-columns: 2.45rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.62rem;
+  padding: 0.52rem 0.65rem;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.17);
+  border-radius: 0.62rem;
+  background: linear-gradient(105deg, rgba(15, 22, 32, 0.96), rgba(7, 12, 19, 0.94));
+  color: #e8edf3;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.le-transfer-board-candidate:hover {
+  border-color: rgba(248, 113, 113, 0.5);
+  background: linear-gradient(105deg, rgba(46, 25, 32, 0.96), rgba(13, 16, 23, 0.96));
+  transform: translateX(2px);
+}
+
+.le-transfer-board-candidate:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.le-transfer-board-candidate--selected {
+  padding-right: 6.5rem;
+  border-color: rgba(248, 113, 113, 0.82);
+  background:
+    linear-gradient(105deg, rgba(87, 30, 39, 0.7), rgba(22, 17, 24, 0.96)),
+    #170f14;
+  box-shadow: inset 3px 0 0 var(--departure), 0 0 0 1px rgba(248, 113, 113, 0.08);
+}
+
+.le-transfer-board-candidate-rating {
+  display: grid;
+  place-items: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  border-radius: 0.48rem;
+  background: rgba(255, 255, 255, 0.055);
+  color: #fff;
+  font: 900 1.05rem/1 'Barlow Condensed', sans-serif;
+}
+
+.le-transfer-board-candidate--selected .le-transfer-board-candidate-rating {
+  background: rgba(248, 113, 113, 0.15);
+  color: #fecaca;
+}
+
+.le-transfer-board-candidate-body {
+  display: grid;
+  min-width: 0;
+  gap: 0.18rem;
+}
+
+.le-transfer-board-candidate-body strong,
+.le-transfer-board-candidate-body small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.le-transfer-board-candidate-body strong {
+  color: #f8fafc;
+  font: 900 0.9rem/1 'Barlow Condensed', sans-serif;
+}
+
+.le-transfer-board-candidate-body small {
+  color: rgba(203, 213, 225, 0.56);
+  font: 700 0.57rem/1.1 'Barlow', sans-serif;
+}
+
+.le-transfer-board-suggested {
+  padding: 0.23rem 0.38rem;
+  border: 1px solid rgba(246, 207, 106, 0.34);
+  border-radius: 999px;
+  background: rgba(106, 78, 14, 0.2);
+  color: var(--bench);
+  font: 900 0.52rem/1 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.07em;
+}
+
+.le-transfer-board-stamp {
+  position: absolute;
+  right: 0.48rem;
+  top: 50%;
+  padding: 0.26rem 0.42rem;
+  transform: translateY(-50%) rotate(-7deg);
+  border: 2px solid rgba(254, 202, 202, 0.92);
+  color: #fecaca;
+  font: 900 0.68rem/1 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 12px rgba(248, 113, 113, 0.28);
+}
+
+.le-transfer-board-impact {
+  display: grid;
+  gap: 0.48rem;
+  margin-top: 0.1rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(248, 113, 113, 0.26);
+  border-radius: 0.65rem;
+  background: rgba(52, 20, 27, 0.24);
+}
+
+.le-transfer-board-impact-head span {
+  color: #fca5a5;
+}
+
+.le-transfer-board-impact .le-transfer-synergy-impact {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.le-transfer-board-impact-empty {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.64);
+  font: 700 0.66rem/1.3 'Barlow', sans-serif;
+}
+
+.le-transfer-summary {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem 0.7rem;
+  margin: 0.1rem 1.45rem 0.25rem;
+  padding: 0.7rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.72rem;
+  background: linear-gradient(115deg, rgba(49, 20, 28, 0.48), rgba(7, 34, 28, 0.46));
+}
+
+.le-transfer-summary-flow {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.le-transfer-summary-flow > .ui-icon {
+  width: 0.95rem;
+  color: rgba(203, 213, 225, 0.46);
+}
+
+.le-transfer-summary-player {
+  display: grid;
+  min-width: 0;
+  gap: 0.14rem;
+}
+
+.le-transfer-summary-player small {
+  font: 900 0.52rem/1 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.1em;
+}
+
+.le-transfer-summary-player strong {
+  overflow: hidden;
+  color: #fff;
+  font: 900 0.82rem/1 'Barlow Condensed', sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.le-transfer-summary-player--out small { color: #fca5a5; }
+.le-transfer-summary-player--in small { color: #86efc4; }
+
+.le-transfer-summary-bench {
+  align-self: center;
+  color: #f6cf6a;
+  font: 800 0.6rem/1.2 'Barlow', sans-serif;
+}
+
+.le-transfer-summary-change {
+  min-height: 1.9rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid rgba(203, 213, 225, 0.28);
+  border-radius: 0.42rem;
+  background: rgba(9, 14, 22, 0.72);
+  color: #dce4ec;
+  font: 900 0.62rem/1 'Barlow Condensed', sans-serif;
+  cursor: pointer;
+}
+
+.le-transfer-summary-change:hover {
+  border-color: rgba(248, 113, 113, 0.7);
+  color: #fecaca;
+}
+
+.le-squad-bench-badge--new {
+  border-color: rgba(246, 207, 106, 0.52) !important;
+  background: rgba(106, 78, 14, 0.3) !important;
+  color: #ffe59b !important;
+}
+
+.le-squad-bench-badge--incoming {
+  border-color: rgba(85, 240, 176, 0.46) !important;
+  background: rgba(18, 88, 67, 0.34) !important;
+  color: #9ff8d2 !important;
+}
+
+.le-body--locked-preview {
+  position: relative;
+  pointer-events: none;
+  user-select: none;
+}
+
+.le-body--locked-preview::after {
+  content: 'KADRO KARARINDAN SONRA DÜZENLENEBİLİR';
+  position: absolute;
+  inset: auto 50% 1.1rem auto;
+  z-index: 8;
+  transform: translateX(50%);
+  padding: 0.38rem 0.58rem;
+  border: 1px solid rgba(246, 207, 106, 0.4);
+  border-radius: 999px;
+  background: rgba(10, 14, 20, 0.86);
+  color: #f6cf6a;
+  font: 900 0.57rem/1 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+}
+
+.le-modal--transfer-preview .le-pitch {
+  filter: saturate(0.78) brightness(0.88);
+}
+
+.le-foot--transfer {
+  justify-content: flex-end !important;
+}
+
+.le-confirm--stage {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 18.5rem !important;
+  padding-inline: 1rem !important;
+  text-align: left;
+}
+
+.le-confirm--stage span {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.le-confirm--stage strong {
+  color: #fff;
+  font-size: 1rem;
+  letter-spacing: 0.07em;
+}
+
+.le-confirm--stage .ui-icon {
+  width: 1rem;
+}
+
+@media (max-width: 899px) {
+  .le-transfer-board-intro {
+    margin-top: 0.48rem;
+    font-size: 0.64rem;
+  }
+
+  .le-squad-panel-list--transfer {
+    max-height: 25rem !important;
+    padding-top: 0.25rem !important;
+  }
+
+  .le-transfer-board-candidates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .le-transfer-board-candidate {
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    min-height: 3.2rem;
+  }
+
+  .le-transfer-board-suggested {
+    display: none;
+  }
+
+  .le-transfer-summary {
+    margin-inline: 1rem;
+  }
+
+  .le-body--locked-preview::after {
+    bottom: 1.7rem;
+  }
+
+  .le-foot--transfer {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .le-squad-panel-list--transfer {
+    max-height: 23rem !important;
+  }
+
+  .le-transfer-board-candidates {
+    grid-template-columns: 1fr;
+  }
+
+  .le-transfer-board-candidate {
+    min-height: 3.25rem;
+  }
+
+  .le-transfer-board-impact-head small {
+    display: none;
+  }
+
+  .le-confirm--stage {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 430px) and (max-height: 760px) {
+  .le-squad-panel-list--transfer {
+    max-height: 18rem !important;
+  }
+
+  .le-transfer-board {
+    gap: 0.55rem;
+  }
+
+  .le-transfer-board-incoming {
+    min-height: 3.55rem;
+    padding-block: 0.5rem;
+  }
+
+  .le-transfer-board-candidate {
+    min-height: 2.9rem;
+    padding-block: 0.38rem;
+  }
+
+  .le-transfer-board-impact {
+    padding: 0.58rem;
+  }
+
+  .le-foot--transfer {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .le-transfer-board-candidate {
+    transition: none;
+  }
+
+  .le-transfer-board-candidate:hover {
+    transform: none;
+  }
+}

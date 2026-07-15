@@ -43,6 +43,7 @@ interface Props {
 type DropTarget = { kind: 'slot'; index: number } | { kind: 'bench' };
 type DragSource = { player: PlayerCard; from: number | 'bench' };
 type DragGhost = { player: PlayerCard; x: number; y: number } | null;
+type EditorStage = 'departure' | 'lineup';
 
 function clampPct(value: number, min = 8, max = 92) {
   return Math.min(max, Math.max(min, value));
@@ -109,6 +110,22 @@ export function LineupEditorModal({
   const bench = activeSquad.filter((p) => !lineupIds.has(p.id));
   const highlightedPlayer = highlightId ? squad.find((player) => player.id === highlightId) ?? null : null;
   const outgoingPlayer = outgoingId ? squad.find((player) => player.id === outgoingId) ?? null : null;
+  const suggestedOutgoingId = useRef(outgoingId).current;
+  const previousSquad = useMemo(
+    () => highlightedPlayer ? squad.filter((player) => player.id !== highlightedPlayer.id) : activeSquad,
+    [activeSquad, highlightedPlayer, squad],
+  );
+  const previousLineup = useMemo(
+    () => assignSquadToFormation(previousSquad, formationKey, manualLineup),
+    [formationKey, manualLineup, previousSquad],
+  );
+  const [baselineStarterIds] = useState(
+    () => new Set(previousLineup.flatMap((slot) => slot.player ? [slot.player.id] : [])),
+  );
+  const newlyBenchedIds = useMemo(
+    () => new Set(bench.filter((player) => baselineStarterIds.has(player.id)).map((player) => player.id)),
+    [baselineStarterIds, bench],
+  );
   const transferImpact = useMemo(() => {
     if (!highlightedPlayer || !outgoingId) return null;
     const previousSquad = squad.filter((player) => player.id !== highlightedPlayer.id);
@@ -132,8 +149,8 @@ export function LineupEditorModal({
     ? squad
       .filter((player) => canSelectTransferDeparture(squad, highlightId, player.id, maxSquadSize))
       .sort((a, b) => {
-        if (a.id === outgoingId) return -1;
-        if (b.id === outgoingId) return 1;
+        if (a.id === suggestedOutgoingId) return -1;
+        if (b.id === suggestedOutgoingId) return 1;
         return a.currentRating - b.currentRating;
       })
     : [];
@@ -152,7 +169,7 @@ export function LineupEditorModal({
   // Dokun-seç / dokun-yerleştir modu: mobilde sürüklemeye alternatif —
   // önce oyuncuya dokun (seçilir), sonra hedef slota/yedeğe dokun (taşınır).
   const [tapSource, setTapSource] = useState<DragSource | null>(null);
-  const [departurePickerOpen, setDeparturePickerOpen] = useState(false);
+  const [editorStage, setEditorStage] = useState<EditorStage>(highlightedPlayer && outgoingPlayer ? 'departure' : 'lineup');
   const justDraggedRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -173,7 +190,6 @@ export function LineupEditorModal({
   useEffect(() => {
     if (!open) {
       setTapSource(null);
-      setDeparturePickerOpen(false);
     }
   }, [open]);
 
@@ -335,6 +351,8 @@ export function LineupEditorModal({
     .filter((player): player is PlayerCard => Boolean(player));
   const benchPlayersForList = activeSquad.filter((player) => !lineupIds.has(player.id));
   const formationDisplay = formationKey.replace(/(\d)(\d)(\d)/, '$1-$2-$3');
+  const choosingDeparture = Boolean(highlightedPlayer && outgoingPlayer && editorStage === 'departure');
+  const newlyBenchedPlayer = benchPlayersForList.find((player) => newlyBenchedIds.has(player.id)) ?? null;
 
   function ratingBadgeClass(position: string): string {
     if (position === 'KL') return 'le-squad-rating-badge--gk';
@@ -351,105 +369,129 @@ export function LineupEditorModal({
       {/* LEFT PANEL: squad list */}
       <div className="le-squad-panel">
         <div className="le-squad-panel-head">
-          <p className="le-squad-panel-kicker">Kadro Listesi</p>
+          <p className="le-squad-panel-kicker">{choosingDeparture ? 'Kadro Kararı' : 'Kadro Listesi'}</p>
           <div className="le-squad-panel-title-row">
-            <span className="le-squad-panel-title">Oyuncular</span>
+            <span className="le-squad-panel-title">{choosingDeparture ? 'Transfer Tahtası' : 'Oyuncular'}</span>
             <span className="le-squad-panel-count">
               {outgoingPlayer ? `${squad.length} aday · ${maxSquadSize} yer` : `${activeSquad.length} / ${maxSquadSize}`}
             </span>
           </div>
-          <div className="le-squad-panel-legend">
-            <span><i className="le-squad-panel-legend-main" /> ana rol</span>
-            <span><i className="le-squad-panel-legend-secondary" /> oynayabildiği yan roller</span>
-          </div>
+          {choosingDeparture ? (
+            <p className="le-transfer-board-intro">Yeni transfer için bir oyuncuyla yollar ayrılmalı. Kararı doğrudan kadrodan ver.</p>
+          ) : (
+            <div className="le-squad-panel-legend">
+              <span><i className="le-squad-panel-legend-main" /> ana rol</span>
+              <span><i className="le-squad-panel-legend-secondary" /> oynayabildiği yan roller</span>
+            </div>
+          )}
         </div>
-        {outgoingPlayer && highlightedPlayer && (
-          <section className={`le-transfer-decision ${departurePickerOpen ? 'le-transfer-decision--open' : ''}`} aria-label="Kadrodan ayrılacak oyuncu">
-            <div className="le-transfer-decision-head">
-              <div>
-                <span className="le-transfer-decision-kicker">KADRODAN AYRILACAK</span>
-                <strong>Ayrılmanın sinerji etkisi</strong>
+        {choosingDeparture && outgoingPlayer && highlightedPlayer ? (
+          <div className="le-squad-panel-list le-squad-panel-list--transfer">
+            <section className="le-transfer-board" aria-label="Transfer tahtası">
+              <div className="le-transfer-board-incoming">
+                <span className="le-transfer-board-incoming-label">GELEN OYUNCU</span>
+                <span className="le-transfer-board-incoming-rating">{highlightedPlayer.currentRating}</span>
+                <span className="le-transfer-board-incoming-body">
+                  <strong>{formatSquadListName(highlightedPlayer.name)}</strong>
+                  <small>{POSITION_BADGE[highlightedPlayer.position]} · kadroya katılıyor</small>
+                </span>
+                <span className="le-transfer-board-incoming-mark" aria-hidden>+</span>
               </div>
-              <button
-                type="button"
-                className="le-transfer-change-btn"
-                onClick={() => setDeparturePickerOpen((value) => !value)}
-                aria-expanded={departurePickerOpen}
-              >
-                {departurePickerOpen ? 'Kapat' : 'Değiştir'}
-              </button>
-            </div>
-            <div className="le-transfer-outgoing">
-              <span className="le-transfer-outgoing-rating">{outgoingPlayer.currentRating}</span>
-              <span className="le-transfer-outgoing-body">
-                <strong>{formatSquadListName(outgoingPlayer.name)}</strong>
-                <small>{POSITION_BADGE[outgoingPlayer.position]} · seçilen çıkış</small>
-              </span>
-              <UiIcon name="arrow-right" />
-              <span className="le-transfer-incoming-mini">
-                <strong>{formatSquadListName(highlightedPlayer.name)}</strong>
-                <small>kadroya girer</small>
-              </span>
-            </div>
-            {visibleSynergyImpacts.length > 0 && (
-              <div className="le-transfer-synergy-impact" aria-live="polite">
-                {visibleSynergyImpacts.map((impact) => {
-                  const hiddenDiscovery = impact.synergy.hidden
-                    && !discoveredSynergies.includes(impact.synergy.id)
-                    && impact.status === 'activated';
-                  const label = hiddenDiscovery ? 'Gizli sinerji keşfi' : impact.synergy.name;
-                  const statusLabel = impact.status === 'activated'
-                    ? 'Açılır'
-                    : impact.status === 'deactivated'
-                      ? 'Kapanır'
-                      : impact.status === 'progressed'
-                        ? `${impact.beforeProgress?.current ?? 0} → ${impact.afterProgress?.current ?? impact.beforeProgress?.required ?? 0}`
-                        : `${impact.beforeProgress?.current ?? 0} → ${impact.afterProgress?.current ?? 0}`;
+
+              <div className="le-transfer-board-question">
+                <span>KİM AYRILIYOR?</span>
+                <small>Bir oyuncu seç</small>
+              </div>
+              <div className="le-transfer-board-candidates" role="listbox" aria-label="Kadrodan ayrılabilecek oyuncular">
+                {departureCandidates.map((player) => {
+                  const selected = player.id === outgoingId;
                   return (
-                    <span key={impact.synergy.id} className={`le-transfer-synergy-chip le-transfer-synergy-chip--${impact.status}`}>
-                      <strong>{label}</strong>
-                      <small>{statusLabel}</small>
-                    </span>
+                    <button
+                      key={player.id}
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      aria-label={`${player.name}, ${player.currentRating}, ${POSITION_BADGE[player.position]}. ${selected ? 'Ayrılacak oyuncu seçildi' : 'Ayrılacak oyuncu olarak seç'}`}
+                      className={`le-transfer-board-candidate ${selected ? 'le-transfer-board-candidate--selected' : ''}`}
+                      onClick={() => onOutgoingChange(player.id)}
+                    >
+                      <span className="le-transfer-board-candidate-rating">{player.currentRating}</span>
+                      <span className="le-transfer-board-candidate-body">
+                        <strong>{formatSquadListName(player.name)}</strong>
+                        <small>{POSITION_BADGE[player.position]} · {player.tags.slice(0, 2).join(' · ')}</small>
+                      </span>
+                      {player.id === suggestedOutgoingId && !selected && (
+                        <span className="le-transfer-board-suggested">ÖNERİLEN</span>
+                      )}
+                      {selected && <span className="le-transfer-board-stamp">AYRILIYOR</span>}
+                    </button>
                   );
                 })}
               </div>
-            )}
-            {departurePickerOpen && (
-              <div className="le-transfer-candidates" role="listbox" aria-label="Kadrodan çıkarılabilecek oyuncular">
-                {departureCandidates.map((player) => (
-                  <button
-                    key={player.id}
-                    type="button"
-                    role="option"
-                    aria-selected={player.id === outgoingId}
-                    className={`le-transfer-candidate ${player.id === outgoingId ? 'le-transfer-candidate--selected' : ''}`}
-                    onClick={() => {
-                      onOutgoingChange(player.id);
-                      setDeparturePickerOpen(false);
-                    }}
-                  >
-                    <span>{player.currentRating}</span>
-                    <strong>{formatSquadListName(player.name)}</strong>
-                    <small>{POSITION_BADGE[player.position]}</small>
-                  </button>
-                ))}
+
+              <div className="le-transfer-board-impact" aria-live="polite">
+                <div className="le-transfer-board-impact-head">
+                  <span>BU AYRILIĞIN BEDELİ</span>
+                  <small>Yalnızca negatif sinerji etkisi</small>
+                </div>
+                {visibleSynergyImpacts.length > 0 ? (
+                  <div className="le-transfer-synergy-impact">
+                    {visibleSynergyImpacts.map((impact) => (
+                      <span key={impact.synergy.id} className={`le-transfer-synergy-chip le-transfer-synergy-chip--${impact.status}`}>
+                        <strong>{impact.synergy.name}</strong>
+                        <small>{impact.status === 'deactivated'
+                          ? 'Kapanır'
+                          : `${impact.beforeProgress?.current ?? 0} → ${impact.afterProgress?.current ?? 0}`}</small>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="le-transfer-board-impact-empty">Aktif sinerji kapanmıyor.</p>
+                )}
               </div>
+            </section>
+          </div>
+        ) : (
+        <>
+        {outgoingPlayer && highlightedPlayer && (
+          <section className="le-transfer-summary" aria-label="Kesinleşen kadro kararı">
+            <div className="le-transfer-summary-flow">
+              <span className="le-transfer-summary-player le-transfer-summary-player--out">
+                <small>AYRILIYOR</small>
+                <strong>{formatSquadListName(outgoingPlayer.name)}</strong>
+              </span>
+              <UiIcon name="arrow-right" />
+              <span className="le-transfer-summary-player le-transfer-summary-player--in">
+                <small>GELİYOR</small>
+                <strong>{formatSquadListName(highlightedPlayer.name)}</strong>
+              </span>
+            </div>
+            {newlyBenchedPlayer && (
+              <span className="le-transfer-summary-bench">{formatSquadListName(newlyBenchedPlayer.name)} yedeğe düşüyor</span>
             )}
+            <button type="button" className="le-transfer-summary-change" onClick={() => setEditorStage('departure')}>
+              Ayrılık kararını değiştir
+            </button>
           </section>
         )}
         <div className="le-squad-panel-list">
           {benchPlayersForList.length > 0 && (
-            <section className="le-bench-focus" aria-label="Yedekten sahaya al">
+            <section className="le-bench-focus" aria-label="İlk 11 değişikliği">
               <div className="le-bench-focus-head">
                 <div>
                   <span className="le-bench-focus-kicker">YEDEK KULÜBESİ</span>
-                  <strong>Yedekten oyuna al</strong>
+                  <strong>İlk 11'i kur</strong>
                 </div>
                 <p><span>1</span> Oyuncuyu seç <i>→</i> <span>2</span> Sahadaki hedefe dokun</p>
               </div>
               <div className="le-bench-focus-list">
                 {benchPlayersForList.map((player) => {
                   const selected = tapSource?.player.id === player.id;
+                  const benchStatus = highlightId === player.id
+                    ? 'Yeni transfer · yedekte'
+                    : newlyBenchedIds.has(player.id)
+                      ? 'Yedeğe düşüyor'
+                      : 'Yedek';
                   return (
                     <div
                       key={player.id}
@@ -468,7 +510,9 @@ export function LineupEditorModal({
                           {player.position === 'KL' ? <span className="le-squad-only">sadece kalede</span> : <SecondaryPositions player={player} />}
                         </div>
                         <div className="le-squad-tags">
-                          <span className="le-squad-bench-badge">Yedeğe düştü</span>
+                          <span className={`le-squad-bench-badge ${newlyBenchedIds.has(player.id) ? 'le-squad-bench-badge--new' : ''} ${highlightId === player.id ? 'le-squad-bench-badge--incoming' : ''}`}>
+                            {benchStatus}
+                          </span>
                           {player.tags.map((tag) => (
                             <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="le-squad-tag-tip">
                               <span className="le-squad-tag" style={tagChipStyle(tag)}>
@@ -546,6 +590,8 @@ export function LineupEditorModal({
             );
           })}
         </div>
+        </>
+        )}
         <div className="le-squad-panel-foot">
           <span>Yedek: <strong>{bench.length}</strong></span>
           <span>Ø Ort: <strong className="le-squad-avg">{squadAvg}</strong></span>
@@ -554,14 +600,14 @@ export function LineupEditorModal({
 
       <div
         ref={containerRef}
-        className="le-modal"
+        className={`le-modal ${choosingDeparture ? 'le-modal--transfer-preview' : ''}`}
         role="dialog"
         aria-modal="true"
-        aria-label="İlk 11 düzenle"
+        aria-label={choosingDeparture ? 'Ayrılık sonrası kadro önizlemesi' : 'İlk 11 düzenle'}
       >
         <div className="le-head">
           <div>
-            <p className="le-kicker-small">İlk 11 Önizleme</p>
+            <p className="le-kicker-small">{choosingDeparture ? 'Ayrılık Sonrası Önizleme' : 'İlk 11 Önizleme'}</p>
             <p className="le-kicker">{formationDisplay} (varsayılan)</p>
             {highlightedPlayer && highlightedTarget && (
               <motion.div
@@ -587,7 +633,7 @@ export function LineupEditorModal({
           <button type="button" className="lineup-preview-close" onClick={dismiss} aria-label="İptal et — kart seçimine dön"><UiIcon name="x" /></button>
         </div>
 
-        <div className="le-body">
+        <div className={`le-body ${choosingDeparture ? 'le-body--locked-preview' : ''}`}>
           <p className="sr-only" aria-live="polite">
             {tapSource ? `${tapSource.player.name} seçildi. Geçerli bir saha slotu veya yedek kulübesi seçin.` : ''}
           </p>
@@ -649,17 +695,32 @@ export function LineupEditorModal({
           </div>
         </div>
 
-        <div className="le-foot">
-          <button
-            type="button"
-            className="le-reset-prominent"
-            onClick={onReset}
-            title="Sistemin önerdiği en uygun yerleşime döner"
-          >
-            <span className="le-reset-prominent-icon" aria-hidden>↺</span>
-            <span className="le-reset-prominent-text">Optimal pozisyonlara dön</span>
-          </button>
-          <button type="button" className="btn-primary le-confirm" onClick={onConfirm}>Onayla ve devam et</button>
+        <div className={`le-foot ${choosingDeparture ? 'le-foot--transfer' : ''}`}>
+          {choosingDeparture && outgoingPlayer ? (
+            <button
+              type="button"
+              className="btn-primary le-confirm le-confirm--stage"
+              aria-label={`${outgoingPlayer.name} ayrılıyor → İlk 11'i kur`}
+              onClick={() => setEditorStage('lineup')}
+            >
+              <span>{formatSquadListName(outgoingPlayer.name)} ayrılıyor</span>
+              <strong>İlk 11'i kur</strong>
+              <UiIcon name="arrow-right" />
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="le-reset-prominent"
+                onClick={onReset}
+                title="Sistemin önerdiği en uygun yerleşime döner"
+              >
+                <span className="le-reset-prominent-icon" aria-hidden>↺</span>
+                <span className="le-reset-prominent-text">Optimal pozisyonlara dön</span>
+              </button>
+              <button type="button" className="btn-primary le-confirm" onClick={onConfirm}>İlk 11'i onayla ve maça geç</button>
+            </>
+          )}
         </div>
       </div>
 

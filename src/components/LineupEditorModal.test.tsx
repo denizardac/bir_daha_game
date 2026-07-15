@@ -38,7 +38,7 @@ beforeAll(() => {
 
 afterEach(cleanup);
 
-function Harness({ onCancel = vi.fn() }: { onCancel?: () => void }) {
+function Harness({ onCancel = vi.fn(), onConfirm = vi.fn() }: { onCancel?: () => void; onConfirm?: () => void }) {
   const [outgoing, setOutgoing] = useState('mid-local');
   return (
     <LineupEditorModal
@@ -54,7 +54,7 @@ function Harness({ onCancel = vi.fn() }: { onCancel?: () => void }) {
       onChange={vi.fn()}
       onOutgoingChange={setOutgoing}
       onReset={vi.fn()}
-      onConfirm={vi.fn()}
+      onConfirm={onConfirm}
       onCancel={onCancel}
     />
   );
@@ -79,29 +79,38 @@ function BenchHarness() {
 }
 
 describe('LineupEditorModal critical flow', () => {
-  it('shows only the negative synergy impact caused by the selected departure', async () => {
+  it('selects the departing player directly and separates the squad decision from lineup placement', async () => {
     const user = userEvent.setup();
-    render(<Harness />);
+    const onConfirm = vi.fn();
+    render(<Harness onConfirm={onConfirm} />);
 
-    const decision = screen.getByRole('region', { name: 'Kadrodan ayrılacak oyuncu' });
+    const decision = screen.getByRole('region', { name: 'Transfer tahtası' });
     expect(within(decision).getByText('mid-local')).toBeTruthy();
     expect(within(decision).getByText('YERLİ KADRO')).toBeTruthy();
     expect(within(decision).getByText('Kapanır')).toBeTruthy();
     expect(within(decision).queryByText('Açılır')).toBeNull();
+    expect(within(decision).queryByRole('button', { name: 'Değiştir' })).toBeNull();
 
-    await user.click(within(decision).getByRole('button', { name: 'Değiştir' }));
-    await user.click(screen.getByRole('option', { name: '75striker-bSF' }));
+    await user.click(within(decision).getByRole('option', { name: /striker-b.*ayrılacak oyuncu olarak seç/i }));
 
     expect(within(decision).getByText('striker-b')).toBeTruthy();
     expect(within(decision).queryByText('YERLİ KADRO')).toBeNull();
     expect(within(decision).queryByText('Açılır')).toBeNull();
-    expect(screen.getAllByText('mid-local').length).toBeGreaterThan(0);
+    expect(within(decision).getByText('AYRILIYOR')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: /striker-b ayrılıyor.*İlk 11'i kur/ }));
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByRole('region', { name: 'Kesinleşen kadro kararı' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ayrılık kararını değiştir' })).toBeTruthy();
   });
 
   it('exposes player chips and empty slots as keyboard controls and cancellation restores the choice screen', async () => {
     const user = userEvent.setup();
     const onCancel = vi.fn();
     render(<Harness onCancel={onCancel} />);
+
+    await user.click(screen.getByRole('button', { name: /mid-local ayrılıyor.*İlk 11'i kur/ }));
 
     const chips = screen.getAllByRole('button', { name: /Taşımak için seç/ });
     expect(chips.length).toBeGreaterThan(0);
@@ -113,14 +122,15 @@ describe('LineupEditorModal critical flow', () => {
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
-  it('surfaces bench players before the starting XI and explains the placement step', async () => {
+  it('surfaces bench players before the starting XI without calling every substitute newly benched', async () => {
     const user = userEvent.setup();
     render(<BenchHarness />);
 
-    const benchFocus = screen.getByRole('region', { name: 'Yedekten sahaya al' });
-    expect(within(benchFocus).getByText('Yedekten oyuna al')).toBeTruthy();
+    const benchFocus = screen.getByRole('region', { name: 'İlk 11 değişikliği' });
+    expect(within(benchFocus).getByText("İlk 11'i kur")).toBeTruthy();
     expect(within(benchFocus).getByText(/Oyuncuyu seç.*Sahadaki hedefe dokun/)).toBeTruthy();
-    expect(within(benchFocus).getByText('Yedeğe düştü')).toBeTruthy();
+    expect(within(benchFocus).getByText('Yedek')).toBeTruthy();
+    expect(within(benchFocus).queryByText('Yedeğe düşüyor')).toBeNull();
     expect(within(benchFocus).getByText('YERLİ')).toBeTruthy();
 
     const action = within(benchFocus).getByRole('button', { name: /oyuncusunu sahaya al/ });
