@@ -1351,7 +1351,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let squad = [...state.squad];
     let score = state.score + outcome.scoreDelta;
     let morale = Math.min(100, Math.max(0, state.morale + outcome.moraleDelta));
-    if (state.squad.length <= 5) morale = Math.max(DANGER_MORALE_FLOOR, morale);
     let rerollsRemaining = state.rerollsRemaining;
     if (outcome.removeWeakest && squad.length > 4) {
       const sellTarget = resolveEventRemoval(
@@ -1363,6 +1362,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ) ?? getWeakestPlayer(squad);
       squad = squad.filter((p) => p.id !== sellTarget.id);
     }
+    const dangerMode = squad.length <= 5;
+    if (dangerMode) morale = Math.max(DANGER_MORALE_FLOOR, morale);
     if (outcome.tempRatingDelta) {
       const target = getEventRatingTarget(state.currentEvent.id, choice, squad, state.activeTactics);
       if (target) {
@@ -1440,6 +1441,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       score,
       roundHistory,
       unlockTelemetry,
+      dangerMode,
       eventResolvedThisRound: true,
       usedEventIds: [...state.usedEventIds, state.currentEvent.id],
       manualLineup,
@@ -1453,6 +1455,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       morale,
       unlockTelemetry,
       roundHistory,
+      dangerMode,
       rerollsRemaining,
       crisisContractTriggered: crisisContract.crisisContractTriggered,
       crisisRecoveryPending: crisisContract.crisisRecoveryPending,
