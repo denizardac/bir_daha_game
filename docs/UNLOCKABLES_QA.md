@@ -1,7 +1,8 @@
 # Unlockable Sistemi — Son QA Raporu
 
-Tarih: 15 Temmuz 2026  
-Branch: `main`  
+Tarih: 15 Temmuz 2026
+
+Branch: `main`
 Kapsam: Kalıcı içerik çekirdeği, yeni oyuncu/olay/mekanikler, görünür ilerleme,
 Ayın Efsanesi, save migration ve transfer ayrılık sinerjisi düzeltmesi.
 
