@@ -9,6 +9,7 @@ import {
 } from '@/engine/achievements';
 import { getPlayerSeasonTitles, getPrimarySeasonTitle } from '@/engine/seasonTitles';
 import type { HallOfFameEntry, PersistedData } from '@/types';
+import { createInitialUnlockState } from '@/engine/unlocks';
 
 function baseData(overrides: Partial<PersistedData> = {}): PersistedData {
   return {
@@ -18,8 +19,9 @@ function baseData(overrides: Partial<PersistedData> = {}): PersistedData {
     dailyStreak: 0, lastPlayedDate: '', soundEnabled: true, musicEnabled: false,
     cardTimerEnabled: false, tutorialCompleted: true, totalRuns: 0, todayRuns: 0, todayRunsDate: '',
     seasonKey: '2026-07', hallOfFame: [], seasonArchive: {}, seenEvents: [], collectedLegends: [],
+    unlocks: createInitialUnlockState(),
     ...overrides,
-    saveVersion: overrides.saveVersion ?? 2,
+    saveVersion: overrides.saveVersion ?? 5,
   };
 }
 

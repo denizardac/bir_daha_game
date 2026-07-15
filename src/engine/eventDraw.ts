@@ -1,4 +1,4 @@
-import { EVENT_CARDS } from '@/data/events';
+import { EVENT_CARDS, PERSONAL_UNLOCK_EVENT_IDS } from '@/data/events';
 import type { EventCard } from '@/types';
 import { createRng, pickOne } from '@/engine/seed';
 
@@ -12,6 +12,19 @@ export type EventDrawContext = {
   /** Önceki olay kararları (olay id → seçim) — zincirleme olay ağırlıkları için */
   pastChoices?: Record<string, 'A' | 'B'>;
 };
+
+export type EventContentAccess = {
+  isDailySeed: boolean;
+  unlockedEventIds: readonly string[];
+};
+
+export function getEventPoolForAccess(access?: EventContentAccess): EventCard[] {
+  if (!access || access.isDailySeed) {
+    return EVENT_CARDS.filter((event) => !PERSONAL_UNLOCK_EVENT_IDS.has(event.id));
+  }
+  const unlocked = new Set(access.unlockedEventIds);
+  return EVENT_CARDS.filter((event) => !PERSONAL_UNLOCK_EVENT_IDS.has(event.id) || unlocked.has(event.id));
+}
 
 /** Her zaman uygun — filtre boş kalırsa bunlardan seçilir */
 const FALLBACK_EVENT_IDS = new Set([
@@ -211,10 +224,12 @@ export function drawEvent(
   round: number,
   usedIds: string[],
   ctx: EventDrawContext,
+  access?: EventContentAccess,
 ): EventCard {
   const rng = createRng(seed, 'event', round);
-  let pool = EVENT_CARDS.filter((e) => !usedIds.includes(e.id));
-  if (!pool.length) pool = [...EVENT_CARDS];
+  const available = getEventPoolForAccess(access);
+  let pool = available.filter((e) => !usedIds.includes(e.id));
+  if (!pool.length) pool = [...available];
 
   const { events, weights } = filterEventsForDraw(pool, ctx);
   return pickWeighted(rng, events, weights);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { drawEvent, getEventDrawWeight, isEventEligible } from '@/engine/eventDraw';
+import { drawEvent, getEventDrawWeight, getEventPoolForAccess, isEventEligible } from '@/engine/eventDraw';
 
 const winStreakCtx = {
   streak: 5,
@@ -20,6 +20,24 @@ const losingCtx = {
 };
 
 describe('eventDraw — bağlama göre ağırlık', () => {
+  it('keeps Daily Seed independent from personal events and gates them in Free Mode', () => {
+    const dailyLocked = getEventPoolForAccess({ isDailySeed: true, unlockedEventIds: [] }).map((event) => event.id);
+    const dailyUnlocked = getEventPoolForAccess({
+      isDailySeed: true,
+      unlockedEventIds: ['evt_unlock_efsane_dokunusu'],
+    }).map((event) => event.id);
+    expect(dailyUnlocked).toEqual(dailyLocked);
+    expect(dailyLocked).not.toContain('evt_unlock_efsane_dokunusu');
+
+    const freeLocked = getEventPoolForAccess({ isDailySeed: false, unlockedEventIds: [] }).map((event) => event.id);
+    const freeUnlocked = getEventPoolForAccess({
+      isDailySeed: false,
+      unlockedEventIds: ['evt_unlock_efsane_dokunusu'],
+    }).map((event) => event.id);
+    expect(freeLocked).not.toContain('evt_unlock_efsane_dokunusu');
+    expect(freeUnlocked).toContain('evt_unlock_efsane_dokunusu');
+  });
+
   it('galibiyet serisinde spor psikoloğu çıkmaz', () => {
     expect(getEventDrawWeight('evt_psikolog', winStreakCtx)).toBe(0);
     expect(isEventEligible('evt_psikolog', winStreakCtx)).toBe(false);

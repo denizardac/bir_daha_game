@@ -3,9 +3,11 @@ import { getSeasonKey } from '@/engine/hallOfFame';
 import { getDailySeed } from '@/engine/seed';
 import { getTodayKey } from '@/engine/leaderboard';
 import { repairRunSnapshot } from '@/engine/runPersistence';
+import { createInitialUnlockState, grantUnlocksForCollectedContent, normalizeUnlockState } from '@/engine/unlocks';
+import { PLAYER_POOL } from '@/data/players';
 
 const STORAGE_KEY = 'bir-daha-save';
-export const CURRENT_SAVE_VERSION = 2;
+export const CURRENT_SAVE_VERSION = 5;
 
 export function getAnonymousId(): string {
   const data = loadPersisted();
@@ -31,6 +33,8 @@ function sanitizePersisted(base: PersistedData, parsed: Record<string, unknown>)
     const v = merged[key];
     if (typeof v !== 'object' || v === null || Array.isArray(v)) merged[key] = base[key];
   }
+  merged.unlocks = normalizeUnlockState(merged.unlocks);
+  merged.currentRun = repairRunSnapshot(merged.currentRun);
   const numberKeys: (keyof PersistedData)[] = ['todayScore', 'allTimeBest', 'dailyStreak', 'totalRuns', 'todayRuns'];
   for (const key of numberKeys) {
     if (typeof merged[key] !== 'number' || Number.isNaN(merged[key])) merged[key] = base[key];
@@ -48,6 +52,38 @@ export function migratePersistedRecord(parsed: Record<string, unknown>): Record<
     migrated.lastPlayerName = migrated.displayName;
   }
   if (version < 2) {
+    migrated.currentRun = repairRunSnapshot(migrated.currentRun);
+  }
+  if (version < 3) {
+    const unlocks = normalizeUnlockState(migrated.unlocks);
+    if (typeof migrated.allTimeBest === 'number' && Number.isFinite(migrated.allTimeBest)) {
+      unlocks.stats.bestScore = Math.max(unlocks.stats.bestScore, Math.max(0, Math.round(migrated.allTimeBest)));
+    }
+    migrated.unlocks = unlocks;
+  }
+  if (version < 4) {
+    const collectedNames = new Set(
+      Array.isArray(migrated.collectedLegends)
+        ? migrated.collectedLegends.filter((name): name is string => typeof name === 'string')
+        : [],
+    );
+    const collectedContentIds = PLAYER_POOL
+      .filter((player) => collectedNames.has(player.name))
+      .map((player) => player.id);
+    migrated.unlocks = grantUnlocksForCollectedContent(
+      normalizeUnlockState(migrated.unlocks),
+      collectedContentIds,
+    );
+  }
+  if (version < 5) {
+    const unlocks = normalizeUnlockState(migrated.unlocks);
+    const legacyIds = new Set(unlocks.unlockedIds);
+    // Kısa süre kullanılan v4 taslağındaki ödülleri yeni katalogda yeniden
+    // kilitleme. İçerik eşlemesi aynı ödülü taşıyan yeni id'ye yapılır.
+    if (legacyIds.has('score_15k_burak')) legacyIds.add('score_25k_burak');
+    if (legacyIds.has('score_25k_etebo')) legacyIds.add('score_10k_etebo');
+    unlocks.unlockedIds = [...legacyIds];
+    migrated.unlocks = unlocks;
     migrated.currentRun = repairRunSnapshot(migrated.currentRun);
   }
   migrated.saveVersion = CURRENT_SAVE_VERSION;
@@ -135,5 +171,6 @@ function defaultPersisted(): PersistedData {
     seasonArchive: {},
     seenEvents: [],
     collectedLegends: [],
+    unlocks: createInitialUnlockState(),
   };
 }

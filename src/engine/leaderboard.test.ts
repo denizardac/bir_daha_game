@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { addScoreToLeaderboards, mergeBestLeaderboardEntries } from '@/engine/leaderboard';
 import { addToHallOfFame, listSeasonMonths } from '@/engine/hallOfFame';
 import type { HallOfFameEntry, LeaderboardEntry, PersistedData } from '@/types';
+import { createInitialUnlockState } from '@/engine/unlocks';
 
 function baseData(): PersistedData {
   return {
-    saveVersion: 2,
+    saveVersion: 5,
     anonymousId: 'anon',
     lastPlayerName: '',
     currentRun: null,
@@ -33,6 +34,7 @@ function baseData(): PersistedData {
     seasonArchive: {},
     seenEvents: [],
     collectedLegends: [],
+    unlocks: createInitialUnlockState(),
   };
 }
 

@@ -27,9 +27,9 @@ PWA: service worker + `public/icons/` PNG seti — mobilde ana ekrana eklenebili
 
 ## Oyun içeriği (güncel sayılar)
 
-- **257 oyuncu kartı** (34'ü efsane/imza kartı), **26 tag**, **29 sinerji**
+- **260 oyuncu kartı** (37'si efsane/imza kartı), **26 tag**, **29 sinerji**
 - **20 taktik kartı** (10 formasyon + 10 oyun sistemi)
-- **56 olay kartı** — olay roundları: **4 / 8 / 11 / 14** (bağlama duyarlı ağırlıklı çekim)
+- **58 olay kartı** — olay roundları: **4 / 8 / 11 / 14** (bağlama duyarlı ağırlıklı çekim)
 - **15 round** run; taktik/antrenman bonus roundları: **3 / 6 / 9 / 12**; round 15 = şampiyonluk finali
 - Manuel ilk 11 editörü (sürükle-bırak pin sistemi) + otomatik diziliş yerleşimi
 

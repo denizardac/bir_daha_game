@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { drawOffers, drawTacticCategoryOffers, rerollSinglePlayerOffer } from '@/engine/cardDraw';
+import { drawOffers, drawTacticCategoryOffers, getPlayerPoolForAccess, rerollSinglePlayerOffer } from '@/engine/cardDraw';
 import { PLAYER_POOL, clonePlayer } from '@/data/players';
 import { isPlayerCard } from '@/types';
 
@@ -8,6 +8,27 @@ function nameLc(s: string) {
 }
 
 describe('drawOffers', () => {
+  it('keeps Daily Seed independent from personal unlocks and gates them in Free Mode', () => {
+    const dailyLocked = getPlayerPoolForAccess({ isDailySeed: true, unlockedPlayerIds: [] }).map((p) => p.id);
+    const dailyUnlocked = getPlayerPoolForAccess({
+      isDailySeed: true,
+      unlockedPlayerIds: ['legend_01', 'player_geri_donuscu'],
+    }).map((p) => p.id);
+    expect(dailyUnlocked).toEqual(dailyLocked);
+    expect(dailyLocked).toContain('legend_01');
+    expect(dailyLocked).not.toContain('player_geri_donuscu');
+
+    const freeLocked = getPlayerPoolForAccess({ isDailySeed: false, unlockedPlayerIds: [] }).map((p) => p.id);
+    const freeUnlocked = getPlayerPoolForAccess({
+      isDailySeed: false,
+      unlockedPlayerIds: ['legend_01', 'player_geri_donuscu'],
+    }).map((p) => p.id);
+    expect(freeLocked).not.toContain('legend_01');
+    expect(freeLocked).not.toContain('player_geri_donuscu');
+    expect(freeUnlocked).toContain('legend_01');
+    expect(freeUnlocked).toContain('player_geri_donuscu');
+  });
+
   it('returns 3 offers for normal round', () => {
     const offers = drawOffers('test-seed-1', 2, 0, [], [], false, 0);
     expect(offers).toHaveLength(3);

@@ -1,5 +1,10 @@
 import { isEventRound } from '@/data/events';
-import { PLAYER_POOL, clonePlayer } from '@/data/players';
+import {
+  FREE_MODE_EXCLUSIVE_PLAYER_IDS,
+  PERSONAL_UNLOCK_PLAYER_IDS,
+  PLAYER_POOL,
+  clonePlayer,
+} from '@/data/players';
 import { filterPoolByRound } from '@/data/playerPoolMeta';
 import { cloneTactic, TACTIC_CARDS } from '@/data/tactics';
 import { createRng, getRarityWeights, pickOne, weightedPick } from '@/engine/seed';
@@ -20,6 +25,20 @@ function nameKey(name: string): string {
 export type OfferDrawVariant = 'normal' | 'extradraw';
 export type OfferDrawMode = 'players' | 'tacticBonus';
 
+export type PlayerContentAccess = {
+  isDailySeed: boolean;
+  unlockedPlayerIds: readonly string[];
+};
+
+/** Günlük havuz kişisel kayıttan bağımsız; Serbest Mod yalnızca açık ödülleri ekler. */
+export function getPlayerPoolForAccess(access?: PlayerContentAccess): PlayerCard[] {
+  if (!access || access.isDailySeed) {
+    return PLAYER_POOL.filter((player) => !FREE_MODE_EXCLUSIVE_PLAYER_IDS.has(player.id));
+  }
+  const unlocked = new Set(access.unlockedPlayerIds);
+  return PLAYER_POOL.filter((player) => !PERSONAL_UNLOCK_PLAYER_IDS.has(player.id) || unlocked.has(player.id));
+}
+
 function rarityWeightsForDraw(round: number, rerollIndex: number): Record<Rarity, number> {
   const base = getRarityWeights(round);
   if (rerollIndex <= 0) return base;
@@ -37,8 +56,14 @@ function filterByRarity(cards: PlayerCard[], rarity: Rarity): PlayerCard[] {
   return cards.filter((c) => c.rarity === rarity);
 }
 
-function getPoolForRound(round: number, seed: string, lossesCount: number, recoveryGuaranteed: boolean): PlayerCard[] {
-  let pool = filterPoolByRound(PLAYER_POOL, round);
+function getPoolForRound(
+  round: number,
+  seed: string,
+  lossesCount: number,
+  recoveryGuaranteed: boolean,
+  basePool: PlayerCard[] = PLAYER_POOL,
+): PlayerCard[] {
+  let pool = filterPoolByRound(basePool, round);
   const recoveryRng = createRng(seed, 'recovery', round, lossesCount);
   const recoveryChance = recoveryGuaranteed ? 1 : 0.35 + lossesCount * 0.15;
 
@@ -141,9 +166,10 @@ function drawPlayers(
   recoveryGuaranteed: boolean,
   rerollIndex = 0,
   variant: OfferDrawVariant = 'normal',
+  basePool: PlayerCard[] = PLAYER_POOL,
 ): PlayerCard[] {
   const rng = createRng(seed, variant === 'extradraw' ? 'extradraw-cards' : 'cards', round, rerollIndex);
-  const rawPool = getPoolForRound(round, seed, lossesCount, recoveryGuaranteed);
+  const rawPool = getPoolForRound(round, seed, lossesCount, recoveryGuaranteed, basePool);
   const cards: PlayerCard[] = [];
   const usedNames = new Set<string>();
 
@@ -249,6 +275,7 @@ function ensureGoalkeeperOffer(
   cards: PlayerCard[],
   squad: SquadRef[],
   rawPool: PlayerCard[],
+  basePool: PlayerCard[],
   rng: () => number,
 ): PlayerCard[] {
   if (squad.some((p) => p.position === 'KL')) return cards;
@@ -260,7 +287,7 @@ function ensureGoalkeeperOffer(
     p.position === 'KL' && !offerIds.has(p.id) && !offerNames.has(nameKey(p.name));
 
   let gkPool = rawPool.filter(isFreeGk);
-  if (!gkPool.length) gkPool = PLAYER_POOL.filter(isFreeGk);
+  if (!gkPool.length) gkPool = basePool.filter(isFreeGk);
   if (!gkPool.length) return cards;
 
   const gk = clonePlayer(gkPool[Math.floor(rng() * gkPool.length)]!);
@@ -283,11 +310,13 @@ export function drawOffers(
   rerollIndex = 0,
   variant: OfferDrawVariant = 'normal',
   mode: OfferDrawMode = 'players',
+  access?: PlayerContentAccess,
 ): GameCard[] {
   if (mode === 'tacticBonus') {
     return drawTacticBonusOffers(seed, round, activeTacticIds, rerollIndex);
   }
 
+  const basePool = getPlayerPoolForAccess(access);
   const players = drawPlayers(
     seed,
     round,
@@ -297,10 +326,11 @@ export function drawOffers(
     recoveryGuaranteed,
     rerollIndex,
     variant,
+    basePool,
   );
-  const rawPool = getPoolForRound(round, seed, lossesCount, recoveryGuaranteed);
+  const rawPool = getPoolForRound(round, seed, lossesCount, recoveryGuaranteed, basePool);
   const gkRng = createRng(seed, 'gk-guarantee', round, rerollIndex);
-  const withGk = ensureGoalkeeperOffer(players, squad, rawPool, gkRng);
+  const withGk = ensureGoalkeeperOffer(players, squad, rawPool, basePool, gkRng);
   return withGk.slice(0, 3);
 }
 
@@ -314,22 +344,24 @@ export function rerollSinglePlayerOffer(
   slotIndex: number,
   rerollIndex: number,
   recoveryGuaranteed: boolean,
+  access?: PlayerContentAccess,
 ): PlayerCard {
   const rng = createRng(seed, 'slot-reroll', round, slotIndex, rerollIndex);
   const excludeNames = new Set([
     ...squadNameSet(squad),
     ...excludeOffers.map((p) => nameKey(p.name)),
   ]);
-  let pool = filterDrawPool(getPoolForRound(round, seed, lossesCount, recoveryGuaranteed), squad, excludeNames);
+  const basePool = getPlayerPoolForAccess(access);
+  let pool = filterDrawPool(getPoolForRound(round, seed, lossesCount, recoveryGuaranteed, basePool), squad, excludeNames);
   if (!pool.length) {
-    pool = filterDrawPool(PLAYER_POOL, squad, excludeNames);
+    pool = filterDrawPool(basePool, squad, excludeNames);
   }
 
   const drawPool = boostRerollPool(pool, round, rerollIndex);
   let card = drawSinglePlayer(rng, round, drawPool, rerollIndex);
   let guard = 0;
   while (excludeNames.has(nameKey(card.name)) && guard++ < 40) {
-    card = drawSinglePlayer(rng, round, drawPool.length ? drawPool : pool.length ? pool : PLAYER_POOL, rerollIndex);
+    card = drawSinglePlayer(rng, round, drawPool.length ? drawPool : pool.length ? pool : basePool, rerollIndex);
   }
 
   if (rerollIndex > 0 && pool.length) {

@@ -227,6 +227,14 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { moraleDelta: 18, grantTag: 'MENTOR', description: 'Efsane bir oyuncuya akıl hocalığı yaptı — MENTOR kazandırdı, moral +18.' },
     { scoreDelta: 80, description: 'Antrenman odaklı geçildi.' },
   ),
+  evt_unlock_efsane_dokunusu: e(
+    { grantRandomTags: 3, description: 'Özel çalışma tamamlandı — bir oyuncu aynı anda üç pozitif trait kazandı.' },
+    { scoreDelta: 140, description: 'Takım düzeni korundu — +140 puan.' },
+  ),
+  evt_unlock_soyunma_odasi_yemini: e(
+    { grantTag: 'KAPİTAN', moraleDelta: 15, description: 'Yeni kaptan öne çıktı — soyunma odası tek yürek, moral +15.' },
+    { scoreDelta: 180, moraleDelta: -8, description: 'Duygusal enerji sahaya taşındı — +180 puan, yorgunluk morali düşürdü.' },
+  ),
   evt_kirmizi_forma: e(
     { nextMatchBonus: 75, nextMatchRisk: 0.15, description: 'Agresif oyun planı — kontrollü risk.' },
     { moraleDelta: 6, description: 'Disiplinli oyun.' },

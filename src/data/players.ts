@@ -212,6 +212,40 @@ const LEGENDARY_PROFILES: PlayerTemplate[] = [
   { name: 'Aykut Kocaman', rating: 88, position: 'SF', rarity: 'efsane', tags: ['FİNİŞÖR', 'SOĞUKKANLI', 'LİDER'], signature: true, signatureColor: '#fbbf24', signatureQuote: 'Golü atarım, yüzüm aynı kalır.' },
 ];
 
+/** Yalnızca kişisel unlock sonrası Serbest Mod havuzuna giren imza kartları. */
+const UNLOCKABLE_PLAYER_PROFILES: Array<PlayerTemplate & { id: string }> = [
+  {
+    id: 'player_mahallenin_kaptani', name: 'Mahallenin Kaptanı', rating: 87, position: 'OS', rarity: 'efsane',
+    tags: ['YERLİ', 'KAPİTAN', 'SOYUNMA ODASI'], signature: true, signatureColor: '#2dd4bf',
+    signatureQuote: 'Bu forma önce sokakta, sonra sahada kazanılır.',
+  },
+  {
+    id: 'player_ceza_sahasi_ustasi', name: 'Ceza Sahası Ustası', rating: 89, position: 'SF', rarity: 'efsane',
+    tags: ['FİNİŞÖR', 'PENALTI', 'SOĞUKKANLI'], signature: true, signatureColor: '#fb7185',
+    signatureQuote: 'Bir adım yeter; gerisini file anlatır.',
+  },
+  {
+    id: 'player_geri_donuscu', name: 'Geri Dönüşçü', rating: 88, position: 'DOS', rarity: 'efsane',
+    tags: ['SAVAŞÇI', 'LİDER', 'DAYANIKLI'], signature: true, signatureColor: '#a78bfa',
+    signatureQuote: 'Maç bitmediyse hikâye de bitmedi.',
+  },
+];
+
+/** Serbest Mod'da ilgili unlock olmadan çekilemeyen tüm mevcut oyuncu id'leri. */
+export const PERSONAL_UNLOCK_PLAYER_IDS = new Set([
+  'legend_01',
+  'legend_02',
+  'legend_03',
+  'legend_04',
+  'legend_05',
+  ...UNLOCKABLE_PLAYER_PROFILES.map((profile) => profile.id),
+]);
+
+/** Günlük Seed'in standart havuzuna hiç eklenmeyen kişisel içerikler. */
+export const FREE_MODE_EXCLUSIVE_PLAYER_IDS = new Set(
+  UNLOCKABLE_PLAYER_PROFILES.map((profile) => profile.id),
+);
+
 function hashMix(n: number, salt: number): number {
   let x = Math.imul(n + 1, 2654435761) ^ salt;
   x = Math.imul(x ^ (x >>> 16), 0x7feb352d);
@@ -341,6 +375,7 @@ export const PLAYER_POOL: PlayerCard[] = [
     .flatMap((p, i) => (p.rarity === 'efsane' ? [] : [makePlayer(p, `player_${String(i + 1).padStart(3, '0')}`)])),
   ...generateExtraPlayers().filter((p) => p.rarity !== 'efsane'),
   ...LEGENDARY_PROFILES.map((p, i) => makePlayer(p, `legend_${String(i + 1).padStart(2, '0')}`)),
+  ...UNLOCKABLE_PLAYER_PROFILES.map(({ id, ...profile }) => makePlayer(profile, id)),
 ];
 
 const BAD_START_TAGS: Tag[] = ['GERİLEYEN', 'SAKATLIK RİSKİ', 'PERFORMANS DÜŞÜŞÜ', 'TARTIŞMALI'];

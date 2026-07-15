@@ -463,6 +463,22 @@ export const EVENT_PRESENTATIONS: Record<string, EventPresentation> = {
     choiceA: { icon: '🌟', flavor: 'Efsaneyi dinle', scene: 'choice-star' },
     choiceB: { icon: '⚽', flavor: 'Antrenmana dön', scene: 'choice-ball' },
   },
+  evt_unlock_efsane_dokunusu: {
+    scene: 'legend-speech',
+    atmosphere: 'Gece antrenmanı · projektörler açık',
+    narrative: 'Kulüp efsanesi herkesi gönderdikten sonra tek bir oyuncuyu sahada tuttu. Üç ayrı çalışma istasyonu hazır; sabaha bambaşka biri çıkabilir.',
+    props: ['✨', '🏆', '⚽'],
+    choiceA: { icon: '🌟', flavor: 'Üç yönünü birden geliştir', scene: 'choice-star' },
+    choiceB: { icon: '📋', flavor: 'Takım düzenini koru', scene: 'choice-hold' },
+  },
+  evt_unlock_soyunma_odasi_yemini: {
+    scene: 'team-huddle',
+    atmosphere: 'Soyunma odası · kapılar kapalı',
+    narrative: 'Oyuncular omuz omuza verdi ve sezonun geri kalanı için söz istedi. Birinin liderliği üstlenmesi takımı birleştirecek; enerji başka yöne de çevrilebilir.',
+    props: ['🤝', '👑', '👕'],
+    choiceA: { icon: '👑', flavor: 'Yeni lideri öne çıkar', scene: 'choice-unity' },
+    choiceB: { icon: '⚡', flavor: 'Enerjiyi maça sakla', scene: 'choice-fire' },
+  },
 };
 
 const DEFAULT_PRESENTATION: EventPresentation = {

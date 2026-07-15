@@ -337,7 +337,24 @@ export const EVENT_CARDS: EventCard[] = [
     optionA: { label: 'DİNLE', description: 'Bir oyuncu MENTOR olur · Moral +18' },
     optionB: { label: 'ODAK', description: '+80 puan' },
   },
+  {
+    id: 'evt_unlock_efsane_dokunusu', category: 'ozel', icon: '✨', title: 'Efsane Dokunuşu',
+    description: 'Kulüp efsanesi bir oyuncuyu özel çalışmaya aldı. Bir gecede üç farklı yönünü geliştirebilir; teklif yalnızca bir kez geçerli.',
+    optionA: { label: 'ÖZEL ÇALIŞ', description: 'Uygun bir oyuncu aynı anda 3 pozitif trait kazanır' },
+    optionB: { label: 'DÜZENİ BOZMA', description: '+140 puan · mevcut roller korunur' },
+  },
+  {
+    id: 'evt_unlock_soyunma_odasi_yemini', category: 'moral', icon: '🤝', title: 'Soyunma Odası Yemini',
+    description: 'Takım kapıları kapattı ve sezonun geri kalanı için söz verdi. Bir lider öne çıkabilir ya da bu enerji puana çevrilebilir.',
+    optionA: { label: 'LİDERİ SEÇ', description: 'Uygun bir oyuncu KAPİTAN olur · Moral +15' },
+    optionB: { label: 'ENERJİYİ SAHAYA TAŞI', description: '+180 puan · Moral -8' },
+  },
 ];
+
+export const PERSONAL_UNLOCK_EVENT_IDS = new Set([
+  'evt_unlock_efsane_dokunusu',
+  'evt_unlock_soyunma_odasi_yemini',
+]);
 
 export const EVENT_ROUNDS = [4, 8, 11, 14] as const;
 

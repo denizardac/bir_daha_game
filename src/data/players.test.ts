@@ -32,7 +32,7 @@ describe('getStartingSquad traits', () => {
 
   it('keeps every legendary card curated with an imza quote', () => {
     const legends = PLAYER_POOL.filter((p) => p.rarity === 'efsane');
-    expect(legends).toHaveLength(34);
+    expect(legends).toHaveLength(37);
     expect(legends.every((p) => p.signature && p.signatureQuote)).toBe(true);
   });
 });

@@ -2,6 +2,7 @@ import type { GameCard, GameState, Tag, TrainingCard } from '@/types';
 import { normalizeSquadGoalkeepers, reconcileManualLineup } from '@/engine/lineupPreview';
 import { getActiveFormationKey } from '@/engine/lineupPreview';
 import type { PlayerCard } from '@/types';
+import { normalizeRunUnlockTelemetry } from '@/engine/unlocks';
 
 export interface PersistedTrainingFlow {
   card: TrainingCard;
@@ -45,12 +46,12 @@ type SnapshotSource = Partial<RunSnapshot> & {
 const EMPTY_TACTIC_DRAFT: TacticDraft = { formationId: null, systemId: null };
 
 const GAME_STATE_KEYS: (keyof GameState)[] = [
-  'seed', 'isDailySeed', 'displayName', 'round', 'maxRounds', 'squad', 'maxSquadSize',
+  'runId', 'seed', 'isDailySeed', 'displayName', 'round', 'maxRounds', 'squad', 'maxSquadSize',
   'morale', 'score', 'streak', 'phase', 'roundHistory', 'currentOffers', 'currentMatch',
   'currentEvent', 'activeTactics', 'lastLossPlayer', 'discoveredSynergies', 'lossesCount',
   'dangerMode', 'isFirstRun', 'timerSeconds', 'eventResolvedThisRound', 'flawless',
   'recentlyJoinedPlayerId', 'runEndAnalysis', 'rerollsRemaining', 'formationRerollUsed', 'systemRerollUsed',
-  'offersRerollIndex', 'recoveryGuaranteed', 'manualLineup',
+  'offersRerollIndex', 'recoveryGuaranteed', 'manualLineup', 'unlockTelemetry',
 ];
 
 export function mergeRunSnapshot(
@@ -165,11 +166,19 @@ export function repairRunSnapshot(input: unknown): Partial<RunSnapshot> | null {
   return {
     ...(input as Partial<RunSnapshot>),
     seed: input.seed,
+    runId: typeof input.runId === 'string' && input.runId.length > 0
+      ? input.runId
+      : `legacy:${input.seed}:${round}`,
     round,
     maxRounds: 15,
     maxSquadSize,
     phase: phase as GameState['phase'],
     squad,
+    unlockTelemetry: normalizeRunUnlockTelemetry(
+      input.unlockTelemetry,
+      squad,
+      typeof input.morale === 'number' ? input.morale : 50,
+    ),
     activeTactics,
     manualLineup,
     currentOffers: uniqueCards(input.currentOffers, squadIds),

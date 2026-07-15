@@ -63,7 +63,43 @@ describe('runPersistence', () => {
 
   it('migrates unversioned persisted data to the current schema', () => {
     const migrated = migratePersistedRecord({ displayName: 'Eski', currentRun: null });
-    expect(migrated.saveVersion).toBe(2);
+    expect(migrated.saveVersion).toBe(5);
     expect(migrated.lastPlayerName).toBe('Eski');
+    expect(migrated.unlocks).toMatchObject({
+      catalogVersion: 1,
+      unlockedIds: [],
+      stats: { bestScore: 0, maxMorale: 0 },
+      pendingGuarantees: [],
+      pendingNotificationIds: [],
+    });
+  });
+
+  it('v2 kariyer skorunu unlock ilerlemesine taşır', () => {
+    const migrated = migratePersistedRecord({ saveVersion: 2, allTimeBest: 12_500 });
+    expect(migrated.unlocks).toMatchObject({ stats: { bestScore: 12_500 } });
+  });
+
+  it('daha önce toplanmış efsaneyi Serbest Mod için yeniden kilitlemez', () => {
+    const migrated = migratePersistedRecord({
+      saveVersion: 3,
+      collectedLegends: ['Gökhan Sazdağı'],
+      unlocks: { unlockedIds: [], stats: {} },
+    });
+    expect(migrated.unlocks).toMatchObject({ unlockedIds: ['score_5k_gokhan'] });
+  });
+
+  it('v4 taslak unlock idlerini yeni kataloğa taşır', () => {
+    const migrated = migratePersistedRecord({
+      saveVersion: 4,
+      unlocks: {
+        unlockedIds: ['score_15k_burak', 'score_25k_etebo'],
+        stats: { maxFinalMorale: 100 },
+      },
+    });
+    expect(migrated.unlocks).toMatchObject({ stats: { maxMorale: 100 } });
+    expect((migrated.unlocks as { unlockedIds: string[] }).unlockedIds).toEqual(expect.arrayContaining([
+      'score_25k_burak',
+      'score_10k_etebo',
+    ]));
   });
 });

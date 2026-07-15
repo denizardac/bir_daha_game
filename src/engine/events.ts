@@ -1,6 +1,12 @@
 import { EVENT_EFFECTS } from '@/data/eventEffects';
 import { PLAYER_POOL, clonePlayer } from '@/data/players';
-import { drawEvent as pickContextEvent, type EventDrawContext } from '@/engine/eventDraw';
+import { canAddTag } from '@/data/tagConflicts';
+import { MAX_PLAYER_TAGS, TRAINING_TAGS } from '@/data/training';
+import {
+  drawEvent as pickContextEvent,
+  type EventContentAccess,
+  type EventDrawContext,
+} from '@/engine/eventDraw';
 import { getStarFieldPlayer } from '@/engine/eventSubjects';
 import { createRng } from '@/engine/seed';
 import type { EventCard, GameState, PlayerCard, Position, Tag } from '@/types';
@@ -13,8 +19,9 @@ export function drawEvent(
   round: number,
   usedIds: string[],
   ctx: EventDrawContext,
+  access?: EventContentAccess,
 ): EventCard {
-  return pickContextEvent(seed, round, usedIds, ctx);
+  return pickContextEvent(seed, round, usedIds, ctx, access);
 }
 
 export interface EventOutcome {
@@ -33,6 +40,8 @@ export interface EventOutcome {
   conditionalBonus?: { tags: Tag[]; perTag: number; base?: number; cap?: number };
   /** Bir oyuncuya kalıcı tag kazandırır (benzersiz olay mekaniği) */
   grantTag?: Tag;
+  /** Uygun tek bir oyuncuya aynı anda eklenecek rastgele pozitif trait sayısı. */
+  grantRandomTags?: number;
   description: string;
 }
 
@@ -129,4 +138,43 @@ export function createLoanPlayer(seed: string, round: number): PlayerCard {
     rarity: rating >= 80 ? 'güçlü' : rating >= 72 ? 'iyi' : 'normal',
     tags: rating >= 78 ? ['FİNİŞÖR'] : rating >= 72 ? ['TEKNİK'] : ['DAYANIKLI'],
   });
+}
+
+export function applyRandomEventTags(
+  squad: PlayerCard[],
+  requestedCount: number,
+  seed: string,
+  round: number,
+  eventId: string,
+): { squad: PlayerCard[]; targetPlayerId: string | null; addedTags: Tag[] } {
+  const requested = Math.max(0, Math.floor(requestedCount));
+  if (requested === 0) return { squad, targetPlayerId: null, addedTags: [] };
+
+  const candidates = squad
+    .filter((player) => player.tags.length < MAX_PLAYER_TAGS)
+    .sort((a, b) => {
+      const aCanFitAll = MAX_PLAYER_TAGS - a.tags.length >= requested ? 1 : 0;
+      const bCanFitAll = MAX_PLAYER_TAGS - b.tags.length >= requested ? 1 : 0;
+      return bCanFitAll - aCanFitAll || b.currentRating - a.currentRating;
+    });
+  const target = candidates[0];
+  if (!target) return { squad, targetPlayerId: null, addedTags: [] };
+
+  const rng = createRng(seed, 'event-random-tags', round, eventId);
+  const nextTags = [...target.tags];
+  const addedTags: Tag[] = [];
+  const pool = TRAINING_TAGS.filter((tag) => canAddTag(tag, nextTags));
+  while (nextTags.length < MAX_PLAYER_TAGS && addedTags.length < requested && pool.length) {
+    const index = Math.floor(rng() * pool.length);
+    const tag = pool.splice(index, 1)[0]!;
+    if (!canAddTag(tag, nextTags)) continue;
+    nextTags.push(tag);
+    addedTags.push(tag);
+  }
+
+  return {
+    squad: squad.map((player) => player.id === target.id ? { ...player, tags: nextTags } : player),
+    targetPlayerId: target.id,
+    addedTags,
+  };
 }

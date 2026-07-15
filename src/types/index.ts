@@ -253,6 +253,8 @@ export interface RunEndAnalysis {
 }
 
 export interface GameState {
+  /** Aynı Run Sonunun iki kez işlenmesini engelleyen kalıcı kimlik. */
+  runId: string;
   seed: string;
   isDailySeed: boolean;
   round: number;
@@ -293,6 +295,8 @@ export interface GameState {
    * veya oyuncu kadrodan çıkınca ilgili pin'ler temizlenir (reconcile).
    */
   manualLineup: Record<number, string>;
+  /** Run içinde unlock koşulları için gereken, snapshot ile taşınan maksimumlar. */
+  unlockTelemetry: RunUnlockTelemetry;
 }
 
 export interface LeaderboardEntry {
@@ -316,6 +320,46 @@ export interface HallOfFameEntry {
   flawless: boolean;
   timestamp: number;
   monthKey: string;
+}
+
+/** Unlock koşullarının run'lar arasında taşıdığı en iyi kariyer değerleri. */
+export interface UnlockStats {
+  bestScore: number;
+  maxTraitsOnPlayer: number;
+  maxLocalPlayers: number;
+  maxGoalsByPlayer: number;
+  maxUniqueSynergies: number;
+  maxMorale: number;
+  completedComebackRuns: number;
+  completedDangerRecoveryRuns: number;
+}
+
+export interface RunUnlockTelemetry {
+  maxTraitsOnPlayer: number;
+  maxLocalPlayers: number;
+  maxMorale: number;
+  dangerReached: boolean;
+  dangerWinsAfterReached: number;
+  dangerRecoveryAchieved: boolean;
+}
+
+export interface UnlockGuarantee {
+  unlockId: string;
+  kind: 'player' | 'event';
+  contentId: string;
+}
+
+/** Kişisel içerik ilerlemesi; Ranked havuzuna doğrudan uygulanmaz. */
+export interface UnlockState {
+  catalogVersion: number;
+  unlockedIds: string[];
+  stats: UnlockStats;
+  /** Yeni içerikler için Serbest Modda sırayla tüketilecek garanti kuyruğu. */
+  pendingGuarantees: UnlockGuarantee[];
+  /** UI gösterene kadar kalıcı tutulan yeni unlock id'leri. */
+  pendingNotificationIds: string[];
+  /** Run Sonu işlemini idempotent yapan yakın geçmiş kimlikleri. */
+  processedRunIds: string[];
 }
 
 export interface PersistedData {
@@ -352,6 +396,8 @@ export interface PersistedData {
   seenEvents: string[];
   /** Koleksiyon: hiç kadroya katılmış efsane kart isimleri */
   collectedLegends: string[];
+  /** Kalıcı içerik unlock durumu ve koşul ilerlemesi. */
+  unlocks: UnlockState;
 }
 
 export const RARITY_COLORS: Record<Rarity, string> = {
