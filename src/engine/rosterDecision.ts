@@ -34,6 +34,8 @@ export type RosterDecisionSimulation = {
   afterSynergySquad: PlayerCard[];
   activeBefore: SynergyDefinition[];
   activeAfter: SynergyDefinition[];
+  /** Yalnızca seçilen oyuncunun taslak kadrodan çıkarılmasının etkileri. */
+  departureSynergyImpacts: SynergyDecisionImpact[];
   synergyImpacts: SynergyDecisionImpact[];
 };
 
@@ -68,6 +70,31 @@ function impactStatus(
   if (after > before) return 'progressed';
   if (after < before) return 'regressed';
   return 'unchanged';
+}
+
+function compareSynergies(
+  activeBefore: SynergyDefinition[],
+  activeAfter: SynergyDefinition[],
+  beforeSynergySquad: PlayerCard[],
+  afterSynergySquad: PlayerCard[],
+): SynergyDecisionImpact[] {
+  const beforeIds = new Set(activeBefore.map((synergy) => synergy.id));
+  const afterIds = new Set(activeAfter.map((synergy) => synergy.id));
+
+  return SYNERGIES.map((synergy) => {
+    const beforeActive = beforeIds.has(synergy.id);
+    const afterActive = afterIds.has(synergy.id);
+    const beforeProgress = synergy.getProgress?.(beforeSynergySquad) ?? null;
+    const afterProgress = synergy.getProgress?.(afterSynergySquad) ?? null;
+    return {
+      synergy,
+      beforeActive,
+      afterActive,
+      beforeProgress,
+      afterProgress,
+      status: impactStatus(beforeActive, afterActive, beforeProgress, afterProgress),
+    };
+  });
 }
 
 /**
@@ -110,23 +137,20 @@ export function simulateRosterDecision(
   const afterCtx = { activeTactics, manualLineup: nextManualLineup };
   const activeBefore = getActiveSynergies(squad, morale, ctx);
   const activeAfter = getActiveSynergies(finalSquad, morale, afterCtx);
-  const beforeIds = new Set(activeBefore.map((synergy) => synergy.id));
-  const afterIds = new Set(activeAfter.map((synergy) => synergy.id));
+  const synergyImpacts = compareSynergies(activeBefore, activeAfter, beforeSynergySquad, afterSynergySquad);
 
-  const synergyImpacts = SYNERGIES.map((synergy) => {
-    const beforeActive = beforeIds.has(synergy.id);
-    const afterActive = afterIds.has(synergy.id);
-    const beforeProgress = synergy.getProgress?.(beforeSynergySquad) ?? null;
-    const afterProgress = synergy.getProgress?.(afterSynergySquad) ?? null;
-    return {
-      synergy,
-      beforeActive,
-      afterActive,
-      beforeProgress,
-      afterProgress,
-      status: impactStatus(beforeActive, afterActive, beforeProgress, afterProgress),
-    };
-  });
+  // Transfer taslağı gelen oyuncuyu da içerir. Bu ikinci kıyas, gelen kartın
+  // pozitif katkısını karıştırmadan yalnızca seçilen çıkışın ne götürdüğünü ölçer.
+  const draftManualLineup = reconcileManualLineup(manualLineup, draft.squad, formationKey);
+  const draftCtx = { activeTactics, manualLineup: draftManualLineup };
+  const draftSynergySquad = synergySquad(draft.squad, activeTactics, draftManualLineup);
+  const activeBeforeDeparture = getActiveSynergies(draft.squad, morale, draftCtx);
+  const departureSynergyImpacts = compareSynergies(
+    activeBeforeDeparture,
+    activeAfter,
+    draftSynergySquad,
+    afterSynergySquad,
+  );
 
   return {
     draftSquad: draft.squad,
@@ -137,6 +161,7 @@ export function simulateRosterDecision(
     afterSynergySquad,
     activeBefore,
     activeAfter,
+    departureSynergyImpacts,
     synergyImpacts,
   };
 }

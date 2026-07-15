@@ -79,20 +79,22 @@ function BenchHarness() {
 }
 
 describe('LineupEditorModal critical flow', () => {
-  it('keeps the outgoing player visible and updates live synergy impact after changing departure', async () => {
+  it('shows only the negative synergy impact caused by the selected departure', async () => {
     const user = userEvent.setup();
     render(<Harness />);
 
     const decision = screen.getByRole('region', { name: 'Kadrodan ayrılacak oyuncu' });
     expect(within(decision).getByText('mid-local')).toBeTruthy();
-    expect(within(decision).queryByText('YERLİ KADRO')).toBeNull();
+    expect(within(decision).getByText('YERLİ KADRO')).toBeTruthy();
+    expect(within(decision).getByText('Kapanır')).toBeTruthy();
+    expect(within(decision).queryByText('Açılır')).toBeNull();
 
     await user.click(within(decision).getByRole('button', { name: 'Değiştir' }));
     await user.click(screen.getByRole('option', { name: '75striker-bSF' }));
 
     expect(within(decision).getByText('striker-b')).toBeTruthy();
-    expect(within(decision).getByText('YERLİ KADRO')).toBeTruthy();
-    expect(within(decision).getByText('Açılır')).toBeTruthy();
+    expect(within(decision).queryByText('YERLİ KADRO')).toBeNull();
+    expect(within(decision).queryByText('Açılır')).toBeNull();
     expect(screen.getAllByText('mid-local').length).toBeGreaterThan(0);
   });
 

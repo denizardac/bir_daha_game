@@ -120,11 +120,11 @@ export function LineupEditorModal({
       outgoingPlayerId: outgoingId,
     });
   }, [activeTactics, highlightedPlayer, manualLineup, maxSquadSize, morale, outgoingId, squad]);
-  const visibleSynergyImpacts = transferImpact?.synergyImpacts
-    .filter((impact) => impact.status !== 'unchanged')
-    .filter((impact) => !impact.synergy.hidden || discoveredSynergies.includes(impact.synergy.id) || impact.afterActive)
+  const visibleSynergyImpacts = transferImpact?.departureSynergyImpacts
+    .filter((impact) => impact.status === 'deactivated' || impact.status === 'regressed')
+    .filter((impact) => !impact.synergy.hidden || discoveredSynergies.includes(impact.synergy.id))
     .sort((a, b) => {
-      const priority = { activated: 0, deactivated: 1, progressed: 2, regressed: 3, unchanged: 4 };
+      const priority = { activated: 4, deactivated: 0, progressed: 3, regressed: 1, unchanged: 2 };
       return priority[a.status] - priority[b.status];
     })
     .slice(0, 4) ?? [];
@@ -368,7 +368,7 @@ export function LineupEditorModal({
             <div className="le-transfer-decision-head">
               <div>
                 <span className="le-transfer-decision-kicker">KADRODAN AYRILACAK</span>
-                <strong>Bu karar sinerjileri etkiler</strong>
+                <strong>Ayrılmanın sinerji etkisi</strong>
               </div>
               <button
                 type="button"

@@ -84,6 +84,17 @@ describe('player transfer decision', () => {
       outgoingPlayerId: 'striker-b',
     });
     expect(simulation.synergyImpacts.find((impact) => impact.synergy.id === localSynergy.id)?.status).toBe('activated');
+    expect(simulation.departureSynergyImpacts.find((impact) => impact.synergy.id === localSynergy.id)?.status).toBe('unchanged');
+  });
+
+  it('separates the outgoing player negative impact from the incoming player contribution', () => {
+    const simulation = simulateRosterDecision(full442(true), incoming, {
+      maxSquadSize: 11,
+      outgoingPlayerId: 'mid-weak',
+    });
+
+    expect(simulation.synergyImpacts.find((impact) => impact.synergy.id === localSynergy.id)?.status).toBe('unchanged');
+    expect(simulation.departureSynergyImpacts.find((impact) => impact.synergy.id === localSynergy.id)?.status).toBe('deactivated');
   });
 
   it('marks a real full-squad unlock as dependent on the proposed departure', () => {
