@@ -1575,16 +1575,18 @@
   }
 
   .loss-v2-cta {
-    position: fixed !important;
-    left: max(0.75rem, env(safe-area-inset-left, 0px)) !important;
-    right: max(0.75rem, env(safe-area-inset-right, 0px)) !important;
-    bottom: calc(0.55rem + env(safe-area-inset-bottom, 0px)) !important;
-    z-index: 20 !important;
-    width: auto !important;
+    position: static !important;
+    width: 100% !important;
     min-height: 3.2rem !important;
-    margin: 0.25rem 0 0 !important;
+    margin: 0.7rem 0 max(0.25rem, env(safe-area-inset-bottom, 0px)) !important;
     border-radius: 14px !important;
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38) !important;
+  }
+}
+
+/* Crisis feedback adds a real row between the floating desktop subheader and cards. */
+@media (min-width: 900px) {
+  .card-select-screen.danger-pulse:not(.card-select-screen--tactic) .card-select-subheader {
+    margin-bottom: 0.55rem !important;
   }
 }
 
@@ -2565,18 +2567,14 @@
   }
 
   .event-v2 {
-    padding-bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .event-v2 .event-confirm-choice {
-    position: fixed !important;
-    left: max(0.75rem, env(safe-area-inset-left, 0px)) !important;
-    right: max(0.75rem, env(safe-area-inset-right, 0px)) !important;
-    bottom: calc(0.55rem + env(safe-area-inset-bottom, 0px)) !important;
-    z-index: 45 !important;
-    width: auto !important;
+    position: static !important;
+    width: 100% !important;
     min-height: 3.15rem !important;
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38) !important;
+    margin-top: 0.75rem !important;
   }
 
   .event-v2 .event-subject-pills {
@@ -2584,6 +2582,13 @@
     flex-wrap: wrap !important;
     gap: 0.3rem !important;
     overflow: visible !important;
+  }
+
+  .run-end-primary-actions {
+    position: static !important;
+    bottom: auto !important;
+    z-index: auto !important;
+    margin-bottom: max(0.25rem, env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .run-end-summary-mobile-actions {
@@ -3027,9 +3032,4 @@
     border-radius: 13px !important;
   }
 
-  .run-end-primary-actions {
-    position: sticky !important;
-    bottom: calc(0.55rem + env(safe-area-inset-bottom, 0px)) !important;
-    z-index: 20 !important;
-  }
 }
