@@ -49,6 +49,7 @@ import { iconForSynergy } from '@/utils/gameIcons';
 import { DANGER_MORALE_FLOOR } from '@/constants/game';
 import { getEventChoiceTones, eventChoiceClass } from '@/engine/eventRisk';
 import { getWeeklyModifier } from '@/engine/weeklyModifier';
+import { getClosestUnlockStatuses } from '@/engine/unlocks';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import type { EventOutcome } from '@/engine/events';
 
@@ -1559,7 +1560,7 @@ function ShareCardPreview({ opts }: { opts: ShareCardOptions }) {
 }
 
 export function RunEndScreen() {
-  const { score, roundHistory, squad, goToMenu, resetRun, discoveredSynergies, round, lossesCount, runEndAnalysis, runEndStep, advanceRunEnd, flawless, displayName, isDailySeed, seed, newAchievements } = useGameStore();
+  const { score, roundHistory, squad, goToMenu, resetRun, discoveredSynergies, round, lossesCount, runEndAnalysis, runEndStep, advanceRunEnd, flawless, displayName, isDailySeed, seed, newAchievements, newContentUnlocks, acknowledgeContentUnlocks } = useGameStore();
   const analysis = runEndAnalysis;
   const playerName = displayName || 'Anonim';
   const [shareMsg, setShareMsg] = useState('');
@@ -1615,6 +1616,9 @@ export function RunEndScreen() {
 
   const challengeUrl = buildChallengeLink(shareOpts);
   const runBadges = analysis?.badges ?? [];
+  const persistedProgress = getPersistedStats().unlocks;
+  const closestUnlocks = getClosestUnlockStatuses(persistedProgress, 3);
+  const pendingGuarantees = persistedProgress.pendingGuarantees;
 
   const flash = (msg: string) => {
     setShareMsg(msg);
@@ -1725,6 +1729,46 @@ export function RunEndScreen() {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {(newContentUnlocks.length > 0 || pendingGuarantees.length > 0 || closestUnlocks.length > 0) && (
+                <section className="run-end-unlocks" aria-label="Kalıcı içerik ilerlemesi">
+                  {newContentUnlocks.length > 0 && (
+                    <div className="run-end-unlocks-new">
+                      <div className="run-end-unlocks-title">
+                        <span><UiIcon name="sparkles" /> YENİ İÇERİK AÇILDI</span>
+                        <button type="button" onClick={acknowledgeContentUnlocks}>Gördüm</button>
+                      </div>
+                      <div className="run-end-unlock-rewards">
+                        {newContentUnlocks.map((unlock) => (
+                          <article key={unlock.id}>
+                            <small>{unlock.reward.kind === 'player' ? 'OYUNCU' : unlock.reward.kind === 'event' ? 'OLAY' : 'MEKANİK'}</small>
+                            <strong>{unlock.reward.name}</strong>
+                            <span>{unlock.name}</span>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {pendingGuarantees.length > 0 && (
+                    <p className="run-end-guarantee-note">
+                      <UiIcon name="shield" />
+                      <span>Sonraki Serbest Mod garantisi</span>
+                      <strong>{pendingGuarantees[0]?.kind === 'player' ? 'Yeni oyuncu ilk tekliflerde' : 'Yeni olay ilk olay roundunda'} gösterilecek.</strong>
+                    </p>
+                  )}
+                  {closestUnlocks.length > 0 && (
+                    <div className="run-end-next-targets">
+                      <span>Sıradaki hedefler</span>
+                      {closestUnlocks.map((status) => (
+                        <p key={status.unlock.id}>
+                          <strong>{status.unlock.name}</strong>
+                          <span>{status.current}/{status.unlock.target} · Ödül: {status.unlock.reward.name}</span>
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </section>
               )}
 
               <div className="run-end-hero-metrics">

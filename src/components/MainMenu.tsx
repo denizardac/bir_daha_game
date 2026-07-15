@@ -7,6 +7,7 @@ import { getDailyStreakBonus } from '@/engine/dailyStreak';
 import { getWeeklyModifier } from '@/engine/weeklyModifier';
 import { isChallengeSeedDaily } from '@/engine/challenge';
 import { getPrimarySeasonTitle } from '@/engine/seasonTitles';
+import { getClosestUnlockStatuses, getUnlockStatuses } from '@/engine/unlocks';
 import { StartRunModal } from '@/components/StartRunModal';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
@@ -30,8 +31,13 @@ export function MainMenu() {
   const showContinuePrompt = useGameStore((s) => s.showContinuePrompt);
   const pendingChallenge = useGameStore((s) => s.pendingChallenge);
   const setChallenge = useGameStore((s) => s.setChallenge);
+  const newContentUnlocks = useGameStore((s) => s.newContentUnlocks);
+  const acknowledgeContentUnlocks = useGameStore((s) => s.acknowledgeContentUnlocks);
   const [stats] = useState(() => getPersistedStats());
   const [seasonTitle] = useState(() => getPrimarySeasonTitle(stats, getAnonymousId()));
+  const closestUnlocks = getClosestUnlockStatuses(stats.unlocks, 3);
+  const activeMechanics = getUnlockStatuses(stats.unlocks)
+    .filter((status) => status.unlocked && status.unlock.reward.kind === 'mechanic');
 
   const [startPrompt, setStartPrompt] = useState<{ daily: boolean; afterAbandon?: boolean; seed?: string; rivalScore?: number } | null>(null);
   const [installTipVisible, setInstallTipVisible] = useState(false);
@@ -278,6 +284,53 @@ export function MainMenu() {
                       </p>
                     );
                   })()}
+
+                  {newContentUnlocks.length > 0 && (
+                    <div className="menu-new-unlocks" role="status" aria-label="Yeni açılan içerikler">
+                      <div>
+                        <span><UiIcon name="sparkles" /> YENİ İÇERİK</span>
+                        <strong>{newContentUnlocks.map((unlock) => unlock.reward.name).join(' · ')}</strong>
+                        <small>Oyuncu ve olay ödülleri ilk Serbest Mod runında garanti edilir.</small>
+                      </div>
+                      <button type="button" className="btn-secondary" onClick={acknowledgeContentUnlocks}>Gördüm</button>
+                    </div>
+                  )}
+
+                  <section className="menu-unlock-panel" aria-label="Kalıcı ilerleme hedefleri">
+                    <div className="menu-unlock-panel-head">
+                      <div>
+                        <span>Kalıcı ilerleme</span>
+                        <strong>En yakın hedefler</strong>
+                      </div>
+                      <button type="button" onClick={() => setScreen('collection')}>Tümünü gör →</button>
+                    </div>
+                    {closestUnlocks.length > 0 ? (
+                      <div className="menu-unlock-targets">
+                        {closestUnlocks.map((status) => (
+                          <div key={status.unlock.id} className="menu-unlock-target">
+                            <div>
+                              <strong>{status.unlock.name}</strong>
+                              <span>{status.unlock.reward.name}</span>
+                            </div>
+                            <div className="menu-unlock-mini-bar" aria-label={`${status.unlock.name} yüzde ${status.percent}`}>
+                              <span style={{ width: `${status.percent}%` }} />
+                            </div>
+                            <small>{status.current}/{status.unlock.target}</small>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="menu-unlock-complete"><UiIcon name="trophy" /> Tüm kalıcı içerikler açıldı.</p>
+                    )}
+                    {activeMechanics.length > 0 && (
+                      <div className="menu-active-mechanics">
+                        <span>Serbest Mod mekanikleri</span>
+                        {activeMechanics.map((status) => (
+                          <strong key={status.unlock.id}><UiIcon name="check" /> {status.unlock.reward.name}</strong>
+                        ))}
+                      </div>
+                    )}
+                  </section>
 
                   {showContinuePrompt ? (
                     <div className="menu-continue-banner">

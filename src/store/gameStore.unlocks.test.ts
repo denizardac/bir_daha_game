@@ -64,4 +64,24 @@ describe('gameStore unlock entegrasyonu', () => {
     expect(useGameStore.getState().targetedScoutAvailable).toBe(false);
     expect(useGameStore.getState().rerollsRemaining).toBe(rerollsBefore);
   });
+
+  it('görülmeyen içerik bildirimini yeniden açılışta yükler ve yalnız onayla temizler', () => {
+    const persisted = loadPersisted();
+    savePersisted({
+      ...persisted,
+      unlocks: {
+        ...persisted.unlocks,
+        unlockedIds: ['score_5k_gokhan'],
+        pendingNotificationIds: ['score_5k_gokhan'],
+      },
+    });
+
+    useGameStore.getState().init();
+    expect(useGameStore.getState().newContentUnlocks.map((unlock) => unlock.id)).toEqual(['score_5k_gokhan']);
+    expect(loadPersisted().unlocks.pendingNotificationIds).toEqual(['score_5k_gokhan']);
+
+    useGameStore.getState().acknowledgeContentUnlocks();
+    expect(useGameStore.getState().newContentUnlocks).toEqual([]);
+    expect(loadPersisted().unlocks.pendingNotificationIds).toEqual([]);
+  });
 });

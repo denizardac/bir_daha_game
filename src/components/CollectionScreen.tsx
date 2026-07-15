@@ -3,12 +3,14 @@ import { EVENT_CARDS } from '@/data/events';
 import { PLAYER_POOL } from '@/data/players';
 import { getPlayerArchetype } from '@/data/archetypes';
 import { countUnlockedAchievements, getAchievementState } from '@/engine/achievements';
+import { getUnlockStatuses } from '@/engine/unlocks';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 
-type Tab = 'efsane' | 'olay' | 'basarim';
+type Tab = 'kilit' | 'efsane' | 'olay' | 'basarim';
 
 const TAB_META: [Tab, string, UiIconName][] = [
+  ['kilit', 'Kilitli İçerik', 'lock'],
   ['efsane', 'Efsaneler', 'trophy'],
   ['olay', 'Olaylar', 'book-open'],
   ['basarim', 'Başarımlar', 'medal'],
@@ -39,7 +41,7 @@ const LEGEND_POOL = (() => {
 export function CollectionScreen() {
   const stats = getPersistedStats();
   const setScreen = useGameStore((s) => s.setScreen);
-  const [tab, setTab] = useState<Tab>('efsane');
+  const [tab, setTab] = useState<Tab>('kilit');
 
   const seenEvents = new Set(stats.seenEvents);
   const collectedLegends = new Set(stats.collectedLegends);
@@ -48,7 +50,11 @@ export function CollectionScreen() {
   const eventOpen = EVENT_CARDS.filter((e) => seenEvents.has(e.id)).length;
   const achievements = getAchievementState(stats);
   const achievementCount = countUnlockedAchievements(stats);
+  const unlockStatuses = getUnlockStatuses(stats.unlocks);
+  const unlockedContentCount = unlockStatuses.filter((status) => status.unlocked).length;
+  const unlockNameById = new Map(unlockStatuses.map((status) => [status.unlock.id, status.unlock.name]));
   const collectionStats = [
+    { label: 'İçerik', value: unlockedContentCount, total: unlockStatuses.length, tone: 'violet' },
     { label: 'Efsane', value: legendOpen, total: LEGEND_POOL.length, tone: 'gold' },
     { label: 'Olay', value: eventOpen, total: EVENT_CARDS.length, tone: 'cyan' },
     { label: 'Başarım', value: achievementCount.unlocked, total: achievementCount.total, tone: 'rose' },
@@ -101,9 +107,45 @@ export function CollectionScreen() {
         </div>
 
         <div className="collection-section-intro">
-          <span>{tab === 'efsane' ? 'Oyuncu vitrini' : tab === 'olay' ? 'Sezon günlüğü' : 'Kariyer hedefleri'}</span>
-          <p>{tab === 'efsane' ? 'Çektiğin efsaneler burada görünür.' : tab === 'olay' ? 'Karşılaştığın olay kartları arşive eklenir.' : 'Hedefleri tamamladıkça rozetler açılır.'}</p>
+          <span>{tab === 'kilit' ? 'Kalıcı ilerleme' : tab === 'efsane' ? 'Oyuncu vitrini' : tab === 'olay' ? 'Sezon günlüğü' : 'Kariyer hedefleri'}</span>
+          <p>{tab === 'kilit' ? 'Serbest Mod hedeflerini tamamla; yeni oyuncu, olay ve mekanikler sonraki runlar için açılsın.' : tab === 'efsane' ? 'Çektiğin efsaneler burada görünür.' : tab === 'olay' ? 'Karşılaştığın olay kartları arşive eklenir.' : 'Hedefleri tamamladıkça rozetler açılır.'}</p>
         </div>
+
+        {tab === 'kilit' && (
+          <div className="unlock-collection-grid">
+            {unlockStatuses.map((status) => {
+              const rewardLabel = status.unlock.reward.kind === 'player'
+                ? 'Oyuncu'
+                : status.unlock.reward.kind === 'event'
+                  ? 'Olay'
+                  : 'Mekanik';
+              const blockedBy = status.blockedByUnlockId ? unlockNameById.get(status.blockedByUnlockId) : undefined;
+              return (
+                <article
+                  key={status.unlock.id}
+                  className={`unlock-collection-card ${status.unlocked ? 'unlock-collection-card--open' : ''}`}
+                >
+                  <div className="unlock-collection-head">
+                    <span className={`unlock-reward-kind unlock-reward-kind--${status.unlock.reward.kind}`}>
+                      <UiIcon name={status.unlocked ? 'check' : status.unlock.reward.kind === 'player' ? 'user' : status.unlock.reward.kind === 'event' ? 'book-open' : 'sparkles'} />
+                      {rewardLabel}
+                    </span>
+                    <strong>{status.unlocked ? 'Açıldı' : `%${status.percent}`}</strong>
+                  </div>
+                  <h2>{status.unlock.name}</h2>
+                  <p>{status.unlock.description}</p>
+                  <div className="unlock-progress-bar" aria-label={`${status.unlock.name} ilerlemesi yüzde ${status.percent}`}>
+                    <span style={{ width: `${status.percent}%` }} />
+                  </div>
+                  <div className="unlock-collection-foot">
+                    <span>{status.unlocked ? 'Tamamlandı' : blockedBy ? `Önce: ${blockedBy}` : `${status.current} / ${status.unlock.target}`}</span>
+                    <strong>Ödül: {status.unlock.reward.name}</strong>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
 
         {tab === 'efsane' && (
           <div className="collection-grid">

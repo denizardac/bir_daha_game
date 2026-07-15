@@ -71,7 +71,9 @@ import {
   applyCompletedRunToUnlocks,
   consumeUnlockGuarantee,
   createRunUnlockTelemetry,
+  dismissUnlockNotifications,
   getNextUnlockGuarantee,
+  getUnlockDefinitionsByIds,
   getUnlockedContentIds,
   hasUnlockedContent,
   updateRunUnlockTelemetry,
@@ -204,6 +206,7 @@ interface GameStore extends GameState {
   rerollSystemOffers: () => void;
   dismissMilestone: (id: string) => void;
   dismissSynergyReveal: () => void;
+  acknowledgeContentUnlocks: () => void;
   tickTimer: () => void;
   saveCurrentRun: () => void;
   setScreen: (screen: Screen) => void;
@@ -647,7 +650,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     getAnonymousId();
     const p = loadPersisted();
     const saved = p.currentRun as Partial<RunSnapshot> | null;
-    set({ showContinuePrompt: isResumableRun(saved), isFirstRun: p.isFirstRun });
+    set({
+      showContinuePrompt: isResumableRun(saved),
+      isFirstRun: p.isFirstRun,
+      newContentUnlocks: getUnlockDefinitionsByIds(p.unlocks.pendingNotificationIds),
+    });
   },
 
   setChallenge: (challenge) => set({ pendingChallenge: challenge }),
@@ -1705,6 +1712,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   advanceRunEnd: () => set((s) => ({ runEndStep: s.runEndStep + 1 })),
+
+  acknowledgeContentUnlocks: () => {
+    const persisted = loadPersisted();
+    const ids = get().newContentUnlocks.map((unlock) => unlock.id);
+    if (ids.length) {
+      savePersisted({
+        ...persisted,
+        unlocks: dismissUnlockNotifications(persisted.unlocks, ids),
+      });
+    }
+    set({ newContentUnlocks: [] });
+  },
 
   goToMenu: () => {
     clearRun();

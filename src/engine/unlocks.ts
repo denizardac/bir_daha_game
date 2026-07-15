@@ -311,6 +311,19 @@ export function getUnlockStatuses(state: UnlockState): UnlockStatus[] {
   });
 }
 
+export function getUnlockDefinitionsByIds(unlockIds: readonly string[]): UnlockDefinition[] {
+  const wanted = new Set(unlockIds);
+  return RULES.filter((unlock) => wanted.has(unlock.id));
+}
+
+/** Oyuncunun şu anda gerçekten ilerletebildiği en yakın hedefleri döndürür. */
+export function getClosestUnlockStatuses(state: UnlockState, limit = 3): UnlockStatus[] {
+  return getUnlockStatuses(state)
+    .filter((status) => !status.unlocked && !status.blockedByUnlockId)
+    .sort((a, b) => b.percent - a.percent || (a.unlock.target - a.current) - (b.unlock.target - b.current))
+    .slice(0, Math.max(0, limit));
+}
+
 function guaranteeFor(unlock: UnlockDefinition): UnlockGuarantee | null {
   if (unlock.reward.kind !== 'player' && unlock.reward.kind !== 'event') return null;
   return { unlockId: unlock.id, kind: unlock.reward.kind, contentId: unlock.reward.contentId };

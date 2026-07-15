@@ -3,6 +3,7 @@ import {
   applyCompletedRunToUnlocks,
   createInitialUnlockState,
   createRunUnlockTelemetry,
+  getClosestUnlockStatuses,
   getUnlockStatuses,
   normalizeUnlockState,
   consumeUnlockGuarantee,
@@ -149,6 +150,21 @@ describe('unlock çekirdeği', () => {
 
     expect(second.state.stats.bestScore).toBe(4_000);
     expect(status.blockedByUnlockId).toBe('score_5k_gokhan');
+  });
+
+  it('ana menü için yalnızca erişilebilir en yakın üç hedefi sıralar', () => {
+    const state = createInitialUnlockState();
+    state.stats.bestScore = 4_500;
+    state.stats.maxLocalPlayers = 6;
+    state.stats.maxTraitsOnPlayer = 2;
+
+    const closest = getClosestUnlockStatuses(state, 3);
+    expect(closest.map((status) => status.unlock.id)).toEqual([
+      'score_5k_gokhan',
+      'locals_7_neighborhood_captain',
+      'traits_5_legend_touch',
+    ]);
+    expect(closest.some((status) => status.blockedByUnlockId)).toBe(false);
   });
 
   it('bozuk ve v4 kayıt alanlarını onarırken eski moral maksimumunu taşır', () => {
