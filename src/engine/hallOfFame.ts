@@ -1,6 +1,12 @@
 import type { HallOfFameEntry, PersistedData } from '@/types';
 
 const ISTANBUL_TZ = 'Europe/Istanbul';
+export const RANKED_SEASON_START = '2026-07';
+
+/** Haziran 2026 ve öncesi eski karma sıralama kuralıyla kapanmış sezonlardır. */
+export function isRankedSeason(monthKey: string): boolean {
+  return monthKey >= RANKED_SEASON_START;
+}
 
 /** Sezon anahtarı (YYYY-MM, İstanbul takvimi) — günlük seed ile aynı saat diliminde kalır */
 export function getSeasonKey(date = new Date()): string {

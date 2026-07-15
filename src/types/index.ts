@@ -324,6 +324,8 @@ export interface LeaderboardEntry {
 
 export interface HallOfFameEntry {
   id: string;
+  /** v7+: yalnızca Ranked günlük seed kayıtları arşivlenir. */
+  seed?: string;
   displayName: string;
   totalScore: number;
   roundsCompleted: number;

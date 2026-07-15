@@ -10,7 +10,12 @@ import { UiIcon } from '@/components/UiIcon';
 
 type Tab = 'daily' | 'weekly' | 'allTime';
 
-const TAB_LABELS: Record<Tab, string> = { daily: 'Günlük', weekly: 'Haftalık', allTime: 'Tüm Zamanlar' };
+const TAB_LABELS: Record<Tab, string> = { daily: 'Günlük', weekly: 'Haftalık', allTime: 'Kariyer' };
+const TAB_DESCRIPTIONS: Record<Tab, string> = {
+  daily: 'Bugünün ortak seed’inde yaptığın en iyi skor.',
+  weekly: 'Bu haftaki Günlük Ranked runlarından tek en iyi skor.',
+  allTime: 'Tüm Günlük Ranked runlarındaki kariyer rekorun.',
+};
 
 type DisplayRow =
   | { kind: 'entry'; entry: LeaderboardEntry; rank: number; isMe: boolean }
@@ -70,7 +75,7 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
   const stats = getPersistedStats();
   const myId = getAnonymousId();
   const setScreen = useGameStore((s) => s.setScreen);
-  const [tab, setTab] = useState<Tab>('allTime');
+  const [tab, setTab] = useState<Tab>('daily');
   const [expanded, setExpanded] = useState(initialExpanded);
   const remote = isRemoteLeaderboardEnabled();
   const [remoteList, setRemoteList] = useState<LeaderboardEntry[] | null>(null);
@@ -119,7 +124,7 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
         aria-label={expanded ? 'Leaderboard daralt' : 'Leaderboard genişlet'}
       >
         <UiIcon name="trophy" className="menu-widget-icon" />
-        <span className="menu-widget-title">Leaderboard</span>
+        <span className="menu-widget-title">Ranked Skorlar</span>
         {remote && <span className="menu-lb-live-badge">Canlı</span>}
         <span className="menu-lb-toggle-hint">{expanded ? 'Daralt' : 'Genişlet'}</span>
         <span className={`menu-lb-chevron ${expanded ? 'menu-lb-chevron--up' : ''}`} aria-hidden>▼</span>
@@ -139,6 +144,8 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
           </button>
         ))}
       </div>
+
+      <p className="menu-lb-period-desc">{TAB_DESCRIPTIONS[tab]}</p>
 
       {!expanded && (
         <div className="menu-lb-compact">
@@ -169,8 +176,8 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
           {rows.length === 0 ? (
             <p className="menu-lb-empty">
               {tab === 'daily'
-                ? 'Günlük seed run\'ı bitirince burada görünür — serbest mod skorları haftalık listede.'
-                : 'Henüz skor yok — ilk sen ol!'}
+                ? 'Bugünün Ranked runını tamamlayınca skorun burada görünür.'
+                : 'Bu Ranked döneminde henüz skor yok — ilk sen ol!'}
             </p>
           ) : (
             rows.map((row, idx) => {
@@ -212,7 +219,7 @@ export function MenuLeaderboardWidget({ initialExpanded = false }: { initialExpa
         className="menu-lb-fullbtn"
         onClick={() => setScreen('leaderboard')}
       >
-        <span>Tüm sıralamayı gör</span>
+        <span>Ranked merkezini aç</span>
         <UiIcon name="arrow-right" />
       </button>
     </div>

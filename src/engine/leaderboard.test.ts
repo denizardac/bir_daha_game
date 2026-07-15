@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { addScoreToLeaderboards, mergeBestLeaderboardEntries } from '@/engine/leaderboard';
-import { addToHallOfFame, listSeasonMonths } from '@/engine/hallOfFame';
+import { addToHallOfFame, isRankedSeason, listSeasonMonths } from '@/engine/hallOfFame';
 import type { HallOfFameEntry, LeaderboardEntry, PersistedData } from '@/types';
 import { createInitialUnlockState } from '@/engine/unlocks';
+import { migratePersistedRecord } from '@/utils/storage';
 
 function baseData(): PersistedData {
   return {
@@ -65,16 +66,18 @@ function hallEntry(overrides: Partial<HallOfFameEntry> = {}): Omit<HallOfFameEnt
 }
 
 describe('addScoreToLeaderboards', () => {
-  it('does not let free mode update daily streak, today score, or daily leaderboard', () => {
+  it('keeps free mode personal and out of every ranked leaderboard', () => {
     const next = addScoreToLeaderboards(baseData(), entry({ seed: 'free-seed', totalScore: 2500 }), false);
 
     expect(next.todayScore).toBe(0);
     expect(next.dailyStreak).toBe(0);
     expect(next.lastPlayedDate).toBe('');
     expect(next.dailyLeaderboard).toHaveLength(0);
-    expect(next.weeklyLeaderboard).toHaveLength(1);
-    expect(next.allTimeLeaderboard).toHaveLength(1);
+    expect(next.weeklyLeaderboard).toHaveLength(0);
+    expect(next.allTimeLeaderboard).toHaveLength(0);
+    expect(next.flawlessLeaderboard).toHaveLength(0);
     expect(next.allTimeBest).toBe(2500);
+    expect(next.totalRuns).toBe(1);
   });
 
   it('updates daily streak and today score only for daily scores', () => {
@@ -119,6 +122,24 @@ describe('addScoreToLeaderboards', () => {
 });
 
 describe('addToHallOfFame', () => {
+  it('starts ranked-only seasons in July 2026 without rewriting the legacy champion', () => {
+    expect(isRankedSeason('2026-06')).toBe(false);
+    expect(isRankedSeason('2026-07')).toBe(true);
+  });
+
+  it('v7 migration removes free scores from ranked seasons but preserves the June legacy archive', () => {
+    const freeHall = { ...hallEntry(), seed: 'free-legacy', monthKey: '2026-06' };
+    const migrated = migratePersistedRecord({
+      saveVersion: 6,
+      seasonKey: '2026-07',
+      hallOfFame: [{ ...freeHall, monthKey: '2026-07' }],
+      seasonArchive: { '2026-06': [freeHall] },
+    });
+
+    expect(migrated.hallOfFame).toEqual([]);
+    expect((migrated.seasonArchive as Record<string, unknown[]>)['2026-06']).toHaveLength(1);
+  });
+
   it('keeps a player monthly best instead of replacing it with a lower score', () => {
     const first = addToHallOfFame(baseData(), hallEntry({ totalScore: 3000, timestamp: 1 }));
     const next = addToHallOfFame(first, hallEntry({ totalScore: 1200, timestamp: 2 }));

@@ -47,7 +47,7 @@ export function StartRunModal({ open, daily, defaultName = '', rivalScore, onCon
         onClick={(e) => e.stopPropagation()}
       >
         <p className="start-run-badge">
-          {rivalScore !== undefined ? 'Meydan Okuma' : daily ? 'Günlük Seed' : 'Serbest Mod'}
+          {rivalScore !== undefined ? 'Meydan Okuma' : daily ? 'Günlük Ranked' : 'Serbest Mod'}
         </p>
         <h2 id="start-run-title" className="start-run-title">Run&apos;a başlamadan önce</h2>
         {rivalScore !== undefined && rivalScore > 0 && (
@@ -56,7 +56,9 @@ export function StartRunModal({ open, daily, defaultName = '', rivalScore, onCon
           </p>
         )}
         <p className="start-run-sub">
-          Leaderboard ve paylaşım kartında görünecek isim. Her run için seçebilirsin.
+          {daily
+            ? 'Ranked tablosu ve paylaşım kartında görünecek isim. Her run için seçebilirsin.'
+            : 'Run özeti ve paylaşım kartında görünecek isim. Serbest Mod sıralamaya yazılmaz.'}
         </p>
 
         <form onSubmit={submit} className="start-run-form">

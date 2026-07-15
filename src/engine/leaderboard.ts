@@ -39,11 +39,15 @@ export function addScoreToLeaderboards(
   const dailyLeaderboard = isDailyScore
     ? upsertBest(data.dailyLeaderboard, fullEntry, (x) => x.seed === seed)
     : data.dailyLeaderboard;
-  const weeklyLeaderboard = upsertBest(data.weeklyLeaderboard, fullEntry, (x) => x.weekKey === weekKey);
-  const allTimeLeaderboard = upsertBest(data.allTimeLeaderboard, fullEntry);
+  const weeklyLeaderboard = isDailyScore
+    ? upsertBest(data.weeklyLeaderboard, fullEntry, (x) => x.weekKey === weekKey)
+    : data.weeklyLeaderboard;
+  const allTimeLeaderboard = isDailyScore
+    ? upsertBest(data.allTimeLeaderboard, fullEntry)
+    : data.allTimeLeaderboard;
 
   let flawlessLeaderboard = data.flawlessLeaderboard;
-  if (entry.flawless) {
+  if (isDailyScore && entry.flawless) {
     flawlessLeaderboard = upsertBest(flawlessLeaderboard, fullEntry);
   }
 

@@ -1,5 +1,6 @@
 import type { SignedRunPayload } from '@/engine/runIntegrity';
 import { getTodayKey, getWeekKey, mergeBestLeaderboardEntries } from '@/engine/leaderboard';
+import { isRankedSeason } from '@/engine/hallOfFame';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import type { LeaderboardEntry, RoundResult } from '@/types';
 
@@ -20,18 +21,6 @@ export type RemoteLeaderboardRow = {
 
 export type LeaderboardPeriod = 'daily' | 'weekly' | 'allTime' | 'flawless';
 
-type LeaderboardRpcRow = {
-  player_id: string;
-  display_name: string;
-  seed: string;
-  total_score: number;
-  rounds_completed: number;
-  flawless: boolean;
-  week_key: string;
-  integrity_digest: string;
-  submitted_at: string;
-};
-
 type RankRpcResult = {
   rank: number;
   total: number;
@@ -46,20 +35,6 @@ export type RunStartPayload = {
 };
 
 function rowToEntry(row: RemoteLeaderboardRow): LeaderboardEntry {
-  return {
-    id: row.player_id,
-    seed: row.seed,
-    displayName: row.display_name,
-    totalScore: row.total_score,
-    roundsCompleted: row.rounds_completed,
-    timestamp: new Date(row.submitted_at).getTime(),
-    flawless: row.flawless,
-    weekKey: row.week_key,
-    integrityDigest: row.integrity_digest,
-  };
-}
-
-function rpcRowToEntry(row: LeaderboardRpcRow): LeaderboardEntry {
   return {
     id: row.player_id,
     seed: row.seed,
@@ -136,7 +111,8 @@ export async function fetchTodayRunStartCount(): Promise<number | null> {
   const { count, error } = await supabase
     .from('run_starts')
     .select('id', { count: 'exact', head: true })
-    .eq('day_key', getTodayKey());
+    .eq('day_key', getTodayKey())
+    .eq('is_daily', true);
 
   if (error || count === null) return null;
   return count;
@@ -163,26 +139,16 @@ export async function fetchRemoteLeaderboard(
 
   const today = getTodayKey();
   const weekKey = getWeekKey();
-  const { data: rpcData, error: rpcError } = await supabase.rpc('get_leaderboard_best', {
-    p_period: period,
-    p_day_key: today,
-    p_week_key: weekKey,
-    p_seed: dailySeed ?? null,
-    p_limit: 100,
-  });
-  if (!rpcError && Array.isArray(rpcData)) {
-    return (rpcData as LeaderboardRpcRow[]).map(rpcRowToEntry);
-  }
-
   let query = supabase
     .from('leaderboard_scores')
     .select('*')
+    .eq('is_daily', true)
     .order('total_score', { ascending: false })
-    .limit(100);
+    .limit(500);
 
   switch (period) {
     case 'daily':
-      query = query.eq('day_key', today).eq('is_daily', true);
+      query = query.eq('day_key', today);
       if (dailySeed) query = query.eq('seed', dailySeed);
       break;
     case 'weekly':
@@ -210,7 +176,7 @@ export async function fetchRemoteLeaderboard(
     entries.push(rowToEntry(row));
   }
 
-  return entries;
+  return entries.slice(0, 100);
 }
 
 function nextMonthKey(monthKey: string): string {
@@ -226,13 +192,17 @@ export async function fetchRemoteHallOfFame(monthKey: string): Promise<Leaderboa
   const supabase = await getSupabaseClient();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('leaderboard_scores')
     .select('*')
     .gte('day_key', `${monthKey}-01`)
     .lt('day_key', `${nextMonthKey(monthKey)}-01`)
     .order('total_score', { ascending: false })
     .limit(500);
+
+  if (isRankedSeason(monthKey)) query = query.eq('is_daily', true);
+
+  const { data, error } = await query;
 
   if (error || !data) return [];
   return mergeBestLeaderboardEntries((data as RemoteLeaderboardRow[]).map(rowToEntry)).slice(0, 50);

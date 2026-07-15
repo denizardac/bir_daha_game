@@ -1,5 +1,5 @@
 import type { PersistedData } from '@/types';
-import { getSeasonKey } from '@/engine/hallOfFame';
+import { getSeasonKey, isRankedSeason } from '@/engine/hallOfFame';
 import { getDailySeed } from '@/engine/seed';
 import { getTodayKey } from '@/engine/leaderboard';
 import { repairRunSnapshot } from '@/engine/runPersistence';
@@ -8,7 +8,7 @@ import { PLAYER_POOL } from '@/data/players';
 import { normalizeMonthlyLegendRecord } from '@/engine/monthlyLegend';
 
 const STORAGE_KEY = 'bir-daha-save';
-export const CURRENT_SAVE_VERSION = 6;
+export const CURRENT_SAVE_VERSION = 7;
 
 export function getAnonymousId(): string {
   const data = loadPersisted();
@@ -90,6 +90,29 @@ export function migratePersistedRecord(parsed: Record<string, unknown>): Record<
   }
   if (version < 6) {
     migrated.monthlyLegend = normalizeMonthlyLegendRecord(migrated.monthlyLegend);
+  }
+  if (version < 7) {
+    const rankedOnly = (value: unknown) => Array.isArray(value)
+      ? value.filter((entry) => {
+          if (!entry || typeof entry !== 'object') return false;
+          const seed = (entry as { seed?: unknown }).seed;
+          return typeof seed === 'string' && !seed.startsWith('free-');
+        })
+      : [];
+    migrated.weeklyLeaderboard = rankedOnly(migrated.weeklyLeaderboard);
+    migrated.allTimeLeaderboard = rankedOnly(migrated.allTimeLeaderboard);
+    migrated.flawlessLeaderboard = rankedOnly(migrated.flawlessLeaderboard);
+    const seasonKey = typeof migrated.seasonKey === 'string' ? migrated.seasonKey : getSeasonKey();
+    migrated.hallOfFame = isRankedSeason(seasonKey)
+      ? rankedOnly(migrated.hallOfFame)
+      : migrated.hallOfFame;
+    const archive = migrated.seasonArchive;
+    migrated.seasonArchive = archive && typeof archive === 'object' && !Array.isArray(archive)
+      ? Object.fromEntries(Object.entries(archive).map(([key, entries]) => [
+          key,
+          isRankedSeason(key) ? rankedOnly(entries) : entries,
+        ]))
+      : {};
   }
   migrated.saveVersion = CURRENT_SAVE_VERSION;
   return migrated;

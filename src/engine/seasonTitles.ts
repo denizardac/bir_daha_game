@@ -1,6 +1,7 @@
 import type { UiIconName } from '@/components/UiIcon';
 import { getSeasonKey, getSeasonLabel } from '@/engine/hallOfFame';
-import type { HallOfFameEntry, PersistedData } from '@/types';
+import { normalizeMonthlyLegendRecord } from '@/engine/monthlyLegend';
+import type { HallOfFameEntry, MonthlyLegendRecord, PersistedData } from '@/types';
 
 export type SeasonPlacement = 1 | 2 | 3;
 
@@ -73,4 +74,22 @@ export function getPrimarySeasonTitle(
   const titles = getPlayerSeasonTitles(data, playerId, currentKey);
   if (!titles.length) return null;
   return [...titles].sort((a, b) => a.placement - b.placement || b.monthKey.localeCompare(a.monthKey))[0]!;
+}
+
+/** Yalnızca global olarak doğrulanmış, kapanmış sezon şampiyonuna unvan verir. */
+export function getVerifiedChampionTitle(
+  record: MonthlyLegendRecord | null,
+  playerId: string,
+  currentKey = getSeasonKey(),
+): SeasonTitle | null {
+  const verified = normalizeMonthlyLegendRecord(record);
+  if (!verified || !playerId) return null;
+  if (verified.awardMonthKey !== currentKey || verified.championId !== playerId) return null;
+  return {
+    monthKey: verified.sourceMonthKey,
+    label: `${getSeasonLabel(verified.sourceMonthKey)} Şampiyonu`,
+    placement: 1,
+    score: verified.totalScore,
+    icon: 'trophy',
+  };
 }

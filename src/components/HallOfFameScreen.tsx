@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { formatScore } from '@/engine/scoring';
-import { getSeasonLabel, listSeasonMonths, getHallOfFameForMonth, getSeasonKey } from '@/engine/hallOfFame';
-import { mergeBestScoreEntries } from '@/engine/leaderboard';
+import { getSeasonLabel, listSeasonMonths, getHallOfFameForMonth, getSeasonKey, isRankedSeason } from '@/engine/hallOfFame';
 import { fetchRemoteHallOfFame, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { UiIcon } from '@/components/UiIcon';
-import { getPlayerSeasonTitles } from '@/engine/seasonTitles';
+import { getVerifiedChampionTitle } from '@/engine/seasonTitles';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { getAnonymousId } from '@/utils/storage';
 import type { HallOfFameEntry, LeaderboardEntry } from '@/types';
@@ -26,11 +25,13 @@ export function HallOfFameScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
   const stats = getPersistedStats();
   const activeKey = getSeasonKey();
-  const months = listSeasonMonths(stats, activeKey);
+  const months = [...new Set([...listSeasonMonths(stats, activeKey), ...getPlaceholderMonths(activeKey, 3)])].sort().reverse();
   const [month, setMonth] = useState(activeKey);
   const isActive = month === activeKey;
+  const rankedSeason = isRankedSeason(month);
   const remote = isRemoteLeaderboardEnabled();
   const [remoteEntries, setRemoteEntries] = useState<LeaderboardEntry[] | null>(null);
+  const monthlyLegend = useGameStore((s) => s.monthlyLegend);
 
   useEffect(() => {
     if (!remote) { setRemoteEntries(null); return; }
@@ -46,16 +47,14 @@ export function HallOfFameScreen() {
   }, [remote, month]);
 
   const localEntries = getHallOfFameForMonth(stats, month);
-  const entries: (HallOfFameEntry | LeaderboardEntry)[] =
-    remote && remoteEntries !== null
-      ? mergeBestScoreEntries<HallOfFameEntry | LeaderboardEntry>(localEntries, remoteEntries)
-      : localEntries;
-  const archivePlaceholders = getPlaceholderMonths(activeKey).filter((m) => !months.includes(m));
-  const myTitles = getPlayerSeasonTitles(stats, getAnonymousId(), activeKey);
+  const entries: (HallOfFameEntry | LeaderboardEntry)[] = remote && remoteEntries !== null
+    ? remoteEntries
+    : localEntries;
+  const verifiedTitle = getVerifiedChampionTitle(monthlyLegend, getAnonymousId(), activeKey);
+  const myTitles = verifiedTitle ? [verifiedTitle] : [];
   const champion = entries[0];
   const podiumEntries = entries.slice(0, 3);
   const tableEntries = entries.slice(3);
-  const pastMonths = months.filter((m) => m !== activeKey);
 
   return (
     <div className="game-shell page-screen hof-screen">
@@ -67,28 +66,25 @@ export function HallOfFameScreen() {
         <header className="page-screen-header hof-screen-header">
           <div className="hof-header-content">
             <div>
-              <span className="page-screen-eyebrow">Sezon arşivi</span>
+              <span className="page-screen-eyebrow">Ranked sezon arşivi</span>
               <h1>Hall of Fame</h1>
-              <p>Aylık sezon — her ay sıfırlanır, geçmiş şampiyonlar ebediyen arşivde kalır.</p>
+              <p>{rankedSeason
+                ? 'Yalnızca Günlük Ranked sonuçları. Aktif ayda lider, ay kapandığında tek şampiyon.'
+                : 'Eski karma kurallarla kapanan sezon; verilmiş şampiyonluk ve Ayın Efsanesi kaydı korunur.'}</p>
             </div>
-            {entries.length > 0 && (
-              <div className="hof-header-stats">
-                <div className="hof-header-stat">
-                  <p className="hof-header-stat-value">{entries.length}</p>
-                  <p className="hof-header-stat-label">Yarışmacı</p>
-                </div>
-                <div className="hof-header-stat hof-header-stat--sep">
-                  <p className="hof-header-stat-value">{champion?.roundsCompleted ?? 15}</p>
-                  <p className="hof-header-stat-label">Round / Run</p>
-                </div>
-              </div>
-            )}
+            <div className="hof-ranking-rule">
+              <span>{rankedSeason ? 'Sezon puanı' : 'Legacy kural'}</span>
+              <strong>{rankedSeason ? 'Ay içindeki tek en iyi Ranked skorun' : 'Dönemin karma global sıralaması'}</strong>
+              <small>{rankedSeason
+                ? 'Serbest Mod ve tekrar denemelerinin düşük skorları tabloyu etkilemez.'
+                : 'Temmuz 2026’da başlayan Ranked ayrımından önceki sonuçlar geriye dönük değiştirilmez.'}</small>
+            </div>
           </div>
         </header>
 
         {myTitles.length > 0 && (
           <div className="hof-my-titles" aria-label="Kazandığın kalıcı unvanlar">
-            <p className="hof-my-titles-kicker">Kalıcı unvanların</p>
+            <p className="hof-my-titles-kicker">Doğrulanmış unvanın</p>
             <div className="hof-my-titles-list">
               {myTitles.map((t) => (
                 <span key={t.monthKey} className={`hof-title-badge hof-title-badge--p${t.placement}`}>
@@ -122,6 +118,16 @@ export function HallOfFameScreen() {
           )}
         </div>
 
+        <div className={`hof-season-status ${isActive ? 'hof-season-status--live' : 'hof-season-status--closed'}`}>
+          <span>{isActive ? 'CANLI SEZON' : rankedSeason ? 'KAPANMIŞ SEZON' : 'LEGACY SEZON'}</span>
+          <strong>{getSeasonLabel(month)}</strong>
+          <small>{isActive
+            ? 'Liderlik ay sonuna kadar değişebilir.'
+            : rankedSeason
+              ? 'Sıralama kesinleşti; birinci artık sezon şampiyonu.'
+              : 'Eski karma sıralama kurallarıyla kapanan şampiyonluk kaydı korunur.'}</small>
+        </div>
+
         {/* PODIUM — top 3 */}
         {entries.length > 0 && (
           <div className="hof-podium">
@@ -144,14 +150,14 @@ export function HallOfFameScreen() {
 
             {/* 1st place — center/hero */}
             <div className="hof-podium-card hof-podium-card--gold">
-              <div className="hof-podium-champ-pill">Aylık Şampiyon</div>
+              <div className="hof-podium-champ-pill">{isActive ? 'Sezon Lideri' : 'Aylık Şampiyon'}</div>
               <div className="hof-podium-header">
                 <span className="hof-podium-medal"><UiIcon name="trophy" /></span>
               </div>
               <p className="hof-podium-name hof-podium-name--champ">{champion!.displayName}{champion!.flawless && <UiIcon name="shield" className="hof-flawless-icon" />}</p>
-              <p className="hof-podium-kicker">{getSeasonLabel(month)} lideri</p>
+              <p className="hof-podium-kicker">{getSeasonLabel(month)} {isActive ? 'lideri' : 'şampiyonu'}</p>
               <p className="hof-podium-score hof-podium-score--gold">{formatScore(champion!.totalScore)}</p>
-              <p className="hof-podium-meta">{champion!.roundsCompleted} round tamamlandı · sezonun en yükseği</p>
+              <p className="hof-podium-meta">{champion!.roundsCompleted} round · {isActive ? 'şimdilik sezonun en yükseği' : 'kapanış skoru'}</p>
             </div>
 
             {/* 3rd place */}
@@ -179,9 +185,9 @@ export function HallOfFameScreen() {
           </div>
         )}
 
-        <div className="hof-layout hof-layout--wide">
+        <div className="hof-layout hof-layout--wide hof-layout--single">
           <div className="panel hof-entries-panel">
-            <p className="hof-panel-title">{getSeasonLabel(month)} — Top 50</p>
+            <p className="hof-panel-title">{getSeasonLabel(month)} · {rankedSeason ? 'Ranked' : 'Legacy'} Top 50</p>
             {tableEntries.length === 0 && entries.length > 0 ? (
               <p className="hof-empty">Podium dışı kayıt yok.</p>
             ) : tableEntries.length === 0 ? null : (
@@ -201,64 +207,15 @@ export function HallOfFameScreen() {
             )}
           </div>
 
-          <div className="panel hof-archive-panel">
-            <p className="hof-panel-title">Geçmiş Sezonlar</p>
-            {pastMonths.length > 0 ? (
-              <div className="hof-archive-list">
-                {pastMonths.map((m) => {
-                  const champ = getHallOfFameForMonth(stats, m)[0];
-                  return (
-                    <div key={m} className="hof-archive-row">
-                      <span className="hof-archive-medal"><UiIcon name="trophy" /></span>
-                      <div className="hof-archive-info">
-                        <p className="hof-archive-month">{getSeasonLabel(m)}</p>
-                        <p className="hof-archive-item">
-                          {champ ? (
-                            <>Şampiyon: <strong>{champ.displayName}</strong></>
-                          ) : 'Kayıt yok'}
-                        </p>
-                        {champ && (
-                          <>
-                            <p className="hof-archive-score">{formatScore(champ.totalScore)}</p>
-                            <p className="hof-archive-title">{getSeasonLabel(m)} Şampiyonu</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {archivePlaceholders.map((m) => (
-                  <div key={m} className="hof-archive-row hof-archive-row--empty">
-                    <span className="hof-archive-medal" style={{ opacity: 0.35 }}><UiIcon name="medal" /></span>
-                    <div className="hof-archive-info">
-                      <p className="hof-archive-month">{getSeasonLabel(m)}</p>
-                      <p className="hof-archive-item">Kayıt yok</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : archivePlaceholders.length > 0 ? (
-              <div className="hof-archive-list">
-                {archivePlaceholders.map((m) => (
-                  <div key={m} className="hof-archive-row hof-archive-row--empty">
-                    <span className="hof-archive-medal" style={{ opacity: 0.35 }}><UiIcon name="medal" /></span>
-                    <div className="hof-archive-info">
-                      <p className="hof-archive-month">{getSeasonLabel(m)}</p>
-                      <p className="hof-archive-item">Kayıt yok</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="hof-empty">Geçmiş sezon kaydı yok.</p>
-            )}
+        </div>
 
-            <div className="hof-cta-card">
-              <p className="hof-cta-icon" aria-hidden><UiIcon name="flame" /></p>
-              <p className="hof-cta-title">Sıralamaya gir</p>
-              <p className="hof-cta-desc">15 round'u tamamla, en yüksek skorunla bu ayın Hall of Fame'inde yerini al.</p>
-            </div>
+        <div className="hof-cta-card hof-cta-card--wide">
+          <p className="hof-cta-icon" aria-hidden><UiIcon name="flame" /></p>
+          <div>
+            <p className="hof-cta-title">Sezon sıralamasına gir</p>
+            <p className="hof-cta-desc">Günlük Ranked runını tamamla; ay içindeki en iyi skorun otomatik olarak burada yarışsın.</p>
           </div>
+          <button type="button" className="btn-primary" onClick={() => setScreen('menu')}>Ranked Oyna</button>
         </div>
 
       </div>

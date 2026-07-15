@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { fetchTodayRunStartCount, fetchTotalRunStartCount, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
-import { formatDailyDate, formatDailyDayMonth } from '@/engine/seed';
+import { fetchTodayRunStartCount, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
+import { formatDailyDate } from '@/engine/seed';
 import { formatScore } from '@/engine/scoring';
 import { getTodayKey } from '@/engine/leaderboard';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
@@ -8,7 +8,7 @@ import { getWeeklyModifier } from '@/engine/weeklyModifier';
 import { getSeasonLabel } from '@/engine/hallOfFame';
 import { buildMonthlyLegendCard } from '@/engine/monthlyLegend';
 import { isChallengeSeedDaily } from '@/engine/challenge';
-import { getPrimarySeasonTitle } from '@/engine/seasonTitles';
+import { getVerifiedChampionTitle } from '@/engine/seasonTitles';
 import { getClosestUnlockStatuses, getUnlockStatuses } from '@/engine/unlocks';
 import { StartRunModal } from '@/components/StartRunModal';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
@@ -37,8 +37,9 @@ export function MainMenu() {
   const acknowledgeContentUnlocks = useGameStore((s) => s.acknowledgeContentUnlocks);
   const monthlyLegendRecord = useGameStore((s) => s.monthlyLegend);
   const [stats] = useState(() => getPersistedStats());
-  const [seasonTitle] = useState(() => getPrimarySeasonTitle(stats, getAnonymousId()));
-  const closestUnlocks = getClosestUnlockStatuses(stats.unlocks, 3);
+  const [playerId] = useState(() => getAnonymousId());
+  const seasonTitle = getVerifiedChampionTitle(monthlyLegendRecord, playerId);
+  const closestUnlocks = getClosestUnlockStatuses(stats.unlocks, 2);
   const activeMechanics = getUnlockStatuses(stats.unlocks)
     .filter((status) => status.unlocked && status.unlock.reward.kind === 'mechanic');
   const monthlyLegendCard = buildMonthlyLegendCard(monthlyLegendRecord);
@@ -73,18 +74,13 @@ export function MainMenu() {
 
   const localTodayRuns = stats.todayRunsDate === getTodayKey() ? stats.todayRuns : 0;
   const [remoteTodayRuns, setRemoteTodayRuns] = useState<number | null>(null);
-  const [remoteTotalRuns, setRemoteTotalRuns] = useState<number | null>(null);
   useEffect(() => {
     if (!isRemoteLeaderboardEnabled()) return;
     let cancelled = false;
     const loadRemoteCounts = async () => {
-      const [todayCount, totalCount] = await Promise.all([
-        fetchTodayRunStartCount(),
-        fetchTotalRunStartCount(),
-      ]);
+      const todayCount = await fetchTodayRunStartCount();
       if (cancelled) return;
       setRemoteTodayRuns(todayCount);
-      setRemoteTotalRuns(totalCount);
     };
 
     let cancelScheduledLoad: () => void;
@@ -106,7 +102,6 @@ export function MainMenu() {
     };
   }, []);
   const todayRuns = remoteTodayRuns ?? localTodayRuns;
-  const totalRuns = remoteTotalRuns ?? stats.totalRuns;
 
   useEffect(() => {
     const nav = navigator as Navigator & { standalone?: boolean };
@@ -154,18 +149,15 @@ export function MainMenu() {
   const quickLinks: { icon: UiIconName; label: string; screen: 'gameGuide' | 'collection' | 'hallOfFame' | 'synergies' | 'settings' }[] = [
     { icon: 'book-open', label: 'Rehber', screen: 'gameGuide' },
     { icon: 'archive', label: 'Koleksiyon', screen: 'collection' },
-    { icon: 'trophy', label: 'Hall of Fame', screen: 'hallOfFame' },
+    { icon: 'trophy', label: 'Sezon', screen: 'hallOfFame' },
     { icon: 'zap', label: 'Sinerjiler', screen: 'synergies' },
     { icon: 'settings', label: 'Ayarlar', screen: 'settings' },
   ];
 
   const summaryStats: { icon: UiIconName; label: string; value: string; sub: string; hot?: boolean }[] = [
-    { icon: 'medal', label: 'En İyi Skor', value: formatScore(stats.allTimeBest), sub: 'kişisel rekor' },
-    { icon: 'globe', label: 'Bugün', value: formatScore(todayRuns), sub: 'başlatılan run' },
-    { icon: 'flame', label: 'Seri', value: `${stats.dailyStreak} gün`, sub: 'üst üste', hot: stats.dailyStreak > 1 },
-    { icon: 'chart', label: 'Toplam', value: formatScore(totalRuns), sub: 'run oynandı' },
-    // Yıl zaten alt satırda — değere tekrar koymak dar kartta taşmaya yol açıyordu
-    { icon: 'calendar', label: 'Seed', value: formatDailyDayMonth(), sub: String(new Date().getFullYear()) },
+    { icon: 'medal', label: 'Bugünkü Skor', value: formatScore(stats.todayScore), sub: 'Ranked kişisel en iyi' },
+    { icon: 'flame', label: 'Günlük Seri', value: `${stats.dailyStreak} gün`, sub: 'Ranked devamlılığı', hot: stats.dailyStreak > 1 },
+    { icon: 'globe', label: 'Bugün', value: formatScore(todayRuns), sub: 'Ranked run başladı' },
   ];
 
   return (
@@ -238,13 +230,20 @@ export function MainMenu() {
               <div className="menu-play-panel-inner">
                 <div className="menu-play-content">
                   <div className="menu-next-action">
-                    <span>Şimdi ne yapabilirim?</span>
-                    <strong>{showContinuePrompt ? 'Devam eden runu bitir' : 'Bugünün seed’ini oyna'}</strong>
+                    <span className="menu-ranked-kicker"><UiIcon name="trophy" /> Günlük Ranked · {formatDailyDate()}</span>
+                    <strong>{showContinuePrompt ? 'Devam eden runun hazır' : 'Aynı fikstür. Tek sıralama.'}</strong>
                     <p>
                       {showContinuePrompt
                         ? `Round ${savedRun?.round ?? '?'} · skor ${formatScore(savedRun?.score ?? 0)}. İstersen kaldığın yerden devam et.`
-                        : '3 karttan seçim yap, kadronu büyüt, maçı kazan ve skoru yukarı taşı.'}
+                        : 'Herkes aynı oyuncu havuzuyla oynar. En iyi skorun Günlük, Haftalık ve Sezon sıralamasına birlikte yazılır.'}
                     </p>
+                    {!showContinuePrompt && (
+                      <div className="menu-ranked-rules" aria-label="Ranked kuralları">
+                        <span><UiIcon name="check" /> Aynı seed</span>
+                        <span><UiIcon name="check" /> 15 round</span>
+                        <span><UiIcon name="check" /> En iyi skor geçerli</span>
+                      </div>
+                    )}
                   </div>
 
                   {pendingChallenge && (
@@ -289,17 +288,6 @@ export function MainMenu() {
                     );
                   })()}
 
-                  {monthlyLegendCard && monthlyLegendRecord && (
-                    <div className="menu-monthly-legend" role="status">
-                      <span className="menu-monthly-legend-icon"><UiIcon name="trophy" /></span>
-                      <div>
-                        <small>AYIN EFSANESİ · {getSeasonLabel(monthlyLegendRecord.sourceMonthKey)} ŞAMPİYONU</small>
-                        <strong>{monthlyLegendCard.name}</strong>
-                        <p>{monthlyLegendCard.currentRating} rating · {monthlyLegendCard.position} · Her iki oyun modunda bu ay havuzda</p>
-                      </div>
-                    </div>
-                  )}
-
                   {newContentUnlocks.length > 0 && (
                     <div className="menu-new-unlocks" role="status" aria-label="Yeni açılan içerikler">
                       <div>
@@ -311,6 +299,7 @@ export function MainMenu() {
                     </div>
                   )}
 
+                  <div className="menu-support-grid">
                   <section className="menu-unlock-panel" aria-label="Kalıcı ilerleme hedefleri">
                     <div className="menu-unlock-panel-head">
                       <div>
@@ -347,6 +336,18 @@ export function MainMenu() {
                     )}
                   </section>
 
+                  {monthlyLegendCard && monthlyLegendRecord && (
+                    <aside className="menu-monthly-legend" role="status">
+                      <span className="menu-monthly-legend-icon"><UiIcon name="trophy" /></span>
+                      <div>
+                        <small>{getSeasonLabel(monthlyLegendRecord.sourceMonthKey)} GLOBAL ŞAMPİYONU</small>
+                        <strong>{monthlyLegendRecord.displayName}</strong>
+                        <p>Şampiyonun {monthlyLegendCard.currentRating} rating · {monthlyLegendCard.position} kartı bu ay iki modda da havuzda.</p>
+                      </div>
+                    </aside>
+                  )}
+                  </div>
+
                   {showContinuePrompt ? (
                     <div className="menu-continue-banner">
                       <div className="menu-continue-text">
@@ -361,26 +362,7 @@ export function MainMenu() {
                         <button type="button" className="btn-primary menu-continue-btn" onClick={continueRun}>Devam Et</button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="menu-play-hint">
-                      <p className="menu-play-hint-title">Bugünün meydan okuması</p>
-                      <p className="menu-play-hint-sub">
-                        Seed {formatDailyDate()} · 15 round · herkes aynı kartlarla oynar
-                      </p>
-                      {todayRuns > 0 && (
-                        <p className="menu-play-hint-runs">
-                          <UiIcon name="globe" />
-                          <span>{formatScore(todayRuns)} run başladı — skor kartını paylaş, meydan oku</span>
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="menu-beta-strip">
-                    <span className="menu-beta-badge">Beta</span>
-                    <span className="menu-beta-text">Android ve iOS app yakında</span>
-                    <span className="menu-beta-date">TestFlight / APK</span>
-                  </div>
+                  ) : null}
 
                 </div>
 
@@ -388,16 +370,16 @@ export function MainMenu() {
                   <button type="button" className="btn-primary menu-play-btn" onClick={() => handlePlayClick(true)}>
                     <span className="menu-play-btn-icon"><UiIcon name="play" /></span>
                     <span>
-                      <span className="menu-play-btn-label">Bugünün Seed'ini Oyna</span>
-                      <span className="menu-play-btn-sub">Aynı kartlar · tek skor · arkadaşına meydan oku</span>
+                      <span className="menu-play-btn-label">Ranked Run Başlat</span>
+                      <span className="menu-play-btn-sub">Günlük · Haftalık · Sezon sıralamasına işler</span>
                     </span>
                     <UiIcon name="arrow-right" className="menu-play-btn-arrow" />
                   </button>
                   <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" onClick={() => handlePlayClick(false)}>
                     <span className="menu-play-btn-icon"><UiIcon name="dice" /></span>
                     <span>
-                      <span className="menu-play-btn-label">Serbest Mod</span>
-                      <span className="menu-play-btn-sub">Rastgele seed · pratik yap, sınır yok</span>
+                      <span className="menu-play-btn-label">Serbest Run Başlat</span>
+                      <span className="menu-play-btn-sub">Rastgele seed · unlock havuzu · sıralamasız</span>
                     </span>
                     <UiIcon name="arrow-right" className="menu-play-btn-arrow" />
                   </button>

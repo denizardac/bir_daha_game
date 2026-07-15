@@ -7,7 +7,7 @@ import {
   TOTAL_EVENTS,
   TOTAL_LEGENDS,
 } from '@/engine/achievements';
-import { getPlayerSeasonTitles, getPrimarySeasonTitle } from '@/engine/seasonTitles';
+import { getPlayerSeasonTitles, getPrimarySeasonTitle, getVerifiedChampionTitle } from '@/engine/seasonTitles';
 import type { HallOfFameEntry, PersistedData } from '@/types';
 import { createInitialUnlockState } from '@/engine/unlocks';
 
@@ -120,5 +120,15 @@ describe('sezon unvanları', () => {
 
   it('oyuncu id yoksa boş', () => {
     expect(getPlayerSeasonTitles(data, '', '2026-07')).toEqual([]);
+  });
+
+  it('yerel arşiv liderini global şampiyon gibi göstermez', () => {
+    const record = {
+      awardMonthKey: '2026-07', sourceMonthKey: '2026-06', championId: 'grande',
+      displayName: 'Grande', totalScore: 21_484, verifiedAt: 1,
+    };
+    expect(getVerifiedChampionTitle(record, 'me', '2026-07')).toBeNull();
+    expect(getVerifiedChampionTitle(record, 'grande', '2026-07')?.label)
+      .toBe('Haziran 2026 Şampiyonu');
   });
 });

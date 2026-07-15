@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getStartingSquad } from '@/data/players';
 import { isResumableRun, mergeRunSnapshot, repairRunSnapshot } from '@/engine/runPersistence';
-import { migratePersistedRecord } from '@/utils/storage';
+import { CURRENT_SAVE_VERSION, migratePersistedRecord } from '@/utils/storage';
 
 describe('runPersistence', () => {
   it('merges partial updates without dropping ephemeral fields', () => {
@@ -89,7 +89,7 @@ describe('runPersistence', () => {
 
   it('migrates unversioned persisted data to the current schema', () => {
     const migrated = migratePersistedRecord({ displayName: 'Eski', currentRun: null });
-    expect(migrated.saveVersion).toBe(6);
+    expect(migrated.saveVersion).toBe(CURRENT_SAVE_VERSION);
     expect(migrated.monthlyLegend).toBeNull();
     expect(migrated.lastPlayerName).toBe('Eski');
     expect(migrated.unlocks).toMatchObject({

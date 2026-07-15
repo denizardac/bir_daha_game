@@ -1653,9 +1653,9 @@ export function RunEndScreen() {
   // Gerçek sıralama: bot-dolgulu yerel liste yerine canlı remote leaderboard'dan
   // hesapla (varsa). Yoksa yerel analiz değerlerine düşer.
   useEffect(() => {
-    if (!isRemoteLeaderboardEnabled() || score <= 0) return;
+    if (!isDailySeed || !isRemoteLeaderboardEnabled() || score <= 0) return;
     let cancelled = false;
-    fetchRemoteRank(isDailySeed ? 'daily' : 'allTime', score, isDailySeed ? getDailySeed() : undefined)
+    fetchRemoteRank('daily', score, getDailySeed())
       .then((rank) => {
         if (cancelled || !rank) return;
         setLiveRank(rank);
@@ -1669,11 +1669,17 @@ export function RunEndScreen() {
     : `${round} round hayatta kaldım. Aynı seed'de daha iyisini yapabilir misin?`;
   const shareText = buildShareText(shareOpts, challengeUrl ?? undefined);
   const scoreRecord = analysis?.scoreRecord;
-  const leaderboardRecordText = scoreRecord?.isLeaderboardBest
-    ? scoreRecord.previousLeaderboardBest
-      ? `Yeni ${isDailySeed ? 'günlük' : 'tüm zamanlar'} rekorun: eski ${formatScore(scoreRecord.previousLeaderboardBest)} geçildi.`
-      : `${isDailySeed ? 'Günlük' : 'Tüm zamanlar'} skor kaydın açıldı.`
-    : `Bu deneme kişisel en iyini geçmedi; listede ${formatScore(scoreRecord?.previousLeaderboardBest ?? 0)} korunuyor.`;
+  const leaderboardRecordText = !isDailySeed
+    ? scoreRecord?.isLeaderboardBest
+      ? scoreRecord.previousLeaderboardBest
+        ? `Yeni kişisel rekorun: ${formatScore(score)}.`
+        : `İlk kişisel skorun: ${formatScore(score)}.`
+      : `Kişisel en iyinde ${formatScore(scoreRecord?.previousLeaderboardBest ?? 0)} korunuyor.`
+    : scoreRecord?.isLeaderboardBest
+      ? scoreRecord.previousLeaderboardBest
+        ? `Yeni günlük Ranked rekorun: eski ${formatScore(scoreRecord.previousLeaderboardBest)} geçildi.`
+        : 'Günlük Ranked skor kaydın açıldı.'
+      : `Bu deneme günlük en iyini geçmedi; listede ${formatScore(scoreRecord?.previousLeaderboardBest ?? 0)} korunuyor.`;
   const hallOfFameRecordText = scoreRecord?.isHallOfFameBest
     ? scoreRecord.previousHallOfFameBest
       ? `Hall of Fame aylık rekorun yenilendi; eski skor ${formatScore(scoreRecord.previousHallOfFameBest)}.`
@@ -1778,9 +1784,9 @@ export function RunEndScreen() {
                   <small>{matchesPlayed} maç · {round} round</small>
                 </div>
                 <div className="run-end-hero-metric">
-                  <span>Sıralama</span>
-                  <strong>{finalRank && finalTotal ? `#${finalRank}/${finalTotal}` : 'Kaydedildi'}</strong>
-                  <small>{finalPercent ? `Yüzdelik: %${finalPercent}` : liveRank ? 'Canlı veri' : 'Yerel kayıt'}</small>
+                  <span>{isDailySeed ? 'Ranked sırası' : 'Oyun modu'}</span>
+                  <strong>{isDailySeed ? (finalRank && finalTotal ? `#${finalRank}/${finalTotal}` : 'Kaydedildi') : 'Serbest'}</strong>
+                  <small>{isDailySeed ? (finalPercent ? `Yüzdelik: %${finalPercent}` : liveRank ? 'Canlı veri' : 'Yerel kayıt') : 'Public sıralamaya yazılmaz'}</small>
                 </div>
                 <div className="run-end-hero-metric">
                   <span>Kadro</span>
@@ -1809,9 +1815,9 @@ export function RunEndScreen() {
 
               {scoreRecord && (
                 <div className={`run-end-record-note ${scoreRecord.isLeaderboardBest || scoreRecord.isHallOfFameBest ? 'run-end-record-note--best' : 'run-end-record-note--kept'}`}>
-                  <span>Kayıt durumu</span>
+                  <span>{isDailySeed ? 'Ranked kayıt durumu' : 'Serbest Mod kaydı'}</span>
                   <strong>{leaderboardRecordText}</strong>
-                  <small>{hallOfFameRecordText}</small>
+                  <small>{isDailySeed ? hallOfFameRecordText : 'Unlock ve koleksiyon ilerlemen kaydedildi; skorun Ranked ve Hall of Fame dışında kaldı.'}</small>
                 </div>
               )}
 
@@ -1846,11 +1852,13 @@ export function RunEndScreen() {
               {analysis ? (
                 <>
                   <p className="text-lg text-neutral-400">
-                    {isDailySeed ? 'Günlük sıralama' : 'Tüm zamanlar sıralaması'}
-                    {liveRank && <span className="ml-2 text-xs text-emerald-400">· canlı</span>}
+                    {isDailySeed ? 'Günlük Ranked sıralaması' : 'Serbest Mod özeti'}
+                    {isDailySeed && liveRank && <span className="ml-2 text-xs text-emerald-400">· canlı</span>}
                   </p>
-                  <p className="mt-4 text-4xl font-extrabold">#{(liveRank?.rank ?? analysis.rank)} / {(liveRank?.total ?? analysis.totalPlayers)}</p>
-                  {(() => {
+                  {isDailySeed ? (
+                  <>
+                    <p className="mt-4 text-4xl font-extrabold">#{(liveRank?.rank ?? analysis.rank)} / {(liveRank?.total ?? analysis.totalPlayers)}</p>
+                    {(() => {
                     const percent = liveRank?.percent ?? analysis.rankPercent;
                     const rank = liveRank?.rank ?? analysis.rank;
                     return (
@@ -1862,9 +1870,17 @@ export function RunEndScreen() {
                             : `Sıralaman #${rank} — bir dahaki run'da yüksel`}
                       </p>
                     );
-                  })()}
+                    })()}
                   {!liveRank && analysis.nearRivalBefore && (
                     <p className="mt-3 text-sm text-neutral-400">Önünde: {analysis.nearRivalBefore.name} (+{analysis.nearRivalBefore.gap})</p>
+                  )}
+                  </>
+                  ) : (
+                    <div className="run-end-free-mode-note">
+                      <UiIcon name="dice" />
+                      <strong>Sıralamasız tamamlandı</strong>
+                      <p>Skorun public tablolara taşınmadı. Unlock, koleksiyon ve kişisel ilerlemen kaydedildi.</p>
+                    </div>
                   )}
                 </>
               ) : (

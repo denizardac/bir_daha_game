@@ -331,12 +331,14 @@ async function persistRunEndScore(
   const hallEntry = { ...signed.entry, flawless: signed.entry.flawless ?? false };
   if (!validation.ok) {
     console.warn('[leaderboard] Run doğrulanamadı:', validation.reason);
-    savePersisted(addToHallOfFame(latest, hallEntry));
     return unlockResult.newlyUnlocked;
   }
-  const withScore = addToHallOfFame(addScoreToLeaderboards(latest, signed.entry, state.isDailySeed), hallEntry);
+  const withLeaderboards = addScoreToLeaderboards(latest, signed.entry, state.isDailySeed);
+  const withScore = state.isDailySeed
+    ? addToHallOfFame(withLeaderboards, hallEntry)
+    : withLeaderboards;
   savePersisted({ ...withScore, unlocks: unlockResult.state });
-  if (isRemoteLeaderboardEnabled()) {
+  if (state.isDailySeed && isRemoteLeaderboardEnabled()) {
     void submitRunToLeaderboard(signed, state.roundHistory, state.isDailySeed).then((result) => {
       if (!result.ok) console.warn('[leaderboard] Uzak skor gönderilemedi:', result.error);
     });
@@ -578,22 +580,26 @@ function synergyPointsFromMatch(
 
 function buildRunEndAnalysis(state: GameStore): RunEndAnalysis {
   const persisted = loadPersisted();
-  const rankList = state.isDailySeed
-    ? getDailyList(persisted)
-    : persisted.allTimeLeaderboard;
+  const rankList = state.isDailySeed ? getDailyList(persisted) : [];
   const currentPlayerId = getAnonymousId();
-  const previousLeaderboardBest = rankList.find((entry) => entry.id === currentPlayerId)?.totalScore;
-  const monthBest = getHallOfFameForMonth(persisted, getSeasonKey())
-    .find((entry) => entry.id === currentPlayerId)?.totalScore;
+  const previousLeaderboardBest = state.isDailySeed
+    ? rankList.find((entry) => entry.id === currentPlayerId)?.totalScore
+    : persisted.allTimeBest || undefined;
+  const monthBest = state.isDailySeed
+    ? getHallOfFameForMonth(persisted, getSeasonKey())
+        .find((entry) => entry.id === currentPlayerId)?.totalScore
+    : undefined;
   const ego = analyzeEgo(
     state.roundHistory,
     state.seed,
     getStartingSquad(state.seed, state.isDailySeed),
     state.isDailySeed,
   );
-  const rank = getRank(state.score, rankList);
-  const rankPercent = getRankPercent(state.score, rankList);
-  const rivals = getNearRivals(state.score, rankList, state.displayName || 'Sen');
+  const rank = state.isDailySeed ? getRank(state.score, rankList) : 1;
+  const rankPercent = state.isDailySeed ? getRankPercent(state.score, rankList) : 50;
+  const rivals = state.isDailySeed
+    ? getNearRivals(state.score, rankList, state.displayName || 'Sen')
+    : { before: undefined, after: undefined };
 
   const synergyStats = state.discoveredSynergies.flatMap((id) => {
     // Eski sürümden persist edilmiş, artık var olmayan sinerji id'lerini atla
@@ -627,7 +633,7 @@ function buildRunEndAnalysis(state: GameStore): RunEndAnalysis {
     scoreRecord: {
       isLeaderboardBest: previousLeaderboardBest === undefined || state.score > previousLeaderboardBest,
       previousLeaderboardBest,
-      isHallOfFameBest: monthBest === undefined || state.score > monthBest,
+      isHallOfFameBest: state.isDailySeed && (monthBest === undefined || state.score > monthBest),
       previousHallOfFameBest: monthBest,
     },
   };
@@ -707,8 +713,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     {
       const p2 = loadPersisted();
       const today = getTodayKey();
-      const todayRuns = (p2.todayRunsDate === today ? p2.todayRuns : 0) + 1;
-      savePersisted({ ...p2, lastPlayerName: name, todayRuns, todayRunsDate: today });
+      const todayRuns = isDaily ? (p2.todayRunsDate === today ? p2.todayRuns : 0) + 1 : p2.todayRuns;
+      savePersisted({
+        ...p2,
+        lastPlayerName: name,
+        ...(isDaily ? { todayRuns, todayRunsDate: today } : {}),
+      });
     }
     if (isRemoteLeaderboardEnabled()) {
       void recordRunStart({
