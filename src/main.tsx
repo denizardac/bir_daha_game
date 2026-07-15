@@ -2,9 +2,16 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
+import { AppErrorBoundary } from '@/components/AppErrorBoundary';
+import { installChunkLoadRecovery } from '@/pwa/chunkRecovery';
 import { getServiceWorkerUpdateVersion } from '@/pwa/updatePrompt';
+import { useGameStore } from '@/store/gameStore';
 import './index.css';
 import './styles/eventScenes.css';
+
+installChunkLoadRecovery({
+  saveCurrentRun: () => useGameStore.getState().saveCurrentRun(),
+});
 
 if ('serviceWorker' in navigator) {
   let updatePromptAnnounced = false;
@@ -29,6 +36,8 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <AppErrorBoundary>
+      <App />
+    </AppErrorBoundary>
   </StrictMode>,
 );

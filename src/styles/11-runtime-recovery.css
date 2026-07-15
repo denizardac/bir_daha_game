@@ -1,0 +1,66 @@
+.runtime-recovery {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #f5f6f0;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(38, 191, 149, 0.18), transparent 34%),
+    linear-gradient(150deg, #081b17 0%, #06110f 58%, #030807 100%);
+}
+
+.runtime-recovery__card {
+  width: min(100%, 520px);
+  padding: clamp(28px, 6vw, 52px);
+  border: 1px solid rgba(94, 225, 186, 0.32);
+  border-radius: 24px;
+  background: rgba(8, 18, 17, 0.92);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
+  text-align: center;
+}
+
+.runtime-recovery__eyebrow {
+  display: block;
+  margin-bottom: 14px;
+  color: #5ee1ba;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.runtime-recovery__card h1 {
+  margin: 0;
+  color: #fff1b8;
+  font-size: clamp(30px, 7vw, 48px);
+  line-height: 0.98;
+}
+
+.runtime-recovery__card p {
+  margin: 20px auto 28px;
+  color: #b8c8c3;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.runtime-recovery__card button {
+  min-height: 50px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 12px;
+  color: #06110f;
+  background: #5ee1ba;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(38, 191, 149, 0.25);
+}
+
+.runtime-recovery__card button:hover {
+  background: #7aebca;
+}
+
+.runtime-recovery__card button:focus-visible {
+  outline: 3px solid #fff1b8;
+  outline-offset: 4px;
+}
