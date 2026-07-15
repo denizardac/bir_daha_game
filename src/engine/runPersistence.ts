@@ -3,6 +3,7 @@ import { normalizeSquadGoalkeepers, reconcileManualLineup } from '@/engine/lineu
 import { getActiveFormationKey } from '@/engine/lineupPreview';
 import type { PlayerCard } from '@/types';
 import { normalizeRunUnlockTelemetry } from '@/engine/unlocks';
+import { normalizeMonthlyLegendRecord } from '@/engine/monthlyLegend';
 
 export interface PersistedTrainingFlow {
   card: TrainingCard;
@@ -54,6 +55,7 @@ const GAME_STATE_KEYS: (keyof GameState)[] = [
   'offersRerollIndex', 'recoveryGuaranteed', 'manualLineup', 'unlockTelemetry',
   'activeUnlockGuarantee', 'unlockGuaranteeOffered', 'targetedScoutAvailable',
   'crisisContractTriggered', 'crisisRecoveryPending',
+  'monthlyLegendAtRunStart',
 ];
 
 export function mergeRunSnapshot(
@@ -191,6 +193,7 @@ export function repairRunSnapshot(input: unknown): Partial<RunSnapshot> | null {
     targetedScoutAvailable: input.targetedScoutAvailable === true,
     crisisContractTriggered: input.crisisContractTriggered === true,
     crisisRecoveryPending: input.crisisRecoveryPending === true,
+    monthlyLegendAtRunStart: normalizeMonthlyLegendRecord(input.monthlyLegendAtRunStart),
     activeTactics,
     manualLineup,
     currentOffers: uniqueCards(input.currentOffers, squadIds),

@@ -4,6 +4,8 @@ import { PLAYER_POOL } from '@/data/players';
 import { getPlayerArchetype } from '@/data/archetypes';
 import { countUnlockedAchievements, getAchievementState } from '@/engine/achievements';
 import { getUnlockStatuses } from '@/engine/unlocks';
+import { buildMonthlyLegendCard } from '@/engine/monthlyLegend';
+import { getSeasonLabel } from '@/engine/hallOfFame';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 
@@ -41,12 +43,17 @@ const LEGEND_POOL = (() => {
 export function CollectionScreen() {
   const stats = getPersistedStats();
   const setScreen = useGameStore((s) => s.setScreen);
+  const monthlyLegendRecord = useGameStore((s) => s.monthlyLegend);
   const [tab, setTab] = useState<Tab>('kilit');
 
   const seenEvents = new Set(stats.seenEvents);
   const collectedLegends = new Set(stats.collectedLegends);
+  const monthlyLegendCard = buildMonthlyLegendCard(monthlyLegendRecord);
+  const legendPool = monthlyLegendCard
+    ? [monthlyLegendCard, ...LEGEND_POOL.filter((player) => player.id !== monthlyLegendCard.id)]
+    : LEGEND_POOL;
 
-  const legendOpen = LEGEND_POOL.filter((p) => collectedLegends.has(p.name)).length;
+  const legendOpen = legendPool.filter((p) => collectedLegends.has(p.name)).length;
   const eventOpen = EVENT_CARDS.filter((e) => seenEvents.has(e.id)).length;
   const achievements = getAchievementState(stats);
   const achievementCount = countUnlockedAchievements(stats);
@@ -55,7 +62,7 @@ export function CollectionScreen() {
   const unlockNameById = new Map(unlockStatuses.map((status) => [status.unlock.id, status.unlock.name]));
   const collectionStats = [
     { label: 'İçerik', value: unlockedContentCount, total: unlockStatuses.length, tone: 'violet' },
-    { label: 'Efsane', value: legendOpen, total: LEGEND_POOL.length, tone: 'gold' },
+    { label: 'Efsane', value: legendOpen, total: legendPool.length, tone: 'gold' },
     { label: 'Olay', value: eventOpen, total: EVENT_CARDS.length, tone: 'cyan' },
     { label: 'Başarım', value: achievementCount.unlocked, total: achievementCount.total, tone: 'rose' },
   ] as const;
@@ -148,13 +155,20 @@ export function CollectionScreen() {
         )}
 
         {tab === 'efsane' && (
-          <div className="collection-grid">
-            {LEGEND_POOL.map((p) => {
+          <>
+            {monthlyLegendCard && monthlyLegendRecord && (
+              <p className="collection-monthly-legend-note">
+                <UiIcon name="trophy" /> {getSeasonLabel(monthlyLegendRecord.sourceMonthKey)} şampiyonu
+                <strong>{monthlyLegendCard.name}</strong> bu ay iki modun ortak havuzunda.
+              </p>
+            )}
+            <div className="collection-grid">
+            {legendPool.map((p) => {
               const ok = collectedLegends.has(p.name);
               const arch = getPlayerArchetype(p);
               return (
                 <div
-                  key={p.name}
+                  key={p.id}
                   className={`collection-tile ${ok ? '' : 'collection-tile--locked'}`}
                   style={ok && p.signature && p.signatureColor ? { borderColor: p.signatureColor } : undefined}
                 >
@@ -168,7 +182,8 @@ export function CollectionScreen() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          </>
         )}
 
         {tab === 'olay' && (

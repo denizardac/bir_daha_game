@@ -5,6 +5,8 @@ import { formatScore } from '@/engine/scoring';
 import { getTodayKey } from '@/engine/leaderboard';
 import { getDailyStreakBonus } from '@/engine/dailyStreak';
 import { getWeeklyModifier } from '@/engine/weeklyModifier';
+import { getSeasonLabel } from '@/engine/hallOfFame';
+import { buildMonthlyLegendCard } from '@/engine/monthlyLegend';
 import { isChallengeSeedDaily } from '@/engine/challenge';
 import { getPrimarySeasonTitle } from '@/engine/seasonTitles';
 import { getClosestUnlockStatuses, getUnlockStatuses } from '@/engine/unlocks';
@@ -33,11 +35,13 @@ export function MainMenu() {
   const setChallenge = useGameStore((s) => s.setChallenge);
   const newContentUnlocks = useGameStore((s) => s.newContentUnlocks);
   const acknowledgeContentUnlocks = useGameStore((s) => s.acknowledgeContentUnlocks);
+  const monthlyLegendRecord = useGameStore((s) => s.monthlyLegend);
   const [stats] = useState(() => getPersistedStats());
   const [seasonTitle] = useState(() => getPrimarySeasonTitle(stats, getAnonymousId()));
   const closestUnlocks = getClosestUnlockStatuses(stats.unlocks, 3);
   const activeMechanics = getUnlockStatuses(stats.unlocks)
     .filter((status) => status.unlocked && status.unlock.reward.kind === 'mechanic');
+  const monthlyLegendCard = buildMonthlyLegendCard(monthlyLegendRecord);
 
   const [startPrompt, setStartPrompt] = useState<{ daily: boolean; afterAbandon?: boolean; seed?: string; rivalScore?: number } | null>(null);
   const [installTipVisible, setInstallTipVisible] = useState(false);
@@ -284,6 +288,17 @@ export function MainMenu() {
                       </p>
                     );
                   })()}
+
+                  {monthlyLegendCard && monthlyLegendRecord && (
+                    <div className="menu-monthly-legend" role="status">
+                      <span className="menu-monthly-legend-icon"><UiIcon name="trophy" /></span>
+                      <div>
+                        <small>AYIN EFSANESİ · {getSeasonLabel(monthlyLegendRecord.sourceMonthKey)} ŞAMPİYONU</small>
+                        <strong>{monthlyLegendCard.name}</strong>
+                        <p>{monthlyLegendCard.currentRating} rating · {monthlyLegendCard.position} · Her iki oyun modunda bu ay havuzda</p>
+                      </div>
+                    </div>
+                  )}
 
                   {newContentUnlocks.length > 0 && (
                     <div className="menu-new-unlocks" role="status" aria-label="Yeni açılan içerikler">

@@ -5,9 +5,10 @@ import { getTodayKey } from '@/engine/leaderboard';
 import { repairRunSnapshot } from '@/engine/runPersistence';
 import { createInitialUnlockState, grantUnlocksForCollectedContent, normalizeUnlockState } from '@/engine/unlocks';
 import { PLAYER_POOL } from '@/data/players';
+import { normalizeMonthlyLegendRecord } from '@/engine/monthlyLegend';
 
 const STORAGE_KEY = 'bir-daha-save';
-export const CURRENT_SAVE_VERSION = 5;
+export const CURRENT_SAVE_VERSION = 6;
 
 export function getAnonymousId(): string {
   const data = loadPersisted();
@@ -34,6 +35,7 @@ function sanitizePersisted(base: PersistedData, parsed: Record<string, unknown>)
     if (typeof v !== 'object' || v === null || Array.isArray(v)) merged[key] = base[key];
   }
   merged.unlocks = normalizeUnlockState(merged.unlocks);
+  merged.monthlyLegend = normalizeMonthlyLegendRecord(merged.monthlyLegend);
   merged.currentRun = repairRunSnapshot(merged.currentRun);
   const numberKeys: (keyof PersistedData)[] = ['todayScore', 'allTimeBest', 'dailyStreak', 'totalRuns', 'todayRuns'];
   for (const key of numberKeys) {
@@ -85,6 +87,9 @@ export function migratePersistedRecord(parsed: Record<string, unknown>): Record<
     unlocks.unlockedIds = [...legacyIds];
     migrated.unlocks = unlocks;
     migrated.currentRun = repairRunSnapshot(migrated.currentRun);
+  }
+  if (version < 6) {
+    migrated.monthlyLegend = normalizeMonthlyLegendRecord(migrated.monthlyLegend);
   }
   migrated.saveVersion = CURRENT_SAVE_VERSION;
   return migrated;
@@ -172,5 +177,6 @@ function defaultPersisted(): PersistedData {
     seenEvents: [],
     collectedLegends: [],
     unlocks: createInitialUnlockState(),
+    monthlyLegend: null,
   };
 }

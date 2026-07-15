@@ -63,7 +63,8 @@ describe('runPersistence', () => {
 
   it('migrates unversioned persisted data to the current schema', () => {
     const migrated = migratePersistedRecord({ displayName: 'Eski', currentRun: null });
-    expect(migrated.saveVersion).toBe(5);
+    expect(migrated.saveVersion).toBe(6);
+    expect(migrated.monthlyLegend).toBeNull();
     expect(migrated.lastPlayerName).toBe('Eski');
     expect(migrated.unlocks).toMatchObject({
       catalogVersion: 1,

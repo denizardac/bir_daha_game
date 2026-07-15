@@ -305,6 +305,8 @@ export interface GameState {
   /** Kriz Kontratı bu Run'da bir kez tetiklenebilir. */
   crisisContractTriggered: boolean;
   crisisRecoveryPending: boolean;
+  /** Run boyunca sabit tutulan global ay kartı; geç gelen ağ cevabı seed akışını değiştirmez. */
+  monthlyLegendAtRunStart: MonthlyLegendRecord | null;
 }
 
 export interface LeaderboardEntry {
@@ -357,6 +359,16 @@ export interface UnlockGuarantee {
   contentId: string;
 }
 
+/** Önceki ayın doğrulanmış liderinden üretilen, içinde bulunulan aya ait global kart kaydı. */
+export interface MonthlyLegendRecord {
+  awardMonthKey: string;
+  sourceMonthKey: string;
+  championId: string;
+  displayName: string;
+  totalScore: number;
+  verifiedAt: number;
+}
+
 /** Kişisel içerik ilerlemesi; Ranked havuzuna doğrudan uygulanmaz. */
 export interface UnlockState {
   catalogVersion: number;
@@ -406,6 +418,8 @@ export interface PersistedData {
   collectedLegends: string[];
   /** Kalıcı içerik unlock durumu ve koşul ilerlemesi. */
   unlocks: UnlockState;
+  /** Ağ yokken de aynı kartı koruyan doğrulanmış Ayın Efsanesi cache'i. */
+  monthlyLegend: MonthlyLegendRecord | null;
 }
 
 export const RARITY_COLORS: Record<Rarity, string> = {

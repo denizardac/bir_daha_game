@@ -6,7 +6,7 @@ import { createInitialUnlockState } from '@/engine/unlocks';
 
 function baseData(): PersistedData {
   return {
-    saveVersion: 5,
+    saveVersion: 6,
     anonymousId: 'anon',
     lastPlayerName: '',
     currentRun: null,
@@ -35,6 +35,7 @@ function baseData(): PersistedData {
     seenEvents: [],
     collectedLegends: [],
     unlocks: createInitialUnlockState(),
+    monthlyLegend: null,
   };
 }
 

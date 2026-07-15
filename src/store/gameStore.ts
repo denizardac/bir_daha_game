@@ -79,6 +79,8 @@ import {
   updateRunUnlockTelemetry,
   type UnlockDefinition,
 } from '@/engine/unlocks';
+import { buildMonthlyLegendCard, fetchMonthlyLegendRecord, normalizeMonthlyLegendRecord } from '@/engine/monthlyLegend';
+import type { MonthlyLegendRecord } from '@/types';
 
 const MAX_ROUNDS = 15;
 const MAX_SQUAD = 11;
@@ -104,11 +106,16 @@ function isCardTimerEnabled() {
 function getPlayerContentAccess(
   isDailySeed: boolean,
   options: { guaranteedPlayerId?: string; guaranteeRecoveryPlayer?: boolean } = {},
+  monthlyLegendRecord: MonthlyLegendRecord | null | undefined = undefined,
 ) {
-  const unlocks = loadPersisted().unlocks;
+  const persisted = loadPersisted();
+  const unlocks = persisted.unlocks;
+  const record = monthlyLegendRecord === undefined ? persisted.monthlyLegend : monthlyLegendRecord;
+  const monthlyLegend = buildMonthlyLegendCard(record);
   return {
     isDailySeed,
     unlockedPlayerIds: getUnlockedContentIds(unlocks, 'player'),
+    globalPlayers: monthlyLegend ? [monthlyLegend] : [],
     ...options,
   };
 }
@@ -159,6 +166,8 @@ interface GameStore extends GameState {
   newAchievements: Achievement[];
   /** Bu run'da ilk kez açılan oynanabilir içerikler; UI ikinci aşamada gösterecek. */
   newContentUnlocks: UnlockDefinition[];
+  /** İçinde bulunulan ay için doğrulanmış global topluluk kartı. */
+  monthlyLegend: MonthlyLegendRecord | null;
   /** Editörde vurgulanacak yeni oyuncu id'si. */
   lineupEditorHighlightId: string | null;
   /** Transfer taslağında kadrodan ayrılması önerilen mevcut oyuncu. */
@@ -167,6 +176,7 @@ interface GameStore extends GameState {
   lineupEditorPrevSquad: GameState['squad'] | null;
   lineupEditorPrevManual: Record<number, string> | null;
   init: () => void;
+  refreshMonthlyLegend: () => Promise<void>;
   /** seedOverride verilirse meydan okuma seed'iyle başlar (günlük olup olmadığı seed'den türetilir) */
   startRun: (daily?: boolean, displayName?: string, seedOverride?: string) => void;
   setChallenge: (challenge: Challenge | null) => void;
@@ -223,11 +233,13 @@ function initialRun(
   const weeklyMod = getWeeklyModifier();
   const persistedUnlocks = loadPersisted().unlocks;
   const activeUnlockGuarantee = getNextUnlockGuarantee(persistedUnlocks, isDailySeed);
+  const cachedMonthlyLegend = normalizeMonthlyLegendRecord(loadPersisted().monthlyLegend);
+  const monthlyLegendAtRunStart = buildMonthlyLegendCard(cachedMonthlyLegend) ? cachedMonthlyLegend : null;
   const guaranteedPlayerId = activeUnlockGuarantee?.kind === 'player' ? activeUnlockGuarantee.contentId : undefined;
   const startMorale = Math.min(100, 50 + streakBonus.startMoraleBonus + (weeklyMod.startMoraleBonus ?? 0));
   const currentOffers = drawOffers(
     seed, 1, 0, squad, [], false, 0, 'normal', 'players',
-    getPlayerContentAccess(isDailySeed, { guaranteedPlayerId }),
+    getPlayerContentAccess(isDailySeed, { guaranteedPlayerId }, monthlyLegendAtRunStart),
   );
   const unlockGuaranteeOffered = Boolean(
     guaranteedPlayerId && currentOffers.some((card) => card.kind === 'player' && card.id === guaranteedPlayerId),
@@ -272,6 +284,7 @@ function initialRun(
     targetedScoutAvailable: !isDailySeed && hasUnlockedContent(persistedUnlocks, 'mechanic_hedefli_scout'),
     crisisContractTriggered: false,
     crisisRecoveryPending: false,
+    monthlyLegendAtRunStart,
   };
 }
 
@@ -348,7 +361,7 @@ function clearRun() {
   savePersisted({ ...loadPersisted(), currentRun: null });
 }
 
-function drawRoundOffers(state: Pick<GameState, 'seed' | 'isDailySeed' | 'round' | 'lossesCount' | 'squad' | 'activeTactics' | 'recoveryGuaranteed' | 'offersRerollIndex' | 'maxRounds' | 'activeUnlockGuarantee' | 'unlockGuaranteeOffered' | 'crisisRecoveryPending'>) {
+function drawRoundOffers(state: Pick<GameState, 'seed' | 'isDailySeed' | 'round' | 'lossesCount' | 'squad' | 'activeTactics' | 'recoveryGuaranteed' | 'offersRerollIndex' | 'maxRounds' | 'activeUnlockGuarantee' | 'unlockGuaranteeOffered' | 'crisisRecoveryPending' | 'monthlyLegendAtRunStart'>) {
   const mode = getOfferDrawModeForRound(state.round, state.maxRounds ?? MAX_ROUNDS);
   return drawOffers(
     state.seed,
@@ -365,7 +378,7 @@ function drawRoundOffers(state: Pick<GameState, 'seed' | 'isDailySeed' | 'round'
         ? state.activeUnlockGuarantee.contentId
         : undefined,
       guaranteeRecoveryPlayer: state.crisisRecoveryPending,
-    }),
+    }, state.monthlyLegendAtRunStart),
   );
 }
 
@@ -640,6 +653,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   unlockedAtRunStart: [],
   newAchievements: [],
   newContentUnlocks: [],
+  monthlyLegend: normalizeMonthlyLegendRecord(loadPersisted().monthlyLegend),
   lineupEditorOpen: false,
   lineupEditorHighlightId: null,
   lineupEditorOutgoingId: null,
@@ -654,7 +668,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
       showContinuePrompt: isResumableRun(saved),
       isFirstRun: p.isFirstRun,
       newContentUnlocks: getUnlockDefinitionsByIds(p.unlocks.pendingNotificationIds),
+      monthlyLegend: normalizeMonthlyLegendRecord(p.monthlyLegend),
     });
+    void get().refreshMonthlyLegend();
+  },
+
+  refreshMonthlyLegend: async () => {
+    try {
+      const cached = normalizeMonthlyLegendRecord(loadPersisted().monthlyLegend);
+      if (buildMonthlyLegendCard(cached)) {
+        set({ monthlyLegend: cached });
+        return;
+      }
+      const record = await fetchMonthlyLegendRecord();
+      if (!record) return;
+      const persisted = loadPersisted();
+      savePersisted({ ...persisted, monthlyLegend: record });
+      set({ monthlyLegend: record });
+    } catch {
+      // Ağ yoksa geçerli cache kullanılmaya devam eder.
+    }
   },
 
   setChallenge: (challenge) => set({ pendingChallenge: challenge }),
@@ -721,7 +754,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         saved.offersRerollIndex ?? 0,
         'normal',
         getOfferDrawModeForRound(saved.round ?? 1, saved.maxRounds ?? MAX_ROUNDS),
-        getPlayerContentAccess(saved.isDailySeed ?? true),
+        getPlayerContentAccess(saved.isDailySeed ?? true, {}, saved.monthlyLegendAtRunStart ?? null),
       );
     }
 
@@ -748,6 +781,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       targetedScoutAvailable: saved.targetedScoutAvailable ?? false,
       crisisContractTriggered: saved.crisisContractTriggered ?? false,
       crisisRecoveryPending: saved.crisisRecoveryPending ?? false,
+      monthlyLegendAtRunStart: saved.monthlyLegendAtRunStart ?? null,
       timerSeconds: 0,
       usedEventIds: saved.usedEventIds ?? [],
       trainingFlow: saved.trainingFlow ?? null,
@@ -816,7 +850,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       slotIndex,
       newIndex,
       state.recoveryGuaranteed,
-      getPlayerContentAccess(state.isDailySeed),
+      getPlayerContentAccess(state.isDailySeed, {}, state.monthlyLegendAtRunStart),
     );
 
     offers[slotIndex] = replacement;
@@ -848,7 +882,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       newIndex,
       'normal',
       getOfferDrawModeForRound(state.round),
-      getPlayerContentAccess(state.isDailySeed),
+      getPlayerContentAccess(state.isDailySeed, {}, state.monthlyLegendAtRunStart),
     );
     const next = {
       currentOffers: offers,
@@ -1295,7 +1329,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state.activeTactics.map((tactic) => tactic.id),
       state.recoveryGuaranteed,
       offersRerollIndex,
-      getPlayerContentAccess(state.isDailySeed),
+      getPlayerContentAccess(state.isDailySeed, {}, state.monthlyLegendAtRunStart),
     );
     const next = { currentOffers, offersRerollIndex, targetedScoutAvailable: false };
     playSound('tick', loadPersisted().soundEnabled);

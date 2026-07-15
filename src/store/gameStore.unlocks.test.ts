@@ -2,6 +2,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useGameStore } from '@/store/gameStore';
 import { loadPersisted, savePersisted } from '@/utils/storage';
+import { createMonthlyLegendRecord } from '@/engine/monthlyLegend';
+import { getSeasonKey } from '@/engine/hallOfFame';
 
 describe('gameStore unlock entegrasyonu', () => {
   beforeEach(() => {
@@ -83,5 +85,18 @@ describe('gameStore unlock entegrasyonu', () => {
     useGameStore.getState().acknowledgeContentUnlocks();
     expect(useGameStore.getState().newContentUnlocks).toEqual([]);
     expect(loadPersisted().unlocks.pendingNotificationIds).toEqual([]);
+  });
+
+  it('Ayın Efsanesi kaydını Run başında dondurup snapshot ile taşır', () => {
+    const persisted = loadPersisted();
+    const monthlyLegend = createMonthlyLegendRecord({
+      id: 'monthly-test', seed: 'valid-seed', displayName: 'Şampiyon', totalScore: 16_000,
+      roundsCompleted: 15, timestamp: 1, flawless: true, integrityDigest: '0123456789abcdef',
+    }, getSeasonKey(), 2);
+    savePersisted({ ...persisted, monthlyLegend });
+
+    useGameStore.getState().startRun(true, 'Test');
+    expect(useGameStore.getState().monthlyLegendAtRunStart).toEqual(monthlyLegend);
+    expect(loadPersisted().currentRun?.monthlyLegendAtRunStart).toEqual(monthlyLegend);
   });
 });

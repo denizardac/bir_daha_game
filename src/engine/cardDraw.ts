@@ -33,15 +33,22 @@ export type PlayerContentAccess = {
   guaranteedPlayerId?: string;
   /** Kriz Kontratı için 78+ toparlanma profili garanti eder. */
   guaranteeRecoveryPlayer?: boolean;
+  /** Her iki moda da aynı giren, ay bazlı doğrulanmış global kartlar. */
+  globalPlayers?: readonly PlayerCard[];
 };
 
 /** Günlük havuz kişisel kayıttan bağımsız; Serbest Mod yalnızca açık ödülleri ekler. */
 export function getPlayerPoolForAccess(access?: PlayerContentAccess): PlayerCard[] {
+  const globalPlayers = access?.globalPlayers ?? [];
+  const appendGlobal = (base: PlayerCard[]) => {
+    const ids = new Set(base.map((player) => player.id));
+    return [...base, ...globalPlayers.filter((player) => !ids.has(player.id)).map(clonePlayer)];
+  };
   if (!access || access.isDailySeed) {
-    return PLAYER_POOL.filter((player) => !FREE_MODE_EXCLUSIVE_PLAYER_IDS.has(player.id));
+    return appendGlobal(PLAYER_POOL.filter((player) => !FREE_MODE_EXCLUSIVE_PLAYER_IDS.has(player.id)));
   }
   const unlocked = new Set(access.unlockedPlayerIds);
-  return PLAYER_POOL.filter((player) => !PERSONAL_UNLOCK_PLAYER_IDS.has(player.id) || unlocked.has(player.id));
+  return appendGlobal(PLAYER_POOL.filter((player) => !PERSONAL_UNLOCK_PLAYER_IDS.has(player.id) || unlocked.has(player.id)));
 }
 
 function rarityWeightsForDraw(round: number, rerollIndex: number): Record<Rarity, number> {
