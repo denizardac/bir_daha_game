@@ -93,7 +93,7 @@ const RULES: readonly UnlockDefinition[] = [
   },
   {
     id: 'comeback_first_five', name: 'Pes Etmeyenler',
-    description: 'İlk 5 Roundda 2 mağlubiyet aldıktan sonra Finaleye ulaş.',
+    description: "İlk 5 roundda 2 mağlubiyet aldıktan sonra Finale'ye ulaş.",
     reward: { kind: 'player', contentId: 'player_geri_donuscu', name: 'Geri Dönüşçü' },
     metric: 'completedComebackRuns', target: 1,
   },

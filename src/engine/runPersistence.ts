@@ -151,6 +151,7 @@ export function repairRunSnapshot(input: unknown): Partial<RunSnapshot> | null {
   const rawSquad = Array.isArray(input.squad) ? input.squad.filter(isPlayer) : [];
   const normalized = normalizeSquadGoalkeepers(rawSquad);
   const squad = normalized.length > maxSquadSize ? normalized.slice(0, maxSquadSize) : normalized;
+  if (squad.length < 4) return null;
   const squadIds = new Set(squad.map((player) => player.id));
   const activeTactics = Array.isArray(input.activeTactics)
     ? input.activeTactics.filter((tactic) => isRecord(tactic) && typeof tactic.id === 'string') as GameState['activeTactics']
@@ -166,6 +167,15 @@ export function repairRunSnapshot(input: unknown): Partial<RunSnapshot> | null {
   const manualLineup = reconcileManualLineup(rawManual, squad, getActiveFormationKey(activeTactics));
   const round = Number.isInteger(input.round) ? Math.min(15, Math.max(1, Number(input.round))) : 1;
   const phase = typeof input.phase === 'string' && PHASES.has(input.phase) ? input.phase : 'cardSelect';
+  const score = typeof input.score === 'number' && Number.isFinite(input.score)
+    ? Math.max(0, Math.round(input.score))
+    : 0;
+  const morale = typeof input.morale === 'number' && Number.isFinite(input.morale)
+    ? Math.min(100, Math.max(0, Math.round(input.morale)))
+    : 50;
+  const streak = typeof input.streak === 'number' && Number.isFinite(input.streak)
+    ? Math.max(0, Math.round(input.streak))
+    : 0;
 
   return {
     ...(input as Partial<RunSnapshot>),
@@ -178,10 +188,13 @@ export function repairRunSnapshot(input: unknown): Partial<RunSnapshot> | null {
     maxSquadSize,
     phase: phase as GameState['phase'],
     squad,
+    score,
+    morale,
+    streak,
     unlockTelemetry: normalizeRunUnlockTelemetry(
       input.unlockTelemetry,
       squad,
-      typeof input.morale === 'number' ? input.morale : 50,
+      morale,
     ),
     activeUnlockGuarantee: isRecord(input.activeUnlockGuarantee)
       && (input.activeUnlockGuarantee.kind === 'player' || input.activeUnlockGuarantee.kind === 'event')

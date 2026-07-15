@@ -61,6 +61,32 @@ describe('runPersistence', () => {
     expect(repaired?.currentOffers?.map((card) => card.id)).toEqual(['skip']);
   });
 
+  it('abandons a corrupt saved Run that no longer has a playable squad', () => {
+    const repaired = repairRunSnapshot({
+      seed: 'corrupt-run',
+      phase: 'cardSelect',
+      round: 'not-a-round',
+      score: 'NaN',
+      squad: 'not-a-squad',
+      currentOffers: 'not-offers',
+    });
+
+    expect(repaired).toBeNull();
+  });
+
+  it('repairs invalid numeric Run fields without exposing NaN to the UI', () => {
+    const repaired = repairRunSnapshot({
+      seed: 'corrupt-numbers',
+      phase: 'cardSelect',
+      squad: getStartingSquad('corrupt-numbers', false),
+      score: 'NaN',
+      morale: Number.NaN,
+      streak: -3,
+    });
+
+    expect(repaired).toMatchObject({ score: 0, morale: 50, streak: 0 });
+  });
+
   it('migrates unversioned persisted data to the current schema', () => {
     const migrated = migratePersistedRecord({ displayName: 'Eski', currentRun: null });
     expect(migrated.saveVersion).toBe(6);

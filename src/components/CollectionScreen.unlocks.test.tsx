@@ -27,6 +27,7 @@ describe('CollectionScreen unlock progression', () => {
     expect(screen.getByRole('button', { name: /Kilitli İçerik/i }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getAllByRole('article')).toHaveLength(UNLOCK_CATALOG.length);
     expect(screen.getByText("Tek Run'da 5.000 skor yap.")).toBeTruthy();
+    expect(screen.getByText("İlk 5 roundda 2 mağlubiyet aldıktan sonra Finale'ye ulaş.")).toBeTruthy();
   });
 
   it('kısmi ilerlemeyi ve skor zinciri engelini ayrı gösterir', () => {
