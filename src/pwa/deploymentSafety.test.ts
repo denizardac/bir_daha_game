@@ -8,9 +8,17 @@ const projectFile = (path: string) => readFileSync(resolve(process.cwd(), path),
 describe('PWA deployment safety contract', () => {
   it('never edge-caches the worker, HTML shell, or pre-React recovery script', () => {
     const headers = projectFile('public/_headers');
+    const vercel = JSON.parse(projectFile('vercel.json')) as {
+      headers?: Array<{ source: string; headers: Array<{ key: string; value: string }> }>;
+    };
 
     for (const path of ['/sw.js', '/index.html', '/boot-recovery.js']) {
       expect(headers).toMatch(new RegExp(`${path.replace('.', '\\.') }[\\s\\S]*?Cache-Control: no-store, no-cache, must-revalidate`));
+      const rule = vercel.headers?.find((candidate) => candidate.source === path);
+      expect(rule?.headers).toContainEqual({
+        key: 'Cache-Control',
+        value: 'no-store, no-cache, must-revalidate',
+      });
     }
     expect(headers).toMatch(/\/assets\/\*[\s\S]*?Cache-Control: public, max-age=31536000, immutable/);
   });
@@ -96,6 +104,69 @@ describe('PWA deployment safety contract', () => {
 
     expect(unregister).toHaveBeenCalledOnce();
     expect(deleteCache).toHaveBeenCalledWith('workbox-precache-v1');
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('moves a legacy controlled tab to the waiting prompt worker exactly once', async () => {
+    const recovery = projectFile('public/boot-recovery.js');
+    const storage = new Map<string, string>();
+    const reload = vi.fn();
+    const postMessage = vi.fn();
+    const update = vi.fn(async () => undefined);
+    let onControllerChange: (() => void) | undefined;
+    const localStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    };
+    const serviceWorker = {
+      controller: {},
+      getRegistration: vi.fn(async () => ({
+        update,
+        waiting: { postMessage },
+        installing: null,
+      })),
+      getRegistrations: vi.fn(async () => []),
+      addEventListener: vi.fn((name: string, listener: () => void) => {
+        if (name === 'controllerchange') onControllerChange = listener;
+      }),
+    };
+    const root = { childElementCount: 1 };
+    const context = {
+      window: {
+        localStorage,
+        sessionStorage: localStorage,
+        location: { reload },
+        serviceWorker,
+        caches: { keys: vi.fn(async () => []), delete: vi.fn(async () => true) },
+        addEventListener: vi.fn(),
+        setTimeout: vi.fn(),
+      },
+      document: {
+        getElementById: () => root,
+        readyState: 'complete',
+      },
+      navigator: { serviceWorker },
+      MutationObserver: class {
+        observe() { /* mounted app */ }
+        disconnect() { /* mounted app */ }
+      },
+      Error,
+      Promise,
+    };
+
+    runInNewContext(recovery, context);
+    await new Promise((resolveTick) => setTimeout(resolveTick, 0));
+
+    expect(update).toHaveBeenCalledOnce();
+    expect(postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
+    onControllerChange?.();
+    expect(reload).toHaveBeenCalledOnce();
+
+    runInNewContext(recovery, context);
+    await new Promise((resolveTick) => setTimeout(resolveTick, 0));
+
+    expect(update).toHaveBeenCalledOnce();
     expect(reload).toHaveBeenCalledOnce();
   });
 });

@@ -2,6 +2,7 @@
   'use strict';
 
   var ATTEMPT_KEY = 'bir-daha-pre-react-recovery-attempted';
+  var LEGACY_UPDATE_MIGRATION_KEY = 'bir-daha-pwa-prompt-migration-v1';
   var WATCHDOG_MS = 8000;
   var recoveryStarted = false;
 
@@ -19,6 +20,59 @@
       window.sessionStorage.removeItem(ATTEMPT_KEY);
     } catch {
       // Privacy modes may block storage. A mounted app is already healthy.
+    }
+  }
+
+  function markLegacyMigrationComplete() {
+    window.localStorage.setItem(LEGACY_UPDATE_MIGRATION_KEY, '1');
+  }
+
+  function waitForInstall(worker) {
+    if (!worker || worker.state === 'installed' || worker.state === 'activated' || worker.state === 'redundant') {
+      return Promise.resolve();
+    }
+    return new Promise(function waitForStateChange(resolve) {
+      worker.addEventListener('statechange', function onStateChange() {
+        if (worker.state === 'installed' || worker.state === 'activated' || worker.state === 'redundant') resolve();
+      });
+    });
+  }
+
+  async function migrateLegacyAutoUpdateWorker() {
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
+
+    try {
+      if (window.localStorage.getItem(LEGACY_UPDATE_MIGRATION_KEY) === '1') return;
+    } catch {
+      // Without persistent guarding, an automatic migration could reload repeatedly.
+      return;
+    }
+
+    try {
+      var registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        markLegacyMigrationComplete();
+        return;
+      }
+
+      await registration.update();
+      if (!registration.waiting && registration.installing) {
+        await waitForInstall(registration.installing);
+      }
+
+      var waitingWorker = registration.waiting;
+      markLegacyMigrationComplete();
+      if (!waitingWorker) return;
+
+      var reloadStarted = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function onControllerChange() {
+        if (reloadStarted) return;
+        reloadStarted = true;
+        window.location.reload();
+      }, { once: true });
+      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    } catch {
+      // A failed update check leaves the current working version untouched and retries next boot.
     }
   }
 
@@ -120,4 +174,6 @@
     if (appMounted()) clearAttempt();
     else void repairStaleDeployment();
   }, WATCHDOG_MS);
+
+  void migrateLegacyAutoUpdateWorker();
 }());

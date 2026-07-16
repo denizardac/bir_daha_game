@@ -76,14 +76,17 @@ export function MainMenu() {
   const [savedRun] = useState(() => loadPersisted().currentRun);
 
   const localTodayRuns = stats.todayRunsDate === getTodayKey() ? stats.todayRuns : 0;
+  const remoteLeaderboardEnabled = isRemoteLeaderboardEnabled();
   const [remoteTodayRuns, setRemoteTodayRuns] = useState<number | null>(null);
+  const [remoteTodayRunsLoaded, setRemoteTodayRunsLoaded] = useState(!remoteLeaderboardEnabled);
   useEffect(() => {
-    if (!isRemoteLeaderboardEnabled()) return;
+    if (!remoteLeaderboardEnabled) return;
     let cancelled = false;
     const loadRemoteCounts = async () => {
       const todayCount = await fetchTodayRunStartCount();
       if (cancelled) return;
       setRemoteTodayRuns(todayCount);
+      setRemoteTodayRunsLoaded(true);
     };
 
     let cancelScheduledLoad: () => void;
@@ -103,8 +106,10 @@ export function MainMenu() {
       cancelled = true;
       cancelScheduledLoad();
     };
-  }, []);
-  const todayRuns = remoteTodayRuns ?? localTodayRuns;
+  }, [remoteLeaderboardEnabled]);
+  const todayRuns = remoteLeaderboardEnabled && !remoteTodayRunsLoaded
+    ? null
+    : remoteTodayRuns ?? localTodayRuns;
 
   useEffect(() => {
     const nav = navigator as Navigator & { standalone?: boolean };
@@ -161,7 +166,7 @@ export function MainMenu() {
   const summaryStats: { icon: UiIconName; label: string; value: string; sub: string; hot?: boolean }[] = [
     { icon: 'medal', label: 'Bugünkü Skor', value: formatScore(stats.todayScore), sub: 'Ranked kişisel en iyi' },
     { icon: 'flame', label: 'Günlük Seri', value: `${stats.dailyStreak} gün`, sub: 'Ranked devamlılığı', hot: stats.dailyStreak > 1 },
-    { icon: 'globe', label: 'Bugün', value: formatScore(todayRuns), sub: 'Ranked run başladı' },
+    { icon: 'globe', label: 'Bugün', value: todayRuns === null ? '…' : formatScore(todayRuns), sub: 'Ranked run başladı' },
   ];
 
   return (
