@@ -40,7 +40,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { moraleDelta: 20, description: 'Basına cevap verildi.' },
   ),
   evt_taraftar: e(
-    { nextMatchBonus: 90, nextMatchRisk: 0.2, description: 'Hücuma ağırlık — bonus ve kontrollü risk.' },
+    { nextMatchBonus: 165, nextMatchRisk: 0.2, description: 'Hücuma ağırlık — takımın hücum artışı rakibin baskısından daha yüksek.' },
     { moraleDelta: 5, description: 'Savunmada kalındı.' },
   ),
   evt_sakatlik: e(
@@ -49,7 +49,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
   ),
   evt_yorgunluk: e(
     { moraleDelta: 6, scoreDelta: 10, description: 'Rotasyon yapıldı — takım dinlendi, moral toparladı.' },
-    { nextMatchBonus: 70, nextMatchRisk: 0.22, moraleDelta: -6, description: 'Yorgun oyuncular zorlandı — kısa vadeli güç, yüksek maç riski.' },
+    { nextMatchBonus: 175, nextMatchRisk: 0.22, moraleDelta: -6, description: 'Yorgun oyuncular zorlandı — belirgin güç avantajı, yüksek maç riski ve moral bedeli.' },
   ),
   evt_zehir: e(
     { moraleDelta: -6, scoreDelta: 40, description: 'Etkilenenler dişini sıktı — moral düştü ama mücadele puanı.' },
@@ -116,7 +116,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { conditionalBonus: { tags: ['TEKNİK'], perTag: 24, base: 15, cap: 100 }, description: 'Teknik oyun — top kontrolü öne çıktı.' },
   ),
   evt_sicak_hava: e(
-    { nextMatchBonus: 40, nextMatchRisk: 0.12, description: 'Yüksek tempo — bonus ama hafif sakatlık riski.' },
+    { nextMatchBonus: 110, nextMatchRisk: 0.12, description: 'Yüksek tempo — ölçülü bir güç avantajı karşılığında hafif risk.' },
     { moraleDelta: 10, scoreDelta: 15, description: 'Yavaş tempo — moral korundu, küçük gelir.' },
   ),
   evt_soguk_hava: e(
@@ -128,7 +128,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { scoreDelta: 40, moraleDelta: 8, description: 'Konforlu yolculuk — takım dinç, küçük gelir.' },
   ),
   evt_derbi: e(
-    { nextMatchBonus: 110, nextMatchRisk: 0.18, description: 'Derbi ateşi — dengeli risk/ödül.' },
+    { nextMatchBonus: 150, nextMatchRisk: 0.18, description: 'Derbi ateşi — rakip baskısını aşan güç avantajı.' },
     { moraleDelta: 8, description: 'Sakin kalındı.' },
   ),
   evt_social_media: e(
@@ -149,7 +149,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
   ),
   evt_doktor: e(
     { moraleDelta: 8, description: 'Sağlık kontrolü tamam.' },
-    { nextMatchBonus: 25, nextMatchRisk: 0.08, description: 'Acele dönüş — küçük bonus, düşük risk.' },
+    { nextMatchBonus: 85, nextMatchRisk: 0.08, description: 'Acele dönüş — düşük riskin üstünde ölçülü güç avantajı.' },
   ),
   evt_fizyoterapist: e(
     { moraleDelta: 12, description: 'Fiziksel toparlanma — takım dinç, moral arttı.' },
@@ -184,15 +184,15 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { nextMatchBonus: 40, description: 'Odak maçta kaldı.' },
   ),
   evt_eksik_kadro: e(
-    { nextMatchBonus: 70, nextMatchRisk: 0.2, description: 'Eksik kadroyla direnildi — büyük bonus ama zor maç riski.' },
+    { nextMatchBonus: 165, nextMatchRisk: 0.2, description: 'Eksik kadro kenetlendi — rakip baskısını aşan büyük güç avantajı.' },
     { addYouth: true, description: 'Acil transfer yapıldı — kadroya taze oyuncu.' },
   ),
   evt_yedek_kaleci: e(
-    { nextMatchBonus: 45, nextMatchRisk: 0.15, description: 'Sakat 1. kaleci oynadı — tecrübe avantajı ama sakatlık riski.' },
+    { nextMatchBonus: 130, nextMatchRisk: 0.15, description: 'Sakat 1. kaleci oynadı — tecrübe avantajı riski anlamlı biçimde aşıyor.' },
     { moraleDelta: 8, description: 'Yedek kaleciye güvenildi — güvenli tercih, takım sakin.' },
   ),
   evt_uzatma: e(
-    { nextMatchBonus: 90, nextMatchRisk: 0.14, description: 'Uzatma taktikleri — orta risk.' },
+    { nextMatchBonus: 125, nextMatchRisk: 0.14, description: 'Uzatma taktikleri — hazırlık avantajı orta riski aşıyor.' },
     { moraleDelta: 5, description: 'Normal tempo.' },
   ),
   evt_ceza_sahasi: e(
@@ -204,11 +204,11 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { moraleDelta: 16, description: 'Basit antrenman — takım rahatladı.' },
   ),
   evt_kontratak: e(
-    { nextMatchBonus: 100, nextMatchRisk: 0.17, description: 'Kontra taktikleri — hızlı ödül, orta risk.' },
+    { nextMatchBonus: 145, nextMatchRisk: 0.17, description: 'Kontra taktikleri — hızlı hücum avantajı orta riski aşıyor.' },
     { moraleDelta: 7, description: 'Dengeli hazırlık.' },
   ),
   evt_sampiyonluk_baskisi: e(
-    { nextMatchRisk: 0.24, nextMatchBonus: 125, description: 'Baskı altında büyük risk — yine de ödüllü.' },
+    { nextMatchRisk: 0.24, nextMatchBonus: 190, description: 'Baskı saldırgan güce çevrildi — çok yüksek riskin üzerinde çok yüksek ödül.' },
     { moraleDelta: 10, description: 'Baskı yönetildi.' },
   ),
   evt_menajer_krizi: e(
@@ -236,7 +236,7 @@ export const EVENT_EFFECTS: Record<string, Pair> = {
     { scoreDelta: 180, moraleDelta: -8, description: 'Duygusal enerji sahaya taşındı — +180 puan, yorgunluk morali düşürdü.' },
   ),
   evt_kirmizi_forma: e(
-    { nextMatchBonus: 75, nextMatchRisk: 0.15, description: 'Agresif oyun planı — kontrollü risk.' },
+    { nextMatchBonus: 130, nextMatchRisk: 0.15, description: 'Agresif oyun planı — güç artışı kontrollü riski aşıyor.' },
     { moraleDelta: 6, description: 'Disiplinli oyun.' },
   ),
   evt_sessiz_stadyum: e(

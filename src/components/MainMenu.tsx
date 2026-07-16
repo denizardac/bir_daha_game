@@ -50,6 +50,7 @@ export function MainMenu() {
   const [installTipVisible, setInstallTipVisible] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [menuDialog, setMenuDialog] = useState<'help' | 'score' | null>(null);
+  const [abandonConfirmVisible, setAbandonConfirmVisible] = useState(false);
 
   const openStart = (daily: boolean, afterAbandon = false) => {
     setStartPrompt({ daily, afterAbandon });
@@ -121,8 +122,9 @@ export function MainMenu() {
     return () => window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
   }, []);
 
-  const handleNewRunFromContinue = () => {
-    openStart(savedRun?.isDailySeed ?? true, true);
+  const confirmAbandonRun = () => {
+    abandonRun();
+    setAbandonConfirmVisible(false);
   };
 
   const handlePlayClick = (daily: boolean) => {
@@ -249,10 +251,20 @@ export function MainMenu() {
                       <button type="button" className="btn-primary menu-resume-primary" onClick={continueRun}>
                         <UiIcon name="play" /> Run’a devam et
                       </button>
-                      <button type="button" className="btn-secondary" onClick={handleNewRunFromContinue}>
-                        Bu runı bırak · Yeni {savedRun?.isDailySeed === false ? 'Serbest' : 'Ranked'}
+                      <button type="button" className="btn-secondary menu-resume-abandon" onClick={() => setAbandonConfirmVisible(true)}>
+                        <UiIcon name="door" /> Mevcut runı terk et
                       </button>
                     </div>
+                    {abandonConfirmVisible && (
+                      <div className="menu-resume-abandon-confirm" role="alert">
+                        <div>
+                          <strong>Bu runın ilerlemesi silinecek.</strong>
+                          <span>Ardından yeni run seçebileceğin normal ana menü açılır.</span>
+                        </div>
+                        <button type="button" className="btn-secondary" onClick={() => setAbandonConfirmVisible(false)}>Vazgeç</button>
+                        <button type="button" className="menu-resume-abandon-final" onClick={confirmAbandonRun}>Evet, runı terk et</button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                 <>

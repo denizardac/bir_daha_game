@@ -132,6 +132,10 @@ describe('LineupEditorModal critical flow', () => {
     expect(within(benchFocus).getByText('Yedek')).toBeTruthy();
     expect(within(benchFocus).queryByText('Yedeğe düşüyor')).toBeNull();
     expect(within(benchFocus).getByText('YERLİ')).toBeTruthy();
+    const traitRail = within(benchFocus).getByRole('group', { name: /traitleri/i });
+    expect(traitRail.classList.contains('le-squad-traits-rail')).toBe(true);
+    expect(within(traitRail).getByText('YERLİ')).toBeTruthy();
+    expect(within(benchFocus).getByText('Yedek').closest('.le-squad-name-row')).toBeTruthy();
 
     const action = within(benchFocus).getByRole('button', { name: /oyuncusunu sahaya al/ });
     await user.click(action);

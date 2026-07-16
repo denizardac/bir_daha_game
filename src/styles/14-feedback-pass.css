@@ -1,0 +1,329 @@
+/* ============================================================
+   FEEDBACK PASS — run çıkışı, kadro bilgi hiyerarşisi, oyuncu olay dosyaları
+   ============================================================ */
+
+/* Devam eden run: çıkış görünür ama yanlışlıkla tek dokunuşla yıkıcı değil. */
+.menu-resume-abandon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #bdc9c5 !important;
+}
+
+.menu-resume-abandon svg { width: 15px; }
+
+.menu-resume-abandon-confirm {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 13px 14px;
+  border: 1px solid rgba(248, 113, 113, 0.28);
+  border-radius: 13px;
+  background: linear-gradient(90deg, rgba(89, 27, 37, 0.27), rgba(10, 17, 16, 0.82));
+}
+
+.menu-resume-abandon-confirm > div { display: grid; gap: 3px; }
+.menu-resume-abandon-confirm strong { color: #fecaca; font: 800 0.86rem/1.2 'Barlow', sans-serif; }
+.menu-resume-abandon-confirm span { color: #9fb0ab; font: 500 0.75rem/1.35 'Barlow', sans-serif; }
+
+.menu-resume-abandon-final {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(248, 113, 113, 0.55);
+  border-radius: 9px;
+  background: rgba(116, 34, 47, 0.72);
+  color: #fee2e2;
+  font: 850 0.76rem/1 'Barlow', sans-serif;
+  cursor: pointer;
+}
+
+.menu-resume-abandon-final:hover {
+  border-color: #fb7185;
+  background: rgba(151, 40, 57, 0.82);
+}
+
+/* Kadro satırı: kimlik/mevki solda; traitler sağ kenardan sola doğru dizilir. */
+.le-squad-row:not(.le-squad-row--bench-feature) {
+  grid-template-columns: 2.35rem minmax(7.2rem, 1fr) minmax(5.8rem, auto) !important;
+  gap: 0.72rem !important;
+  min-height: 4rem !important;
+  overflow: visible !important;
+}
+
+.le-squad-row .le-squad-info,
+.le-bench-focus .le-squad-info {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  align-content: center !important;
+  gap: 0.32rem !important;
+}
+
+.le-squad-row .le-squad-name-row,
+.le-bench-focus .le-squad-name-row {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.42rem !important;
+  min-width: 0 !important;
+}
+
+.le-squad-row .le-squad-role-row,
+.le-bench-focus .le-squad-role-row {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  justify-self: start !important;
+  gap: 0.27rem !important;
+}
+
+.le-squad-name {
+  font-size: 0.98rem !important;
+  letter-spacing: 0.01em;
+}
+
+.le-squad-bench-badge {
+  flex: 0 0 auto !important;
+  min-height: 1.15rem !important;
+  padding: 0.16rem 0.38rem !important;
+  border-radius: 999px !important;
+  font-size: 0.52rem !important;
+  letter-spacing: 0.055em;
+}
+
+.le-squad-traits-rail {
+  min-width: 0;
+  display: flex;
+  flex-flow: row-reverse wrap;
+  align-items: center;
+  align-content: center;
+  justify-content: flex-start;
+  gap: 0.28rem;
+}
+
+.le-squad-traits-rail .le-squad-tag-tip {
+  display: inline-flex !important;
+  flex: 0 0 auto;
+}
+
+.le-squad-traits-rail .le-squad-tag {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  min-height: 1.3rem !important;
+  padding: 0.18rem 0.42rem !important;
+  border: 1px solid currentColor !important;
+  border-radius: 999px !important;
+  background: rgba(5, 12, 14, 0.72) !important;
+  font: 850 0.55rem/1 'Barlow Condensed', sans-serif !important;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.le-squad-traits-rail .le-squad-tag .ui-icon {
+  display: block !important;
+  width: 10px;
+  height: 10px;
+}
+
+.le-bench-focus .le-squad-row--bench-feature {
+  grid-template-columns: 2.2rem minmax(7rem, 1fr) minmax(5rem, auto) minmax(5.7rem, auto) !important;
+  grid-template-rows: auto !important;
+  gap: 0.62rem !important;
+  min-height: 4.65rem !important;
+}
+
+.le-bench-focus .le-squad-traits-rail {
+  max-width: 8.8rem;
+  justify-self: end;
+}
+
+/* Oyuncu merkezli olaylar: küçük nötr satır yerine karar dosyası. */
+.event-v2 .event-subjects {
+  gap: 0.65rem !important;
+  margin: 1rem 0 1.25rem !important;
+}
+
+.event-v2 .event-player-offer {
+  --subject-accent: #e7c65b;
+  --subject-soft: rgba(231, 198, 91, 0.1);
+}
+
+.event-v2 .event-player-offer--join { --subject-accent: #55f0b0; --subject-soft: rgba(85, 240, 176, 0.1); }
+.event-v2 .event-player-offer--leave { --subject-accent: #fb7185; --subject-soft: rgba(251, 113, 133, 0.11); }
+.event-v2 .event-player-offer--pair { --subject-accent: #a78bfa; --subject-soft: rgba(167, 139, 250, 0.1); }
+
+.event-v2 .event-subject-card {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: 4.25rem minmax(8rem, 1fr) minmax(8rem, auto);
+  gap: 0.85rem !important;
+  align-items: center !important;
+  min-height: 7.2rem;
+  padding: 0.85rem 1rem !important;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--subject-accent) 42%, transparent) !important;
+  border-radius: 15px !important;
+  background:
+    linear-gradient(100deg, var(--subject-soft), transparent 42%),
+    rgba(5, 14, 12, 0.92) !important;
+  box-shadow: inset 3px 0 0 var(--subject-accent), 0 12px 30px rgba(0, 0, 0, 0.16);
+}
+
+.event-v2 .event-subject-card::after {
+  content: '';
+  position: absolute;
+  right: -2rem;
+  bottom: -3rem;
+  width: 9rem;
+  height: 9rem;
+  border: 1px solid color-mix(in srgb, var(--subject-accent) 13%, transparent);
+  border-radius: 50%;
+}
+
+.event-subject-rating-block {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 4.25rem;
+  height: 4.9rem;
+  border: 1px solid color-mix(in srgb, var(--subject-accent) 38%, transparent);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.event-subject-rating-block strong {
+  color: #f4f3e9;
+  font: 900 2rem/0.9 'Barlow Condensed', sans-serif;
+}
+
+.event-subject-rating-block > span {
+  margin-top: 6px;
+  padding: 3px 6px !important;
+  border: 1px solid !important;
+  border-radius: 5px !important;
+  font: 900 0.62rem/1 'Barlow', sans-serif !important;
+}
+
+.event-subject-identity {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.event-subject-context {
+  color: var(--subject-accent);
+  font: 850 0.62rem/1 'Barlow', sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.event-v2 .event-subject-name {
+  color: #f3f5ef !important;
+  font: 900 1.38rem/1 'Barlow Condensed', sans-serif !important;
+}
+
+.event-subject-identity small {
+  color: #96aaa4;
+  font: 550 0.73rem/1.2 'Barlow', sans-serif;
+}
+
+.event-subject-decision {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+}
+
+.event-subject-decision > span {
+  padding: 5px 8px;
+  border: 1px solid color-mix(in srgb, var(--subject-accent) 42%, transparent);
+  border-radius: 999px;
+  color: var(--subject-accent);
+  background: var(--subject-soft);
+  font: 850 0.58rem/1 'Barlow', sans-serif;
+  letter-spacing: 0.08em;
+}
+
+.event-subject-traits {
+  display: flex;
+  flex-flow: row-reverse wrap;
+  justify-content: flex-start;
+  gap: 5px;
+}
+
+.event-v2 .event-subject-tag-pill {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  min-height: 1.35rem;
+  padding: 0.18rem 0.42rem !important;
+  border-radius: 999px !important;
+  font-size: 0.56rem !important;
+}
+
+.event-v2 .event-subject-tag-pill svg { width: 10px; height: 10px; }
+
+@media (max-width: 760px) {
+  .menu-resume-abandon-confirm { grid-template-columns: 1fr 1fr; }
+  .menu-resume-abandon-confirm > div { grid-column: 1 / -1; }
+
+  .le-squad-row:not(.le-squad-row--bench-feature) {
+    grid-template-columns: 2.15rem minmax(0, 1fr) !important;
+    grid-template-rows: auto auto !important;
+  }
+  .le-squad-row:not(.le-squad-row--bench-feature) .le-squad-traits-rail {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
+  .le-bench-focus .le-squad-row--bench-feature {
+    grid-template-columns: 1.8rem minmax(0, 1fr) minmax(5.15rem, auto) !important;
+    grid-template-rows: auto auto !important;
+  }
+  .le-bench-focus .le-squad-traits-rail {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
+  .le-bench-focus .le-squad-place-btn {
+    grid-column: 3;
+    grid-row: 1 / 3;
+  }
+
+  .event-v2 .event-subject-card {
+    grid-template-columns: 3.7rem minmax(0, 1fr);
+    min-height: 0;
+    padding: 0.75rem !important;
+  }
+  .event-subject-rating-block { width: 3.7rem; height: 4.35rem; }
+  .event-subject-decision {
+    grid-column: 1 / -1;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    justify-items: start;
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  .event-subject-traits { justify-content: flex-start; }
+}
+
+@media (max-width: 430px) {
+  .menu-resume-abandon-confirm { grid-template-columns: 1fr; }
+  .menu-resume-abandon-confirm > div,
+  .menu-resume-abandon-confirm button { grid-column: 1; width: 100%; }
+  .le-squad-traits-rail .le-squad-tag { font-size: 0.5rem !important; }
+  .event-subject-decision { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-resume-abandon-final { transition: none; }
+}

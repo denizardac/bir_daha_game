@@ -45,7 +45,7 @@ import {
 import { playSound } from '@/utils/sound';
 import { formatStatDisplay } from '@/utils/formatNumber';
 import { POSITION_BADGE, formatPosition, getPositionRoleColor, TAG_AVATAR_BG } from '@/utils/positionStyle';
-import { iconForSynergy } from '@/utils/gameIcons';
+import { iconForSynergy, iconForTag } from '@/utils/gameIcons';
 import { DANGER_MORALE_FLOOR } from '@/constants/game';
 import { getEventChoiceTones, eventChoiceClass } from '@/engine/eventRisk';
 import { getWeeklyModifier } from '@/engine/weeklyModifier';
@@ -355,6 +355,16 @@ function getEventOutcomeLines(o: EventOutcome, eventId?: string): EventOutcomeLi
       label: 'Rakip gücü',
       value: `Sonraki maç +%${pct}`,
       tone: 'warn',
+    });
+  }
+  if (o.nextMatchBonus && o.nextMatchRisk) {
+    const teamPct = Math.round((matchBonusMultiplier(o.nextMatchBonus) - 1) * 100);
+    const opponentPct = Math.round(o.nextMatchRisk * 100);
+    lines.push({
+      icon: 'scale',
+      label: 'Risk/ödül dengesi',
+      value: `Takım lehine +%${teamPct - opponentPct}`,
+      tone: teamPct > opponentPct ? 'good' : 'warn',
     });
   }
   if (o.grantRerolls) {
@@ -695,21 +705,31 @@ export function CardSelectScreen() {
 
 function EventSubjectCard({ subject }: { subject: EventSubject }) {
   const p = subject.player;
+  const variant = subject.variant ?? 'focus';
+  const statusLabel = variant === 'join'
+    ? 'KADROYA KATILABİLİR'
+    : variant === 'leave'
+      ? 'AYRILMA RİSKİ'
+      : variant === 'pair'
+        ? 'ÇATIŞMANIN TARAFI'
+        : 'KARARIN ODAĞI';
   return (
-    <div className="event-subject-card">
-      <span className="event-subject-avatar">
-        <UiIcon name="shirt" />
-      </span>
-      <div className="event-subject-body">
+    <div className={`event-subject-card event-subject-card--${variant}`}>
+      <div className="event-subject-rating-block">
+        <strong>{p.currentRating}</strong>
+        <span style={pillStyle(getPositionRoleColor(p.position))}>{POSITION_BADGE[p.position]}</span>
+      </div>
+      <div className="event-subject-identity">
+        <span className="event-subject-context">{subject.label}</span>
         <strong className="event-subject-name" title={p.name}>{p.name}</strong>
-        <div className="event-subject-pills">
-          <span className="event-subject-rating">{p.currentRating}</span>
-          <span className="event-subject-pos-pill" style={pillStyle(getPositionRoleColor(p.position))}>
-            {POSITION_BADGE[p.position]}
-          </span>
-          {p.tags.slice(0, 2).map((tag) => (
+        <small>{formatPosition(p.position)}</small>
+      </div>
+      <div className="event-subject-decision">
+        <span>{statusLabel}</span>
+        <div className="event-subject-traits">
+          {p.tags.map((tag) => (
             <span key={tag} className="event-subject-tag-pill" style={pillStyle(tagPillColor(tag))}>
-              {tag}
+              <UiIcon name={iconForTag(tag)} />{tag}
             </span>
           ))}
         </div>
@@ -876,7 +896,6 @@ export function EventScreen() {
                     key={`${subject.player.id}-${subject.label}`}
                     className={`event-player-offer event-player-offer--${subject.variant ?? 'focus'}`}
                   >
-                    <p className="event-player-offer-label">{subject.label}</p>
                     <EventSubjectCard subject={subject} />
                   </div>
                 ))}

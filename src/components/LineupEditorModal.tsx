@@ -80,6 +80,21 @@ function positionChipStyle(position: Position, filled: boolean): CSSProperties {
     : { color, background: `${color}10`, borderColor: `${color}8a` };
 }
 
+function SquadTraitsRail({ player }: { player: PlayerCard }) {
+  return (
+    <div className="le-squad-traits-rail" role="group" aria-label={`${player.name} traitleri`}>
+      {player.tags.map((tag) => (
+        <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="le-squad-tag-tip">
+          <span className="le-squad-tag" style={tagChipStyle(tag)}>
+            <UiIcon name={iconForTag(tag)} />
+            {tag}
+          </span>
+        </HoverTip>
+      ))}
+    </div>
+  );
+}
+
 export function LineupEditorModal({
   open,
   squad,
@@ -504,25 +519,16 @@ export function LineupEditorModal({
                       <div className="le-squad-info">
                         <div className="le-squad-name-row">
                           <span className="le-squad-name" title={player.name}>{formatSquadListName(player.name)}</span>
+                          <span className={`le-squad-bench-badge ${newlyBenchedIds.has(player.id) ? 'le-squad-bench-badge--new' : ''} ${highlightId === player.id ? 'le-squad-bench-badge--incoming' : ''}`}>
+                            {benchStatus}
+                          </span>
                         </div>
                         <div className="le-squad-role-row">
                           <span className="le-squad-primary-pos" style={positionChipStyle(player.position, true)}>{POSITION_BADGE[player.position]}</span>
                           {player.position === 'KL' ? <span className="le-squad-only">sadece kalede</span> : <SecondaryPositions player={player} />}
                         </div>
-                        <div className="le-squad-tags">
-                          <span className={`le-squad-bench-badge ${newlyBenchedIds.has(player.id) ? 'le-squad-bench-badge--new' : ''} ${highlightId === player.id ? 'le-squad-bench-badge--incoming' : ''}`}>
-                            {benchStatus}
-                          </span>
-                          {player.tags.map((tag) => (
-                            <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="le-squad-tag-tip">
-                              <span className="le-squad-tag" style={tagChipStyle(tag)}>
-                                <UiIcon name={iconForTag(tag)} />
-                                {tag}
-                              </span>
-                            </HoverTip>
-                          ))}
-                        </div>
                       </div>
+                      <SquadTraitsRail player={player} />
                       <button
                         type="button"
                         className={`le-squad-place-btn ${selected ? 'le-squad-place-btn--active' : ''}`}
@@ -575,17 +581,8 @@ export function LineupEditorModal({
                       </>
                     );
                   })()}
-                  <div className="le-squad-tags">
-                    {player.tags.map((tag) => (
-                      <HoverTip key={tag} tip={TAG_DESCRIPTIONS[tag]} placement="right" className="le-squad-tag-tip">
-                        <span className="le-squad-tag" style={tagChipStyle(tag)}>
-                          <UiIcon name={iconForTag(tag)} />
-                          {tag}
-                        </span>
-                      </HoverTip>
-                    ))}
-                  </div>
                 </div>
+                <SquadTraitsRail player={player} />
               </div>
             );
           })}
