@@ -31,6 +31,21 @@ const EVENT_CATEGORY_ICON: Record<string, UiIconName> = {
   ozel: 'sparkles',
 };
 
+const EVENT_TEASERS: Record<EventCard['category'], { label: string; theme: string }> = {
+  transfer: { label: 'Transfer', theme: 'Kadro kararı' },
+  taktik: { label: 'Taktik', theme: 'Maç planı' },
+  moral: { label: 'Moral', theme: 'Takım dengesi' },
+  fiziksel: { label: 'Fiziksel', theme: 'Hazırlık sınavı' },
+  ozel: { label: 'Özel', theme: 'Nadir karşılaşma' },
+};
+
+function getRatingBand(rating: number): string {
+  if (rating >= 90) return '90+ rating';
+  if (rating >= 88) return '88–89 rating';
+  if (rating >= 85) return '85–87 rating';
+  return '84 ve altı';
+}
+
 const MECHANIC_DESCRIPTIONS: Record<string, string> = {
   mechanic_hedefli_scout: 'Serbest Modda run başına bir kez mevki seçerek ücretsiz oyuncu ararsın.',
   mechanic_kriz_kontrati: 'Kadro 5 kişiye düştüğünde toparlanma oyuncusu teklifini garanti eder.',
@@ -72,28 +87,43 @@ function UnlockRewardPreview({
   kind,
   contentId,
   name,
+  unlocked,
 }: {
   kind: UnlockRewardKind;
   contentId: string;
   name: string;
+  unlocked: boolean;
 }) {
   const player = kind === 'player' ? PLAYER_POOL.find((candidate) => candidate.id === contentId) : undefined;
   const event = kind === 'event' ? EVENT_CARDS.find((candidate) => candidate.id === contentId) : undefined;
   const kindLabel = kind === 'player' ? 'Açılacak oyuncu' : kind === 'event' ? 'Açılacak olay' : 'Açılacak mekanik';
+  const eventTeaser = event ? EVENT_TEASERS[event.category] : undefined;
 
   return (
-    <div className={`unlock-reward-preview unlock-reward-preview--${kind}`} tabIndex={0}>
+    <div className={`unlock-reward-preview unlock-reward-preview--${kind} ${unlocked ? 'unlock-reward-preview--revealed' : 'unlock-reward-preview--teaser'}`} tabIndex={0}>
       <div className="unlock-reward-preview-head">
         <span>{kindLabel}</span>
-        <strong>{name}</strong>
+        <strong>{unlocked || kind === 'mechanic' ? name : kind === 'player' ? 'Gizli imza' : 'Gizli olay'}</strong>
       </div>
-      {player && (
+      {player && unlocked && (
         <>
           <p>{player.currentRating} rating · {POSITION_BADGE[player.position]} · {POSITION_LABELS[player.position]}</p>
           <PlayerReveal player={player} />
         </>
       )}
-      {event && <EventReveal event={event} />}
+      {player && !unlocked && (
+        <div className="unlock-reward-teaser-line">
+          <span>{POSITION_BADGE[player.position]} · {getRatingBand(player.currentRating)}</span>
+          <small>{player.tags.length} trait</small>
+        </div>
+      )}
+      {event && unlocked && <EventReveal event={event} />}
+      {event && !unlocked && eventTeaser && (
+        <div className="unlock-reward-teaser-line">
+          <span>{eventTeaser.label} · {eventTeaser.theme}</span>
+          <small>2 karar yolu</small>
+        </div>
+      )}
       {kind === 'mechanic' && <p>{MECHANIC_DESCRIPTIONS[contentId] ?? 'Serbest Modda yeni bir oyun kuralı açar.'}</p>}
     </div>
   );
@@ -219,7 +249,7 @@ export function CollectionScreen() {
                   <div className="unlock-collection-foot">
                     <span>{status.unlocked ? 'Tamamlandı' : blockedBy ? `Önce: ${blockedBy}` : `${status.current} / ${status.unlock.target}`}</span>
                   </div>
-                  <UnlockRewardPreview {...status.unlock.reward} />
+                  <UnlockRewardPreview {...status.unlock.reward} unlocked={status.unlocked} />
                 </article>
               );
             })}
@@ -238,21 +268,24 @@ export function CollectionScreen() {
             {legendPool.map((p) => {
               const ok = collectedLegends.has(p.name);
               const arch = getPlayerArchetype(p);
+              const ratingBand = getRatingBand(p.currentRating);
+              const lockedLabel = `Kilitli oyuncu kartı · ${POSITION_BADGE[p.position]} · ${ratingBand} · ${p.tags.length} trait`;
               return (
                 <article
                   key={p.id}
                   className={`collection-tile ${ok ? '' : 'collection-tile--locked'}`}
                   style={ok && p.signature && p.signatureColor ? { borderColor: p.signatureColor } : undefined}
                   tabIndex={ok ? 0 : undefined}
-                  aria-label={ok ? `${p.name} kart detayı` : undefined}
+                  aria-label={ok ? `${p.name} kart detayı` : lockedLabel}
                 >
                   <div className="collection-tile-icon">
                     <UiIcon name={ok ? (p.signature ? 'sparkles' : 'trophy') : 'lock'} />
                   </div>
-                  <div className="collection-tile-name">{ok ? p.name : '???'}</div>
+                  <div className="collection-tile-name">{ok ? p.name : 'Gizli imza'}</div>
                   <div className="collection-tile-sub">
-                    {ok ? `${POSITION_BADGE[p.position]} · ${arch.label}` : 'Henüz çekilmedi'}
+                    {ok ? `${POSITION_BADGE[p.position]} · ${arch.label}` : `${POSITION_BADGE[p.position]} · ${ratingBand}`}
                   </div>
+                  {!ok && <span className="collection-lock-clue">{p.tags.length} trait</span>}
                   {ok && <PlayerReveal player={p} />}
                 </article>
               );
@@ -265,18 +298,20 @@ export function CollectionScreen() {
           <div className="collection-grid">
             {EVENT_CARDS.map((e) => {
               const ok = seenEvents.has(e.id);
+              const teaser = EVENT_TEASERS[e.category];
               return (
                 <article
                   key={e.id}
                   className={`collection-tile ${ok ? '' : 'collection-tile--locked'}`}
                   tabIndex={ok ? 0 : undefined}
-                  aria-label={ok ? `${e.title} olay detayı` : undefined}
+                  aria-label={ok ? `${e.title} olay detayı` : `Kilitli olay · ${teaser.label} · ${teaser.theme}`}
                 >
                   <div className="collection-tile-icon">
                     <UiIcon name={ok ? (EVENT_CATEGORY_ICON[e.category] ?? 'circle-dot') : 'lock'} />
                   </div>
-                  <div className="collection-tile-name">{ok ? e.title : '???'}</div>
-                  <div className="collection-tile-sub">{ok ? e.category : 'Henüz görülmedi'}</div>
+                  <div className="collection-tile-name">{ok ? e.title : 'Gizli olay'}</div>
+                  <div className="collection-tile-sub">{ok ? teaser.label : `${teaser.label} · ${teaser.theme}`}</div>
+                  {!ok && <span className="collection-lock-clue">2 karar yolu</span>}
                   {ok && <EventReveal event={e} />}
                 </article>
               );

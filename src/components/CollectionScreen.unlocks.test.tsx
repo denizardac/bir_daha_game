@@ -68,10 +68,25 @@ describe('CollectionScreen unlock progression', () => {
     expect(legendsTab.getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('kilitli olay ödülünün ne yapacağını ve iki kararını açıklar', () => {
+  it('kilitli olay ödülünde yalnız sabit tema ipucunu gösterir', () => {
     render(<CollectionScreen />);
 
     const card = screen.getByRole('heading', { name: 'Trait Ustası' }).closest('article')!;
+    expect(within(card).getByText('Gizli olay')).toBeTruthy();
+    expect(within(card).getByText(/Özel.*Nadir karşılaşma/)).toBeTruthy();
+    expect(within(card).getByText('2 karar yolu')).toBeTruthy();
+    expect(within(card).queryByText(/Bir gecede üç farklı yönünü geliştirebilir/)).toBeNull();
+    expect(within(card).queryByText(/ÖZEL ÇALIŞ/)).toBeNull();
+  });
+
+  it('olay ödülü açılınca açıklamasını ve iki kararını gösterir', () => {
+    saveUnlocks((unlocks) => {
+      unlocks.unlockedIds = ['traits_5_legend_touch'];
+    });
+    render(<CollectionScreen />);
+
+    const card = screen.getByRole('heading', { name: 'Trait Ustası' }).closest('article')!;
+    expect(within(card).getByText('Efsane Dokunuşu')).toBeTruthy();
     expect(within(card).getByText(/Bir gecede üç farklı yönünü geliştirebilir/)).toBeTruthy();
     expect(within(card).getByText(/ÖZEL ÇALIŞ/)).toBeTruthy();
     expect(within(card).getByText(/DÜZENİ BOZMA/)).toBeTruthy();
@@ -90,6 +105,18 @@ describe('CollectionScreen unlock progression', () => {
     expect(within(card).getByText('DAYANIKLI')).toBeTruthy();
   });
 
+  it('çekilmemiş efsanede yalnız sabit scout ipuçlarını gösterir', async () => {
+    const user = userEvent.setup();
+    render(<CollectionScreen />);
+
+    await user.click(screen.getByRole('button', { name: /Efsaneler/i }));
+    const [card] = screen.getAllByRole('article', { name: /Kilitli oyuncu kartı.*SĞB.*3 trait/i });
+    expect(within(card).getByText('Gizli imza')).toBeTruthy();
+    expect(within(card).getByText(/SĞB.*88–89 rating/)).toBeTruthy();
+    expect(within(card).queryByText('Gökhan Sazdağı')).toBeNull();
+    expect(within(card).queryByText('88')).toBeNull();
+  });
+
   it('görülmüş olayın açıklamasını ve iki karar sonucunu arşivler', async () => {
     const persisted = loadPersisted();
     savePersisted({ ...persisted, seenEvents: ['evt_unlock_efsane_dokunusu'] });
@@ -101,5 +128,18 @@ describe('CollectionScreen unlock progression', () => {
     expect(within(card).getByText(/Kulüp efsanesi bir oyuncuyu özel çalışmaya aldı/)).toBeTruthy();
     expect(within(card).getByText(/3 pozitif trait/)).toBeTruthy();
     expect(within(card).getByText(/140 puan/)).toBeTruthy();
+  });
+
+  it('görülmemiş olayda kategori ve tema ipucunu gösterip sonuçları saklar', async () => {
+    const user = userEvent.setup();
+    render(<CollectionScreen />);
+
+    await user.click(screen.getByRole('button', { name: /Olaylar/i }));
+    const [card] = screen.getAllByRole('article', { name: /Kilitli olay.*Transfer.*Kadro kararı/i });
+    expect(within(card).getByText('Gizli olay')).toBeTruthy();
+    expect(within(card).getByText(/Transfer.*Kadro kararı/)).toBeTruthy();
+    expect(within(card).getByText('2 karar yolu')).toBeTruthy();
+    expect(within(card).queryByText('Transfer Teklifi')).toBeNull();
+    expect(within(card).queryByText(/30 puan/)).toBeNull();
   });
 });
