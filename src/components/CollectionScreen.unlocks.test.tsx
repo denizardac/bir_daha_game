@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { CollectionScreen } from '@/components/CollectionScreen';
 import { createInitialUnlockState, UNLOCK_CATALOG } from '@/engine/unlocks';
 import { loadPersisted, savePersisted } from '@/utils/storage';
+import { useGameStore } from '@/store/gameStore';
 
 beforeEach(() => {
   localStorage.clear();
@@ -13,6 +14,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  useGameStore.setState({ monthlyLegend: null });
 });
 
 function saveUnlocks(mutator: (unlocks: ReturnType<typeof createInitialUnlockState>) => void) {
@@ -103,6 +105,31 @@ describe('CollectionScreen unlock progression', () => {
     expect(within(card).getByText('88')).toBeTruthy();
     expect(within(card).getByText('SĞB')).toBeTruthy();
     expect(within(card).getByText('DAYANIKLI')).toBeTruthy();
+  });
+
+  it('ayın efsanesini normal gridden ayrı, tam bir showcase kartında sunar', async () => {
+    useGameStore.setState({
+      monthlyLegend: {
+        awardMonthKey: '2026-07',
+        sourceMonthKey: '2026-06',
+        championId: 'grande',
+        displayName: 'Grande',
+        totalScore: 21_484,
+        verifiedAt: 1,
+      },
+    });
+    const user = userEvent.setup();
+    render(<CollectionScreen />);
+
+    await user.click(screen.getByRole('button', { name: /Efsaneler/i }));
+    const showcase = screen.getByRole('article', { name: /Grande Ayın Efsanesi showcase kartı/i });
+    expect(within(showcase).getByRole('heading', { name: 'Grande' })).toBeTruthy();
+    expect(within(showcase).getByText('90')).toBeTruthy();
+    expect(within(showcase).getByLabelText(/90 rating SĞB/i)).toBeTruthy();
+    expect(within(showcase).getByText('HIZLI')).toBeTruthy();
+    expect(within(showcase).getByText('21.484')).toBeTruthy();
+    expect(within(showcase).getByText(/Haziran 2026 global şampiyonu/i)).toBeTruthy();
+    expect(screen.queryByText(/Grande — Ayın Efsanesi bu ay/i)).toBeNull();
   });
 
   it('çekilmemiş efsanede yalnız sabit scout ipuçlarını gösterir', async () => {

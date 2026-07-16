@@ -6,11 +6,12 @@ import { countUnlockedAchievements, getAchievementState } from '@/engine/achieve
 import { getUnlockStatuses } from '@/engine/unlocks';
 import { buildMonthlyLegendCard } from '@/engine/monthlyLegend';
 import { getSeasonLabel } from '@/engine/hallOfFame';
+import { formatScore } from '@/engine/scoring';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { POSITION_BADGE, POSITION_LABELS } from '@/utils/positionStyle';
 import { iconForTag } from '@/utils/gameIcons';
-import type { EventCard, PlayerCard } from '@/types';
+import type { EventCard, MonthlyLegendRecord, PlayerCard } from '@/types';
 import type { UnlockRewardKind } from '@/engine/unlocks';
 
 type Tab = 'kilit' | 'efsane' | 'olay' | 'basarim';
@@ -68,6 +69,58 @@ function PlayerReveal({ player }: { player: PlayerCard }) {
         {player.signatureQuote && <q>{player.signatureQuote}</q>}
       </div>
     </div>
+  );
+}
+
+function MonthlyLegendShowcase({
+  player,
+  record,
+}: {
+  player: PlayerCard;
+  record: MonthlyLegendRecord;
+}) {
+  return (
+    <article
+      className="monthly-legend-showcase"
+      aria-label={`${record.displayName} Ayın Efsanesi showcase kartı`}
+    >
+      <div className="monthly-legend-showcase-copy">
+        <span className="monthly-legend-showcase-kicker">
+          <UiIcon name="trophy" /> Kulüp müzesi · Ayın Efsanesi
+        </span>
+        <p>{getSeasonLabel(record.sourceMonthKey)} global şampiyonu</p>
+        <h2>{record.displayName}</h2>
+        <div className="monthly-legend-showcase-mode">
+          <span><UiIcon name="trophy" /> Bu aya özel</span>
+          <span><UiIcon name="globe" /> Ranked + Serbest havuzunda</span>
+        </div>
+      </div>
+
+      <div className="monthly-legend-player-card" aria-label={`${player.currentRating} rating ${POSITION_BADGE[player.position]}`}>
+        <div className="monthly-legend-card-crown"><UiIcon name="sparkles" /></div>
+        <div className="monthly-legend-card-rating">
+          <strong>{player.currentRating}</strong>
+          <span>{POSITION_BADGE[player.position]}</span>
+        </div>
+        <div className="monthly-legend-card-name">
+          <small>AYIN EFSANESİ</small>
+          <strong>{record.displayName}</strong>
+          <span>{POSITION_LABELS[player.position]}</span>
+        </div>
+        <div className="monthly-legend-card-tags">
+          {player.tags.map((tag) => (
+            <span key={tag}><UiIcon name={iconForTag(tag)} />{tag}</span>
+          ))}
+        </div>
+      </div>
+
+      <div className="monthly-legend-showcase-record">
+        <span>ŞAMPİYONLUK KAYDI</span>
+        <strong>{formatScore(record.totalScore)}</strong>
+        <small>{getSeasonLabel(record.sourceMonthKey)} final skoru</small>
+        <q>Doğrulanmış global lider · bu ayın efsanesi</q>
+      </div>
+    </article>
   );
 }
 
@@ -154,6 +207,9 @@ export function CollectionScreen() {
   const legendPool = monthlyLegendCard
     ? [monthlyLegendCard, ...LEGEND_POOL.filter((player) => player.id !== monthlyLegendCard.id)]
     : LEGEND_POOL;
+  const legendGridPool = monthlyLegendCard
+    ? legendPool.filter((player) => player.id !== monthlyLegendCard.id)
+    : legendPool;
 
   const legendOpen = legendPool.filter((p) => collectedLegends.has(p.name)).length;
   const eventOpen = EVENT_CARDS.filter((e) => seenEvents.has(e.id)).length;
@@ -259,13 +315,10 @@ export function CollectionScreen() {
         {tab === 'efsane' && (
           <>
             {monthlyLegendCard && monthlyLegendRecord && (
-              <p className="collection-monthly-legend-note">
-                <UiIcon name="trophy" /> {getSeasonLabel(monthlyLegendRecord.sourceMonthKey)} şampiyonu
-                <strong>{monthlyLegendCard.name}</strong> bu ay iki modun ortak havuzunda.
-              </p>
+              <MonthlyLegendShowcase player={monthlyLegendCard} record={monthlyLegendRecord} />
             )}
             <div className="collection-grid">
-            {legendPool.map((p) => {
+            {legendGridPool.map((p) => {
               const ok = collectedLegends.has(p.name);
               const arch = getPlayerArchetype(p);
               const ratingBand = getRatingBand(p.currentRating);

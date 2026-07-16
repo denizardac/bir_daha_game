@@ -263,6 +263,166 @@
 .menu-resume-primary svg { width: 17px; }
 
 /* Koleksiyon kartı hover/focus yüzü */
+.monthly-legend-showcase {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) minmax(250px, 0.72fr) minmax(210px, 0.75fr);
+  gap: clamp(20px, 3vw, 48px);
+  align-items: center;
+  overflow: hidden;
+  min-height: 300px;
+  margin-bottom: 22px;
+  padding: clamp(24px, 3.4vw, 48px);
+  border: 1px solid rgba(226, 189, 85, 0.38);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 57% 45%, rgba(167, 139, 250, 0.18), transparent 29%),
+    linear-gradient(112deg, #14150d 0%, #090f0d 48%, #171224 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025), 0 28px 65px rgba(0, 0, 0, 0.32);
+}
+
+.monthly-legend-showcase::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 14px;
+  border: 1px solid rgba(226, 189, 85, 0.1);
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.monthly-legend-showcase::after {
+  content: '★';
+  position: absolute;
+  z-index: -1;
+  right: -30px;
+  top: -82px;
+  color: rgba(167, 139, 250, 0.038);
+  font: 900 22rem/1 sans-serif;
+  transform: rotate(9deg);
+}
+
+.monthly-legend-showcase-copy { min-width: 0; }
+
+.monthly-legend-showcase-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #e2bd55;
+  font: 850 0.72rem/1 'Barlow', sans-serif;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.monthly-legend-showcase-kicker svg { width: 15px; }
+
+.monthly-legend-showcase-copy > p {
+  margin: 30px 0 5px;
+  color: #a78bfa;
+  font: 750 0.78rem/1.2 'Barlow', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.monthly-legend-showcase-copy h2 {
+  margin: 0;
+  color: #f6f2df;
+  font: 900 clamp(3.8rem, 6vw, 6.7rem)/0.78 'Barlow Condensed', sans-serif;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+}
+
+.monthly-legend-showcase-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 26px;
+}
+
+.monthly-legend-showcase-mode span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+  border: 1px solid rgba(226, 189, 85, 0.2);
+  border-radius: 999px;
+  color: #c9c3ae;
+  background: rgba(226, 189, 85, 0.055);
+  font: 650 0.7rem/1 'Barlow', sans-serif;
+}
+
+.monthly-legend-showcase-mode svg { width: 12px; color: #e2bd55; }
+
+.monthly-legend-player-card {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 270px);
+  min-height: 238px;
+  padding: 22px;
+  border: 1px solid rgba(226, 189, 85, 0.58);
+  clip-path: polygon(8% 0, 92% 0, 100% 9%, 100% 91%, 92% 100%, 8% 100%, 0 91%, 0 9%);
+  background:
+    linear-gradient(145deg, rgba(226, 189, 85, 0.16), transparent 37%),
+    linear-gradient(160deg, #261f10, #0b1512 58%, #211832);
+  box-shadow: 0 26px 55px rgba(0, 0, 0, 0.42);
+  transform: rotate(-1.4deg);
+}
+
+.monthly-legend-card-crown {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  color: #e6c45f;
+}
+
+.monthly-legend-card-crown svg { width: 28px; height: 28px; }
+
+.monthly-legend-card-rating strong,
+.monthly-legend-card-rating span { display: block; }
+.monthly-legend-card-rating strong { color: #f0cb61; font: 900 4rem/0.78 'Barlow Condensed', sans-serif; }
+.monthly-legend-card-rating span { margin-top: 8px; color: #d8c47f; font: 900 0.82rem/1 'Barlow', sans-serif; }
+
+.monthly-legend-card-name { margin-top: 30px; }
+.monthly-legend-card-name small { display: block; color: #a78bfa; font: 850 0.62rem/1 'Barlow', sans-serif; letter-spacing: 0.13em; }
+.monthly-legend-card-name strong { display: block; margin-top: 5px; color: #f5f1e4; font: 900 2.15rem/0.9 'Barlow Condensed', sans-serif; text-transform: uppercase; }
+.monthly-legend-card-name > span { display: block; margin-top: 7px; color: #aebeb9; font: 600 0.75rem/1.2 'Barlow', sans-serif; }
+
+.monthly-legend-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 20px;
+}
+
+.monthly-legend-card-tags span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px;
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  border-radius: 6px;
+  color: #d9d0ee;
+  background: rgba(167, 139, 250, 0.08);
+  font: 800 0.61rem/1 'Barlow', sans-serif;
+}
+
+.monthly-legend-card-tags svg { width: 11px; }
+
+.monthly-legend-showcase-record {
+  padding-left: clamp(18px, 3vw, 38px);
+  border-left: 1px solid rgba(226, 189, 85, 0.18);
+}
+
+.monthly-legend-showcase-record > span,
+.monthly-legend-showcase-record > strong,
+.monthly-legend-showcase-record > small,
+.monthly-legend-showcase-record > q { display: block; }
+.monthly-legend-showcase-record > span { color: #9e9170; font: 850 0.65rem/1 'Barlow', sans-serif; letter-spacing: 0.14em; }
+.monthly-legend-showcase-record > strong { margin-top: 12px; color: #e2bd55; font: 900 clamp(2.8rem, 4.5vw, 5rem)/0.82 'Barlow Condensed', sans-serif; }
+.monthly-legend-showcase-record > small { margin-top: 10px; color: #aabbb6; font: 600 0.76rem/1.3 'Barlow', sans-serif; }
+.monthly-legend-showcase-record > q { margin-top: 28px; color: #b9a9d5; font: italic 500 0.8rem/1.5 'Barlow', sans-serif; }
+
 .collection-tile {
   overflow: visible !important;
   outline: none;
@@ -544,6 +704,9 @@
   .menu-shell .menu-support-grid { grid-template-columns: 1fr; }
   .menu-resume-stage { grid-template-columns: 1fr; min-height: 0; }
   .menu-resume-ticket { width: 100%; }
+  .monthly-legend-showcase { grid-template-columns: 1fr 1fr; }
+  .monthly-legend-showcase-record { grid-column: 1 / -1; padding: 18px 0 0; border-top: 1px solid rgba(226, 189, 85, 0.18); border-left: 0; }
+  .monthly-legend-showcase-record > q { margin-top: 12px; }
 }
 
 @media (max-width: 620px) {
@@ -554,6 +717,12 @@
   .menu-resume-actions button { width: 100%; }
   .menu-legend-reveal { right: 0; }
   .collection-card-reveal { width: min(300px, calc(100vw - 22px)); }
+  .monthly-legend-showcase { grid-template-columns: 1fr; padding: 24px 18px; }
+  .monthly-legend-showcase-copy { text-align: center; }
+  .monthly-legend-showcase-kicker { justify-content: center; }
+  .monthly-legend-showcase-copy > p { margin-top: 20px; }
+  .monthly-legend-showcase-mode { justify-content: center; }
+  .monthly-legend-showcase-record { grid-column: auto; text-align: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {
