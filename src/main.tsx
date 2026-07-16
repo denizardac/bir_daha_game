@@ -4,7 +4,6 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { installChunkLoadRecovery } from '@/pwa/chunkRecovery';
-import { getServiceWorkerUpdateVersion } from '@/pwa/updatePrompt';
 import { useGameStore } from '@/store/gameStore';
 import './index.css';
 import './styles/eventScenes.css';
@@ -14,21 +13,19 @@ installChunkLoadRecovery({
 });
 
 if ('serviceWorker' in navigator) {
-  let updatePromptAnnounced = false;
-  const updateSW = registerSW({
+  registerSW({
     immediate: true,
-    onNeedRefresh() {
-      if (updatePromptAnnounced) return;
-      updatePromptAnnounced = true;
-      void getServiceWorkerUpdateVersion().then((version) => {
-        window.dispatchEvent(new CustomEvent('bir-daha-update-ready', {
-          detail: { apply: () => updateSW(true), version },
-        }));
-      });
+    onNeedReload() {
+      try {
+        useGameStore.getState().saveCurrentRun();
+      } finally {
+        window.location.reload();
+      }
     },
     onRegisteredSW(_url, registration) {
       if (registration) {
-        setInterval(() => registration.update(), 60 * 60 * 1000);
+        void registration.update();
+        setInterval(() => registration.update(), 15 * 60 * 1000);
       }
     },
   });

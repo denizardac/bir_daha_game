@@ -9,15 +9,16 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: false,
       workbox: {
         cleanupOutdatedCaches: true,
-        clientsClaim: false,
+        clientsClaim: true,
+        globIgnores: ['boot-recovery.js'],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,json}'],
         navigateFallback: '/index.html',
-        skipWaiting: false,
+        skipWaiting: true,
       },
       devOptions: {
         enabled: false,
