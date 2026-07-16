@@ -3,8 +3,17 @@
 
   var ATTEMPT_KEY = 'bir-daha-pre-react-recovery-attempted';
   var LEGACY_UPDATE_MIGRATION_KEY = 'bir-daha-pwa-prompt-migration-v1';
+  var REPAIR_COOLDOWN_KEY = 'bir-daha-recovery-last-repair';
+  var REPAIR_COOLDOWN_MS = 60000;
   var WATCHDOG_MS = 8000;
   var recoveryStarted = false;
+
+  function isChunkLoadFailure(text) {
+    // Only genuine module-loading failures may trigger a repair. Broad words like
+    // "script" or "fetch" also appear in ServiceWorker update errors and ordinary
+    // network failures, and matching those caused cross-tab reload loops.
+    return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Loading chunk|Loading CSS chunk|ChunkLoadError/i.test(String(text || ''));
+  }
 
   function getRoot() {
     return document.getElementById('root');
@@ -95,6 +104,7 @@
     button.addEventListener('click', function retry() {
       try {
         window.sessionStorage.removeItem(ATTEMPT_KEY);
+        window.localStorage.removeItem(REPAIR_COOLDOWN_KEY);
       } catch {
         // Continue with a normal reload when storage is unavailable.
       }
@@ -118,6 +128,20 @@
     } catch {
       showManualFallback();
       return;
+    }
+
+    try {
+      // The session guard above is per-tab and cleared on every successful mount,
+      // so it cannot stop a repair loop that spans reloads or tabs. This shared
+      // cooldown can: at most one automatic repair per minute for the whole origin.
+      var lastRepair = Number(window.localStorage.getItem(REPAIR_COOLDOWN_KEY) || '0');
+      if (Date.now() - lastRepair < REPAIR_COOLDOWN_MS) {
+        showManualFallback();
+        return;
+      }
+      window.localStorage.setItem(REPAIR_COOLDOWN_KEY, String(Date.now()));
+    } catch {
+      // Without localStorage the per-tab session guard is still in place.
     }
 
     try {
@@ -161,13 +185,12 @@
   window.addEventListener('error', function onBootError(event) {
     var target = event.target;
     var scriptFailed = target && target.tagName === 'SCRIPT';
-    var moduleFailed = /chunk|module|import|script/i.test(String(event.message || ''));
-    if (scriptFailed || moduleFailed) void repairStaleDeployment();
+    if (scriptFailed || isChunkLoadFailure(event.message)) void repairStaleDeployment();
   }, true);
 
   window.addEventListener('unhandledrejection', function onBootRejection(event) {
     var reason = event.reason instanceof Error ? event.reason.message : String(event.reason || '');
-    if (/chunk|module|import|script|fetch/i.test(reason)) void repairStaleDeployment();
+    if (isChunkLoadFailure(reason)) void repairStaleDeployment();
   });
 
   window.setTimeout(function verifyBoot() {

@@ -32,8 +32,12 @@ if ('serviceWorker' in navigator) {
     },
     onRegisteredSW(_url, registration) {
       if (registration) {
-        void registration.update();
-        setInterval(() => registration.update(), 15 * 60 * 1000);
+        // An update() rejection (e.g. after another tab unregisters this worker)
+        // must never surface as an unhandled rejection: its message used to trip
+        // the boot-recovery watchdog and reload the page in a loop.
+        setInterval(() => {
+          registration.update().catch(() => {});
+        }, 15 * 60 * 1000);
       }
     },
   });

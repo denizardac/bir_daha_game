@@ -36,6 +36,8 @@ describe('PWA deployment safety contract', () => {
     expect(main).toContain('onNeedRefresh()');
     expect(main).toContain('announceServiceWorkerUpdate({');
     expect(main).not.toContain('onNeedReload()');
+    expect(main).not.toContain('void registration.update()');
+    expect(main).toContain('registration.update().catch');
     expect(viteConfig).toContain("globIgnores: ['boot-recovery.js']");
     expect(recoveryIndex).toBeGreaterThan(-1);
     expect(appIndex).toBeGreaterThan(recoveryIndex);
@@ -50,6 +52,10 @@ describe('PWA deployment safety contract', () => {
     expect(recovery).toContain('window.location.reload()');
     expect(recovery).not.toContain('localStorage.clear');
     expect(recovery).not.toContain('indexedDB.deleteDatabase');
+    // The repair triggers must stay scoped to real module-loading failures;
+    // matching loose words like "script" or "fetch" caused reload loops.
+    expect(recovery).toContain('Failed to fetch dynamically imported module');
+    expect(recovery).not.toMatch(/chunk\|module\|import\|script/);
   });
 
   it('unregisters stale workers and purges only Cache Storage when boot stays empty', async () => {
@@ -105,6 +111,123 @@ describe('PWA deployment safety contract', () => {
     expect(unregister).toHaveBeenCalledOnce();
     expect(deleteCache).toHaveBeenCalledWith('workbox-precache-v1');
     expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('repairs only on real chunk failures, never on ServiceWorker or network noise', async () => {
+    const recovery = projectFile('public/boot-recovery.js');
+    const unregister = vi.fn(async () => true);
+    const reload = vi.fn();
+    const sessionStore = new Map<string, string>();
+    const localStore = new Map<string, string>();
+    const listeners = new Map<string, (event: unknown) => void>();
+    const makeStorage = (store: Map<string, string>) => ({
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+      removeItem: (key: string) => store.delete(key),
+    });
+    const root = { childElementCount: 0, replaceChildren: vi.fn(), append: vi.fn() };
+    const serviceWorker = { getRegistrations: vi.fn(async () => [{ unregister }]) };
+    const windowObject = {
+      sessionStorage: makeStorage(sessionStore),
+      localStorage: makeStorage(localStore),
+      location: { reload },
+      caches: { keys: vi.fn(async () => []), delete: vi.fn(async () => true) },
+      MutationObserver: class { observe() {} disconnect() {} },
+      addEventListener: (name: string, listener: (event: unknown) => void) => {
+        listeners.set(name, listener);
+      },
+      setTimeout: vi.fn(),
+    };
+
+    runInNewContext(recovery, {
+      window: windowObject,
+      document: {
+        getElementById: () => root,
+        readyState: 'complete',
+        createElement: () => ({ setAttribute: vi.fn(), style: {}, addEventListener: vi.fn(), append: vi.fn() }),
+      },
+      navigator: { serviceWorker },
+      MutationObserver: windowObject.MutationObserver,
+      Error,
+      Promise,
+      Date,
+      String,
+      Number,
+      RegExp,
+    });
+
+    const onRejection = listeners.get('unhandledrejection')!;
+    onRejection({
+      reason: new Error("Failed to update a ServiceWorker for scope ('https://birdaha.tech/') with script ('Unknown'): Not found"),
+    });
+    onRejection({ reason: new Error('Failed to fetch') });
+    await new Promise((resolveTick) => setTimeout(resolveTick, 0));
+
+    expect(unregister).not.toHaveBeenCalled();
+    expect(reload).not.toHaveBeenCalled();
+
+    onRejection({
+      reason: new Error('Failed to fetch dynamically imported module: https://birdaha.tech/assets/Guide-abc123.js'),
+    });
+    await new Promise((resolveTick) => setTimeout(resolveTick, 0));
+
+    expect(unregister).toHaveBeenCalledOnce();
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('refuses a second automatic repair inside the shared cooldown window', async () => {
+    const recovery = projectFile('public/boot-recovery.js');
+    const unregister = vi.fn(async () => true);
+    const reload = vi.fn();
+    const sessionStore = new Map<string, string>();
+    const localStore = new Map<string, string>([
+      ['bir-daha-recovery-last-repair', String(Date.now())],
+    ]);
+    const listeners = new Map<string, (event: unknown) => void>();
+    const makeStorage = (store: Map<string, string>) => ({
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+      removeItem: (key: string) => store.delete(key),
+    });
+    const root = { childElementCount: 0, replaceChildren: vi.fn(), append: vi.fn() };
+    const serviceWorker = { getRegistrations: vi.fn(async () => [{ unregister }]) };
+    const windowObject = {
+      sessionStorage: makeStorage(sessionStore),
+      localStorage: makeStorage(localStore),
+      location: { reload },
+      caches: { keys: vi.fn(async () => []), delete: vi.fn(async () => true) },
+      MutationObserver: class { observe() {} disconnect() {} },
+      addEventListener: (name: string, listener: (event: unknown) => void) => {
+        listeners.set(name, listener);
+      },
+      setTimeout: vi.fn(),
+    };
+
+    runInNewContext(recovery, {
+      window: windowObject,
+      document: {
+        getElementById: () => root,
+        readyState: 'complete',
+        createElement: () => ({ setAttribute: vi.fn(), style: {}, addEventListener: vi.fn(), append: vi.fn() }),
+      },
+      navigator: { serviceWorker },
+      MutationObserver: windowObject.MutationObserver,
+      Error,
+      Promise,
+      Date,
+      String,
+      Number,
+      RegExp,
+    });
+
+    listeners.get('unhandledrejection')!({
+      reason: new Error('Failed to fetch dynamically imported module: https://birdaha.tech/assets/Guide-abc123.js'),
+    });
+    await new Promise((resolveTick) => setTimeout(resolveTick, 0));
+
+    expect(unregister).not.toHaveBeenCalled();
+    expect(reload).not.toHaveBeenCalled();
+    expect(root.replaceChildren).toHaveBeenCalled();
   });
 
   it('moves a legacy controlled tab to the waiting prompt worker exactly once', async () => {
