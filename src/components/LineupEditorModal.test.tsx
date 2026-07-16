@@ -78,31 +78,74 @@ function BenchHarness() {
   );
 }
 
+function TabbedDepartureHarness() {
+  const [outgoing, setOutgoing] = useState('def-1');
+  const crowdedSquad = [
+    player('only-gk', 'KL', 72),
+    ...Array.from({ length: 5 }, (_, index) => player(`def-${index + 1}`, 'STP', 70 + index)),
+    ...Array.from({ length: 5 }, (_, index) => player(`mid-${index + 1}`, 'OS', 68 + index)),
+  ];
+  const crowdedIncoming = player('crowded-incoming', 'OOS', 84, ['TEKNİK']);
+
+  return (
+    <LineupEditorModal
+      open
+      squad={[...crowdedSquad, crowdedIncoming]}
+      activeTactics={[]}
+      morale={50}
+      discoveredSynergies={[]}
+      manualLineup={{}}
+      highlightId={crowdedIncoming.id}
+      outgoingId={outgoing}
+      maxSquadSize={11}
+      onChange={vi.fn()}
+      onOutgoingChange={setOutgoing}
+      onReset={vi.fn()}
+      onConfirm={vi.fn()}
+    />
+  );
+}
+
 describe('LineupEditorModal critical flow', () => {
+  it('switches between first-eleven and bench departure candidates without mixing the lists', async () => {
+    const user = userEvent.setup();
+    render(<TabbedDepartureHarness />);
+
+    const board = screen.getByRole('region', { name: 'Transfer tahtası' });
+    const startersTab = within(board).getByRole('tab', { name: /İlk 11.*oyuncu/i });
+    const benchTab = within(board).getByRole('tab', { name: /Yedekler.*oyuncu/i });
+    const initiallySelected = startersTab.getAttribute('aria-selected') === 'true' ? startersTab : benchTab;
+    const initiallyUnselected = initiallySelected === startersTab ? benchTab : startersTab;
+    const initialOptionCount = within(board).getAllByRole('option').length;
+
+    expect(initiallySelected.getAttribute('aria-selected')).toBe('true');
+    expect(initiallyUnselected.getAttribute('aria-selected')).toBe('false');
+
+    await user.click(initiallyUnselected);
+
+    expect(initiallySelected.getAttribute('aria-selected')).toBe('false');
+    expect(initiallyUnselected.getAttribute('aria-selected')).toBe('true');
+    expect(within(board).getAllByRole('option').length).not.toBe(initialOptionCount);
+  });
+
   it('selects the departing player directly and separates the squad decision from lineup placement', async () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();
     render(<Harness onConfirm={onConfirm} />);
 
     const decision = screen.getByRole('region', { name: 'Transfer tahtası' });
-    const startersToggle = within(decision).getByRole('button', { name: /İlk 11.*oyuncu/i });
-    expect(startersToggle.getAttribute('aria-expanded')).toBe('true');
+    const startersTab = within(decision).getByRole('tab', { name: /İlk 11.*oyuncu/i });
+    expect(startersTab.getAttribute('aria-selected')).toBe('true');
     expect(within(decision).getAllByText('mid-local').length).toBeGreaterThan(0);
     expect(within(decision).getByText('YERLİ KADRO')).toBeTruthy();
     expect(within(decision).getByText('Kapanır')).toBeTruthy();
     expect(within(decision).queryByText('Açılır')).toBeNull();
 
-    const decisionSlip = within(decision).getByRole('region', { name: 'Ayrılık kararı' });
-    expect(within(decisionSlip).getByText(/Şu an · İlk 11/i)).toBeTruthy();
-    expect(within(decisionSlip).getByText(/Ana mevki · OS/i)).toBeTruthy();
-    expect(within(decisionSlip).getByText('YERLİ')).toBeTruthy();
-    expect(within(decisionSlip).getByText(/Yerine/i)).toBeTruthy();
+    const route = screen.getByRole('region', { name: 'Transfer rotası' });
+    expect(within(route).getByText('mid-local')).toBeTruthy();
+    expect(within(route).getByText('incoming-local')).toBeTruthy();
+    expect(within(decision).getByRole('region', { name: 'Ayrılık etkisi' })).toBeTruthy();
     expect(within(decision).queryByRole('button', { name: 'Değiştir' })).toBeNull();
-
-    await user.click(startersToggle);
-    expect(startersToggle.getAttribute('aria-expanded')).toBe('false');
-    expect(within(decision).queryByRole('option', { name: /mid-local/i })).toBeNull();
-    await user.click(startersToggle);
     expect(within(decision).getByRole('option', { name: /mid-local/i })).toBeTruthy();
 
     await user.click(within(decision).getByRole('option', { name: /striker-b.*ayrılacak oyuncu olarak seç/i }));
@@ -111,9 +154,9 @@ describe('LineupEditorModal critical flow', () => {
     expect(within(decision).queryByText('YERLİ KADRO')).toBeNull();
     expect(within(decision).queryByText('Açılır')).toBeNull();
     expect(within(decision).getAllByText('AYRILIYOR').length).toBeGreaterThan(0);
-    expect(within(decision).getByRole('region', { name: 'Ayrılık kararı' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Transfer rotası' })).toBeTruthy();
 
-    await user.click(screen.getByRole('button', { name: /striker-b ayrılıyor.*İlk 11'i kur/ }));
+    await user.click(screen.getByRole('button', { name: /striker-b ayrılığını onayla.*dizilişi düzenle/i }));
 
     expect(onConfirm).not.toHaveBeenCalled();
     expect(screen.getByRole('region', { name: 'Kesinleşen kadro kararı' })).toBeTruthy();
@@ -125,7 +168,7 @@ describe('LineupEditorModal critical flow', () => {
     const onCancel = vi.fn();
     render(<Harness onCancel={onCancel} />);
 
-    await user.click(screen.getByRole('button', { name: /mid-local ayrılıyor.*İlk 11'i kur/ }));
+    await user.click(screen.getByRole('button', { name: /mid-local ayrılığını onayla.*dizilişi düzenle/i }));
 
     const chips = screen.getAllByRole('button', { name: /Taşımak için seç/ });
     expect(chips.length).toBeGreaterThan(0);

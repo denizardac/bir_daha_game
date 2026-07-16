@@ -188,15 +188,18 @@ export function LineupEditorModal({
   const outgoingGroupKey = outgoingPlayer && previousSlotByPlayerId.has(outgoingPlayer.id)
     ? 'first-eleven'
     : 'bench';
-  const [openDepartureGroups, setOpenDepartureGroups] = useState<Set<string>>(
-    () => new Set([outgoingGroupKey]),
-  );
+  const [activeDepartureGroupKey, setActiveDepartureGroupKey] = useState(outgoingGroupKey);
   useEffect(() => {
-    setOpenDepartureGroups(new Set([outgoingGroupKey]));
+    setActiveDepartureGroupKey(outgoingGroupKey);
   }, [outgoingGroupKey]);
+  const activeDepartureGroup = departureCandidateGroups.find((group) => group.key === activeDepartureGroupKey)
+    ?? departureCandidateGroups[0];
   const outgoingPreviousSlot = outgoingPlayer ? previousSlotByPlayerId.get(outgoingPlayer.id) ?? null : null;
   const outgoingReplacement = outgoingPreviousSlot
     ? lineup.find((slot) => slot.slot.label === outgoingPreviousSlot.slot.label)?.player ?? null
+    : null;
+  const outgoingReplacementPreviousSlot = outgoingReplacement
+    ? previousSlotByPlayerId.get(outgoingReplacement.id) ?? null
     : null;
   const highlightedSlot = highlightId ? lineup.find((slot) => slot.player?.id === highlightId) ?? null : null;
   const highlightedTarget = highlightedSlot
@@ -325,6 +328,10 @@ export function LineupEditorModal({
     const dragging = dragSource?.player.id === player.id;
     const tapSelected = tapSource?.player.id === player.id;
     const highlighted = highlightId === player.id;
+    const relocated = editorStage === 'departure'
+      && outgoingReplacement?.id === player.id
+      && !highlighted
+      && outgoingPreviousSlot?.slot.label !== outgoingReplacementPreviousSlot?.slot.label;
     const targetBadge = slot?.label ?? 'YEDEK';
     return (
       <HoverTip
@@ -338,7 +345,7 @@ export function LineupEditorModal({
         type="button"
         aria-label={`${getLineupPlayerHoverAria(player, slot?.label, hoverFit)}. ${tapSelected ? 'Seçildi; hedef slotu seç.' : 'Taşımak için seç.'}`}
         aria-pressed={tapSelected}
-        className={`le-chip le-chip--${onField ? `fit-${tier}` : 'bench'} ${isGk ? 'le-chip--gk' : ''} ${highlighted ? 'le-chip--highlight' : ''} ${dragging ? 'le-chip--dragging' : ''} ${tapSelected ? 'le-chip--selected' : ''}`}
+        className={`le-chip le-chip--${onField ? `fit-${tier}` : 'bench'} ${isGk ? 'le-chip--gk' : ''} ${highlighted ? 'le-chip--highlight' : ''} ${relocated ? 'le-chip--relocated' : ''} ${dragging ? 'le-chip--dragging' : ''} ${tapSelected ? 'le-chip--selected' : ''}`}
         initial={highlighted && !reduceMotion ? { opacity: 0, x: -42, scale: 0.78 } : false}
         animate={{ opacity: 1, x: 0, scale: 1 }}
         transition={highlighted && !reduceMotion
@@ -378,6 +385,16 @@ export function LineupEditorModal({
             YENİ <span>→ {targetBadge}</span>
           </motion.span>
         )}
+        {relocated && (
+          <motion.span
+            className="le-relocation-marker"
+            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            aria-hidden
+          >
+            KAYDI <span>→ {outgoingPreviousSlot?.slot.label}</span>
+          </motion.span>
+        )}
         <span className="le-chip-rating">{player.currentRating}</span>
         <span className="le-chip-name">{formatSquadListName(player.name)}</span>
         <span className="le-chip-badge">{POSITION_BADGE[player.position]}</span>
@@ -408,7 +425,7 @@ export function LineupEditorModal({
   return createPortal(
     <>
       <div className="lineup-preview-backdrop" onClick={dismiss} aria-hidden />
-      <div className="le-modal-group">
+      <div className={`le-modal-group ${choosingDeparture ? 'le-modal-group--transfer-route' : ''}`}>
 
       {/* LEFT PANEL: squad list */}
       <div className="le-squad-panel">
@@ -417,11 +434,11 @@ export function LineupEditorModal({
           <div className="le-squad-panel-title-row">
             <span className="le-squad-panel-title">{choosingDeparture ? 'Transfer Tahtası' : 'Oyuncular'}</span>
             <span className="le-squad-panel-count">
-              {outgoingPlayer ? `${squad.length} aday · ${maxSquadSize} yer` : `${activeSquad.length} / ${maxSquadSize}`}
+              {outgoingPlayer ? `${squad.length} oyuncu → ${maxSquadSize}` : `${activeSquad.length} / ${maxSquadSize}`}
             </span>
           </div>
           {choosingDeparture ? (
-            <p className="le-transfer-board-intro">Yeni transfer için bir oyuncuyla yollar ayrılmalı. Kararı doğrudan kadrodan ver.</p>
+            <p className="le-transfer-board-intro">Yeni transfer için bir yer aç. Seçimin sahadaki hareketini sağda anında gör.</p>
           ) : (
             <div className="le-squad-panel-legend">
               <span><i className="le-squad-panel-legend-main" /> ana rol</span>
@@ -447,34 +464,34 @@ export function LineupEditorModal({
                 <span className="le-transfer-board-incoming-mark" aria-hidden>+</span>
               </div>
 
-              <div className="le-transfer-board-question">
-                <span>KİM AYRILIYOR?</span>
-                <small>Bir oyuncu seç</small>
-              </div>
-              <div className="le-transfer-board-candidates" role="listbox" aria-label="Kadrodan ayrılabilecek oyuncular">
-                {departureCandidateGroups.map((group) => {
-                  const isOpen = openDepartureGroups.has(group.key);
-                  const groupPanelId = `departure-group-${group.key}`;
-                  return (
-                  <div key={group.key} className="le-transfer-board-candidate-group" role="group" aria-label={group.label}>
+              <div className="le-transfer-board-picker-head">
+                <div className="le-transfer-board-question">
+                  <span>KİM AYRILIYOR?</span>
+                  <small>{departureCandidates.length} aday</small>
+                </div>
+                <div className="le-transfer-board-tabs" role="tablist" aria-label="Kadro bölümü">
+                  {departureCandidateGroups.map((group) => (
                     <button
+                      key={group.key}
                       type="button"
-                      className="le-transfer-board-candidate-group-title"
-                      aria-expanded={isOpen}
-                      aria-controls={groupPanelId}
-                      onClick={() => setOpenDepartureGroups((current) => {
-                        const next = new Set(current);
-                        if (next.has(group.key)) next.delete(group.key);
-                        else next.add(group.key);
-                        return next;
-                      })}
+                      role="tab"
+                      aria-selected={group.key === activeDepartureGroup?.key}
+                      aria-controls="departure-candidate-grid"
+                      onClick={() => setActiveDepartureGroupKey(group.key)}
                     >
                       <span>{group.label}</span>
                       <small>{group.players.length} oyuncu</small>
-                      <UiIcon name="arrow-right" />
                     </button>
-                    {isOpen && <div id={groupPanelId} className="le-transfer-board-candidate-group-list">
-                    {group.players.map((player) => {
+                  ))}
+                </div>
+              </div>
+              <div
+                id="departure-candidate-grid"
+                className="le-transfer-board-candidates"
+                role="listbox"
+                aria-label="Kadrodan ayrılabilecek oyuncular"
+              >
+                    {activeDepartureGroup?.players.map((player) => {
                       const selected = player.id === outgoingId;
                       const currentSlot = previousSlotByPlayerId.get(player.id);
                       const currentRole = currentSlot
@@ -509,38 +526,12 @@ export function LineupEditorModal({
                         </button>
                       );
                     })}
-                    </div>}
-                  </div>
-                  );
-                })}
               </div>
 
-              <section className="le-transfer-board-decision" role="region" aria-label="Ayrılık kararı" aria-live="polite">
-                <div className="le-transfer-board-decision-player">
-                  <span className="le-transfer-board-decision-rating">{outgoingPlayer.currentRating}</span>
-                  <div>
-                    <small>AYRILACAK OYUNCU</small>
-                    <strong>{formatSquadListName(outgoingPlayer.name)}</strong>
-                  </div>
-                  <span className="le-transfer-board-decision-status">AYRILIYOR</span>
-                </div>
-                <div className="le-transfer-board-decision-context">
-                  <span>{outgoingPreviousSlot ? `Şu an · İlk 11 · ${formationSlotLabel(outgoingPreviousSlot.slot.label)} (${outgoingPreviousSlot.slot.label})` : 'Şu an · Yedek kulübesi'}</span>
-                  <span>Ana mevki · {POSITION_BADGE[outgoingPlayer.position]}</span>
-                  {outgoingPlayer.tags.map((tag) => <span key={tag} className="le-transfer-board-decision-trait">{tag}</span>)}
-                </div>
-                <p className="le-transfer-board-replacement">
-                  <UiIcon name="arrow-right" />
-                  {outgoingPreviousSlot
-                    ? outgoingReplacement
-                      ? <><span>Yerine</span> <strong>{formatSquadListName(outgoingReplacement.name)}</strong> <span>{outgoingPreviousSlot.slot.label} slotuna geçiyor.</span></>
-                      : <><span>Yerine</span> <strong>kimse geçmiyor</strong> <span>· {outgoingPreviousSlot.slot.label} boş kalıyor.</span></>
-                    : <span>Yedekten ayrılıyor; mevcut İlk 11 düzeni değişmiyor.</span>}
-                </p>
-                <div className="le-transfer-board-impact">
+              <section className="le-transfer-board-impact le-transfer-board-impact--rail" role="region" aria-label="Ayrılık etkisi" aria-live="polite">
                   <div className="le-transfer-board-impact-head">
-                    <span>BU AYRILIĞIN BEDELİ</span>
-                    <small>Yalnızca negatif sinerji etkisi</small>
+                    <span>SİNERJİ KAYBI</span>
+                    <small>Yalnızca kapanan veya gerileyenler</small>
                   </div>
                   {visibleSynergyImpacts.length > 0 ? (
                     <div className="le-transfer-synergy-impact">
@@ -556,7 +547,6 @@ export function LineupEditorModal({
                   ) : (
                     <p className="le-transfer-board-impact-empty">Aktif sinerji kapanmıyor.</p>
                   )}
-                </div>
               </section>
             </section>
           </div>
@@ -696,9 +686,56 @@ export function LineupEditorModal({
         aria-modal="true"
         aria-label={choosingDeparture ? 'Ayrılık sonrası kadro önizlemesi' : 'İlk 11 düzenle'}
       >
-        <div className="le-head">
+        <div className={`le-head ${choosingDeparture ? 'le-head--transfer-route' : ''}`}>
+          {choosingDeparture && outgoingPlayer && highlightedPlayer ? (
+            <motion.section
+              key={`${outgoingPlayer.id}-${highlightedPlayer.id}`}
+              className="le-transfer-route"
+              role="region"
+              aria-label="Transfer rotası"
+              initial={reduceMotion ? false : { opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="le-transfer-route-title">
+                <div>
+                  <span>KARARIN SAHAYA YANSIMASI</span>
+                  <strong>Transfer rotası</strong>
+                </div>
+                <span className="le-transfer-route-formation">{formationDisplay} · karar sonrası</span>
+              </div>
+              <div className="le-transfer-route-track">
+                <article className="le-transfer-route-node le-transfer-route-node--out">
+                  <span className="le-transfer-route-step">1 · AYRILIYOR</span>
+                  <strong>{formatSquadListName(outgoingPlayer.name)}</strong>
+                  <small>{outgoingPreviousSlot
+                    ? `${outgoingPreviousSlot.slot.label} · ana ${POSITION_BADGE[outgoingPlayer.position]}`
+                    : `Yedek · ana ${POSITION_BADGE[outgoingPlayer.position]}`}</small>
+                </article>
+                <UiIcon name="arrow-right" />
+                <article className="le-transfer-route-node le-transfer-route-node--shift">
+                  <span className="le-transfer-route-step">2 · DÜZEN</span>
+                  <strong>{outgoingPreviousSlot
+                    ? outgoingReplacement
+                      ? formatSquadListName(outgoingReplacement.name)
+                      : `${outgoingPreviousSlot.slot.label} boş kalıyor`
+                    : 'İlk 11 korunuyor'}</strong>
+                  <small>{outgoingPreviousSlot && outgoingReplacement
+                    ? `${outgoingReplacementPreviousSlot?.slot.label ?? 'Yedek'} → ${outgoingPreviousSlot.slot.label}`
+                    : outgoingPreviousSlot
+                      ? 'Yerine uygun oyuncu yok'
+                      : 'Yalnızca yedek kulübesi değişiyor'}</small>
+                </article>
+                <UiIcon name="arrow-right" />
+                <article className="le-transfer-route-node le-transfer-route-node--in">
+                  <span className="le-transfer-route-step">3 · KATILIYOR</span>
+                  <strong>{formatSquadListName(highlightedPlayer.name)}</strong>
+                  <small>{highlightedTarget ?? 'Yedek kulübesi'} · {highlightedPlayer.currentRating} reyting</small>
+                </article>
+              </div>
+            </motion.section>
+          ) : (
           <div>
-            <p className="le-kicker-small">{choosingDeparture ? 'Ayrılık Sonrası Önizleme' : 'İlk 11 Önizleme'}</p>
+            <p className="le-kicker-small">İlk 11 Önizleme</p>
             <p className="le-kicker">{formationDisplay} (varsayılan)</p>
             {highlightedPlayer && highlightedTarget && (
               <motion.div
@@ -717,10 +754,11 @@ export function LineupEditorModal({
               </motion.div>
             )}
           </div>
-          <div className="le-head-legend" aria-label="Mevki uyumu">
+          )}
+          {!choosingDeparture && <div className="le-head-legend" aria-label="Mevki uyumu">
             <span className="le-legend le-legend--ideal">ana mevki</span>
             <span className="le-legend le-legend--flex">yan mevki</span>
-          </div>
+          </div>}
           <button type="button" className="lineup-preview-close" onClick={dismiss} aria-label="İptal et — kart seçimine dön"><UiIcon name="x" /></button>
         </div>
 
@@ -734,6 +772,7 @@ export function LineupEditorModal({
             <div className="lineup-pitch-center" />
             <div className="lineup-pitch-box lineup-pitch-box--top" aria-hidden />
             <div className="lineup-pitch-box lineup-pitch-box--bottom" aria-hidden />
+            {choosingDeparture && <span className="le-transfer-pitch-caption"><UiIcon name="eye" /> Karar sonrası yerleşim</span>}
             {lineup.map((slot) => {
               const valid = dragPlayer ? canDropOnSlot(dragPlayer, slot.index) : false;
               const tier = dragPlayer && valid ? fitClass(dragPlayer, slot.slot) : null;
@@ -788,16 +827,22 @@ export function LineupEditorModal({
 
         <div className={`le-foot ${choosingDeparture ? 'le-foot--transfer' : ''}`}>
           {choosingDeparture && outgoingPlayer ? (
+            <>
+            <div className={`le-transfer-foot-impact ${visibleSynergyImpacts.length ? 'le-transfer-foot-impact--warning' : ''}`}>
+              <span>{visibleSynergyImpacts.length ? `${visibleSynergyImpacts.length} sinerji etkileniyor` : 'Aktif sinerji kaybı yok'}</span>
+              <small>Dizilişi sonraki adımda serbestçe düzenleyebilirsin.</small>
+            </div>
             <button
               type="button"
               className="btn-primary le-confirm le-confirm--stage"
-              aria-label={`${outgoingPlayer.name} ayrılıyor → İlk 11'i kur`}
+              aria-label={`${outgoingPlayer.name} ayrılığını onayla → dizilişi düzenle`}
               onClick={() => setEditorStage('lineup')}
             >
-              <span>{formatSquadListName(outgoingPlayer.name)} ayrılıyor</span>
-              <strong>İlk 11'i kur</strong>
+              <span>SONRAKİ ADIM · DİZİLİŞ</span>
+              <strong>Ayrılığı onayla</strong>
               <UiIcon name="arrow-right" />
             </button>
+            </>
           ) : (
             <>
               <button

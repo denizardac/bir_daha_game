@@ -1,0 +1,510 @@
+/* ============================================================
+   TRANSFER ROUTE — one decision, one tactical story
+   ============================================================ */
+
+.le-modal-group--transfer-route {
+  --route-out: #ef6a75;
+  --route-shift: #e1b84d;
+  --route-in: #55f0b0;
+}
+
+.le-modal-group--transfer-route .le-squad-panel {
+  width: 31rem !important;
+  flex-basis: 31rem !important;
+  background:
+    linear-gradient(180deg, rgba(15, 22, 32, 0.995), rgba(8, 14, 22, 0.995)),
+    #0a1018 !important;
+}
+
+.le-modal-group--transfer-route .le-squad-panel-head {
+  padding: 1.35rem 1.35rem 0.55rem !important;
+}
+
+.le-modal-group--transfer-route .le-squad-panel-title {
+  font-size: 1.75rem !important;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-intro {
+  max-width: 27rem;
+  margin-top: 0.45rem;
+  color: #879790;
+  font-size: 0.66rem;
+}
+
+.le-modal-group--transfer-route .le-squad-panel-list--transfer {
+  padding: 0.25rem 1.35rem 0 !important;
+}
+
+.le-modal-group--transfer-route .le-transfer-board {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 0.62rem;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-incoming {
+  min-height: 4.25rem;
+  padding: 0.62rem 0.72rem;
+  border-color: rgba(85, 240, 176, 0.34);
+  border-radius: 0.65rem;
+  background:
+    linear-gradient(105deg, rgba(19, 95, 72, 0.43), rgba(7, 22, 23, 0.94) 70%),
+    #081513;
+  box-shadow: inset 3px 0 0 rgba(85, 240, 176, 0.8);
+}
+
+.le-modal-group--transfer-route .le-transfer-board-incoming-mark {
+  font-size: 2.8rem;
+}
+
+.le-transfer-board-picker-head {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-question {
+  padding: 0;
+}
+
+.le-transfer-board-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 0.28rem;
+  padding: 0.24rem;
+  border: 1px solid rgba(148, 163, 184, 0.13);
+  border-radius: 0.55rem;
+  background: rgba(3, 9, 14, 0.62);
+}
+
+.le-transfer-board-tabs > button {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 2.15rem;
+  padding: 0.45rem 0.62rem;
+  border: 1px solid transparent;
+  border-radius: 0.38rem;
+  background: transparent;
+  color: #6f827b;
+  cursor: pointer;
+}
+
+.le-transfer-board-tabs > button span {
+  font: 900 0.62rem/1 'Barlow', sans-serif;
+  letter-spacing: 0.1em;
+}
+
+.le-transfer-board-tabs > button small {
+  font: 750 0.55rem/1 'Barlow', sans-serif;
+}
+
+.le-transfer-board-tabs > button[aria-selected="true"] {
+  border-color: rgba(85, 240, 176, 0.22);
+  background: rgba(30, 104, 83, 0.24);
+  color: #a7f3d7;
+}
+
+.le-transfer-board-tabs > button:focus-visible {
+  outline: 2px solid #55f0b0;
+  outline-offset: 2px;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 0.42rem;
+  padding: 0 0.28rem 0.2rem 0;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidate {
+  min-height: 4.25rem;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 0.52rem;
+  padding: 0.52rem 0.58rem;
+  border-radius: 0.58rem;
+  overflow: hidden;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidate:hover {
+  transform: translateY(-1px);
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidate--selected {
+  padding-right: 4.7rem;
+  background:
+    linear-gradient(108deg, rgba(87, 30, 39, 0.66), rgba(20, 16, 23, 0.98)),
+    #170f14;
+  box-shadow: inset 3px 0 0 var(--route-out), 0 0 0 1px rgba(248, 113, 113, 0.06);
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidate-rating {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidate-body strong {
+  font-size: 0.88rem;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidate-body > small {
+  font-size: 0.53rem;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidate-meta {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidate-meta i {
+  overflow: hidden;
+  max-width: 6rem;
+  font-size: 0.46rem;
+  text-overflow: ellipsis;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidate-status {
+  position: absolute;
+  top: 0.48rem;
+  right: 0.48rem;
+  min-height: 0;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidate-status > svg {
+  display: none;
+}
+
+.le-modal-group--transfer-route .le-transfer-board-candidate-status > b {
+  padding: 0.24rem 0.32rem;
+  font-size: 0.48rem;
+}
+
+.le-transfer-board-impact--rail {
+  gap: 0.34rem;
+  margin: 0 !important;
+  padding: 0.58rem 0.65rem !important;
+  border: 1px solid rgba(248, 113, 113, 0.18) !important;
+  border-radius: 0.58rem !important;
+  background: rgba(36, 18, 25, 0.36) !important;
+}
+
+.le-transfer-board-impact--rail .le-transfer-board-impact-empty {
+  color: #9caaa5;
+  font-size: 0.61rem;
+}
+
+/* The right side tells the tactical story instead of repeating the selected card. */
+.le-head--transfer-route {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  min-height: 9.2rem !important;
+  margin: 0 !important;
+  padding: 1.25rem 1.5rem 0.85rem !important;
+}
+
+.le-transfer-route {
+  min-width: 0;
+  display: grid;
+  gap: 0.72rem;
+}
+
+.le-transfer-route-title {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.le-transfer-route-title > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.le-transfer-route-title > div > span {
+  color: #74847f;
+  font: 900 0.58rem/1 'Barlow', sans-serif;
+  letter-spacing: 0.14em;
+}
+
+.le-transfer-route-title > div > strong {
+  color: #f4f7f5;
+  font: 900 1.35rem/1 'Barlow Condensed', sans-serif;
+}
+
+.le-transfer-route-formation {
+  color: #8d9d97;
+  font: 750 0.62rem/1 'Barlow', sans-serif;
+}
+
+.le-transfer-route-track {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) auto minmax(0, 1.08fr) auto minmax(0, 0.92fr);
+  align-items: stretch;
+  gap: 0.52rem;
+}
+
+.le-transfer-route-track > .ui-icon {
+  align-self: center;
+  width: 0.9rem;
+  color: #576660;
+}
+
+.le-transfer-route-node {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 0.2rem;
+  min-height: 3.7rem;
+  padding: 0.62rem 0.72rem 0.58rem;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 0.62rem;
+  background: rgba(7, 13, 20, 0.76);
+}
+
+.le-transfer-route-node::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: currentColor;
+}
+
+.le-transfer-route-node--out { color: var(--route-out); background: linear-gradient(100deg, rgba(78, 27, 37, 0.45), rgba(7, 13, 20, 0.78)); }
+.le-transfer-route-node--shift { color: var(--route-shift); background: linear-gradient(100deg, rgba(70, 57, 20, 0.33), rgba(7, 13, 20, 0.78)); }
+.le-transfer-route-node--in { color: var(--route-in); background: linear-gradient(100deg, rgba(17, 76, 59, 0.38), rgba(7, 13, 20, 0.78)); }
+
+.le-transfer-route-step {
+  color: currentColor;
+  font: 900 0.5rem/1 'Barlow', sans-serif;
+  letter-spacing: 0.1em;
+}
+
+.le-transfer-route-node strong {
+  overflow: hidden;
+  color: #f5f7f6;
+  font: 900 0.88rem/1 'Barlow Condensed', sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.le-transfer-route-node small {
+  overflow: hidden;
+  color: #879690;
+  font: 650 0.56rem/1.1 'Barlow', sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.le-head--transfer-route .lineup-preview-close {
+  margin: 0 !important;
+}
+
+.le-modal--transfer-preview .le-body {
+  position: relative;
+  padding-inline: 1.5rem !important;
+}
+
+.le-modal--transfer-preview .le-pitch {
+  filter: saturate(0.94) brightness(0.96);
+  border-color: rgba(62, 162, 112, 0.54) !important;
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.12) !important;
+}
+
+.le-body--locked-preview::after {
+  display: none;
+}
+
+.le-transfer-pitch-caption {
+  position: absolute;
+  top: 0.72rem;
+  left: 0.72rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.34rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.4rem;
+  background: rgba(4, 13, 10, 0.64);
+  color: rgba(237, 247, 241, 0.76);
+  font: 850 0.55rem/1 'Barlow', sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.le-transfer-pitch-caption .ui-icon {
+  width: 0.72rem;
+  color: #8ee6c2;
+}
+
+.le-chip--relocated {
+  border-color: #e1b84d !important;
+  box-shadow: 0 0 0 2px rgba(225, 184, 77, 0.13), 0 5px 12px rgba(0, 0, 0, 0.34) !important;
+}
+
+.le-relocation-marker {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.25rem);
+  z-index: 3;
+  translate: -50% 0;
+  display: inline-flex;
+  gap: 0.2rem;
+  padding: 0.2rem 0.36rem;
+  border: 1px solid rgba(225, 184, 77, 0.76);
+  border-radius: 999px;
+  background: rgba(31, 26, 10, 0.94);
+  color: #e1b84d;
+  font: 900 0.49rem/1 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.le-relocation-marker span { color: #fff4c7; }
+
+.le-foot--transfer {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 0.9rem 1.5rem 1.15rem !important;
+}
+
+.le-transfer-foot-impact {
+  display: grid;
+  align-content: center;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.le-transfer-foot-impact span {
+  color: #8ee6c2;
+  font: 900 0.72rem/1 'Barlow', sans-serif;
+}
+
+.le-transfer-foot-impact--warning span { color: #f3a0a8; }
+
+.le-transfer-foot-impact small {
+  color: #74837e;
+  font: 650 0.62rem/1.2 'Barlow', sans-serif;
+}
+
+.le-modal-group--transfer-route .le-confirm--stage {
+  min-width: 17.5rem !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-rows: auto auto;
+  gap: 0.14rem 0.7rem;
+  padding: 0.72rem 0.95rem !important;
+}
+
+.le-modal-group--transfer-route .le-confirm--stage span {
+  grid-column: 1;
+  grid-row: 1;
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+}
+
+.le-modal-group--transfer-route .le-confirm--stage strong {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.le-modal-group--transfer-route .le-confirm--stage .ui-icon {
+  grid-column: 2;
+  grid-row: 1 / 3;
+}
+
+@media (max-width: 1180px) and (min-width: 900px) {
+  .le-modal-group--transfer-route .le-squad-panel {
+    width: 27rem !important;
+    flex-basis: 27rem !important;
+  }
+
+  .le-modal-group--transfer-route .le-transfer-board-candidates {
+    grid-template-columns: 1fr;
+  }
+
+  .le-transfer-route-node {
+    padding-inline: 0.55rem;
+  }
+}
+
+@media (max-width: 899px) {
+  .le-modal-group--transfer-route .le-squad-panel {
+    width: 100% !important;
+    flex-basis: auto !important;
+  }
+
+  .le-modal-group--transfer-route .le-squad-panel-list--transfer {
+    max-height: 29rem !important;
+  }
+
+  .le-head--transfer-route {
+    min-height: auto !important;
+    padding: 1rem !important;
+  }
+
+  .le-transfer-route-track {
+    grid-template-columns: 1fr;
+  }
+
+  .le-transfer-route-track > .ui-icon { display: none; }
+  .le-transfer-route-node--in { grid-column: 1; }
+
+  .le-modal--transfer-preview .le-body {
+    padding-inline: 1rem !important;
+  }
+
+  .le-foot--transfer {
+    padding-inline: 1rem !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .le-modal-group--transfer-route .le-squad-panel-list--transfer {
+    max-height: 25rem !important;
+  }
+
+  .le-modal-group--transfer-route .le-transfer-board-candidates {
+    grid-template-columns: 1fr;
+  }
+
+  .le-transfer-route-title {
+    align-items: start;
+  }
+
+  .le-transfer-route-formation { display: none; }
+
+  .le-transfer-route-track {
+    grid-template-columns: 1fr;
+  }
+
+  .le-transfer-route-track > .ui-icon { display: none; }
+  .le-transfer-route-track > :nth-child(3),
+  .le-transfer-route-node--in { display: grid; grid-column: 1; }
+
+  .le-transfer-route-node {
+    min-height: 3.15rem;
+  }
+
+  .le-foot--transfer {
+    grid-template-columns: 1fr !important;
+  }
+
+  .le-transfer-foot-impact { display: none; }
+
+  .le-modal-group--transfer-route .le-confirm--stage {
+    min-width: 0 !important;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .le-transfer-board-tabs > button,
+  .le-modal-group--transfer-route .le-transfer-board-candidate {
+    transition: none;
+  }
+}
