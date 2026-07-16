@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { dismissUpdatePrompt, isUpdatePromptDismissed } from '@/pwa/updatePrompt';
+import {
+  clearPendingServiceWorkerUpdate,
+  dismissUpdatePrompt,
+  getPendingServiceWorkerUpdate,
+  isUpdatePromptDismissed,
+  UPDATE_READY_EVENT,
+  type PendingServiceWorkerUpdate,
+} from '@/pwa/updatePrompt';
 
-interface PendingUpdate {
-  apply: () => Promise<void>;
-  version?: string;
-}
-
-type UpdateReadyEvent = CustomEvent<PendingUpdate>;
+type UpdateReadyEvent = CustomEvent<PendingServiceWorkerUpdate>;
 
 export function PwaUpdateToast() {
-  const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null);
+  const [pendingUpdate, setPendingUpdate] = useState<PendingServiceWorkerUpdate | null>(() => {
+    const pending = getPendingServiceWorkerUpdate();
+    return pending && !isUpdatePromptDismissed(pending.version) ? pending : null;
+  });
   const [applying, setApplying] = useState(false);
   const screen = useGameStore((state) => state.screen);
   const phase = useGameStore((state) => state.phase);
@@ -20,17 +25,21 @@ export function PwaUpdateToast() {
   useEffect(() => {
     const onReady = (event: Event) => {
       const detail = (event as UpdateReadyEvent).detail;
-      if (isUpdatePromptDismissed(detail.version)) return;
+      if (isUpdatePromptDismissed(detail.version)) {
+        clearPendingServiceWorkerUpdate();
+        return;
+      }
       setPendingUpdate(detail);
     };
-    window.addEventListener('bir-daha-update-ready', onReady);
-    return () => window.removeEventListener('bir-daha-update-ready', onReady);
+    window.addEventListener(UPDATE_READY_EVENT, onReady);
+    return () => window.removeEventListener(UPDATE_READY_EVENT, onReady);
   }, []);
 
   if (!pendingUpdate) return null;
 
   const handleDismiss = () => {
     dismissUpdatePrompt(pendingUpdate.version);
+    clearPendingServiceWorkerUpdate();
     setPendingUpdate(null);
   };
 

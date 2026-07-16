@@ -1,5 +1,26 @@
 const DISMISSED_VERSION_KEY = 'bir-daha-pwa-dismissed-version';
 const DISMISSED_SESSION_KEY = 'bir-daha-pwa-dismissed-session';
+export const UPDATE_READY_EVENT = 'bir-daha-update-ready';
+
+export interface PendingServiceWorkerUpdate {
+  apply: () => Promise<void>;
+  version?: string;
+}
+
+let pendingServiceWorkerUpdate: PendingServiceWorkerUpdate | null = null;
+
+export function announceServiceWorkerUpdate(update: PendingServiceWorkerUpdate): void {
+  pendingServiceWorkerUpdate = update;
+  window.dispatchEvent(new CustomEvent(UPDATE_READY_EVENT, { detail: update }));
+}
+
+export function getPendingServiceWorkerUpdate(): PendingServiceWorkerUpdate | null {
+  return pendingServiceWorkerUpdate;
+}
+
+export function clearPendingServiceWorkerUpdate(): void {
+  pendingServiceWorkerUpdate = null;
+}
 
 function fingerprint(content: string): string {
   let hash = 2166136261;

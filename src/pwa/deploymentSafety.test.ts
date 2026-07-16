@@ -15,13 +15,19 @@ describe('PWA deployment safety contract', () => {
     expect(headers).toMatch(/\/assets\/\*[\s\S]*?Cache-Control: public, max-age=31536000, immutable/);
   });
 
-  it('auto-activates a new worker and loads recovery before the hashed app entry', () => {
+  it('keeps a new worker waiting for user approval and loads recovery before the hashed app entry', () => {
     const viteConfig = projectFile('vite.config.ts');
+    const main = projectFile('src/main.tsx');
     const html = projectFile('index.html');
     const recoveryIndex = html.indexOf('/boot-recovery.js');
     const appIndex = html.indexOf('/src/main.tsx');
 
-    expect(viteConfig).toContain("registerType: 'autoUpdate'");
+    expect(viteConfig).toContain("registerType: 'prompt'");
+    expect(viteConfig).toContain('clientsClaim: false');
+    expect(viteConfig).toContain('skipWaiting: false');
+    expect(main).toContain('onNeedRefresh()');
+    expect(main).toContain('announceServiceWorkerUpdate({');
+    expect(main).not.toContain('onNeedReload()');
     expect(viteConfig).toContain("globIgnores: ['boot-recovery.js']");
     expect(recoveryIndex).toBeGreaterThan(-1);
     expect(appIndex).toBeGreaterThan(recoveryIndex);

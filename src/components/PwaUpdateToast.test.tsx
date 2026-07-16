@@ -4,6 +4,10 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PwaUpdateToast } from '@/components/PwaUpdateToast';
+import {
+  announceServiceWorkerUpdate,
+  clearPendingServiceWorkerUpdate,
+} from '@/pwa/updatePrompt';
 import { useGameStore } from '@/store/gameStore';
 
 beforeAll(() => {
@@ -12,9 +16,7 @@ beforeAll(() => {
 
 function announceUpdate(version: string, apply = vi.fn(async () => undefined)) {
   act(() => {
-    window.dispatchEvent(new CustomEvent('bir-daha-update-ready', {
-      detail: { apply, version },
-    }));
+    announceServiceWorkerUpdate({ apply, version });
   });
   return apply;
 }
@@ -23,6 +25,7 @@ describe('PwaUpdateToast', () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
+    clearPendingServiceWorkerUpdate();
     useGameStore.setState({ screen: 'menu', phase: 'cardSelect', lineupEditorOpen: false });
   });
 
@@ -43,5 +46,13 @@ describe('PwaUpdateToast', () => {
 
     announceUpdate('worker-v2');
     expect(screen.getByText('Yeni sürüm hazır')).toBeTruthy();
+  });
+
+  it('shows an update that was found before the toast mounted', () => {
+    announceUpdate('worker-ready-before-react');
+
+    render(<PwaUpdateToast />);
+
+    expect(screen.getByRole('button', { name: 'Sonra' })).toBeTruthy();
   });
 });

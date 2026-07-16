@@ -4,6 +4,10 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { installChunkLoadRecovery } from '@/pwa/chunkRecovery';
+import {
+  announceServiceWorkerUpdate,
+  getServiceWorkerUpdateVersion,
+} from '@/pwa/updatePrompt';
 import { useGameStore } from '@/store/gameStore';
 import './index.css';
 import './styles/eventScenes.css';
@@ -13,14 +17,18 @@ installChunkLoadRecovery({
 });
 
 if ('serviceWorker' in navigator) {
-  registerSW({
+  const updateSW = registerSW({
     immediate: true,
-    onNeedReload() {
-      try {
-        useGameStore.getState().saveCurrentRun();
-      } finally {
-        window.location.reload();
-      }
+    onNeedRefresh() {
+      void getServiceWorkerUpdateVersion().then((version) => {
+        announceServiceWorkerUpdate({
+          apply: async () => {
+            useGameStore.getState().saveCurrentRun();
+            await updateSW(true);
+          },
+          version,
+        });
+      });
     },
     onRegisteredSW(_url, registration) {
       if (registration) {
