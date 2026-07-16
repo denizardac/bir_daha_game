@@ -85,18 +85,26 @@ describe('LineupEditorModal critical flow', () => {
     render(<Harness onConfirm={onConfirm} />);
 
     const decision = screen.getByRole('region', { name: 'Transfer tahtası' });
-    expect(within(decision).getByText('mid-local')).toBeTruthy();
+    expect(within(decision).getByText('İLK 11')).toBeTruthy();
+    expect(within(decision).getAllByText('mid-local').length).toBeGreaterThan(0);
     expect(within(decision).getByText('YERLİ KADRO')).toBeTruthy();
     expect(within(decision).getByText('Kapanır')).toBeTruthy();
     expect(within(decision).queryByText('Açılır')).toBeNull();
+
+    const decisionSlip = within(decision).getByRole('region', { name: 'Ayrılık kararı' });
+    expect(within(decisionSlip).getByText(/Şu an · İlk 11/i)).toBeTruthy();
+    expect(within(decisionSlip).getByText(/Ana mevki · OS/i)).toBeTruthy();
+    expect(within(decisionSlip).getByText('YERLİ')).toBeTruthy();
+    expect(within(decisionSlip).getByText(/Yerine/i)).toBeTruthy();
     expect(within(decision).queryByRole('button', { name: 'Değiştir' })).toBeNull();
 
     await user.click(within(decision).getByRole('option', { name: /striker-b.*ayrılacak oyuncu olarak seç/i }));
 
-    expect(within(decision).getByText('striker-b')).toBeTruthy();
+    expect(within(decision).getAllByText('striker-b').length).toBeGreaterThan(0);
     expect(within(decision).queryByText('YERLİ KADRO')).toBeNull();
     expect(within(decision).queryByText('Açılır')).toBeNull();
-    expect(within(decision).getByText('AYRILIYOR')).toBeTruthy();
+    expect(within(decision).getAllByText('AYRILIYOR').length).toBeGreaterThan(0);
+    expect(within(decision).getByRole('region', { name: 'Ayrılık kararı' })).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: /striker-b ayrılıyor.*İlk 11'i kur/ }));
 

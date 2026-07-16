@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 import { TacticCard } from '@/components/TacticCard';
 import { TacticBoardVisual } from '@/components/TacticBoardVisual';
 import { LineupPreviewInline } from '@/components/LineupPreview';
-import { HoverTip } from '@/components/HoverTip';
 import { UiIcon } from '@/components/UiIcon';
 import { getTacticCard, getTacticCategory, getTacticEffect } from '@/data/tactics';
 import { playSound } from '@/utils/sound';
@@ -37,6 +36,7 @@ function TacticExpandModal({
   sound,
   onSelect,
   onClose,
+  viewOnly = false,
 }: {
   card: TacticCardType;
   squad: PlayerCard[];
@@ -46,6 +46,7 @@ function TacticExpandModal({
   sound: boolean;
   onSelect: () => void;
   onClose: () => void;
+  viewOnly?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -111,17 +112,21 @@ function TacticExpandModal({
           <button type="button" className="btn-secondary" onClick={onClose}>
             Kapat
           </button>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => {
-              playSound('tick', sound);
-              onSelect();
-              onClose();
-            }}
-          >
-            {selected && canDeselect ? 'Seçimi kaldır' : selected ? '✓ Seçili' : 'Bu kartı seç'}
-          </button>
+          {viewOnly ? (
+            <span className="tactic-expand-active-badge"><UiIcon name="shield" /> Aktif planda</span>
+          ) : (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => {
+                playSound('tick', sound);
+                onSelect();
+                onClose();
+              }}
+            >
+              {selected && canDeselect ? 'Seçimi kaldır' : selected ? '✓ Seçili' : 'Bu kartı seç'}
+            </button>
+          )}
         </div>
       </div>
     </>,
@@ -213,6 +218,7 @@ function TacticPickRow({
 
 export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLineup = {}, sound, onSelect, onConfirm, onRerollFormation, onRerollSystem, formationRerollUsed = false, systemRerollUsed = false }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedViewOnly, setExpandedViewOnly] = useState(false);
   const tactics = offers.filter(isTacticCard);
   const formations = tactics.filter((o) => getTacticCategory(o.id) === 'formasyon');
   const systems = tactics.filter((o) => getTacticCategory(o.id) === 'sistem');
@@ -224,7 +230,7 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
   const effectiveSystem = Boolean(draft.systemId) || hasActiveSystem;
   const ready = optional ? true : Boolean(draft.formationId && draft.systemId);
   const changed = Boolean(draft.formationId || draft.systemId);
-  const expanded = expandedId ? tactics.find((t) => t.id === expandedId) : undefined;
+  const expanded = expandedId ? getTacticCard(expandedId) : undefined;
   const previewTactics = [
     ...activeTactics.filter((t) => {
       const cat = getTacticCategory(t.id);
@@ -249,18 +255,18 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
       label: 'Formasyon',
       name: selectedFormationCard?.name ?? activeFormation?.name ?? 'Seçilmedi',
       detail: selectedFormationCard?.effectSummary ?? activeFormation?.description ?? 'Bu turda bir formasyon seç.',
-      tip: selectedFormationCard?.description ?? activeFormation?.description,
       active: Boolean(selectedFormationCard || activeFormation),
       draft: Boolean(selectedFormationCard),
+      cardId: selectedFormationCard?.id ?? activeFormation?.id,
     },
     {
       key: 'system',
       label: 'Oyun sistemi',
       name: selectedSystemCard?.name ?? activeSystem?.name ?? 'Seçilmedi',
       detail: selectedSystemCard?.effectSummary ?? activeSystem?.description ?? 'Bu turda bir oyun sistemi seç.',
-      tip: selectedSystemCard?.description ?? activeSystem?.description,
       active: Boolean(selectedSystemCard || activeSystem),
       draft: Boolean(selectedSystemCard),
+      cardId: selectedSystemCard?.id ?? activeSystem?.id,
     },
   ];
 
@@ -301,7 +307,7 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
                 card={card}
                 selected={draft.formationId === card.id}
                 canDeselect={optional}
-                onExpand={() => setExpandedId(card.id)}
+                onExpand={() => { setExpandedViewOnly(false); setExpandedId(card.id); }}
                 onSelect={() => { playSound('tick', sound); onSelect(card); }}
               />
             ))}
@@ -329,7 +335,7 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
                 card={card}
                 selected={draft.systemId === card.id}
                 canDeselect={optional}
-                onExpand={() => setExpandedId(card.id)}
+                onExpand={() => { setExpandedViewOnly(false); setExpandedId(card.id); }}
                 onSelect={() => { playSound('tick', sound); onSelect(card); }}
               />
             ))}
@@ -344,21 +350,24 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
             </div>
             <div className="tactic-pick-current-list">
               {currentPlanItems.map((item) => {
-                const row = (
-                  <div
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
                     className={`tactic-pick-current-item ${item.active ? 'tactic-pick-current-item--active' : ''} ${item.draft ? 'tactic-pick-current-item--draft' : ''}`}
+                    disabled={!item.cardId}
+                    aria-label={`Aktif plan · ${item.label} · ${item.name} · detaylarını aç`}
+                    onClick={() => {
+                      if (!item.cardId) return;
+                      setExpandedViewOnly(!item.draft);
+                      setExpandedId(item.cardId);
+                    }}
                   >
                     <span>{item.label}</span>
                     <strong>{item.name}</strong>
                     <small>{item.detail}</small>
-                  </div>
-                );
-                return item.tip ? (
-                  <HoverTip key={item.key} tip={item.tip} placement="left">
-                    {row}
-                  </HoverTip>
-                ) : (
-                  <div key={item.key}>{row}</div>
+                    {item.cardId && <i className="tactic-pick-current-detail"><UiIcon name="info" /> Detay</i>}
+                  </button>
                 );
               })}
             </div>
@@ -414,7 +423,8 @@ export function TacticPickGrid({ offers, squad, activeTactics, draft, manualLine
           canDeselect={optional}
           sound={sound}
           onSelect={() => onSelect(expanded)}
-          onClose={() => setExpandedId(null)}
+          onClose={() => { setExpandedId(null); setExpandedViewOnly(false); }}
+          viewOnly={expandedViewOnly}
         />
       )}
     </div>

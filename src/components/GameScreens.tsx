@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GameHeader } from '@/components/GameHeader';
 import { HoverTip } from '@/components/HoverTip';
-import { PlayerCard, PlayerCardMini } from '@/components/PlayerCard';
+import { PlayerCard } from '@/components/PlayerCard';
 import { PlayerCardCompareGrid, type CardPickMode } from '@/components/PlayerCardCompareGrid';
 import { TacticCard } from '@/components/TacticCard';
 import { TacticPickGrid } from '@/components/TacticPickGrid';
@@ -10,21 +10,21 @@ import { buildMatchAnimSchedule, buildMatchAnimScheduleResume, type MatchAnimSta
 import { isFinaleRound, isTacticBonusRound } from '@/engine/roundFlow';
 import { getDailySeed } from '@/engine/seed';
 import { getEventSubjects, type EventSubject } from '@/engine/eventSubjects';
-import { getTacticCategory } from '@/data/tactics';
+import { getTacticCard, getTacticCategory } from '@/data/tactics';
 import { fetchRemoteRank, isRemoteLeaderboardEnabled } from '@/api/leaderboardRemote';
 import { SynergyRevealOverlay } from '@/components/SynergyRevealOverlay';
 import { SidePanel } from '@/components/SidePanel';
 import { SynergySideSection, SynergyFullPanel, getActiveSynergyUnlockTip } from '@/components/SynergySideSection';
 import { MatchTeamCard } from '@/components/MatchPickPanel';
-import { getActiveSynergies, getSynergyById, SYNERGIES } from '@/data/synergies';
-import { explainActiveTactic, getSidePanelNearSynergies, type NearSynergyProgress } from '@/engine/squadInsights';
+import { getActiveSynergies, getSynergyById } from '@/data/synergies';
+import { getSidePanelNearSynergies, type NearSynergyProgress } from '@/engine/squadInsights';
 import { getEventPresentation } from '@/data/eventVisuals';
 import { EventChoiceVisual, EventSceneVisual } from '@/components/EventSceneVisual';
 import { getDepartureScore, getEventPreviews, getMoraleEffect, getTacticPreview } from '@/engine/contextPreview';
 import { calculateRoundPoints, formatScore, streakMultiplier } from '@/engine/scoring';
 import { matchBonusMultiplier } from '@/engine/matchPower';
 import { getSquadLineupSummary, lineupSlotToMatchPitch } from '@/engine/lineupPreview';
-import { getPersistedStats, TOTAL_SYNERGIES, useGameStore } from '@/store/gameStore';
+import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { isPlayerCard, isSkipCard, isTacticCard, isTrainingCard } from '@/types';
 import type { ActiveTactic, PlayerCard as PlayerCardType } from '@/types';
 import { MatchAnimation } from '@/components/MatchAnimation';
@@ -36,7 +36,6 @@ import { TrainingPickModal } from '@/components/TrainingPickModal';
 import { FirstWinCelebration } from '@/components/FirstWinCelebration';
 import {
   buildChallengeLink,
-  buildShareText,
   canNativeShare,
   getShareTier,
   getShareTierLabel,
@@ -49,7 +48,6 @@ import { iconForSynergy, iconForTag } from '@/utils/gameIcons';
 import { DANGER_MORALE_FLOOR } from '@/constants/game';
 import { getEventChoiceTones, eventChoiceClass } from '@/engine/eventRisk';
 import { getWeeklyModifier } from '@/engine/weeklyModifier';
-import { getClosestUnlockStatuses } from '@/engine/unlocks';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import type { EventOutcome } from '@/engine/events';
 
@@ -121,6 +119,7 @@ function CardSelectLeftRail({
   squad,
   onOpenLineup,
   onOpenSynergy,
+  onOpenSystem,
 }: {
   morale: number;
   lineupSummary: ReturnType<typeof getSquadLineupSummary>;
@@ -130,10 +129,10 @@ function CardSelectLeftRail({
   squad: PlayerCardType[];
   onOpenLineup: () => void;
   onOpenSynergy: () => void;
+  onOpenSystem: () => void;
 }) {
   const fx = getMoraleEffect(morale);
   const activeSystem = activeTactics.find((tactic) => getTacticCategory(tactic.id) === 'sistem');
-  const activeSystemTip = activeSystem ? explainActiveTactic(activeSystem, squad).join('\n') : null;
   const maxVisibleSynergyRows = 4;
   const activeRows = activeSynergies.slice(0, maxVisibleSynergyRows).map((synergy) => ({
     id: synergy.id,
@@ -216,13 +215,20 @@ function CardSelectLeftRail({
         )}
         {(() => {
           const box = (
-            <div className={`pick-rail-system ${activeSystem ? 'pick-rail-system--active' : ''}`}>
+            <button
+              type="button"
+              className={`pick-rail-system ${activeSystem ? 'pick-rail-system--active' : ''}`}
+              disabled={!activeSystem}
+              onClick={onOpenSystem}
+              aria-label={activeSystem ? `Oyun sistemi · ${activeSystem.name} · detaylarını aç` : 'Henüz aktif oyun sistemi yok'}
+            >
               <span className="pick-rail-system-kicker">Oyun sistemi</span>
               <strong>{activeSystem?.name ?? 'Henüz yok'}</strong>
               <p>{activeSystem?.description || 'Taktik turunda bir sistem seçince burada görünür.'}</p>
-            </div>
+              {activeSystem && <i><UiIcon name="info" /> Detayı aç</i>}
+            </button>
           );
-          return activeSystemTip ? <HoverTip tip={activeSystemTip} placement="right">{box}</HoverTip> : box;
+          return box;
         })()}
       </section>
     </aside>
@@ -401,7 +407,7 @@ function getEventOutcomeLines(o: EventOutcome, eventId?: string): EventOutcomeLi
 
 export function CardSelectScreen() {
   const [lineupOpen, setLineupOpen] = useState(false);
-  const [detailDrawer, setDetailDrawer] = useState<'synergy' | 'plan' | null>(null);
+  const [detailDrawer, setDetailDrawer] = useState<'synergy' | 'plan' | 'system' | null>(null);
   const [pickMode, setPickMode] = useState<CardPickMode>('cards');
   const state = useGameStore();
   const {
@@ -425,6 +431,8 @@ export function CardSelectScreen() {
     () => getActiveSynergies(squad, morale, { activeTactics, manualLineup }),
     [squad, morale, activeTactics, manualLineup],
   );
+  const activeSystem = activeTactics.find((tactic) => getTacticCategory(tactic.id) === 'sistem');
+  const activeSystemCard = activeSystem ? getTacticCard(activeSystem.id) : undefined;
   // Kompakt rayda sadece birkaç satır gösterilir (CardSelectLeftRail kendi içinde
   // ayrıca kısıtlar) ama sayaç ve detay popup'ı TÜM yakın sinerjileri görmeli —
   // limiti düşük tutmak, gerçekten yakın olan ama sırada geride kalan bir sinerjinin
@@ -496,6 +504,7 @@ export function CardSelectScreen() {
               squad={squad}
               onOpenLineup={() => setLineupOpen(true)}
               onOpenSynergy={() => setDetailDrawer('synergy')}
+              onOpenSystem={() => setDetailDrawer('system')}
             />
           )}
           <div
@@ -646,7 +655,7 @@ export function CardSelectScreen() {
               className="game-detail-dialog"
               role="dialog"
               aria-modal="true"
-              aria-label={detailDrawer === 'synergy' ? 'Sinerji bilgileri' : 'Maç planı'}
+              aria-label={detailDrawer === 'synergy' ? 'Sinerji bilgileri' : detailDrawer === 'system' ? 'Oyun sistemi detayı' : 'Maç planı'}
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -654,8 +663,8 @@ export function CardSelectScreen() {
             >
               <div className="game-detail-head">
                 <div>
-                  <span>{detailDrawer === 'synergy' ? 'Sinerji ve tag özeti' : 'Maç planı'}</span>
-                  <strong>{detailDrawer === 'synergy' ? `${activeSynergies.length} aktif · ${nearSynergies.length} yakın` : 'Taktik slotları ve olay takvimi'}</strong>
+                  <span>{detailDrawer === 'synergy' ? 'Sinerji ve tag özeti' : detailDrawer === 'system' ? 'Aktif oyun sistemi' : 'Maç planı'}</span>
+                  <strong>{detailDrawer === 'synergy' ? `${activeSynergies.length} aktif · ${nearSynergies.length} yakın` : detailDrawer === 'system' ? activeSystem?.name ?? 'Sistem seçilmedi' : 'Taktik slotları ve olay takvimi'}</strong>
                 </div>
                 <button type="button" className="game-detail-close" onClick={() => setDetailDrawer(null)} aria-label="Kapat">
                   <UiIcon name="x" />
@@ -667,6 +676,10 @@ export function CardSelectScreen() {
                   activeSynergies={activeSynergies}
                   near={nearSynergies}
                 />
+              ) : detailDrawer === 'system' && activeSystemCard ? (
+                <div className="game-detail-tactic-card">
+                  <TacticCard card={activeSystemCard} squad={squad} activeTactics={activeTactics} expanded />
+                </div>
               ) : (
                 <SidePanel
                   squad={squad}
@@ -1579,7 +1592,7 @@ function ShareCardPreview({ opts }: { opts: ShareCardOptions }) {
 }
 
 export function RunEndScreen() {
-  const { score, roundHistory, squad, goToMenu, resetRun, discoveredSynergies, round, lossesCount, runEndAnalysis, runEndStep, advanceRunEnd, flawless, displayName, isDailySeed, seed, newAchievements, newContentUnlocks, acknowledgeContentUnlocks } = useGameStore();
+  const { score, roundHistory, squad, goToMenu, resetRun, round, lossesCount, runEndAnalysis, runEndStep, advanceRunEnd, flawless, displayName, isDailySeed, seed, newAchievements, newContentUnlocks, acknowledgeContentUnlocks } = useGameStore();
   const analysis = runEndAnalysis;
   const playerName = displayName || 'Anonim';
   const [shareMsg, setShareMsg] = useState('');
@@ -1587,7 +1600,6 @@ export function RunEndScreen() {
   const wins = roundHistory.filter((r) => r.matchResult?.outcome === 'win').length;
   const matchesPlayed = roundHistory.filter((r) => r.matchResult).length;
   const draws = roundHistory.filter((r) => r.matchResult?.outcome === 'draw').length;
-  const allLoss = lossesCount > 0 && wins === 0;
   const squadAvg = squad.length ? Math.round(squad.reduce((s, p) => s + p.currentRating, 0) / squad.length) : 0;
   const activeSynergyStats = analysis?.synergyStats.filter((s) => s.activations > 0) ?? [];
   const bestRound = roundHistory.reduce<typeof roundHistory[number] | null>(
@@ -1636,7 +1648,6 @@ export function RunEndScreen() {
   const challengeUrl = buildChallengeLink(shareOpts);
   const runBadges = analysis?.badges ?? [];
   const persistedProgress = getPersistedStats().unlocks;
-  const closestUnlocks = getClosestUnlockStatuses(persistedProgress, 3);
   const pendingGuarantees = persistedProgress.pendingGuarantees;
 
   const flash = (msg: string) => {
@@ -1683,10 +1694,6 @@ export function RunEndScreen() {
     return () => { cancelled = true; };
   }, [score, isDailySeed]);
 
-  const viralHook = score > 0
-    ? `${formatScore(score)} puan yaptım. Aynı seed'de geçebilir misin?`
-    : `${round} round hayatta kaldım. Aynı seed'de daha iyisini yapabilir misin?`;
-  const shareText = buildShareText(shareOpts, challengeUrl ?? undefined);
   const scoreRecord = analysis?.scoreRecord;
   const leaderboardRecordText = !isDailySeed
     ? scoreRecord?.isLeaderboardBest
@@ -1699,12 +1706,6 @@ export function RunEndScreen() {
         ? `Yeni günlük Ranked rekorun: eski ${formatScore(scoreRecord.previousLeaderboardBest)} geçildi.`
         : 'Günlük Ranked skor kaydın açıldı.'
       : `Bu deneme günlük en iyini geçmedi; listede ${formatScore(scoreRecord?.previousLeaderboardBest ?? 0)} korunuyor.`;
-  const hallOfFameRecordText = scoreRecord?.isHallOfFameBest
-    ? scoreRecord.previousHallOfFameBest
-      ? `Hall of Fame aylık rekorun yenilendi; eski skor ${formatScore(scoreRecord.previousHallOfFameBest)}.`
-      : 'Hall of Fame için bu ayki ilk kaydın açıldı.'
-    : `Hall of Fame'de aylık en iyi skorun ${formatScore(scoreRecord?.previousHallOfFameBest ?? 0)} korunuyor.`;
-
   return (
     <div className="game-shell min-h-screen p-4">
       <div className="mx-auto max-w-5xl run-end-shell">
@@ -1756,7 +1757,7 @@ export function RunEndScreen() {
                 </div>
               )}
 
-              {(newContentUnlocks.length > 0 || pendingGuarantees.length > 0 || closestUnlocks.length > 0) && (
+              {(newContentUnlocks.length > 0 || pendingGuarantees.length > 0) && (
                 <section className="run-end-unlocks" aria-label="Kalıcı içerik ilerlemesi">
                   {newContentUnlocks.length > 0 && (
                     <div className="run-end-unlocks-new">
@@ -1782,17 +1783,6 @@ export function RunEndScreen() {
                       <strong>{pendingGuarantees[0]?.kind === 'player' ? 'Yeni oyuncu ilk tekliflerde' : 'Yeni olay ilk olay roundunda'} gösterilecek.</strong>
                     </p>
                   )}
-                  {closestUnlocks.length > 0 && (
-                    <div className="run-end-next-targets">
-                      <span>Sıradaki hedefler</span>
-                      {closestUnlocks.map((status) => (
-                        <p key={status.unlock.id}>
-                          <strong>{status.unlock.name}</strong>
-                          <span>{status.current}/{status.unlock.target} · Ödül: {status.unlock.reward.name}</span>
-                        </p>
-                      ))}
-                    </div>
-                  )}
                 </section>
               )}
 
@@ -1813,9 +1803,9 @@ export function RunEndScreen() {
                   <small>Ortalama rating {squadAvg || '-'}</small>
                 </div>
                 <div className="run-end-hero-metric">
-                  <span>Sinerji</span>
+                  <span>Çalışan sinerji</span>
                   <strong>{activeSynergyStats.length}</strong>
-                  <small>{discoveredSynergies.length}/{TOTAL_SYNERGIES} keşif</small>
+                  <small>Bu run puan üretenler</small>
                 </div>
               </div>
 
@@ -1836,88 +1826,34 @@ export function RunEndScreen() {
                 <div className={`run-end-record-note ${scoreRecord.isLeaderboardBest || scoreRecord.isHallOfFameBest ? 'run-end-record-note--best' : 'run-end-record-note--kept'}`}>
                   <span>{isDailySeed ? 'Ranked kayıt durumu' : 'Serbest Mod kaydı'}</span>
                   <strong>{leaderboardRecordText}</strong>
-                  <small>{isDailySeed ? hallOfFameRecordText : 'Unlock ve koleksiyon ilerlemen kaydedildi; skorun Ranked ve Hall of Fame dışında kaldı.'}</small>
                 </div>
               )}
 
-              {allLoss && (
-                <p className="mt-3 rounded-lg bg-neutral-900 px-3 py-2 text-sm text-neutral-400">
-                  Hiç galip gelmedin — kayıp roundlar puan vermez. Bir sonraki run&apos;da ilk galibiyeti hedefle.
-                </p>
-              )}
-              {score === 0 && (
-                <p className="mt-3 text-sm text-neutral-400">
-                  Bu runu unutma — bir dahaki farklı olabilir. {round} round hayatta kaldın.
-                </p>
-              )}
-              {score > 0 && score < 500 && !allLoss && (
-                <p className="mt-3 text-sm text-neutral-500">Beraberlikler az puan verir; bir sonraki run&apos;da sinerji kurmayı dene.</p>
-              )}
-              <div className="run-end-viral-strip">
-                <span>Paylaşılabilir meydan okuma</span>
-                <strong>{viralHook}</strong>
-                <small>Detaylarda PNG skor kartı ve kopyalanabilir paylaşım metni hazır.</small>
-              </div>
               <div className="run-end-primary-actions">
                 <button type="button" className="btn-primary" onClick={() => resetRun()}>Bir Daha</button>
-                <button type="button" className="btn-secondary" onClick={advanceRunEnd}>Sıralama ve detaylar</button>
+                <button type="button" className="btn-secondary" onClick={advanceRunEnd}>Run raporu</button>
                 <button type="button" className="btn-secondary" onClick={goToMenu}>Ana Menü</button>
               </div>
             </motion.div>
           )}
 
-          {runEndStep === 1 && (
-            <motion.div key="rank" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="panel text-center run-end-rank-panel">
-              {analysis ? (
-                <>
-                  <p className="text-lg text-neutral-400">
-                    {isDailySeed ? 'Günlük Ranked sıralaması' : 'Serbest Mod özeti'}
-                    {isDailySeed && liveRank && <span className="ml-2 text-xs text-emerald-400">· canlı</span>}
-                  </p>
-                  {isDailySeed ? (
-                  <>
-                    <p className="mt-4 text-4xl font-extrabold">#{(liveRank?.rank ?? analysis.rank)} / {(liveRank?.total ?? analysis.totalPlayers)}</p>
-                    {(() => {
-                    const percent = liveRank?.percent ?? analysis.rankPercent;
-                    const rank = liveRank?.rank ?? analysis.rank;
-                    return (
-                      <p className="mt-2 text-xl">
-                        {score <= 0
-                          ? `${round} round hayatta kaldın — bir dahaki sefer farklı olabilir`
-                          : percent >= 50
-                            ? `En iyi %${Math.max(1, 100 - percent)} içindesin`
-                            : `Sıralaman #${rank} — bir dahaki run'da yüksel`}
-                      </p>
-                    );
-                    })()}
-                  {!liveRank && analysis.nearRivalBefore && (
-                    <p className="mt-3 text-sm text-neutral-400">Önünde: {analysis.nearRivalBefore.name} (+{analysis.nearRivalBefore.gap})</p>
-                  )}
-                  </>
-                  ) : (
-                    <div className="run-end-free-mode-note">
-                      <UiIcon name="dice" />
-                      <strong>Sıralamasız tamamlandı</strong>
-                      <p>Skorun public tablolara taşınmadı. Unlock, koleksiyon ve kişisel ilerlemen kaydedildi.</p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="text-neutral-400">Skor kaydedildi.</p>
-              )}
-              <button type="button" className="btn-primary mt-6 w-full" onClick={advanceRunEnd}>Özet</button>
-            </motion.div>
-          )}
-
-          {runEndStep >= 2 && (
+          {runEndStep >= 1 && (
             <motion.div key="summary" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="panel run-end-summary space-y-4">
               <div className="run-end-summary-hero">
                 <div>
-                  <p className="run-end-summary-kicker">Run özeti</p>
-                  <p className="run-end-summary-title">{playerName}</p>
+                  <p className="run-end-summary-kicker">{playerName} · Run raporu</p>
+                  <h1 className="run-end-summary-title">Teknik rapor</h1>
                 </div>
                 <strong>{formatScore(score)}</strong>
               </div>
+              <section className={`run-end-report-rank ${isDailySeed ? 'run-end-report-rank--ranked' : 'run-end-report-rank--free'}`} aria-label="Run kayıt durumu">
+                <UiIcon name={isDailySeed ? 'trophy' : 'dice'} />
+                <div>
+                  <span>{isDailySeed ? 'Günlük Ranked' : 'Serbest Mod'}</span>
+                  <strong>{isDailySeed && finalRank && finalTotal ? `#${finalRank} / ${finalTotal}` : isDailySeed ? 'Skor kaydedildi' : 'Sıralamasız tamamlandı'}</strong>
+                  <small>{isDailySeed && finalPercent ? `Yüzdelik %${finalPercent}` : isDailySeed ? 'Günlük skor kaydına işlendi' : 'Unlock ve koleksiyon ilerlemesi kaydedildi'}</small>
+                </div>
+              </section>
               <div className="run-end-stats-row">
                 <div className="run-end-stat">
                   <span className="run-end-stat-label">Round</span>
@@ -1945,48 +1881,47 @@ export function RunEndScreen() {
                 </div>
               </div>
 
-              <div className="run-end-summary-mobile-actions">
-                <button type="button" className="btn-primary" onClick={() => resetRun()}>Bir Daha</button>
-                <button type="button" className="btn-secondary" onClick={goToMenu}>Ana Menü</button>
-              </div>
-
               {squad.length < 11 && (
                 <p className="run-end-understrength-note">
                   Run sonunda {squad.length} oyuncu kaldı — eksik kadro maç gücünü düşürür; geri dönüş zorlaşır.
                 </p>
               )}
-              {analysis?.bestDecision && (
-                <div className="rounded-xl border border-green-800/40 bg-green-950/30 p-4">
-                  <p className="text-sm uppercase text-green-400">En İyi Kararın</p>
-                  <p className="text-lg font-bold">Round {analysis.bestDecision.round}: {analysis.bestDecision.cardName}</p>
-                  <p className="text-sm text-neutral-400">Bunu yalnızca %{analysis.bestDecision.rarePercent} oyuncu yaptı</p>
-                  <p className="text-sm text-green-300">+{analysis.bestDecision.pointsGained} puan etkisi</p>
-                </div>
-              )}
-              {analysis?.worstMistake && (
-                <div className="rounded-xl border border-red-800/40 bg-red-950/30 p-4">
-                  <p className="text-sm uppercase text-red-400">En Kritik Hata</p>
-                  <p className="text-lg font-bold">Round {analysis.worstMistake.round}</p>
-                  <p className="text-sm text-neutral-300">{analysis.worstMistake.description}</p>
-                </div>
+              {(analysis?.bestDecision || analysis?.worstMistake) && (
+                <section className="run-end-decisions" aria-label="Karar analizi">
+                  {analysis?.bestDecision && (
+                    <article className="run-end-decision run-end-decision--best">
+                      <span>En iyi karar</span>
+                      <strong>R{analysis.bestDecision.round} · {analysis.bestDecision.cardName}</strong>
+                      <small>%{analysis.bestDecision.rarePercent} menajer bu seçimi yaptı · +{formatScore(analysis.bestDecision.pointsGained)} puan</small>
+                    </article>
+                  )}
+                  {analysis?.worstMistake && (
+                    <article className="run-end-decision run-end-decision--worst">
+                      <span>Kritik kırılma</span>
+                      <strong>Round {analysis.worstMistake.round}</strong>
+                      <small>{analysis.worstMistake.description}</small>
+                    </article>
+                  )}
+                </section>
               )}
 
               <div className="run-end-synergies">
-                <p className="text-sm uppercase text-neutral-500">Keşfedilen sinerjiler ({discoveredSynergies.length}/{TOTAL_SYNERGIES})</p>
-                {analysis?.synergyStats.length ? (
+                <div className="run-end-section-head">
+                  <span>Bu run çalışan sinerjiler</span>
+                  <strong>{activeSynergyStats.length}</strong>
+                </div>
+                {activeSynergyStats.length ? (
                   <div className="run-end-synergy-grid">
-                    {analysis.synergyStats.map((s) => (
+                    {activeSynergyStats.map((s) => (
                       <div
                         key={s.id}
-                        className={`run-end-synergy-chip ${s.activations > 0 ? 'run-end-synergy-chip--active' : 'run-end-synergy-chip--idle'}`}
+                        className="run-end-synergy-chip run-end-synergy-chip--active"
                       >
                         <span className="run-end-synergy-icon"><UiIcon name={iconForSynergy(s.icon)} /></span>
                         <div className="run-end-synergy-body">
                           <p className="run-end-synergy-name">{s.name}</p>
                           <p className="run-end-synergy-detail">
-                            {s.activations > 0
-                              ? `${s.activations}× (+${s.points})`
-                              : `Keşfedildi · ${SYNERGIES.find((x) => x.id === s.id)?.description ?? ''}`}
+                            {s.activations} kez aktif · +{formatScore(s.points)} puan
                           </p>
                         </div>
                       </div>
@@ -1997,7 +1932,13 @@ export function RunEndScreen() {
                 )}
               </div>
 
-              <div className="run-end-history max-h-48 overflow-y-auto">
+              <details className="run-end-history-disclosure">
+                <summary>
+                  <span><UiIcon name="chart" /> Round dökümü</span>
+                  <small>{roundHistory.length} karar ve maç kaydı</small>
+                  <UiIcon name="arrow-right" />
+                </summary>
+                <div className="run-end-history">
                 {/* Olay roundlarında (4/8/11/14) aynı round hem olay hem maç kaydı üretir —
                     key yalnızca r.round olursa çakışır ve satırlar atlanır. */}
                 {roundHistory.map((r, historyIndex) => {
@@ -2038,11 +1979,8 @@ export function RunEndScreen() {
                     </div>
                   );
                 })}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                {squad.slice(0, 6).map((p) => <PlayerCardMini key={p.id} card={p} />)}
-              </div>
+                </div>
+              </details>
 
               <section className="run-end-share" aria-label="Paylaşım">
                 <div className="run-end-share-head">
@@ -2058,30 +1996,17 @@ export function RunEndScreen() {
                 <ShareCardPreview opts={shareOpts} />
 
                 <div className="run-end-share-actions">
-                  {canNativeShare() && (
+                  {canNativeShare() ? (
                     <button type="button" className="btn-primary run-end-share-btn" onClick={handleNativeShare}>
                       <UiIcon name="arrow-right" />
                       Paylaş
                     </button>
-                  )}
-                  {challengeUrl && (
-                    <button type="button" className="btn-secondary run-end-share-btn" onClick={handleCopyLink}>
+                  ) : challengeUrl ? (
+                    <button type="button" className="btn-primary run-end-share-btn" onClick={handleCopyLink}>
                       <UiIcon name="globe" />
-                      Meydan okuma linki
+                      Linki kopyala
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    className="btn-secondary run-end-share-btn"
-                    onClick={async () => {
-                      const { copyShareCardImage } = await import('@/utils/shareCard');
-                      const ok = await copyShareCardImage(shareOpts);
-                      flash(ok ? 'Görsel panoya kopyalandı!' : 'Kopyalama desteklenmiyor — PNG indir.');
-                    }}
-                  >
-                    <UiIcon name="archive" />
-                    Görseli kopyala
-                  </button>
+                  ) : null}
                   <button
                     type="button"
                     className="btn-secondary run-end-share-btn"
@@ -2093,21 +2018,6 @@ export function RunEndScreen() {
                   >
                     <UiIcon name="chart" />
                     PNG indir
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-secondary run-end-share-btn"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(shareText);
-                        flash('Paylaşım metni kopyalandı!');
-                      } catch {
-                        flash('Kopyalanamadı.');
-                      }
-                    }}
-                  >
-                    <UiIcon name="info" />
-                    Metni kopyala
                   </button>
                 </div>
 

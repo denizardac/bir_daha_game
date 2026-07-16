@@ -169,6 +169,26 @@ export function LineupEditorModal({
         return a.currentRating - b.currentRating;
       })
     : [];
+  const previousSlotByPlayerId = useMemo(
+    () => new Map(previousLineup.flatMap((slot) => slot.player ? [[slot.player.id, slot] as const] : [])),
+    [previousLineup],
+  );
+  const departureCandidateGroups = [
+    {
+      key: 'first-eleven',
+      label: 'İLK 11',
+      players: departureCandidates.filter((player) => previousSlotByPlayerId.has(player.id)),
+    },
+    {
+      key: 'bench',
+      label: 'YEDEKLER',
+      players: departureCandidates.filter((player) => !previousSlotByPlayerId.has(player.id)),
+    },
+  ].filter((group) => group.players.length > 0);
+  const outgoingPreviousSlot = outgoingPlayer ? previousSlotByPlayerId.get(outgoingPlayer.id) ?? null : null;
+  const outgoingReplacement = outgoingPreviousSlot
+    ? lineup.find((slot) => slot.slot.label === outgoingPreviousSlot.slot.label)?.player ?? null
+    : null;
   const highlightedSlot = highlightId ? lineup.find((slot) => slot.player?.id === highlightId) ?? null : null;
   const highlightedTarget = highlightedSlot
     ? `${formationSlotLabel(highlightedSlot.slot.label)} (${highlightedSlot.slot.label})`
@@ -408,7 +428,12 @@ export function LineupEditorModal({
                 <span className="le-transfer-board-incoming-rating">{highlightedPlayer.currentRating}</span>
                 <span className="le-transfer-board-incoming-body">
                   <strong>{formatSquadListName(highlightedPlayer.name)}</strong>
-                  <small>{POSITION_BADGE[highlightedPlayer.position]} · kadroya katılıyor</small>
+                  <small>Ana mevki · {POSITION_BADGE[highlightedPlayer.position]}</small>
+                  {highlightedPlayer.tags.length > 0 && (
+                    <span className="le-transfer-board-incoming-tags">
+                      {highlightedPlayer.tags.map((tag) => <i key={tag}>{tag}</i>)}
+                    </span>
+                  )}
                 </span>
                 <span className="le-transfer-board-incoming-mark" aria-hidden>+</span>
               </div>
@@ -418,52 +443,94 @@ export function LineupEditorModal({
                 <small>Bir oyuncu seç</small>
               </div>
               <div className="le-transfer-board-candidates" role="listbox" aria-label="Kadrodan ayrılabilecek oyuncular">
-                {departureCandidates.map((player) => {
-                  const selected = player.id === outgoingId;
-                  return (
-                    <button
-                      key={player.id}
-                      type="button"
-                      role="option"
-                      aria-selected={selected}
-                      aria-label={`${player.name}, ${player.currentRating}, ${POSITION_BADGE[player.position]}. ${selected ? 'Ayrılacak oyuncu seçildi' : 'Ayrılacak oyuncu olarak seç'}`}
-                      className={`le-transfer-board-candidate ${selected ? 'le-transfer-board-candidate--selected' : ''}`}
-                      onClick={() => onOutgoingChange(player.id)}
-                    >
-                      <span className="le-transfer-board-candidate-rating">{player.currentRating}</span>
-                      <span className="le-transfer-board-candidate-body">
-                        <strong>{formatSquadListName(player.name)}</strong>
-                        <small>{POSITION_BADGE[player.position]} · {player.tags.slice(0, 2).join(' · ')}</small>
-                      </span>
-                      {player.id === suggestedOutgoingId && !selected && (
-                        <span className="le-transfer-board-suggested">ÖNERİLEN</span>
-                      )}
-                      {selected && <span className="le-transfer-board-stamp">AYRILIYOR</span>}
-                    </button>
-                  );
-                })}
+                {departureCandidateGroups.map((group) => (
+                  <div key={group.key} className="le-transfer-board-candidate-group" role="group" aria-label={group.label}>
+                    <div className="le-transfer-board-candidate-group-title">
+                      <span>{group.label}</span>
+                      <small>{group.players.length} oyuncu</small>
+                    </div>
+                    {group.players.map((player) => {
+                      const selected = player.id === outgoingId;
+                      const currentSlot = previousSlotByPlayerId.get(player.id);
+                      const currentRole = currentSlot
+                        ? `${formationSlotLabel(currentSlot.slot.label)} (${currentSlot.slot.label})`
+                        : 'Yedek kulübesi';
+                      return (
+                        <button
+                          key={player.id}
+                          type="button"
+                          role="option"
+                          aria-selected={selected}
+                          aria-label={`${player.name}, ${player.currentRating}, ${POSITION_BADGE[player.position]}. ${selected ? 'Ayrılacak oyuncu seçildi' : 'Ayrılacak oyuncu olarak seç'}`}
+                          className={`le-transfer-board-candidate ${selected ? 'le-transfer-board-candidate--selected' : ''}`}
+                          onClick={() => onOutgoingChange(player.id)}
+                        >
+                          <span className="le-transfer-board-candidate-rating">{player.currentRating}</span>
+                          <span className="le-transfer-board-candidate-body">
+                            <strong>{formatSquadListName(player.name)}</strong>
+                            <small>Şu an · {currentRole}</small>
+                            <span className="le-transfer-board-candidate-meta">
+                              <i>Ana · {POSITION_BADGE[player.position]}</i>
+                              {player.tags.map((tag) => <i key={tag}>{tag}</i>)}
+                            </span>
+                          </span>
+                          <span className="le-transfer-board-candidate-status" data-transfer-status>
+                            {selected
+                              ? <b>AYRILIYOR</b>
+                              : player.id === suggestedOutgoingId
+                                ? <b className="le-transfer-board-suggested">ÖNERİLEN</b>
+                                : <UiIcon name="arrow-right" />}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
 
-              <div className="le-transfer-board-impact" aria-live="polite">
-                <div className="le-transfer-board-impact-head">
-                  <span>BU AYRILIĞIN BEDELİ</span>
-                  <small>Yalnızca negatif sinerji etkisi</small>
-                </div>
-                {visibleSynergyImpacts.length > 0 ? (
-                  <div className="le-transfer-synergy-impact">
-                    {visibleSynergyImpacts.map((impact) => (
-                      <span key={impact.synergy.id} className={`le-transfer-synergy-chip le-transfer-synergy-chip--${impact.status}`}>
-                        <strong>{impact.synergy.name}</strong>
-                        <small>{impact.status === 'deactivated'
-                          ? 'Kapanır'
-                          : `${impact.beforeProgress?.current ?? 0} → ${impact.afterProgress?.current ?? 0}`}</small>
-                      </span>
-                    ))}
+              <section className="le-transfer-board-decision" role="region" aria-label="Ayrılık kararı" aria-live="polite">
+                <div className="le-transfer-board-decision-player">
+                  <span className="le-transfer-board-decision-rating">{outgoingPlayer.currentRating}</span>
+                  <div>
+                    <small>AYRILACAK OYUNCU</small>
+                    <strong>{formatSquadListName(outgoingPlayer.name)}</strong>
                   </div>
-                ) : (
-                  <p className="le-transfer-board-impact-empty">Aktif sinerji kapanmıyor.</p>
-                )}
-              </div>
+                  <span className="le-transfer-board-decision-status">AYRILIYOR</span>
+                </div>
+                <div className="le-transfer-board-decision-context">
+                  <span>{outgoingPreviousSlot ? `Şu an · İlk 11 · ${formationSlotLabel(outgoingPreviousSlot.slot.label)} (${outgoingPreviousSlot.slot.label})` : 'Şu an · Yedek kulübesi'}</span>
+                  <span>Ana mevki · {POSITION_BADGE[outgoingPlayer.position]}</span>
+                  {outgoingPlayer.tags.map((tag) => <span key={tag} className="le-transfer-board-decision-trait">{tag}</span>)}
+                </div>
+                <p className="le-transfer-board-replacement">
+                  <UiIcon name="arrow-right" />
+                  {outgoingPreviousSlot
+                    ? outgoingReplacement
+                      ? <><span>Yerine</span> <strong>{formatSquadListName(outgoingReplacement.name)}</strong> <span>{outgoingPreviousSlot.slot.label} slotuna geçiyor.</span></>
+                      : <><span>Yerine</span> <strong>kimse geçmiyor</strong> <span>· {outgoingPreviousSlot.slot.label} boş kalıyor.</span></>
+                    : <span>Yedekten ayrılıyor; mevcut İlk 11 düzeni değişmiyor.</span>}
+                </p>
+                <div className="le-transfer-board-impact">
+                  <div className="le-transfer-board-impact-head">
+                    <span>BU AYRILIĞIN BEDELİ</span>
+                    <small>Yalnızca negatif sinerji etkisi</small>
+                  </div>
+                  {visibleSynergyImpacts.length > 0 ? (
+                    <div className="le-transfer-synergy-impact">
+                      {visibleSynergyImpacts.map((impact) => (
+                        <span key={impact.synergy.id} className={`le-transfer-synergy-chip le-transfer-synergy-chip--${impact.status}`}>
+                          <strong>{impact.synergy.name}</strong>
+                          <small>{impact.status === 'deactivated'
+                            ? 'Kapanır'
+                            : `${impact.beforeProgress?.current ?? 0} → ${impact.afterProgress?.current ?? 0}`}</small>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="le-transfer-board-impact-empty">Aktif sinerji kapanmıyor.</p>
+                  )}
+                </div>
+              </section>
             </section>
           </div>
         ) : (
