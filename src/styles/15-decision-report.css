@@ -66,12 +66,17 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  display: flex;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.55rem;
   padding: 0.32rem 0.18rem;
+  border: 0;
   border-bottom: 1px solid rgba(85, 240, 176, 0.14);
   background: #0b111b;
+  cursor: pointer;
+  text-align: left;
 }
 
 .le-transfer-board-candidate-group-title span {
@@ -83,6 +88,19 @@
 .le-transfer-board-candidate-group-title small {
   color: #65736f;
   font: 700 0.55rem/1 'Barlow', sans-serif;
+}
+
+.le-transfer-board-candidate-group-title svg {
+  width: 0.75rem;
+  color: #65736f;
+  transition: transform 150ms ease;
+}
+
+.le-transfer-board-candidate-group-title[aria-expanded="true"] svg { transform: rotate(90deg); }
+
+.le-transfer-board-candidate-group-list {
+  display: grid;
+  gap: 0.42rem;
 }
 
 .le-transfer-board-candidate {
@@ -245,7 +263,16 @@
   font: 850 0.72rem/1 'Barlow', sans-serif;
 }
 .tactic-expand-active-badge svg { width: 0.9rem; }
-.game-detail-tactic-card { padding: 0.2rem; }
+.game-detail-dialog--tactic { min-height: 0; overflow: hidden !important; }
+.game-detail-tactic-card {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(86, 216, 200, 0.36) transparent;
+  padding: 0.2rem 0.38rem 0.2rem 0.2rem;
+}
 
 /* Run end: a match ledger, followed by one optional technical report. */
 .run-end-shell { align-items: flex-start; padding: clamp(0.5rem, 3vh, 2.5rem) 0; }
@@ -359,6 +386,32 @@
   padding-bottom: 0.45rem;
   border-bottom: 1px solid rgba(86, 216, 200, 0.14);
 }
+.run-end-synergies-disclosure {
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 11px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.018);
+}
+.run-end-synergies-disclosure .run-end-section-head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.55rem;
+  min-height: 3rem;
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.run-end-synergies-disclosure .run-end-section-head span { display: inline-flex; align-items: center; gap: 0.45rem; }
+.run-end-synergies-disclosure .run-end-section-head span svg { width: 0.9rem; color: #56d8c8; }
+.run-end-synergies-disclosure .run-end-section-head > svg { width: 0.8rem; color: #71817c; transition: transform 150ms ease; }
+.run-end-synergies-disclosure .run-end-section-head[aria-expanded="true"] > svg { transform: rotate(90deg); }
+.run-end-synergies-disclosure .run-end-synergy-grid,
+.run-end-synergies-disclosure > p { margin: 0; padding: 0.75rem 0.85rem; border-top: 1px solid rgba(255,255,255,0.06); }
 .run-end-section-head span { color: #9eb0aa; font: 850 0.66rem/1 'Barlow', sans-serif; letter-spacing: 0.1em; text-transform: uppercase; }
 .run-end-section-head strong { color: #56d8c8; font: 900 1rem/1 'Barlow Condensed', sans-serif; }
 .run-end-synergy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -395,7 +448,8 @@
   border-color: rgba(217, 173, 59, 0.2);
   background: rgba(217, 173, 59, 0.025);
 }
-.run-end-share-head { grid-column: 1 / -1; margin: 0; }
+.run-end-share-head { grid-column: 1 / -1; margin: 0; align-items: flex-start; }
+.run-end-share-explainer { max-width: 38rem; margin-top: 0.28rem; color: #8fa19b; font: 600 0.72rem/1.4 'Barlow', sans-serif; }
 .run-end-share .share-card-preview { grid-column: 1; width: 100%; max-width: 380px; margin: 0; }
 .run-end-share-actions { grid-column: 2; align-self: center; display: grid; grid-template-columns: 1fr; margin: 0; }
 .run-end-share-msg { grid-column: 1 / -1; margin: 0; }
@@ -443,6 +497,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .le-transfer-board-candidate-group-title svg,
   .tactic-pick-current-item,
+  .run-end-synergies-disclosure .run-end-section-head > svg,
   .run-end-history-disclosure > summary > svg { transition: none; }
 }

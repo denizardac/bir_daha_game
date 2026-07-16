@@ -276,7 +276,11 @@ export function MainMenu() {
                   </div>
 
                   {pendingChallenge && (
-                    <div className="menu-challenge" role="status">
+                    <div
+                      className="menu-challenge"
+                      role="status"
+                      aria-label={`${pendingChallenge.by} sana meydan okuyor`}
+                    >
                       <span className="menu-challenge-badge">MEYDAN OKUMA</span>
                       <div className="menu-challenge-body">
                         <p className="menu-challenge-title">

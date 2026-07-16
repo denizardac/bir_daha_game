@@ -185,6 +185,15 @@ export function LineupEditorModal({
       players: departureCandidates.filter((player) => !previousSlotByPlayerId.has(player.id)),
     },
   ].filter((group) => group.players.length > 0);
+  const outgoingGroupKey = outgoingPlayer && previousSlotByPlayerId.has(outgoingPlayer.id)
+    ? 'first-eleven'
+    : 'bench';
+  const [openDepartureGroups, setOpenDepartureGroups] = useState<Set<string>>(
+    () => new Set([outgoingGroupKey]),
+  );
+  useEffect(() => {
+    setOpenDepartureGroups(new Set([outgoingGroupKey]));
+  }, [outgoingGroupKey]);
   const outgoingPreviousSlot = outgoingPlayer ? previousSlotByPlayerId.get(outgoingPlayer.id) ?? null : null;
   const outgoingReplacement = outgoingPreviousSlot
     ? lineup.find((slot) => slot.slot.label === outgoingPreviousSlot.slot.label)?.player ?? null
@@ -443,12 +452,28 @@ export function LineupEditorModal({
                 <small>Bir oyuncu seç</small>
               </div>
               <div className="le-transfer-board-candidates" role="listbox" aria-label="Kadrodan ayrılabilecek oyuncular">
-                {departureCandidateGroups.map((group) => (
+                {departureCandidateGroups.map((group) => {
+                  const isOpen = openDepartureGroups.has(group.key);
+                  const groupPanelId = `departure-group-${group.key}`;
+                  return (
                   <div key={group.key} className="le-transfer-board-candidate-group" role="group" aria-label={group.label}>
-                    <div className="le-transfer-board-candidate-group-title">
+                    <button
+                      type="button"
+                      className="le-transfer-board-candidate-group-title"
+                      aria-expanded={isOpen}
+                      aria-controls={groupPanelId}
+                      onClick={() => setOpenDepartureGroups((current) => {
+                        const next = new Set(current);
+                        if (next.has(group.key)) next.delete(group.key);
+                        else next.add(group.key);
+                        return next;
+                      })}
+                    >
                       <span>{group.label}</span>
                       <small>{group.players.length} oyuncu</small>
-                    </div>
+                      <UiIcon name="arrow-right" />
+                    </button>
+                    {isOpen && <div id={groupPanelId} className="le-transfer-board-candidate-group-list">
                     {group.players.map((player) => {
                       const selected = player.id === outgoingId;
                       const currentSlot = previousSlotByPlayerId.get(player.id);
@@ -484,8 +509,10 @@ export function LineupEditorModal({
                         </button>
                       );
                     })}
+                    </div>}
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               <section className="le-transfer-board-decision" role="region" aria-label="Ayrılık kararı" aria-live="polite">

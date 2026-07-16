@@ -652,7 +652,7 @@ export function CardSelectScreen() {
             onClick={() => setDetailDrawer(null)}
           >
             <motion.aside
-              className="game-detail-dialog"
+              className={`game-detail-dialog ${detailDrawer === 'system' ? 'game-detail-dialog--tactic' : ''}`}
               role="dialog"
               aria-modal="true"
               aria-label={detailDrawer === 'synergy' ? 'Sinerji bilgileri' : detailDrawer === 'system' ? 'Oyun sistemi detayı' : 'Maç planı'}
@@ -677,7 +677,12 @@ export function CardSelectScreen() {
                   near={nearSynergies}
                 />
               ) : detailDrawer === 'system' && activeSystemCard ? (
-                <div className="game-detail-tactic-card">
+                <div
+                  className="game-detail-tactic-card"
+                  role="region"
+                  aria-label="Oyun sistemi içeriği"
+                  tabIndex={0}
+                >
                   <TacticCard card={activeSystemCard} squad={squad} activeTactics={activeTactics} expanded />
                 </div>
               ) : (
@@ -1584,6 +1589,8 @@ function ShareCardPreview({ opts }: { opts: ShareCardOptions }) {
       canvas.style.display = 'block';
       canvas.style.borderRadius = '14px';
       hostRef.current.replaceChildren(canvas);
+    }).catch(() => {
+      // Önizleme desteklenmiyorsa paylaşım bağlantısı ve indirme eylemleri çalışmaya devam eder.
     });
     return () => { cancelled = true; };
   }, [opts]);
@@ -1596,6 +1603,7 @@ export function RunEndScreen() {
   const analysis = runEndAnalysis;
   const playerName = displayName || 'Anonim';
   const [shareMsg, setShareMsg] = useState('');
+  const [synergiesOpen, setSynergiesOpen] = useState(false);
   const [liveRank, setLiveRank] = useState<{ rank: number; total: number; percent: number } | null>(null);
   const wins = roundHistory.filter((r) => r.matchResult?.outcome === 'win').length;
   const matchesPlayed = roundHistory.filter((r) => r.matchResult).length;
@@ -1905,13 +1913,21 @@ export function RunEndScreen() {
                 </section>
               )}
 
-              <div className="run-end-synergies">
-                <div className="run-end-section-head">
-                  <span>Bu run çalışan sinerjiler</span>
+              <section className="run-end-synergies run-end-synergies-disclosure">
+                <button
+                  type="button"
+                  className="run-end-section-head"
+                  aria-expanded={synergiesOpen}
+                  aria-controls="run-end-synergy-content"
+                  aria-label={`Çalışan sinerjiler · ${activeSynergyStats.length}`}
+                  onClick={() => setSynergiesOpen((open) => !open)}
+                >
+                  <span><UiIcon name="zap" /> Bu run çalışan sinerjiler</span>
                   <strong>{activeSynergyStats.length}</strong>
-                </div>
-                {activeSynergyStats.length ? (
-                  <div className="run-end-synergy-grid">
+                  <UiIcon name="arrow-right" />
+                </button>
+                {synergiesOpen && (activeSynergyStats.length ? (
+                  <div id="run-end-synergy-content" className="run-end-synergy-grid">
                     {activeSynergyStats.map((s) => (
                       <div
                         key={s.id}
@@ -1928,9 +1944,9 @@ export function RunEndScreen() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-neutral-500">Bu run&apos;da sinerji puanı yok</p>
-                )}
-              </div>
+                  <p id="run-end-synergy-content" className="text-sm text-neutral-500">Bu run&apos;da sinerji puanı yok</p>
+                ))}
+              </section>
 
               <details className="run-end-history-disclosure">
                 <summary>
@@ -1987,6 +2003,9 @@ export function RunEndScreen() {
                   <div>
                     <p className="run-end-share-kicker">Meydan okuma kartı</p>
                     <strong className="run-end-share-title">Arkadaşına bu seed’i gönder</strong>
+                    <p className="run-end-share-explainer">
+                      Bağlantıyı açan arkadaşın adını girip aynı seed ile başlar. PNG yalnızca skor kartıdır.
+                    </p>
                   </div>
                   <span className={`run-end-share-tier run-end-share-tier--${getShareTier(finalPercent ?? 50)}`}>
                     {getShareTierLabel(getShareTier(finalPercent ?? 50))}
@@ -1999,12 +2018,12 @@ export function RunEndScreen() {
                   {canNativeShare() ? (
                     <button type="button" className="btn-primary run-end-share-btn" onClick={handleNativeShare}>
                       <UiIcon name="arrow-right" />
-                      Paylaş
+                      Seed bağlantısını paylaş
                     </button>
                   ) : challengeUrl ? (
                     <button type="button" className="btn-primary run-end-share-btn" onClick={handleCopyLink}>
                       <UiIcon name="globe" />
-                      Linki kopyala
+                      Meydan okuma linkini kopyala
                     </button>
                   ) : null}
                   <button
@@ -2017,7 +2036,7 @@ export function RunEndScreen() {
                     }}
                   >
                     <UiIcon name="chart" />
-                    PNG indir
+                    Skor kartını indir
                   </button>
                 </div>
 

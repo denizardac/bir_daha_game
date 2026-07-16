@@ -13,11 +13,21 @@ beforeEach(() => {
     score: 11706,
     round: 15,
     displayName: 'felacity',
+    seed: 'free-friend-seed-123',
     roundHistory: [],
     squad: [],
     lossesCount: 2,
     discoveredSynergies: [],
-    runEndAnalysis: null,
+    runEndAnalysis: {
+      rank: 1,
+      totalPlayers: 1,
+      rankPercent: 50,
+      bestDecision: null,
+      worstMistake: null,
+      synergyStats: [{ id: 'test-synergy', name: 'Pas Ustası', icon: 'zap', activations: 4, points: 220 }],
+      badges: [],
+      scoreRecord: { isLeaderboardBest: true, isHallOfFameBest: false },
+    },
     newAchievements: [],
     newContentUnlocks: [],
     isDailySeed: false,
@@ -38,9 +48,14 @@ describe('Run sonu akışı', () => {
 
     expect(screen.getByRole('heading', { name: 'Teknik rapor' })).toBeTruthy();
     expect(screen.queryByText('Serbest Mod özeti')).toBeNull();
-    expect(screen.getByText(/Bu run çalışan sinerjiler/i)).toBeTruthy();
+    const synergiesToggle = screen.getByRole('button', { name: /Çalışan sinerjiler.*1/i });
+    expect(screen.queryByText('Pas Ustası')).toBeNull();
+    await user.click(synergiesToggle);
+    expect(screen.getByText('Pas Ustası')).toBeTruthy();
 
     const share = screen.getByRole('region', { name: 'Paylaşım' });
+    expect(within(share).getByText(/Bağlantıyı açan arkadaşın adını girip aynı seed/i)).toBeTruthy();
+    expect(within(share).getByRole('button', { name: /Meydan okuma linkini kopyala/i })).toBeTruthy();
     expect(within(share).getAllByRole('button').length).toBeLessThanOrEqual(2);
     expect(screen.queryByText('Görseli kopyala')).toBeNull();
     expect(screen.queryByText('Metni kopyala')).toBeNull();

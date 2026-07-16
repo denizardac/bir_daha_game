@@ -41,6 +41,8 @@ describe('Kart seçimindeki aktif oyun sistemi', () => {
     await user.click(screen.getByRole('button', { name: /Oyun sistemi.*Topla Oynama.*detaylarını aç/i }));
 
     const dialog = screen.getByRole('dialog', { name: 'Oyun sistemi detayı' });
+    const scrollArea = within(dialog).getByRole('region', { name: 'Oyun sistemi içeriği' });
+    expect(scrollArea.getAttribute('tabindex')).toBe('0');
     expect(within(dialog).getAllByText('Topla Oynama').length).toBeGreaterThan(0);
     expect(within(dialog).getByText('Seçince ne olur?')).toBeTruthy();
     expect(within(dialog).getByText('Kadrona etkisi')).toBeTruthy();

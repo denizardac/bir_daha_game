@@ -85,7 +85,8 @@ describe('LineupEditorModal critical flow', () => {
     render(<Harness onConfirm={onConfirm} />);
 
     const decision = screen.getByRole('region', { name: 'Transfer tahtası' });
-    expect(within(decision).getByText('İLK 11')).toBeTruthy();
+    const startersToggle = within(decision).getByRole('button', { name: /İlk 11.*oyuncu/i });
+    expect(startersToggle.getAttribute('aria-expanded')).toBe('true');
     expect(within(decision).getAllByText('mid-local').length).toBeGreaterThan(0);
     expect(within(decision).getByText('YERLİ KADRO')).toBeTruthy();
     expect(within(decision).getByText('Kapanır')).toBeTruthy();
@@ -97,6 +98,12 @@ describe('LineupEditorModal critical flow', () => {
     expect(within(decisionSlip).getByText('YERLİ')).toBeTruthy();
     expect(within(decisionSlip).getByText(/Yerine/i)).toBeTruthy();
     expect(within(decision).queryByRole('button', { name: 'Değiştir' })).toBeNull();
+
+    await user.click(startersToggle);
+    expect(startersToggle.getAttribute('aria-expanded')).toBe('false');
+    expect(within(decision).queryByRole('option', { name: /mid-local/i })).toBeNull();
+    await user.click(startersToggle);
+    expect(within(decision).getByRole('option', { name: /mid-local/i })).toBeTruthy();
 
     await user.click(within(decision).getByRole('option', { name: /striker-b.*ayrılacak oyuncu olarak seç/i }));
 

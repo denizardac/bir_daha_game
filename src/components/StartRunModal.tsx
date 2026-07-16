@@ -56,7 +56,9 @@ export function StartRunModal({ open, daily, defaultName = '', rivalScore, onCon
           </p>
         )}
         <p className="start-run-sub">
-          {daily
+          {rivalScore !== undefined
+            ? 'Teknik direktör adını yaz. Bağlantıdaki kartlar ve olay akışı aynı seed ile yeniden kurulacak.'
+            : daily
             ? 'Ranked tablosu ve paylaşım kartında görünecek isim. Her run için seçebilirsin.'
             : 'Run özeti ve paylaşım kartında görünecek isim. Serbest Mod sıralamaya yazılmaz.'}
         </p>
@@ -79,7 +81,7 @@ export function StartRunModal({ open, daily, defaultName = '', rivalScore, onCon
               Vazgeç
             </button>
             <button type="submit" className="btn-primary">
-              Başla
+              {rivalScore !== undefined ? 'Aynı seed ile başla' : 'Başla'}
             </button>
           </div>
         </form>
