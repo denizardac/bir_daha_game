@@ -14,6 +14,8 @@ import { StartRunModal } from '@/components/StartRunModal';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { getAnonymousId, loadPersisted } from '@/utils/storage';
+import { POSITION_BADGE, POSITION_LABELS } from '@/utils/positionStyle';
+import { iconForTag } from '@/utils/gameIcons';
 
 const MenuBiteTipsWidget = lazy(() => import('@/components/MenuBiteTipsWidget')
   .then((module) => ({ default: module.MenuBiteTipsWidget })));
@@ -39,7 +41,7 @@ export function MainMenu() {
   const [stats] = useState(() => getPersistedStats());
   const [playerId] = useState(() => getAnonymousId());
   const seasonTitle = getVerifiedChampionTitle(monthlyLegendRecord, playerId);
-  const closestUnlocks = getClosestUnlockStatuses(stats.unlocks, 2);
+  const closestUnlocks = getClosestUnlockStatuses(stats.unlocks, 1);
   const activeMechanics = getUnlockStatuses(stats.unlocks)
     .filter((status) => status.unlocked && status.unlock.reward.kind === 'mechanic');
   const monthlyLegendCard = buildMonthlyLegendCard(monthlyLegendRecord);
@@ -228,22 +230,37 @@ export function MainMenu() {
           <div className="menu-body menu-body--simple">
             <section className="menu-play-panel">
               <div className="menu-play-panel-inner">
+                {showContinuePrompt ? (
+                  <div className="menu-resume-stage">
+                    <div className="menu-resume-copy">
+                      <span className="menu-ranked-kicker">
+                        <UiIcon name={savedRun?.isDailySeed === false ? 'dice' : 'trophy'} />
+                        {savedRun?.isDailySeed === false ? 'Serbest Mod' : 'Günlük Ranked'} · Devam ediyor
+                      </span>
+                      <strong>Round {savedRun?.round ?? '?'}’ye dön</strong>
+                      <p>Kadron ve kararların kayıtlı. Tek dokunuşla kaldığın yerden devam et.</p>
+                    </div>
+                    <div className="menu-resume-ticket" aria-label="Devam eden run özeti">
+                      <div><span>Round</span><strong>{savedRun?.round ?? '?'}</strong></div>
+                      <div><span>Skor</span><strong>{formatScore(savedRun?.score ?? 0)}</strong></div>
+                      <div><span>Mod</span><strong>{savedRun?.isDailySeed === false ? 'Serbest' : 'Ranked'}</strong></div>
+                    </div>
+                    <div className="menu-resume-actions">
+                      <button type="button" className="btn-primary menu-resume-primary" onClick={continueRun}>
+                        <UiIcon name="play" /> Run’a devam et
+                      </button>
+                      <button type="button" className="btn-secondary" onClick={handleNewRunFromContinue}>
+                        Bu runı bırak · Yeni {savedRun?.isDailySeed === false ? 'Serbest' : 'Ranked'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                <>
                 <div className="menu-play-content">
                   <div className="menu-next-action">
                     <span className="menu-ranked-kicker"><UiIcon name="trophy" /> Günlük Ranked · {formatDailyDate()}</span>
-                    <strong>{showContinuePrompt ? 'Devam eden runun hazır' : 'Aynı fikstür. Tek sıralama.'}</strong>
-                    <p>
-                      {showContinuePrompt
-                        ? `Round ${savedRun?.round ?? '?'} · skor ${formatScore(savedRun?.score ?? 0)}. İstersen kaldığın yerden devam et.`
-                        : 'Herkes aynı oyuncu havuzuyla oynar. En iyi skorun Günlük, Haftalık ve Sezon sıralamasına birlikte yazılır.'}
-                    </p>
-                    {!showContinuePrompt && (
-                      <div className="menu-ranked-rules" aria-label="Ranked kuralları">
-                        <span><UiIcon name="check" /> Aynı seed</span>
-                        <span><UiIcon name="check" /> 15 round</span>
-                        <span><UiIcon name="check" /> En iyi skor geçerli</span>
-                      </div>
-                    )}
+                    <strong>Bugünün Ranked’i</strong>
+                    <p>Aynı seed · 15 round · en iyi skorun Günlük, Haftalık ve Sezon listelerine işler.</p>
                   </div>
 
                   {pendingChallenge && (
@@ -337,33 +354,34 @@ export function MainMenu() {
                   </section>
 
                   {monthlyLegendCard && monthlyLegendRecord && (
-                    <aside className="menu-monthly-legend" role="status">
+                    <aside
+                      className="menu-monthly-legend"
+                      role="status"
+                      tabIndex={0}
+                      aria-label={`${monthlyLegendRecord.displayName} Ayın Efsanesi kart detayı`}
+                    >
                       <span className="menu-monthly-legend-icon"><UiIcon name="trophy" /></span>
                       <div>
                         <small>{getSeasonLabel(monthlyLegendRecord.sourceMonthKey)} GLOBAL ŞAMPİYONU</small>
                         <strong>{monthlyLegendRecord.displayName}</strong>
-                        <p>Şampiyonun {monthlyLegendCard.currentRating} rating · {monthlyLegendCard.position} kartı bu ay iki modda da havuzda.</p>
+                        <p>Ayın Efsanesi kartı · bu ay iki modda da havuzda</p>
+                      </div>
+                      <div className="menu-legend-rating">
+                        <strong>{monthlyLegendCard.currentRating}</strong>
+                        <span>{POSITION_BADGE[monthlyLegendCard.position]}</span>
+                      </div>
+                      <div className="menu-legend-reveal">
+                        <span>{POSITION_LABELS[monthlyLegendCard.position]}</span>
+                        <div>
+                          {monthlyLegendCard.tags.map((tag) => (
+                            <span key={tag}><UiIcon name={iconForTag(tag)} />{tag}</span>
+                          ))}
+                        </div>
+                        <small>{formatScore(monthlyLegendRecord.totalScore)} puanla sezon şampiyonu</small>
                       </div>
                     </aside>
                   )}
                   </div>
-
-                  {showContinuePrompt ? (
-                    <div className="menu-continue-banner">
-                      <div className="menu-continue-text">
-                        <p className="menu-continue-title">Devam eden runun var</p>
-                        <p className="menu-continue-sub">
-                          Round {savedRun?.round ?? '?'} · Skor {formatScore(savedRun?.score ?? 0)}
-                          {' · '}Kaldığın yerden devam et veya yeni başla
-                        </p>
-                      </div>
-                      <div className="menu-continue-actions">
-                        <button type="button" className="btn-secondary menu-continue-btn" onClick={handleNewRunFromContinue}>Yeni Run</button>
-                        <button type="button" className="btn-primary menu-continue-btn" onClick={continueRun}>Devam Et</button>
-                      </div>
-                    </div>
-                  ) : null}
-
                 </div>
 
                 <div className="menu-play-actions">
@@ -384,6 +402,8 @@ export function MainMenu() {
                     <UiIcon name="arrow-right" className="menu-play-btn-arrow" />
                   </button>
                 </div>
+                </>
+                )}
               </div>
             </section>
 

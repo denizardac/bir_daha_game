@@ -67,4 +67,39 @@ describe('CollectionScreen unlock progression', () => {
     await user.keyboard('{Enter}');
     expect(legendsTab.getAttribute('aria-pressed')).toBe('true');
   });
+
+  it('kilitli olay ödülünün ne yapacağını ve iki kararını açıklar', () => {
+    render(<CollectionScreen />);
+
+    const card = screen.getByRole('heading', { name: 'Trait Ustası' }).closest('article')!;
+    expect(within(card).getByText(/Bir gecede üç farklı yönünü geliştirebilir/)).toBeTruthy();
+    expect(within(card).getByText(/ÖZEL ÇALIŞ/)).toBeTruthy();
+    expect(within(card).getByText(/DÜZENİ BOZMA/)).toBeTruthy();
+  });
+
+  it('çekilmiş efsanenin rating, mevki ve trait detaylarını gösterir', async () => {
+    const persisted = loadPersisted();
+    savePersisted({ ...persisted, collectedLegends: ['Gökhan Sazdağı'] });
+    const user = userEvent.setup();
+    render(<CollectionScreen />);
+
+    await user.click(screen.getByRole('button', { name: /Efsaneler/i }));
+    const card = screen.getByRole('article', { name: /Gökhan Sazdağı kart detayı/i });
+    expect(within(card).getByText('88')).toBeTruthy();
+    expect(within(card).getByText('SĞB')).toBeTruthy();
+    expect(within(card).getByText('DAYANIKLI')).toBeTruthy();
+  });
+
+  it('görülmüş olayın açıklamasını ve iki karar sonucunu arşivler', async () => {
+    const persisted = loadPersisted();
+    savePersisted({ ...persisted, seenEvents: ['evt_unlock_efsane_dokunusu'] });
+    const user = userEvent.setup();
+    render(<CollectionScreen />);
+
+    await user.click(screen.getByRole('button', { name: /Olaylar/i }));
+    const card = screen.getByRole('article', { name: /Efsane Dokunuşu olay detayı/i });
+    expect(within(card).getByText(/Kulüp efsanesi bir oyuncuyu özel çalışmaya aldı/)).toBeTruthy();
+    expect(within(card).getByText(/3 pozitif trait/)).toBeTruthy();
+    expect(within(card).getByText(/140 puan/)).toBeTruthy();
+  });
 });

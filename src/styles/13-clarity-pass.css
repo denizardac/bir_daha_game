@@ -1,0 +1,497 @@
+/* ============================================================
+   CLARITY PASS — okunabilir mikro tipografi, kart yüzleri, sade menü
+   ============================================================ */
+
+:root {
+  --copy-secondary: #b4c5c0;
+  --copy-muted: #8fa7a0;
+  --menu-gold: #d1a53a;
+  --menu-gold-light: #dfb94f;
+  --menu-gold-ink: #171205;
+}
+
+/* Scroll tek sahibi sayfa olsun. İçerik kadar uzayan menu-shell'in wheel'i
+   yutup pencereye aktarmadığı iç içe scroll tuzağını kaldırır. */
+.menu-shell {
+  overflow: visible !important;
+  overscroll-behavior-y: auto !important;
+}
+
+/* Yardımcı yazılar: 10–11px düşük kontrast yerine okunabilir ortak taban. */
+.menu-shell .menu-stat-sub,
+.menu-shell .menu-unlock-target span,
+.menu-shell .menu-unlock-target small,
+.menu-shell .menu-monthly-legend p,
+.collection-tile-sub,
+.collection-section-intro p,
+.unlock-collection-foot span,
+.unlock-collection-card > p,
+.achievement-desc,
+.achievement-progress,
+.collection-stat-label,
+.collection-stat-percent,
+.collection-monthly-legend-note,
+.ranked-period-head p,
+.ranked-rule-ticket small,
+.hof-ranking-rule small,
+.hof-season-status small {
+  color: var(--copy-muted) !important;
+  font-family: 'Barlow', sans-serif !important;
+  font-size: clamp(0.78rem, 0.76rem + 0.08vw, 0.86rem) !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+}
+
+.menu-shell .menu-stat-label,
+.menu-shell .menu-unlock-target strong,
+.menu-shell .menu-monthly-legend small,
+.unlock-collection-head > strong,
+.unlock-reward-kind {
+  font-size: 0.76rem !important;
+}
+
+.menu-shell .menu-unlock-target strong,
+.unlock-collection-foot strong {
+  color: var(--copy-secondary) !important;
+}
+
+.menu-shell .menu-unlock-target span,
+.menu-shell .menu-unlock-target strong {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+.menu-shell .menu-unlock-target small {
+  min-width: max-content;
+  color: #d6c68f !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Daha koyu, metalik ranked altını. */
+.menu-shell {
+  --ranked-gold: var(--menu-gold) !important;
+  --ranked-gold-soft: rgba(209, 165, 58, 0.13) !important;
+}
+
+.menu-shell .menu-play-btn:not(.menu-play-btn--free),
+.menu-resume-primary {
+  color: var(--menu-gold-ink) !important;
+  background:
+    linear-gradient(105deg, #bd8d25 0%, var(--menu-gold) 45%, var(--menu-gold-light) 100%) !important;
+  box-shadow: 0 13px 34px rgba(159, 113, 21, 0.2) !important;
+}
+
+.menu-shell .menu-play-btn:not(.menu-play-btn--free):hover,
+.menu-resume-primary:hover {
+  background: linear-gradient(105deg, #c9992c, #e1ba50) !important;
+}
+
+.menu-shell .menu-next-action > strong {
+  font-size: clamp(2.2rem, 3.4vw, 3.35rem) !important;
+}
+
+.menu-shell .menu-next-action > p {
+  max-width: 720px;
+  color: var(--copy-secondary) !important;
+  font-size: 0.94rem !important;
+}
+
+.menu-shell .menu-support-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 0.72fr);
+}
+
+.menu-shell .menu-unlock-panel,
+.menu-shell .menu-monthly-legend {
+  min-height: 92px;
+}
+
+/* Grande / Ayın Efsanesi: temel bilgiler görünür, trait yüzü hover/focus'ta. */
+.menu-shell .menu-monthly-legend {
+  position: relative;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  cursor: default;
+  outline: none;
+}
+
+.menu-shell .menu-monthly-legend:focus-visible {
+  box-shadow: 0 0 0 3px rgba(209, 165, 58, 0.28);
+}
+
+.menu-legend-rating {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(209, 165, 58, 0.22);
+}
+
+.menu-legend-rating strong {
+  color: var(--menu-gold-light) !important;
+  font: 900 1.85rem/0.9 'Barlow Condensed', sans-serif !important;
+}
+
+.menu-legend-rating span {
+  color: #dcc780;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.menu-legend-reveal {
+  position: absolute;
+  z-index: 12;
+  right: 10px;
+  top: calc(100% - 4px);
+  width: min(330px, calc(100vw - 32px));
+  padding: 13px;
+  border: 1px solid rgba(209, 165, 58, 0.38);
+  border-radius: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  background: linear-gradient(155deg, #1d190c, #090d0b 72%);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.48);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.menu-monthly-legend:hover .menu-legend-reveal,
+.menu-monthly-legend:focus .menu-legend-reveal,
+.menu-monthly-legend:focus-within .menu-legend-reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.menu-legend-reveal > span,
+.menu-legend-reveal > small {
+  display: block;
+  color: var(--copy-secondary) !important;
+  font: 600 0.8rem/1.35 'Barlow', sans-serif !important;
+}
+
+.menu-legend-reveal > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 8px 0;
+}
+
+.menu-legend-reveal > div span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 7px;
+  border: 1px solid rgba(209, 165, 58, 0.22);
+  border-radius: 999px;
+  color: #e3d7ad;
+  background: rgba(209, 165, 58, 0.08);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.menu-legend-reveal svg { width: 12px; }
+
+/* Devam eden run, yeni run dashboard'u değil tek amaçlı dönüş bileti. */
+.menu-resume-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px 36px;
+  align-items: end;
+  min-height: 300px;
+  padding: clamp(22px, 3vw, 38px) clamp(10px, 2vw, 24px);
+}
+
+.menu-resume-copy > strong {
+  display: block;
+  max-width: 680px;
+  margin-top: 12px;
+  color: #f3f4eb;
+  font: 800 clamp(3rem, 6vw, 5.7rem)/0.85 'Barlow Condensed', sans-serif;
+  letter-spacing: -0.035em;
+}
+
+.menu-resume-copy > p {
+  max-width: 570px;
+  margin: 15px 0 0;
+  color: var(--copy-secondary);
+  font: 500 0.95rem/1.5 'Barlow', sans-serif;
+}
+
+.menu-resume-ticket {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(90px, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(209, 165, 58, 0.24);
+  border-radius: 14px;
+  background: rgba(209, 165, 58, 0.055);
+}
+
+.menu-resume-ticket > div {
+  min-width: 100px;
+  padding: 14px;
+  border-right: 1px solid rgba(209, 165, 58, 0.15);
+}
+
+.menu-resume-ticket > div:last-child { border-right: 0; }
+.menu-resume-ticket span,
+.menu-resume-ticket strong { display: block; }
+.menu-resume-ticket span { color: var(--copy-muted); font: 800 0.68rem/1 'Barlow', sans-serif; letter-spacing: 0.1em; text-transform: uppercase; }
+.menu-resume-ticket strong { margin-top: 7px; color: var(--menu-gold-light); font: 850 1.55rem/1 'Barlow Condensed', sans-serif; }
+
+.menu-resume-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(94, 225, 210, 0.11);
+}
+
+.menu-resume-actions button {
+  min-height: 50px;
+  padding-inline: 20px;
+}
+
+.menu-resume-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 210px;
+  font-weight: 900;
+}
+
+.menu-resume-primary svg { width: 17px; }
+
+/* Koleksiyon kartı hover/focus yüzü */
+.collection-tile {
+  overflow: visible !important;
+  outline: none;
+}
+
+.collection-tile:not(.collection-tile--locked) {
+  cursor: default;
+}
+
+.collection-tile:not(.collection-tile--locked):focus-visible {
+  box-shadow: 0 0 0 3px rgba(94, 225, 210, 0.26);
+}
+
+.collection-tile:not(.collection-tile--locked):hover,
+.collection-tile:not(.collection-tile--locked):focus,
+.collection-tile:not(.collection-tile--locked):focus-within {
+  z-index: 50;
+  content-visibility: visible;
+  contain: none;
+}
+
+.collection-card-reveal {
+  position: absolute;
+  z-index: 30;
+  left: 50%;
+  top: 50%;
+  width: min(320px, calc(100vw - 28px));
+  padding: 14px;
+  border: 1px solid rgba(94, 225, 210, 0.34);
+  border-radius: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -42%) scale(0.96);
+  background: linear-gradient(155deg, #10221d, #070d0b 76%);
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.56);
+  text-align: left;
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.collection-tile:hover .collection-card-reveal,
+.collection-tile:focus .collection-card-reveal,
+.collection-tile:focus-within .collection-card-reveal {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.collection-player-reveal {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 11px;
+}
+
+.collection-player-score {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 4px;
+}
+
+.collection-player-score strong {
+  color: var(--menu-gold-light);
+  font: 900 2.35rem/0.9 'Barlow Condensed', sans-serif;
+}
+
+.collection-player-score span {
+  padding: 3px 6px;
+  border: 1px solid rgba(209, 165, 58, 0.28);
+  border-radius: 6px;
+  color: #e3cd83;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.collection-player-copy > span {
+  color: var(--copy-secondary);
+  font: 650 0.84rem/1.2 'Barlow', sans-serif;
+}
+
+.collection-player-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.collection-player-tags span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid rgba(94, 225, 210, 0.2);
+  border-radius: 999px;
+  color: #cce6df;
+  background: rgba(94, 225, 210, 0.07);
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.collection-player-tags svg { width: 11px; }
+.collection-player-copy q { display: block; margin-top: 9px; color: #a7bbb5; font: italic 500 0.76rem/1.35 'Barlow', sans-serif; }
+
+.collection-event-reveal > p {
+  margin: 0;
+  color: #d2dedb;
+  font: 500 0.82rem/1.45 'Barlow', sans-serif;
+}
+
+.collection-event-options {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.collection-event-options > span {
+  display: grid;
+  grid-template-columns: minmax(78px, auto) 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 7px 8px;
+  border: 1px solid rgba(94, 225, 210, 0.14);
+  border-radius: 8px;
+  color: var(--copy-muted);
+  background: rgba(0, 0, 0, 0.18);
+  font: 500 0.73rem/1.35 'Barlow', sans-serif;
+}
+
+.collection-event-options strong { color: #71dfd1; font-size: 0.68rem; letter-spacing: 0.04em; }
+
+/* Unlock kartlarında ödül artık yalnız isim değil, gerçek içeriğin özeti. */
+.unlock-reward-preview {
+  position: relative;
+  margin-top: 12px;
+  padding: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 11px;
+  outline: none;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.unlock-reward-preview:focus-visible { box-shadow: 0 0 0 3px rgba(94, 225, 210, 0.2); }
+.unlock-reward-preview--event { border-color: rgba(94, 225, 210, 0.23); }
+.unlock-reward-preview--player { border-color: rgba(209, 165, 58, 0.2); }
+.unlock-reward-preview--mechanic { border-color: rgba(167, 139, 250, 0.22); }
+
+.unlock-reward-preview-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 9px;
+}
+
+.unlock-reward-preview-head span {
+  color: var(--copy-muted);
+  font: 800 0.66rem/1 'Barlow', sans-serif;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.unlock-reward-preview-head strong { color: #f0e7c7; font-size: 0.86rem; text-align: right; }
+.unlock-reward-preview > p { margin: 7px 0 0; color: var(--copy-secondary); font: 500 0.8rem/1.4 'Barlow', sans-serif; }
+
+.unlock-reward-preview .collection-card-reveal {
+  position: static;
+  width: auto;
+  margin-top: 9px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  opacity: 1;
+  transform: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.unlock-reward-preview--player .collection-player-reveal {
+  position: absolute;
+  z-index: 40;
+  left: 50%;
+  top: calc(100% + 6px);
+  width: min(300px, calc(100vw - 28px));
+  padding: 13px;
+  border: 1px solid rgba(209, 165, 58, 0.32);
+  border-radius: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -6px);
+  background: linear-gradient(155deg, #181509, #080d0b 76%);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.unlock-reward-preview--player:hover .collection-player-reveal,
+.unlock-reward-preview--player:focus .collection-player-reveal,
+.unlock-reward-preview--player:focus-within .collection-player-reveal {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.menu-shell .menu-play-btn-sub {
+  color: rgba(23, 18, 5, 0.72) !important;
+  font: 650 0.78rem/1.25 'Barlow', sans-serif !important;
+}
+
+.menu-shell .menu-play-btn--free .menu-play-btn-sub {
+  color: #91ada6 !important;
+}
+
+.unlock-collection-card { display: flex; flex-direction: column; }
+.unlock-collection-grid { align-items: start; }
+.unlock-progress-bar { margin-bottom: 0.45rem !important; }
+.unlock-collection-foot { min-height: 1.25rem; }
+
+@media (max-width: 860px) {
+  .menu-shell .menu-support-grid { grid-template-columns: 1fr; }
+  .menu-resume-stage { grid-template-columns: 1fr; min-height: 0; }
+  .menu-resume-ticket { width: 100%; }
+}
+
+@media (max-width: 620px) {
+  .menu-resume-copy > strong { font-size: 3.35rem; }
+  .menu-resume-ticket { grid-template-columns: repeat(3, 1fr); }
+  .menu-resume-ticket > div { min-width: 0; padding: 10px; }
+  .menu-resume-actions { flex-direction: column; }
+  .menu-resume-actions button { width: 100%; }
+  .menu-legend-reveal { right: 0; }
+  .collection-card-reveal { width: min(300px, calc(100vw - 22px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collection-card-reveal,
+  .menu-legend-reveal { transition: none; }
+}

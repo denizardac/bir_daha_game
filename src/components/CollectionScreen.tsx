@@ -8,6 +8,10 @@ import { buildMonthlyLegendCard } from '@/engine/monthlyLegend';
 import { getSeasonLabel } from '@/engine/hallOfFame';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
+import { POSITION_BADGE, POSITION_LABELS } from '@/utils/positionStyle';
+import { iconForTag } from '@/utils/gameIcons';
+import type { EventCard, PlayerCard } from '@/types';
+import type { UnlockRewardKind } from '@/engine/unlocks';
 
 type Tab = 'kilit' | 'efsane' | 'olay' | 'basarim';
 
@@ -26,6 +30,74 @@ const EVENT_CATEGORY_ICON: Record<string, UiIconName> = {
   fiziksel: 'shield',
   ozel: 'sparkles',
 };
+
+const MECHANIC_DESCRIPTIONS: Record<string, string> = {
+  mechanic_hedefli_scout: 'Serbest Modda run başına bir kez mevki seçerek ücretsiz oyuncu ararsın.',
+  mechanic_kriz_kontrati: 'Kadro 5 kişiye düştüğünde toparlanma oyuncusu teklifini garanti eder.',
+};
+
+function PlayerReveal({ player }: { player: PlayerCard }) {
+  return (
+    <div className="collection-card-reveal collection-player-reveal">
+      <div className="collection-player-score">
+        <strong>{player.currentRating}</strong>
+        <span>{POSITION_BADGE[player.position]}</span>
+      </div>
+      <div className="collection-player-copy">
+        <span>{POSITION_LABELS[player.position]}</span>
+        <div className="collection-player-tags">
+          {player.tags.slice(0, 4).map((tag) => (
+            <span key={tag}><UiIcon name={iconForTag(tag)} />{tag}</span>
+          ))}
+        </div>
+        {player.signatureQuote && <q>{player.signatureQuote}</q>}
+      </div>
+    </div>
+  );
+}
+
+function EventReveal({ event }: { event: EventCard }) {
+  return (
+    <div className="collection-card-reveal collection-event-reveal">
+      <p>{event.description}</p>
+      <div className="collection-event-options">
+        <span><strong>{event.optionA.label}</strong>{event.optionA.description}</span>
+        <span><strong>{event.optionB.label}</strong>{event.optionB.description}</span>
+      </div>
+    </div>
+  );
+}
+
+function UnlockRewardPreview({
+  kind,
+  contentId,
+  name,
+}: {
+  kind: UnlockRewardKind;
+  contentId: string;
+  name: string;
+}) {
+  const player = kind === 'player' ? PLAYER_POOL.find((candidate) => candidate.id === contentId) : undefined;
+  const event = kind === 'event' ? EVENT_CARDS.find((candidate) => candidate.id === contentId) : undefined;
+  const kindLabel = kind === 'player' ? 'Açılacak oyuncu' : kind === 'event' ? 'Açılacak olay' : 'Açılacak mekanik';
+
+  return (
+    <div className={`unlock-reward-preview unlock-reward-preview--${kind}`} tabIndex={0}>
+      <div className="unlock-reward-preview-head">
+        <span>{kindLabel}</span>
+        <strong>{name}</strong>
+      </div>
+      {player && (
+        <>
+          <p>{player.currentRating} rating · {POSITION_BADGE[player.position]} · {POSITION_LABELS[player.position]}</p>
+          <PlayerReveal player={player} />
+        </>
+      )}
+      {event && <EventReveal event={event} />}
+      {kind === 'mechanic' && <p>{MECHANIC_DESCRIPTIONS[contentId] ?? 'Serbest Modda yeni bir oyun kuralı açar.'}</p>}
+    </div>
+  );
+}
 
 /** Havuzdaki benzersiz efsane kartlar (isim bazlı) */
 const LEGEND_POOL = (() => {
@@ -146,8 +218,8 @@ export function CollectionScreen() {
                   </div>
                   <div className="unlock-collection-foot">
                     <span>{status.unlocked ? 'Tamamlandı' : blockedBy ? `Önce: ${blockedBy}` : `${status.current} / ${status.unlock.target}`}</span>
-                    <strong>Ödül: {status.unlock.reward.name}</strong>
                   </div>
+                  <UnlockRewardPreview {...status.unlock.reward} />
                 </article>
               );
             })}
@@ -167,19 +239,22 @@ export function CollectionScreen() {
               const ok = collectedLegends.has(p.name);
               const arch = getPlayerArchetype(p);
               return (
-                <div
+                <article
                   key={p.id}
                   className={`collection-tile ${ok ? '' : 'collection-tile--locked'}`}
                   style={ok && p.signature && p.signatureColor ? { borderColor: p.signatureColor } : undefined}
+                  tabIndex={ok ? 0 : undefined}
+                  aria-label={ok ? `${p.name} kart detayı` : undefined}
                 >
                   <div className="collection-tile-icon">
                     <UiIcon name={ok ? (p.signature ? 'sparkles' : 'trophy') : 'lock'} />
                   </div>
                   <div className="collection-tile-name">{ok ? p.name : '???'}</div>
                   <div className="collection-tile-sub">
-                    {ok ? `${arch.label} · ${p.currentRating}` : 'Henüz çekilmedi'}
+                    {ok ? `${POSITION_BADGE[p.position]} · ${arch.label}` : 'Henüz çekilmedi'}
                   </div>
-                </div>
+                  {ok && <PlayerReveal player={p} />}
+                </article>
               );
             })}
             </div>
@@ -191,13 +266,19 @@ export function CollectionScreen() {
             {EVENT_CARDS.map((e) => {
               const ok = seenEvents.has(e.id);
               return (
-                <div key={e.id} className={`collection-tile ${ok ? '' : 'collection-tile--locked'}`}>
+                <article
+                  key={e.id}
+                  className={`collection-tile ${ok ? '' : 'collection-tile--locked'}`}
+                  tabIndex={ok ? 0 : undefined}
+                  aria-label={ok ? `${e.title} olay detayı` : undefined}
+                >
                   <div className="collection-tile-icon">
                     <UiIcon name={ok ? (EVENT_CATEGORY_ICON[e.category] ?? 'circle-dot') : 'lock'} />
                   </div>
                   <div className="collection-tile-name">{ok ? e.title : '???'}</div>
                   <div className="collection-tile-sub">{ok ? e.category : 'Henüz görülmedi'}</div>
-                </div>
+                  {ok && <EventReveal event={e} />}
+                </article>
               );
             })}
           </div>
