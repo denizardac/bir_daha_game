@@ -23,6 +23,21 @@ describe('PWA deployment safety contract', () => {
     expect(headers).toMatch(/\/assets\/\*[\s\S]*?Cache-Control: public, max-age=31536000, immutable/);
   });
 
+  it('never rewrites a missing hashed asset to the HTML shell', () => {
+    const vercel = JSON.parse(projectFile('vercel.json')) as {
+      rewrites?: Array<{ source: string; destination: string }>;
+    };
+
+    expect(vercel.rewrites).toContainEqual({
+      source: '/((?!assets/).*)',
+      destination: '/index.html',
+    });
+    expect(vercel.rewrites).not.toContainEqual({
+      source: '/(.*)',
+      destination: '/index.html',
+    });
+  });
+
   it('keeps a new worker waiting for user approval and loads recovery before the hashed app entry', () => {
     const viteConfig = projectFile('vite.config.ts');
     const main = projectFile('src/main.tsx');
