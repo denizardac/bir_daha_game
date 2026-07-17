@@ -274,10 +274,43 @@ export function MainMenu() {
                 ) : (
                 <>
                 <div className="menu-play-content">
-                  <div className="menu-next-action">
-                    <span className="menu-ranked-kicker"><UiIcon name="trophy" /> Günlük Ranked · {formatDailyDate()}</span>
-                    <strong>Bugünün Ranked’i</strong>
-                    <p>Aynı seed · 15 round · en iyi skorun Günlük, Haftalık ve Sezon listelerine işler.</p>
+                  <div className="menu-kickoff-stage">
+                    <div className="menu-next-action">
+                      <span className="menu-ranked-kicker"><UiIcon name="trophy" /> Günlük Ranked · {formatDailyDate()}</span>
+                      <strong>Bugünün fikstürü hazır.</strong>
+                      <p>Aynı seed, 15 round. Ranked’de herkese karşı yarış veya kendi futbol hikâyeni serbestçe kur.</p>
+                    </div>
+
+                    <div className="menu-play-actions" aria-label="Oyun modunu seç">
+                      <button type="button" className="btn-primary menu-play-btn" data-mark="R" aria-label="Ranked Run başlat" onClick={() => handlePlayClick(true)}>
+                        <span className="menu-mode-head">
+                          <span className="menu-play-btn-kicker"><UiIcon name="trophy" /> Bugünün maçı</span>
+                          <span className="menu-mode-length">15 round</span>
+                        </span>
+                        <span className="menu-mode-main">
+                          <span className="menu-play-btn-label">Ranked Run</span>
+                          <span className="menu-mode-go">Başlat <UiIcon name="arrow-right" /></span>
+                        </span>
+                        <span className="menu-mode-facts" aria-hidden="true">
+                          <span><strong>Aynı seed</strong><small>Herkese karşı</small></span>
+                          <span><strong>3 liste</strong><small>Gün · Hafta · Sezon</small></span>
+                        </span>
+                      </button>
+                      <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" data-mark="∞" aria-label="Serbest Run başlat" onClick={() => handlePlayClick(false)}>
+                        <span className="menu-mode-head">
+                          <span className="menu-play-btn-kicker"><UiIcon name="dice" /> Serbest mod</span>
+                          <span className="menu-mode-length">Sınırsız</span>
+                        </span>
+                        <span className="menu-mode-main">
+                          <span className="menu-play-btn-label">Serbest Run</span>
+                          <span className="menu-mode-go">Başlat <UiIcon name="arrow-right" /></span>
+                        </span>
+                        <span className="menu-mode-facts" aria-hidden="true">
+                          <span><strong>Rastgele seed</strong><small>Her run yeni</small></span>
+                          <span><strong>Unlock havuzu</strong><small>Ödüller açık</small></span>
+                        </span>
+                      </button>
+                    </div>
                   </div>
 
                   {pendingChallenge && (
@@ -342,22 +375,30 @@ export function MainMenu() {
                     <div className="menu-unlock-panel-head">
                       <div>
                         <span>Kalıcı ilerleme</span>
-                        <strong>En yakın hedefler</strong>
+                        <strong>Sıradaki açılım</strong>
                       </div>
-                      <button type="button" onClick={() => setScreen('collection')}>Tümünü gör →</button>
+                      <button type="button" onClick={() => setScreen('collection')}>Koleksiyon <UiIcon name="arrow-right" /></button>
                     </div>
                     {closestUnlocks.length > 0 ? (
                       <div className="menu-unlock-targets">
                         {closestUnlocks.map((status) => (
                           <div key={status.unlock.id} className="menu-unlock-target">
-                            <div>
-                              <strong>{status.unlock.name}</strong>
-                              <span>{status.unlock.reward.name}</span>
+                            <div className="menu-unlock-target-main">
+                              <span className="menu-unlock-emblem"><UiIcon name="target" /></span>
+                              <div className="menu-unlock-copy">
+                                <span>Hedef · {status.unlock.name}</span>
+                                <strong>{status.unlock.reward.name}</strong>
+                                <small>Bir sonraki kalıcı ödül</small>
+                              </div>
+                              <strong className="menu-unlock-percent">%{status.percent}</strong>
                             </div>
-                            <div className="menu-unlock-mini-bar" aria-label={`${status.unlock.name} yüzde ${status.percent}`}>
-                              <span style={{ width: `${status.percent}%` }} />
+                            <div className="menu-unlock-progress-row">
+                              <small>{status.current}</small>
+                              <div className="menu-unlock-mini-bar" aria-label={`${status.unlock.name} yüzde ${status.percent}`}>
+                                <span style={{ width: `${status.percent}%` }} />
+                              </div>
+                              <small>{status.unlock.target}</small>
                             </div>
-                            <small>{status.current}/{status.unlock.target}</small>
                           </div>
                         ))}
                       </div>
@@ -378,50 +419,35 @@ export function MainMenu() {
                     <aside
                       className="menu-monthly-legend"
                       role="status"
-                      tabIndex={0}
-                      aria-label={`${monthlyLegendRecord.displayName} Ayın Efsanesi kart detayı`}
+                      aria-label={`${monthlyLegendRecord.displayName}, ${monthlyLegendCard.currentRating} reytingli Ayın Efsanesi`}
                     >
-                      <span className="menu-monthly-legend-icon"><UiIcon name="trophy" /></span>
-                      <div>
-                        <small>{getSeasonLabel(monthlyLegendRecord.sourceMonthKey)} GLOBAL ŞAMPİYONU</small>
-                        <strong>{monthlyLegendRecord.displayName}</strong>
-                        <p>Ayın Efsanesi kartı · bu ay iki modda da havuzda</p>
+                      <div className="menu-champion-top">
+                        <span><UiIcon name="trophy" /> {getSeasonLabel(monthlyLegendRecord.sourceMonthKey)} global şampiyonu</span>
+                        <small>Ayın Efsanesi</small>
                       </div>
-                      <div className="menu-legend-rating">
-                        <strong>{monthlyLegendCard.currentRating}</strong>
-                        <span>{POSITION_BADGE[monthlyLegendCard.position]}</span>
+                      <div className="menu-champion-player">
+                        <div className="menu-champion-rating">
+                          <strong>{monthlyLegendCard.currentRating}</strong>
+                          <span>{POSITION_BADGE[monthlyLegendCard.position]}</span>
+                        </div>
+                        <div className="menu-champion-identity">
+                          <small>Şampiyon kartı</small>
+                          <strong>{monthlyLegendRecord.displayName}</strong>
+                          <span>{POSITION_LABELS[monthlyLegendCard.position]}</span>
+                        </div>
+                        <span className="menu-champion-shirt"><UiIcon name="shirt" /></span>
                       </div>
-                      <div className="menu-legend-reveal">
-                        <span>{POSITION_LABELS[monthlyLegendCard.position]}</span>
-                        <div>
-                          {monthlyLegendCard.tags.map((tag) => (
+                      <div className="menu-champion-foot">
+                        <div className="menu-champion-traits">
+                          {monthlyLegendCard.tags.slice(0, 2).map((tag) => (
                             <span key={tag}><UiIcon name={iconForTag(tag)} />{tag}</span>
                           ))}
                         </div>
-                        <small>{formatScore(monthlyLegendRecord.totalScore)} puanla sezon şampiyonu</small>
+                        <span className="menu-champion-score">{formatScore(monthlyLegendRecord.totalScore)} puan</span>
                       </div>
                     </aside>
                   )}
                   </div>
-                </div>
-
-                <div className="menu-play-actions">
-                  <button type="button" className="btn-primary menu-play-btn" onClick={() => handlePlayClick(true)}>
-                    <span className="menu-play-btn-icon"><UiIcon name="play" /></span>
-                    <span>
-                      <span className="menu-play-btn-label">Ranked Run Başlat</span>
-                      <span className="menu-play-btn-sub">Günlük · Haftalık · Sezon sıralamasına işler</span>
-                    </span>
-                    <UiIcon name="arrow-right" className="menu-play-btn-arrow" />
-                  </button>
-                  <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" onClick={() => handlePlayClick(false)}>
-                    <span className="menu-play-btn-icon"><UiIcon name="dice" /></span>
-                    <span>
-                      <span className="menu-play-btn-label">Serbest Run Başlat</span>
-                      <span className="menu-play-btn-sub">Rastgele seed · unlock havuzu · sıralamasız</span>
-                    </span>
-                    <UiIcon name="arrow-right" className="menu-play-btn-arrow" />
-                  </button>
                 </div>
                 </>
                 )}
