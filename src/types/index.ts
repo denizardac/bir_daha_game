@@ -160,6 +160,20 @@ export interface MatchHighlight {
   points: number;
 }
 
+export interface MatchForecast {
+  /** Sahaya çıkan oyuncuların geçici etkiler dahil ham rating ortalaması. */
+  teamOverall: number;
+  opponentOverall: number;
+  /** Pozisyon, moral, tag, sinerji ve taktikler sonrası efektif güçler. */
+  teamAttack: number;
+  teamDefense: number;
+  opponentAttack: number;
+  opponentDefense: number;
+  winProbability: number;
+  drawProbability: number;
+  lossProbability: number;
+}
+
 export interface MatchResult {
   outcome: MatchOutcome;
   goalsFor: number;
@@ -170,6 +184,8 @@ export interface MatchResult {
   activeSynergies: string[];
   newlyDiscoveredSynergies: string[];
   roundPoints: number;
+  /** Eski kayıtlarla uyumluluk için opsiyonel; yeni maç motoru her zaman üretir. */
+  forecast?: MatchForecast;
   wowMoment?: string;
   events: MatchEvent[];
 }

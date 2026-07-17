@@ -48,14 +48,34 @@ export function hasWidePlayer(squad: PlayerCard[]): boolean {
 
 export function conditionalAttackMod(tactics: ActiveTactic[], squad: PlayerCard[]): number {
   let mod = 0;
-  if (hasTactic(tactics, 'tactic_tekli_forvet')) mod += hasSingleFinisherForward(squad) ? 12 : -8;
+  if (hasTactic(tactics, 'tactic_yuksek_blok') && isHighPressReady(squad)) mod += 6;
+  if (hasTactic(tactics, 'tactic_topla_oyn')) {
+    const technical = countTag(squad, 'TEKNİK');
+    mod += technical >= 4 ? 4 : technical < 2 ? -3 : 0;
+  }
+  if (hasTactic(tactics, 'tactic_direkt')) {
+    const fast = countTag(squad, 'HIZLI');
+    mod += fast >= 3 ? 7 : fast < 2 ? -3 : 0;
+  }
+  if (hasTactic(tactics, 'tactic_tiki_taka')) {
+    const technical = countTag(squad, 'TEKNİK');
+    mod += technical >= 5 ? 6 : technical < 3 ? -4 : 0;
+  }
+  if (hasTactic(tactics, 'tactic_kanat_bindirme')) {
+    const fastWide = countFastWidePlayers(squad);
+    mod += fastWide >= 2 ? 8 : fastWide === 1 ? 3 : 0;
+  }
+  if (hasTactic(tactics, 'tactic_tekli_forvet')) mod += hasSingleFinisherForward(squad) ? 10 : -8;
   if (hasTactic(tactics, 'tactic_gegenpress') && isGegenpressReady(squad)) mod += 8;
   return mod;
 }
 
 export function conditionalDefenseMod(tactics: ActiveTactic[], squad: PlayerCard[]): number {
   let mod = 0;
+  if (hasTactic(tactics, 'tactic_yuksek_blok') && isHighPressReady(squad)) mod += 3;
   if (hasTactic(tactics, 'tactic_yuksek_blok') && !isHighPressReady(squad)) mod -= 6;
+  if (hasTactic(tactics, 'tactic_topla_oyn') && countTag(squad, 'TEKNİK') >= 4) mod += 5;
+  if (hasTactic(tactics, 'tactic_tiki_taka') && countTag(squad, 'TEKNİK') >= 5) mod += 6;
   if (hasTactic(tactics, 'tactic_gegenpress') && !isGegenpressReady(squad)) mod -= 8;
   if (hasTactic(tactics, 'tactic_kanat_bindirme') && !hasWidePlayer(squad)) mod -= 6;
   return mod;

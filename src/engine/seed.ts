@@ -41,7 +41,7 @@ function slugForDay(dayKey: string): string {
 
 export function getDailySeed(now = new Date()): string {
   const day = getDailyDateKey(now);
-  return `${day}-${slugForDay(day)}-bir-daha-v1`;
+  return `${day}-${slugForDay(day)}-bir-daha-v2`;
 }
 
 const TR_MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];

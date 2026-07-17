@@ -69,18 +69,15 @@ export function analyzeEgoReplay(
         continue;
       }
 
-      const altMatch = simulateMatch(
+      const altMatch = simulateMatch({
         seed,
-        r.round,
-        altSquad,
+        round: r.round,
+        squad: altSquad,
         morale,
-        11,
-        discovered,
-        altTactics,
-        0,
-        0,
+        discoveredSynergies: discovered,
+        activeTactics: altTactics,
         lossesCount,
-      );
+      });
       const altPoints = calculateRoundPoints(
         altMatch,
         altSquad,

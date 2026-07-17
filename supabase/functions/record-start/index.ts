@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { expectedDailySeed } from '../_shared/dailySeed.ts';
 
 type Body = {
   playerId: string;
@@ -55,6 +56,7 @@ function validate(body: Body): string | null {
   if (!body.seed || body.seed.length > 80) return 'Geçersiz seed';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(body.dayKey)) return 'Geçersiz gün';
   if (typeof body.isDaily !== 'boolean') return 'Geçersiz mod';
+  if (body.isDaily && body.seed !== expectedDailySeed(body.dayKey)) return 'Geçersiz Günlük Ranked seed';
   return null;
 }
 

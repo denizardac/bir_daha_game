@@ -241,6 +241,24 @@ describe('lineupPlacement — genel kurallar', () => {
     expect(slot352(squad, 'sok')).toBe('SĞK');
   });
 
+  it.each(['352', '3412'])('%s — SĞK yeteneği olmayan sağ bek kanat slotuna geçirilmez', (formation) => {
+    const squad = [
+      p({ id: 'kl', name: 'KL', position: 'KL', currentRating: 70, rating: 70 }),
+      p({ id: 'stp1', name: 'S1', position: 'STP', currentRating: 72, rating: 72 }),
+      p({ id: 'stp2', name: 'S2', position: 'STP', currentRating: 71, rating: 71 }),
+      p({ id: 'stp3', name: 'S3', position: 'STP', currentRating: 70, rating: 70 }),
+      p({
+        id: 'right-back-only', name: 'Yalnız Sağ Bek', position: 'SÖB', flexPositions: [],
+        currentRating: 69, rating: 69,
+      }),
+    ];
+
+    const placed = assignSquadToFormation(squad, formation)
+      .find((slot) => slot.player?.id === 'right-back-only');
+
+    expect(placed?.slot.label).not.toBe('SĞK');
+  });
+
   it('çift SF — ilk SF doluyken SLK boş ikinci SF’ye kayıp native OOS oyuncusuna OOS açar', () => {
     const slots: PlacementSlotDef[] = [
       { label: 'KL', preferred: ['KL'], zone: 'kaleci' },

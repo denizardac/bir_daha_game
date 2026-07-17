@@ -115,6 +115,7 @@ function getPlayerContentAccess(
   return {
     isDailySeed,
     unlockedPlayerIds: getUnlockedContentIds(unlocks, 'player'),
+    // Ayın Efsanesi global içeriktir; kişisel unlock değildir ve her iki havuza girer.
     globalPlayers: monthlyLegend ? [monthlyLegend] : [],
     ...options,
   };
@@ -705,6 +706,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Meydan okuma seed'i bugünün günlük seed'i değilse serbest mod sayılır —
     // sunucu da günlük skorlarda seed↔gün eşleşmesi arıyor.
     const isDaily = seedOverride ? isChallengeSeedDaily(seed) : daily;
+    // Günlük devamlılık Ranked'de küçük bir teşvik verir; Serbest Mod standart başlar.
     const streakBonus = isDaily ? getDailyStreakBonus(p.dailyStreak) : getDailyStreakBonus(0);
     const run = initialRun(seed, isDaily, p.isFirstRun, name, streakBonus);
     clearRun();
@@ -1032,21 +1034,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
 
-    const match = simulateMatch(
-      state.seed,
-      state.round,
+    const match = simulateMatch({
+      seed: state.seed,
+      round: state.round,
       squad,
-      state.morale,
-      state.maxSquadSize,
-      state.discoveredSynergies,
+      morale: state.morale,
+      discoveredSynergies: state.discoveredSynergies,
       activeTactics,
-      state.nextMatchRisk,
-      state.nextMatchBonus,
-      state.lossesCount,
-      state.isDailySeed,
-      state.manualLineup,
-      state.round === state.maxRounds ? getFinaleRivalName(state.roundHistory) : null,
-    );
+      matchRisk: state.nextMatchRisk,
+      matchBonus: state.nextMatchBonus,
+      lossesCount: state.lossesCount,
+      isDailySeed: state.isDailySeed,
+      manualLineup: state.manualLineup,
+      opponentNameOverride: state.round === state.maxRounds ? getFinaleRivalName(state.roundHistory) : null,
+    });
 
     set({
       squad,
@@ -1086,21 +1087,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const squad = transferDecision.finalSquad;
     const manualLineup = transferDecision.manualLineup;
     const unlockTelemetry = updateRunUnlockTelemetry(state.unlockTelemetry, squad, state.morale);
-    const match = simulateMatch(
-      state.seed,
-      state.round,
+    const match = simulateMatch({
+      seed: state.seed,
+      round: state.round,
       squad,
-      state.morale,
-      state.maxSquadSize,
-      state.discoveredSynergies,
-      state.activeTactics,
-      state.nextMatchRisk,
-      state.nextMatchBonus,
-      state.lossesCount,
-      state.isDailySeed,
+      morale: state.morale,
+      discoveredSynergies: state.discoveredSynergies,
+      activeTactics: state.activeTactics,
+      matchRisk: state.nextMatchRisk,
+      matchBonus: state.nextMatchBonus,
+      lossesCount: state.lossesCount,
+      isDailySeed: state.isDailySeed,
       manualLineup,
-      state.round === state.maxRounds ? getFinaleRivalName(state.roundHistory) : null,
-    );
+      opponentNameOverride: state.round === state.maxRounds ? getFinaleRivalName(state.roundHistory) : null,
+    });
     set({
       squad,
       manualLineup,
@@ -1246,21 +1246,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
     };
 
     // Antrenman normal round'da oyuncu seçiminin yerine geçer: nitelik eklenir, ardından maç oynanır.
-    const match = simulateMatch(
-      state.seed,
-      state.round,
+    const match = simulateMatch({
+      seed: state.seed,
+      round: state.round,
       squad,
-      state.morale,
-      state.maxSquadSize,
-      state.discoveredSynergies,
-      state.activeTactics,
-      state.nextMatchRisk,
-      state.nextMatchBonus,
-      state.lossesCount,
-      state.isDailySeed,
-      state.manualLineup,
-      state.round === state.maxRounds ? getFinaleRivalName(state.roundHistory) : null,
-    );
+      morale: state.morale,
+      discoveredSynergies: state.discoveredSynergies,
+      activeTactics: state.activeTactics,
+      matchRisk: state.nextMatchRisk,
+      matchBonus: state.nextMatchBonus,
+      lossesCount: state.lossesCount,
+      isDailySeed: state.isDailySeed,
+      manualLineup: state.manualLineup,
+      opponentNameOverride: state.round === state.maxRounds ? getFinaleRivalName(state.roundHistory) : null,
+    });
 
     set({
       squad,

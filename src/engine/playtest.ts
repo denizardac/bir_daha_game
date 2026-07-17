@@ -225,7 +225,17 @@ export function simulateFullRun(seed: string, maxRounds = 15, strategy: PickStra
       squad = applyPlayerToSquad(squad, pick, 11, morale, activeTactics);
     }
 
-    const match = simulateMatch(seed, round, squad, morale, 11, discovered, activeTactics, nextMatchRisk, nextMatchBonus, lossesCount);
+    const match = simulateMatch({
+      seed,
+      round,
+      squad,
+      morale,
+      discoveredSynergies: discovered,
+      activeTactics,
+      matchRisk: nextMatchRisk,
+      matchBonus: nextMatchBonus,
+      lossesCount,
+    });
     const points = calculateRoundPoints(match, squad, morale, streak, round, lossesCount, activeTactics, 0, lossesCount === 0);
     score += points;
     nextMatchRisk = 0;

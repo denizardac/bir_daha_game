@@ -95,6 +95,7 @@ Production hosting panelinde de ayni iki degisken olmali:
 - Sadece POST kabul eder.
 - Origin allowlist uygular.
 - Oyuncu, isim, seed, gun, mod formatlarini kontrol eder.
+- Gunluk modda o gunun tam `v2` Ranked seed'ini dogrular.
 - Player/gun basina temel spam limiti uygular.
 - `run_starts` yazimini service role ile yapar.
 

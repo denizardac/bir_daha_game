@@ -19,7 +19,7 @@ GitHub + Cloudflare Pages ile yayin akisi.
 
 - Digest dogrulamasi: istemciyle ayni kanonik payload uzerinden SHA-256 karsilastirmasi
 - HMAC-SHA256 imza: kayit `integrity_digest` alanina sunucu gizli anahtariyla imzalanip yazilir
-- Gunluk modda seed `dayKey` ile baslamak zorunda (baska gune / uydurma seed'e skor basilamaz)
+- Gunluk modda hem run baslangici hem skor gonderimi, o gun icin uretilen tam `v2` Ranked seed'iyle birebir eslesmek zorunda
 - `dayKey` sunucu saatinden ±2 gunden fazla sapamaz (gecmise skor basilamaz)
 - Skor, ayni seed icin kayitli bir `run_starts` satirina baglidir — `record-start` cagrilmadan skor kabul edilmez
 - Oyuncu basina gunde en fazla 30 leaderboard satiri (free mode benzersiz seed flood korumasi)

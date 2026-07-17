@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { expectedDailySeed } from '../_shared/dailySeed.ts';
 
 const SCORE_TOLERANCE = 30;
 const MAX_SCORE = 500_000;
@@ -154,9 +155,10 @@ function validate(body: SubmitBody): string | null {
 
   if (!digest || digest.length < 8) return 'Digest eksik';
 
-  // Günlük mod: seed formatı `${dayKey}-${slug}-bir-daha-v1` — gün ile eşleşmeli
-  if (body.isDaily && !entry.seed.startsWith(body.dayKey)) {
-    return 'Seed gün anahtarıyla uyuşmuyor';
+  // Günlük leaderboard yalnız o günün tam v2 seed'ini kabul eder. Böylece eski
+  // istemci veya tarih önekli uydurma seed, farklı RNG ile aynı tabloya giremez.
+  if (body.isDaily && entry.seed !== expectedDailySeed(body.dayKey)) {
+    return 'Seed günün güncel Ranked seed’iyle uyuşmuyor';
   }
 
   // dayKey sunucu saatine makul yakın olmalı (geçmiş güne skor basılamaz)

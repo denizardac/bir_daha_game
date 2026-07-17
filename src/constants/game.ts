@@ -11,6 +11,6 @@ export const MATCH_ANIM_MAX_SEGMENT_MS = 720;
 
 /** Günlük giriş serisi ödülleri */
 export const DAILY_STREAK_REWARDS = [
-  { minDays: 3, extraRerolls: 1, startMoraleBonus: 2, label: '3 gün serisi: +1 yenileme hakkı, moral +2' },
-  { minDays: 7, extraRerolls: 2, startMoraleBonus: 5, label: '7 gün serisi: +2 yenileme, moral +5' },
+  { minDays: 3, extraRerolls: 1, startMoraleBonus: 0, label: '3 gün serisi: +1 yenileme hakkı' },
+  { minDays: 7, extraRerolls: 1, startMoraleBonus: 2, label: '7 gün serisi: +1 yenileme, moral +2' },
 ] as const;

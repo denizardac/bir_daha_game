@@ -39,14 +39,17 @@ export function positionFitMultiplier(
   // Manuel pin'ler varsa ceza gerçek (pin'li) dizilişe göre hesaplanır —
   // aksi halde otomatik yerleşim farklı slot dağıtıp cezayı saptırabilir.
   const lineup = assignSquadToFormation(squad, formationKey, manualLineup);
-  let penalty = 0;
+  let rawRating = 0;
+  let adjustedRating = 0;
   for (const slot of lineup) {
     if (!slot.player) continue;
     const tier = getSlotFitTier(slot.player, slot.slot.preferred);
-    if (tier === 'forced') penalty += 0.06;
-    else if (tier === 'flex') penalty += 0.03;
+    const rating = effectivePlayerRating(slot.player);
+    const effectiveness = tier === 'ideal' ? 1 : tier === 'flex' ? 0.94 : 0.82;
+    rawRating += rating;
+    adjustedRating += rating * effectiveness;
   }
-  return Math.max(0.82, 1 - penalty);
+  return rawRating > 0 ? adjustedRating / rawRating : 1;
 }
 
 export function synergyRatingMultiplier(synergies: SynergyDefinition[]): number {

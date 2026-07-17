@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useGameStore } from '@/store/gameStore';
 import { loadPersisted, savePersisted } from '@/utils/storage';
-import { createMonthlyLegendRecord } from '@/engine/monthlyLegend';
+import { buildMonthlyLegendCard, createMonthlyLegendRecord } from '@/engine/monthlyLegend';
 import { getSeasonKey } from '@/engine/hallOfFame';
 import { EVENT_CARDS } from '@/data/events';
 import { isPlayerCard, type MatchResult } from '@/types';
@@ -73,6 +73,53 @@ describe('gameStore unlock entegrasyonu', () => {
     useGameStore.getState().startRun(true, 'Test');
     expect(useGameStore.getState().currentOffers.map((card) => card.id)).not.toContain('player_mahallenin_kaptani');
     expect(loadPersisted().unlocks.pendingGuarantees).toHaveLength(1);
+  });
+
+  it('Günlük Ranked devamlılığı küçük ama gerçek bir başlangıç avantajı verir', () => {
+    const withoutStreak = loadPersisted();
+    savePersisted({ ...withoutStreak, dailyStreak: 0 });
+    useGameStore.getState().startRun(true, 'Test');
+    const baseline = useGameStore.getState();
+    const baselineResources = {
+      morale: baseline.morale,
+      rerollsRemaining: baseline.rerollsRemaining,
+      offers: baseline.currentOffers.map((card) => card.id),
+      squad: baseline.squad.map((player) => player.id),
+    };
+
+    const withStreak = loadPersisted();
+    savePersisted({ ...withStreak, dailyStreak: 7 });
+    useGameStore.getState().startRun(true, 'Test');
+    const streakRun = useGameStore.getState();
+
+    expect(streakRun.morale).toBe(baselineResources.morale + 2);
+    expect(streakRun.rerollsRemaining).toBe(baselineResources.rerollsRemaining + 1);
+    expect(streakRun.currentOffers.map((card) => card.id)).toEqual(baselineResources.offers);
+    expect(streakRun.squad.map((player) => player.id)).toEqual(baselineResources.squad);
+  });
+
+  it('Ayın Efsanesi Günlük Ranked oyuncu teklif havuzunda görünür', () => {
+    const persisted = loadPersisted();
+    const monthlyLegend = createMonthlyLegendRecord({
+      id: 'monthly-ranked-cache', seed: 'valid-seed', displayName: 'Cache Oyuncusu', totalScore: 16_000,
+      roundsCompleted: 15, timestamp: 1, flawless: true, integrityDigest: '0123456789abcdef',
+    }, getSeasonKey(), 2);
+    savePersisted({ ...persisted, monthlyLegend });
+    useGameStore.getState().startRun(true, 'Test');
+    const legendId = buildMonthlyLegendCard(monthlyLegend)!.id;
+    useGameStore.setState({
+      round: 10,
+      rerollsRemaining: 80,
+      offersRerollIndex: 0,
+    });
+
+    let appeared = false;
+    for (let attempt = 0; attempt < 80 && !appeared; attempt++) {
+      useGameStore.getState().rerollAllOffers();
+      appeared = useGameStore.getState().currentOffers.some((card) => card.id === legendId);
+    }
+
+    expect(appeared).toBe(true);
   });
 
   it('Hedefli Scout Serbest Modda ücretsiz ve Run başına bir kez kullanılabilir', () => {

@@ -1158,10 +1158,16 @@ export function MatchScreen() {
   const outcomeColor = currentMatch.outcome === 'win' ? 'text-green-400' : currentMatch.outcome === 'draw' ? 'text-amber-400' : 'text-red-400';
   const moraleOutcomeDelta = currentMatch.outcome === 'win' ? 10 : currentMatch.outcome === 'draw' ? -5 : -16;
   const matchEdge = squadAvg - currentMatch.opponent.rating;
-  const drawPct = Math.max(8, Math.min(22, Math.round(18 - Math.abs(matchEdge) * 0.35)));
-  const homeNoDrawPct = Math.max(10, Math.min(90, Math.round(50 + matchEdge * 2)));
-  const homeWinPct = Math.round(((100 - drawPct) * homeNoDrawPct) / 100);
-  const awayWinPct = 100 - drawPct - homeWinPct;
+  const fallbackDrawPct = Math.max(8, Math.min(22, Math.round(18 - Math.abs(matchEdge) * 0.35)));
+  const fallbackHomeNoDrawPct = Math.max(10, Math.min(90, Math.round(50 + matchEdge * 2)));
+  const fallbackHomeWinPct = Math.round(((100 - fallbackDrawPct) * fallbackHomeNoDrawPct) / 100);
+  const homeWinPct = currentMatch.forecast
+    ? Math.round(currentMatch.forecast.winProbability * 100)
+    : fallbackHomeWinPct;
+  const drawPct = currentMatch.forecast
+    ? Math.round(currentMatch.forecast.drawProbability * 100)
+    : fallbackDrawPct;
+  const awayWinPct = Math.max(0, 100 - drawPct - homeWinPct);
   const moraleFx = getMoraleEffect(morale);
   const streakMult = streakMultiplier(streak);
 
