@@ -236,6 +236,7 @@ export function MainMenu() {
         <div className="menu-main">
           <div className="menu-body menu-body--simple">
             <section className="menu-play-panel">
+              <div className="menu-stadium-horizon" aria-hidden="true" />
               <div className="menu-play-panel-inner">
                 {showContinuePrompt ? (
                   <div className="menu-resume-stage">
@@ -283,13 +284,19 @@ export function MainMenu() {
 
                     <div className="menu-play-actions" aria-label="Oyun modunu seç">
                       <button type="button" className="btn-primary menu-play-btn" data-mark="R" aria-label="Ranked Run başlat" onClick={() => handlePlayClick(true)}>
+                        <span className="menu-ranked-tunnel" aria-hidden="true">
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                        <span className="menu-ranked-sheen" aria-hidden="true" />
                         <span className="menu-mode-head">
-                          <span className="menu-play-btn-kicker"><UiIcon name="trophy" /> Bugünün maçı</span>
+                          <span className="menu-play-btn-kicker"><UiIcon name="trophy" /> Tünelden sahaya</span>
                           <span className="menu-mode-length">15 round</span>
                         </span>
                         <span className="menu-mode-main">
                           <span className="menu-play-btn-label">Ranked Run</span>
-                          <span className="menu-mode-go">Başlat <UiIcon name="arrow-right" /></span>
+                          <span className="menu-mode-go">Sahaya çık <UiIcon name="arrow-right" /></span>
                         </span>
                         <span className="menu-mode-facts" aria-hidden="true">
                           <span><strong>Aynı seed</strong><small>Herkese karşı</small></span>
