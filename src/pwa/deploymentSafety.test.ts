@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
@@ -20,7 +20,6 @@ describe('PWA deployment safety contract', () => {
         value: 'no-store, no-cache, must-revalidate',
       });
     }
-    expect(headers).toMatch(/\/assets\/\*[\s\S]*?Cache-Control: public, max-age=31536000, immutable/);
   });
 
   it('never rewrites a missing hashed asset to the HTML shell', () => {
@@ -36,6 +35,13 @@ describe('PWA deployment safety contract', () => {
       source: '/(.*)',
       destination: '/index.html',
     });
+  });
+
+  it('makes Cloudflare Pages return a real 404 for missing assets without sticky browser caching', () => {
+    const headers = projectFile('public/_headers');
+
+    expect(existsSync(resolve(process.cwd(), 'public/404.html'))).toBe(true);
+    expect(headers).not.toMatch(/\/assets\/\*[\s\S]*?max-age=31536000/);
   });
 
   it('keeps a new worker waiting for user approval and loads recovery before the hashed app entry', () => {
