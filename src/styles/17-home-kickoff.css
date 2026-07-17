@@ -427,65 +427,102 @@
 /* Destek kartları: hedef panosu + oyuncu lisansı */
 .menu-shell .menu-support-grid {
   align-items: stretch;
+  gap: 12px !important;
   grid-template-columns: minmax(0, 1fr) minmax(390px, 0.72fr) !important;
 }
 
 .menu-shell .menu-unlock-panel,
 .menu-shell .menu-monthly-legend {
-  min-height: 164px !important;
-  padding: 17px 18px !important;
+  min-height: 184px !important;
+  padding: 18px 20px !important;
   overflow: hidden;
+  border-radius: 16px !important;
 }
 
 .menu-shell .menu-unlock-panel {
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border-color: rgba(157, 119, 225, 0.34) !important;
+  border-color: rgba(80, 212, 194, 0.32) !important;
   background:
-    linear-gradient(90deg, rgba(157, 119, 225, 0.08), transparent 42%),
-    rgba(12, 12, 22, 0.82) !important;
+    linear-gradient(112deg, transparent 0 69%, rgba(80, 212, 194, 0.08) 69.2% 69.7%, transparent 70%),
+    radial-gradient(circle at 6% 110%, rgba(80, 212, 194, 0.16), transparent 42%),
+    linear-gradient(145deg, rgba(8, 33, 29, 0.96), rgba(5, 16, 15, 0.98)) !important;
+  box-shadow:
+    inset 3px 0 0 rgba(80, 212, 194, 0.75),
+    inset 0 1px rgba(255, 255, 255, 0.035) !important;
+}
+
+.menu-shell .menu-unlock-panel::before {
+  content: 'GELİŞİM';
+  position: absolute;
+  z-index: -1;
+  top: 37px;
+  right: -8px;
+  color: rgba(80, 212, 194, 0.035);
+  font: 900 4.9rem/0.8 'Barlow Condensed', sans-serif;
+  letter-spacing: -0.06em;
+  pointer-events: none;
 }
 
 .menu-shell .menu-unlock-panel-head {
   align-items: flex-start;
+  gap: 16px;
 }
 
 .menu-shell .menu-unlock-panel-head > div {
   display: grid;
-  gap: 5px;
+  gap: 6px;
 }
 
 .menu-shell .menu-unlock-panel-head > div > span {
-  color: #ad8ced !important;
-  font-size: 0.62rem !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #69cbbd !important;
+  font: 850 0.61rem/1 'Barlow', sans-serif !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.menu-shell .menu-unlock-panel-head > div > span svg {
+  width: 12px;
+  height: 12px;
 }
 
 .menu-shell .menu-unlock-panel-head > div > strong {
   color: var(--kickoff-chalk) !important;
-  font: 800 1rem/1 'Barlow', sans-serif !important;
+  font: 850 1.15rem/0.95 'Barlow Condensed', sans-serif !important;
+  text-transform: uppercase;
 }
 
 .menu-shell .menu-unlock-panel-head button {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #9b7ddd !important;
-  font-size: 0.68rem !important;
+  padding: 6px 8px !important;
+  border: 1px solid rgba(80, 212, 194, 0.16) !important;
+  border-radius: 999px;
+  color: #7ed7ca !important;
+  background: rgba(80, 212, 194, 0.045) !important;
+  font: 750 0.63rem/1 'Barlow', sans-serif !important;
 }
 
 .menu-shell .menu-unlock-panel-head button svg {
-  width: 13px;
+  width: 12px;
 }
 
 .menu-shell .menu-unlock-targets {
   display: block !important;
+  margin-top: 16px;
 }
 
 .menu-shell .menu-unlock-target {
   display: grid !important;
   grid-template-columns: 1fr !important;
-  gap: 11px !important;
+  gap: 13px !important;
   min-width: 0;
   padding: 0 !important;
 }
@@ -493,41 +530,43 @@
 .menu-shell .menu-unlock-target-main {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: 13px;
   align-items: center;
 }
 
 .menu-shell .menu-unlock-emblem {
   display: grid !important;
-  width: 41px;
-  height: 41px;
+  width: 46px;
+  height: 46px;
   place-items: center;
-  border: 1px solid rgba(157, 119, 225, 0.28);
-  border-radius: 50%;
-  color: #b899f0 !important;
-  background: rgba(157, 119, 225, 0.09);
+  border: 1px solid rgba(80, 212, 194, 0.28);
+  border-radius: 13px;
+  color: #7cddd0 !important;
+  background:
+    linear-gradient(145deg, rgba(80, 212, 194, 0.14), rgba(80, 212, 194, 0.04));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .menu-shell .menu-unlock-emblem svg {
-  width: 18px;
+  width: 19px;
 }
 
 .menu-shell .menu-unlock-copy {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
 .menu-shell .menu-unlock-copy > span {
-  color: #8876ab !important;
-  font: 750 0.61rem/1 'Barlow', sans-serif !important;
-  letter-spacing: 0.07em;
+  color: #688f88 !important;
+  font: 800 0.59rem/1 'Barlow', sans-serif !important;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .menu-shell .menu-unlock-copy > strong {
-  color: #eee9f8 !important;
-  font: 800 1rem/1 'Barlow Condensed', sans-serif !important;
+  color: #eff7f4 !important;
+  font: 850 1.26rem/0.92 'Barlow Condensed', sans-serif !important;
 }
 
 .menu-shell .menu-unlock-copy > small {
@@ -535,20 +574,46 @@
   grid-row: auto !important;
   align-self: auto !important;
   min-width: 0;
-  color: #807b8f !important;
-  font-size: 0.67rem !important;
+  color: #728d87 !important;
+  font-size: 0.65rem !important;
 }
 
 .menu-shell .menu-unlock-percent {
-  color: #c8b3f4 !important;
-  font: 850 1.7rem/0.9 'Barlow Condensed', sans-serif !important;
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: end;
+  align-items: end;
+  min-width: 60px;
+  color: #8be2d5 !important;
   font-variant-numeric: tabular-nums;
+}
+
+.menu-shell .menu-unlock-percent > strong {
+  font: 900 2.35rem/0.72 'Barlow Condensed', sans-serif !important;
+}
+
+.menu-shell .menu-unlock-percent > span {
+  margin-left: 2px;
+  font: 850 0.72rem/1 'Barlow', sans-serif;
+}
+
+.menu-shell .menu-unlock-percent > small {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  align-self: auto !important;
+  min-width: 0 !important;
+  margin-top: 6px;
+  color: #567c75;
+  font: 800 0.5rem/1 'Barlow', sans-serif;
+  letter-spacing: 0.12em;
+  text-align: right;
+  text-transform: uppercase;
 }
 
 .menu-shell .menu-unlock-progress-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 9px;
+  gap: 10px;
   align-items: center;
 }
 
@@ -556,40 +621,64 @@
   grid-column: auto !important;
   grid-row: auto !important;
   align-self: center !important;
-  color: #8876ab !important;
-  font: 750 0.67rem/1 'Barlow', sans-serif !important;
+  color: #628a82 !important;
+  font: 800 0.62rem/1 'Barlow', sans-serif !important;
+  font-variant-numeric: tabular-nums;
 }
 
 .menu-shell .menu-unlock-progress-row .menu-unlock-mini-bar {
   grid-column: auto !important;
-  height: 5px !important;
+  height: 7px !important;
+  overflow: hidden;
+  border: 1px solid rgba(80, 212, 194, 0.08);
   border-radius: 99px;
-  background: rgba(157, 119, 225, 0.12) !important;
+  background: rgba(80, 212, 194, 0.08) !important;
 }
 
 .menu-shell .menu-unlock-progress-row .menu-unlock-mini-bar > span {
   min-width: 3px;
   border-radius: inherit;
-  background: linear-gradient(90deg, #8161c8, #c0a1ff) !important;
-  box-shadow: 0 0 12px rgba(157, 119, 225, 0.34);
+  background: linear-gradient(90deg, #2f9d8d, #71ddce) !important;
+  box-shadow: 0 0 14px rgba(80, 212, 194, 0.38);
 }
 
 .menu-shell .menu-monthly-legend {
   position: relative;
+  isolation: isolate;
   display: flex !important;
   flex-direction: column;
+  align-items: stretch !important;
   justify-content: space-between;
-  border-color: rgba(214, 166, 52, 0.36) !important;
+  border-color: rgba(214, 166, 52, 0.42) !important;
   background:
-    radial-gradient(circle at 90% 115%, rgba(214, 166, 52, 0.2), transparent 46%),
-    linear-gradient(145deg, rgba(34, 29, 11, 0.94), rgba(13, 15, 10, 0.95)) !important;
+    linear-gradient(112deg, transparent 0 68%, rgba(239, 200, 95, 0.08) 68.2% 68.7%, transparent 69%),
+    radial-gradient(circle at 100% 110%, rgba(214, 166, 52, 0.22), transparent 47%),
+    linear-gradient(145deg, rgba(39, 31, 8, 0.97), rgba(13, 15, 10, 0.98)) !important;
+  box-shadow:
+    inset 3px 0 0 rgba(214, 166, 52, 0.9),
+    inset 0 1px rgba(255, 255, 255, 0.035) !important;
+}
+
+.menu-shell .menu-monthly-legend::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 45px;
+  right: -54px;
+  width: 172px;
+  height: 172px;
+  border: 1px solid rgba(214, 166, 52, 0.12);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 18px rgba(214, 166, 52, 0.045),
+    0 0 0 36px rgba(214, 166, 52, 0.025);
 }
 
 .menu-shell .menu-monthly-legend::after {
   content: '';
   position: absolute;
   inset: 0 0 auto;
-  height: 3px;
+  height: 2px;
   background: linear-gradient(90deg, var(--kickoff-brass), transparent 80%);
 }
 
@@ -612,9 +701,9 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #bda24c !important;
-  font: 850 0.58rem/1 'Barlow', sans-serif !important;
-  letter-spacing: 0.09em;
+  color: #c8a94f !important;
+  font: 850 0.59rem/1 'Barlow', sans-serif !important;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -623,37 +712,45 @@
 }
 
 .menu-shell .menu-champion-top > small {
-  padding: 4px 6px;
-  border: 1px solid rgba(214, 166, 52, 0.18);
+  padding: 5px 7px;
+  border: 1px solid rgba(214, 166, 52, 0.24);
   border-radius: 999px;
-  color: #cbb35e !important;
+  color: #ddc66e !important;
+  background: rgba(214, 166, 52, 0.055);
   font-size: 0.55rem !important;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .menu-shell .menu-champion-player {
-  gap: 12px;
-  margin: 11px 0;
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr) auto;
+  gap: 14px;
+  margin: 14px 0 12px;
 }
 
 .menu-shell .menu-champion-rating {
   display: grid;
-  min-width: 48px;
+  width: 66px;
+  height: 64px;
   justify-items: center;
-  padding-right: 12px;
-  border-right: 1px solid rgba(214, 166, 52, 0.22);
+  align-content: center;
+  border: 1px solid rgba(214, 166, 52, 0.25);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(214, 166, 52, 0.16), rgba(214, 166, 52, 0.045));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .menu-shell .menu-champion-rating strong {
   color: var(--kickoff-brass-light) !important;
-  font: 900 2.1rem/0.78 'Barlow Condensed', sans-serif !important;
+  font: 900 2.7rem/0.7 'Barlow Condensed', sans-serif !important;
 }
 
 .menu-shell .menu-champion-rating span {
-  margin-top: 5px;
-  color: #bda455 !important;
-  font: 900 0.62rem/1 'Barlow', sans-serif !important;
+  margin-top: 7px;
+  color: #c4aa57 !important;
+  font: 900 0.57rem/1 'Barlow', sans-serif !important;
+  letter-spacing: 0.08em;
 }
 
 .menu-shell .menu-champion-identity {
@@ -663,7 +760,7 @@
 }
 
 .menu-shell .menu-champion-identity > small {
-  color: #81764b !important;
+  color: #8f8049 !important;
   font-size: 0.58rem !important;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -672,34 +769,34 @@
 .menu-shell .menu-champion-identity > strong {
   overflow: hidden;
   color: #f4f0dd !important;
-  font: 850 1.35rem/0.95 'Barlow Condensed', sans-serif !important;
+  font: 850 1.65rem/0.9 'Barlow Condensed', sans-serif !important;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .menu-shell .menu-champion-identity > span {
-  color: #90886e !important;
-  font: 600 0.68rem/1 'Barlow', sans-serif !important;
+  color: #a49a78 !important;
+  font: 650 0.68rem/1 'Barlow', sans-serif !important;
 }
 
 .menu-shell .menu-champion-shirt {
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 46px;
+  height: 46px;
   margin-left: auto;
   place-items: center;
-  border: 1px solid rgba(214, 166, 52, 0.2);
-  border-radius: 11px;
-  color: #c8ae55 !important;
-  background: rgba(214, 166, 52, 0.07);
+  border: 1px solid rgba(214, 166, 52, 0.27);
+  border-radius: 13px;
+  color: #ddc15f !important;
+  background: linear-gradient(145deg, rgba(214, 166, 52, 0.14), rgba(214, 166, 52, 0.045));
 }
 
 .menu-shell .menu-champion-shirt svg {
-  width: 18px;
+  width: 20px;
 }
 
 .menu-shell .menu-champion-foot {
-  padding-top: 9px;
+  padding-top: 10px;
   border-top: 1px solid rgba(214, 166, 52, 0.15);
 }
 
@@ -714,11 +811,12 @@
   align-items: center;
   gap: 4px;
   min-width: 0;
-  padding: 4px 6px;
-  border-radius: 6px;
-  color: #bbaa6e !important;
-  background: rgba(214, 166, 52, 0.07);
-  font: 750 0.57rem/1 'Barlow', sans-serif !important;
+  padding: 5px 7px;
+  border: 1px solid rgba(214, 166, 52, 0.1);
+  border-radius: 999px;
+  color: #c9b56f !important;
+  background: rgba(214, 166, 52, 0.065);
+  font: 750 0.58rem/1 'Barlow', sans-serif !important;
   white-space: nowrap;
 }
 
@@ -728,8 +826,8 @@
 
 .menu-shell .menu-champion-score {
   flex: 0 0 auto;
-  color: #8e8568 !important;
-  font: 700 0.62rem/1 'Barlow', sans-serif !important;
+  color: #a99e79 !important;
+  font: 750 0.62rem/1 'Barlow', sans-serif !important;
 }
 
 @media (max-width: 1040px) {

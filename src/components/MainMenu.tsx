@@ -306,7 +306,7 @@ export function MainMenu() {
                       <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" data-mark="∞" aria-label="Serbest Run başlat" onClick={() => handlePlayClick(false)}>
                         <span className="menu-mode-head">
                           <span className="menu-play-btn-kicker"><UiIcon name="dice" /> Serbest mod</span>
-                          <span className="menu-mode-length">Sınırsız</span>
+                          <span className="menu-mode-length">15 round</span>
                         </span>
                         <span className="menu-mode-main">
                           <span className="menu-play-btn-label">Serbest Run</span>
@@ -381,7 +381,7 @@ export function MainMenu() {
                   <section className="menu-unlock-panel" aria-label="Kalıcı ilerleme hedefleri">
                     <div className="menu-unlock-panel-head">
                       <div>
-                        <span>Kalıcı ilerleme</span>
+                        <span><UiIcon name="target" /> Kalıcı ilerleme</span>
                         <strong>Sıradaki açılım</strong>
                       </div>
                       <button type="button" onClick={() => setScreen('collection')}>Koleksiyon <UiIcon name="arrow-right" /></button>
@@ -397,14 +397,18 @@ export function MainMenu() {
                                 <strong>{status.unlock.reward.name}</strong>
                                 <small>Bir sonraki kalıcı ödül</small>
                               </div>
-                              <strong className="menu-unlock-percent">%{status.percent}</strong>
+                              <div className="menu-unlock-percent" aria-label={`Yüzde ${status.percent} tamamlandı`}>
+                                <strong>{status.percent}</strong>
+                                <span>%</span>
+                                <small>tamam</small>
+                              </div>
                             </div>
                             <div className="menu-unlock-progress-row">
-                              <small>{status.current}</small>
+                              <small>{formatScore(status.current)}</small>
                               <div className="menu-unlock-mini-bar" aria-label={`${status.unlock.name} yüzde ${status.percent}`}>
                                 <span style={{ width: `${status.percent}%` }} />
                               </div>
-                              <small>{status.unlock.target}</small>
+                              <small>{formatScore(status.unlock.target)}</small>
                             </div>
                           </div>
                         ))}
