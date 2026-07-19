@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { useState } from 'react';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { useFeedback } from '@/components/FeedbackCenter';
 import { UiIcon } from '@/components/UiIcon';
 import { formatScore } from '@/engine/scoring';
 import { useGameStore } from '@/store/gameStore';
@@ -97,6 +98,7 @@ function TrackRecord({ history }: { history: RoundResult[] }) {
 }
 
 export function GameHeader({ round, maxRounds, score, streak, timerSeconds = 20, showTimer, trackRecord }: Props) {
+  const { openFeedback } = useFeedback();
   const exitToMenu = useGameStore((s) => s.exitToMenu);
   const resetRun = useGameStore((s) => s.resetRun);
   const [modal, setModal] = useState<'exit' | 'reset' | null>(null);
@@ -114,6 +116,10 @@ export function GameHeader({ round, maxRounds, score, streak, timerSeconds = 20,
             MENÜ
           </button>
           <button type="button" className="game-header-reset-btn game-header-reset-btn--danger" onClick={() => setModal('reset')}>SIFIRLA</button>
+          <button type="button" className="game-header-feedback-btn" onClick={openFeedback} title="Hata, öneri veya görüş bildir" aria-label="Hata, öneri veya görüş bildir">
+            <UiIcon name="message" />
+            <span>BİLDİR</span>
+          </button>
         </div>
         <div className="flex flex-1 flex-wrap items-center justify-center gap-4">
           <div className="game-header-stat-stack">

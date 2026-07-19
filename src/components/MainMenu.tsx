@@ -11,6 +11,7 @@ import { isChallengeSeedDaily } from '@/engine/challenge';
 import { getVerifiedChampionTitle } from '@/engine/seasonTitles';
 import { getClosestUnlockStatuses, getUnlockStatuses } from '@/engine/unlocks';
 import { StartRunModal } from '@/components/StartRunModal';
+import { useFeedback } from '@/components/FeedbackCenter';
 import { UiIcon, type UiIconName } from '@/components/UiIcon';
 import { getPersistedStats, useGameStore } from '@/store/gameStore';
 import { getAnonymousId, loadPersisted } from '@/utils/storage';
@@ -28,6 +29,7 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 export function MainMenu() {
+  const { openFeedback } = useFeedback();
   const startRun = useGameStore((s) => s.startRun);
   const continueRun = useGameStore((s) => s.continueRun);
   const abandonRun = useGameStore((s) => s.abandonRun);
@@ -213,6 +215,10 @@ export function MainMenu() {
               <button type="button" className="menu-icon-action" onClick={() => setMenuDialog('score')} aria-label="Skor tablosunu aç">
                 <UiIcon name="chart" />
                 <span>Skor</span>
+              </button>
+              <button type="button" className="menu-icon-action" onClick={openFeedback} aria-label="Hata, öneri veya görüş bildir">
+                <UiIcon name="message" />
+                <span>Görüş</span>
               </button>
             </div>
 

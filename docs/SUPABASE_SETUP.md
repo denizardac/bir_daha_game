@@ -34,6 +34,7 @@ Iki function da deploy edilmeli:
 ```bash
 supabase functions deploy submit-score
 supabase functions deploy record-start
+supabase functions deploy submit-feedback
 ```
 
 `submit-score` skor yazimini yapar. `record-start` run baslangiclarini yazar. Iki tabloya da client tarafindan dogrudan yazilmaz.

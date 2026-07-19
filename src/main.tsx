@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { AppErrorBoundary } from '@/components/AppErrorBoundary';
+import { FeedbackProvider } from '@/components/FeedbackCenter';
 import { installChunkLoadRecovery } from '@/pwa/chunkRecovery';
 import {
   announceServiceWorkerUpdate,
@@ -46,7 +47,9 @@ if ('serviceWorker' in navigator) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AppErrorBoundary>
-      <App />
+      <FeedbackProvider>
+        <App />
+      </FeedbackProvider>
     </AppErrorBoundary>
   </StrictMode>,
 );
