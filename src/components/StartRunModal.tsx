@@ -1,5 +1,6 @@
 import { useEffect, useRef, type FormEvent } from 'react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface Props {
   open: boolean;
@@ -17,9 +18,12 @@ export function StartRunModal({ open, daily, defaultName = '', rivalScore, onCon
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, open, onCancel);
+  useBodyScrollLock(open);
 
   useEffect(() => {
     if (!open) return;
+    const hasPrecisePointer = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
+    if (!hasPrecisePointer) return;
     const t = window.setTimeout(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
@@ -70,10 +74,13 @@ export function StartRunModal({ open, daily, defaultName = '', rivalScore, onCon
               ref={inputRef}
               className="start-run-input"
               type="text"
+              name="managerName"
               defaultValue={defaultName}
               maxLength={MAX_NAME_LEN}
-              placeholder="Örn: Deniz"
+              placeholder="Örn. Deniz…"
               autoComplete="nickname"
+              enterKeyHint="go"
+              spellCheck={false}
             />
           </label>
           <div className="start-run-actions">

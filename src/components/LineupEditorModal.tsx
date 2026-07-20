@@ -21,6 +21,8 @@ import type { ActiveTactic, PlayerCard, Position } from '@/types';
 import { POSITION_BADGE, TAG_AVATAR_BG, formationSlotLabel, getPositionRoleColor } from '@/utils/positionStyle';
 import { iconForTag } from '@/utils/gameIcons';
 import { formatSquadListName } from '@/utils/squadDisplayName';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface Props {
   open: boolean;
@@ -219,20 +221,9 @@ export function LineupEditorModal({
   const [editorStage, setEditorStage] = useState<EditorStage>(highlightedPlayer && outgoingPlayer ? 'departure' : 'lineup');
   const justDraggedRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') dismiss(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, dismiss]);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(open);
+  useFocusTrap(modalRef, open, dismiss);
 
   useEffect(() => {
     if (!open) {
@@ -425,7 +416,13 @@ export function LineupEditorModal({
   return createPortal(
     <>
       <div className="lineup-preview-backdrop" onClick={dismiss} aria-hidden />
-      <div className={`le-modal-group ${choosingDeparture ? 'le-modal-group--transfer-route' : ''}`}>
+      <div
+        ref={modalRef}
+        className={`le-modal-group ${choosingDeparture ? 'le-modal-group--transfer-route' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={choosingDeparture ? 'Transfer tahtası ve kadro düzenleme' : 'İlk 11 kadro düzenleme'}
+      >
 
       {/* LEFT PANEL: squad list */}
       <div className="le-squad-panel">

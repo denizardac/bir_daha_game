@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useRef } from 'react';
 import { UiIcon } from '@/components/UiIcon';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface Props {
   title: string;
@@ -27,6 +28,7 @@ export function ConfirmModal({
   const icon = danger ? 'alert-triangle' : menu ? 'home' : 'info';
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, true, onCancel);
+  useBodyScrollLock(true);
 
   return (
     <motion.div

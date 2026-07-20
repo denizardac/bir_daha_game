@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useShallow } from 'zustand/react/shallow';
 import { GameHeader } from '@/components/GameHeader';
 import { HoverTip } from '@/components/HoverTip';
 import { PlayerCard } from '@/components/PlayerCard';
@@ -409,7 +410,6 @@ export function CardSelectScreen() {
   const [lineupOpen, setLineupOpen] = useState(false);
   const [detailDrawer, setDetailDrawer] = useState<'synergy' | 'plan' | 'system' | null>(null);
   const [pickMode, setPickMode] = useState<CardPickMode>('cards');
-  const state = useGameStore();
   const {
     round, maxRounds, squad, maxSquadSize, morale, score, streak, roundHistory,
     currentOffers, selectOffer,
@@ -420,7 +420,51 @@ export function CardSelectScreen() {
     tacticDraft, confirmTacticRound, rerollFormationOffers, rerollSystemOffers,
     formationRerollUsed, systemRerollUsed,
     targetedScoutAvailable, useTargetedScout,
-  } = state;
+    lineupEditorOpen, lineupEditorHighlightId, lineupEditorOutgoingId,
+    setManualLineup, setLineupEditorOutgoing, resetManualLineup, confirmLineupAndPlay, cancelLineupEditor,
+  } = useGameStore(useShallow((state) => ({
+    round: state.round,
+    maxRounds: state.maxRounds,
+    squad: state.squad,
+    maxSquadSize: state.maxSquadSize,
+    morale: state.morale,
+    score: state.score,
+    streak: state.streak,
+    roundHistory: state.roundHistory,
+    currentOffers: state.currentOffers,
+    selectOffer: state.selectOffer,
+    dangerMode: state.dangerMode,
+    discoveredSynergies: state.discoveredSynergies,
+    activeTactics: state.activeTactics,
+    usedEventIds: state.usedEventIds,
+    crisisContractTriggered: state.crisisContractTriggered,
+    manualLineup: state.manualLineup,
+    rerollsRemaining: state.rerollsRemaining,
+    rerollSingleOffer: state.rerollSingleOffer,
+    offersRerollIndex: state.offersRerollIndex,
+    trainingFlow: state.trainingFlow,
+    beginTraining: state.beginTraining,
+    pickTrainingPlayer: state.pickTrainingPlayer,
+    completeTraining: state.completeTraining,
+    cancelTraining: state.cancelTraining,
+    backTrainingPlayer: state.backTrainingPlayer,
+    tacticDraft: state.tacticDraft,
+    confirmTacticRound: state.confirmTacticRound,
+    rerollFormationOffers: state.rerollFormationOffers,
+    rerollSystemOffers: state.rerollSystemOffers,
+    formationRerollUsed: state.formationRerollUsed,
+    systemRerollUsed: state.systemRerollUsed,
+    targetedScoutAvailable: state.targetedScoutAvailable,
+    useTargetedScout: state.useTargetedScout,
+    lineupEditorOpen: state.lineupEditorOpen,
+    lineupEditorHighlightId: state.lineupEditorHighlightId,
+    lineupEditorOutgoingId: state.lineupEditorOutgoingId,
+    setManualLineup: state.setManualLineup,
+    setLineupEditorOutgoing: state.setLineupEditorOutgoing,
+    resetManualLineup: state.resetManualLineup,
+    confirmLineupAndPlay: state.confirmLineupAndPlay,
+    cancelLineupEditor: state.cancelLineupEditor,
+  })));
   const sound = getPersistedStats().soundEnabled;
 
   const lineupSummary = useMemo(
@@ -699,22 +743,22 @@ export function CardSelectScreen() {
           </motion.div>
         )}
       </AnimatePresence>
-      {state.lineupEditorOpen && (
+      {lineupEditorOpen && (
         <LineupEditorModal
           open
           squad={squad}
           activeTactics={activeTactics}
           morale={morale}
           discoveredSynergies={discoveredSynergies}
-          manualLineup={state.manualLineup}
-          highlightId={state.lineupEditorHighlightId}
-          outgoingId={state.lineupEditorOutgoingId}
+          manualLineup={manualLineup}
+          highlightId={lineupEditorHighlightId}
+          outgoingId={lineupEditorOutgoingId}
           maxSquadSize={maxSquadSize}
-          onChange={state.setManualLineup}
-          onOutgoingChange={state.setLineupEditorOutgoing}
-          onReset={state.resetManualLineup}
-          onConfirm={state.confirmLineupAndPlay}
-          onCancel={state.cancelLineupEditor}
+          onChange={setManualLineup}
+          onOutgoingChange={setLineupEditorOutgoing}
+          onReset={resetManualLineup}
+          onConfirm={confirmLineupAndPlay}
+          onCancel={cancelLineupEditor}
         />
       )}
     </div>
@@ -757,7 +801,22 @@ function EventSubjectCard({ subject }: { subject: EventSubject }) {
 }
 
 export function EventScreen() {
-  const { currentEvent, resolveEventChoice, round, maxRounds, score, streak, squad, morale, isFirstRun, seed, activeTactics, manualLineup, maxSquadSize, roundHistory } = useGameStore();
+  const { currentEvent, resolveEventChoice, round, maxRounds, score, streak, squad, morale, isFirstRun, seed, activeTactics, manualLineup, maxSquadSize, roundHistory } = useGameStore(useShallow((state) => ({
+    currentEvent: state.currentEvent,
+    resolveEventChoice: state.resolveEventChoice,
+    round: state.round,
+    maxRounds: state.maxRounds,
+    score: state.score,
+    streak: state.streak,
+    squad: state.squad,
+    morale: state.morale,
+    isFirstRun: state.isFirstRun,
+    seed: state.seed,
+    activeTactics: state.activeTactics,
+    manualLineup: state.manualLineup,
+    maxSquadSize: state.maxSquadSize,
+    roundHistory: state.roundHistory,
+  })));
   const [picked, setPicked] = useState<'A' | 'B' | null>(null);
   const [lineupOpen, setLineupOpen] = useState(false);
 
@@ -972,7 +1031,22 @@ export function MatchScreen() {
   const {
     currentMatch, pendingSelected, finishMatch, squad, round, maxRounds, score, streak, morale,
     activeTactics, lossesCount, timerSeconds, flawless, manualLineup,
-  } = useGameStore();
+  } = useGameStore(useShallow((state) => ({
+    currentMatch: state.currentMatch,
+    pendingSelected: state.pendingSelected,
+    finishMatch: state.finishMatch,
+    squad: state.squad,
+    round: state.round,
+    maxRounds: state.maxRounds,
+    score: state.score,
+    streak: state.streak,
+    morale: state.morale,
+    activeTactics: state.activeTactics,
+    lossesCount: state.lossesCount,
+    timerSeconds: state.timerSeconds,
+    flawless: state.flawless,
+    manualLineup: state.manualLineup,
+  })));
   const [anim, setAnim] = useState<MatchAnimState>({
     minute: 0,
     goalsFor: 0,
@@ -1437,7 +1511,20 @@ function pillStyle(color: string) {
 }
 
 export function LossScreen() {
-  const { lastLossPlayer, lastLossBrokenSynergies, finishLoss, dangerMode, squad, round, maxRounds, score, streak, morale, activeTactics, manualLineup } = useGameStore();
+  const { lastLossPlayer, lastLossBrokenSynergies, finishLoss, dangerMode, squad, round, maxRounds, score, streak, morale, activeTactics, manualLineup } = useGameStore(useShallow((state) => ({
+    lastLossPlayer: state.lastLossPlayer,
+    lastLossBrokenSynergies: state.lastLossBrokenSynergies,
+    finishLoss: state.finishLoss,
+    dangerMode: state.dangerMode,
+    squad: state.squad,
+    round: state.round,
+    maxRounds: state.maxRounds,
+    score: state.score,
+    streak: state.streak,
+    morale: state.morale,
+    activeTactics: state.activeTactics,
+    manualLineup: state.manualLineup,
+  })));
 
   const departedScore = lastLossPlayer ? getDepartureScore(lastLossPlayer, morale) : 0;
   const remainingScores = squad
@@ -1605,7 +1692,25 @@ function ShareCardPreview({ opts }: { opts: ShareCardOptions }) {
 }
 
 export function RunEndScreen() {
-  const { score, roundHistory, squad, goToMenu, resetRun, round, lossesCount, runEndAnalysis, runEndStep, advanceRunEnd, flawless, displayName, isDailySeed, seed, newAchievements, newContentUnlocks, acknowledgeContentUnlocks } = useGameStore();
+  const { score, roundHistory, squad, goToMenu, resetRun, round, lossesCount, runEndAnalysis, runEndStep, advanceRunEnd, flawless, displayName, isDailySeed, seed, newAchievements, newContentUnlocks, acknowledgeContentUnlocks } = useGameStore(useShallow((state) => ({
+    score: state.score,
+    roundHistory: state.roundHistory,
+    squad: state.squad,
+    goToMenu: state.goToMenu,
+    resetRun: state.resetRun,
+    round: state.round,
+    lossesCount: state.lossesCount,
+    runEndAnalysis: state.runEndAnalysis,
+    runEndStep: state.runEndStep,
+    advanceRunEnd: state.advanceRunEnd,
+    flawless: state.flawless,
+    displayName: state.displayName,
+    isDailySeed: state.isDailySeed,
+    seed: state.seed,
+    newAchievements: state.newAchievements,
+    newContentUnlocks: state.newContentUnlocks,
+    acknowledgeContentUnlocks: state.acknowledgeContentUnlocks,
+  })));
   const analysis = runEndAnalysis;
   const playerName = displayName || 'Anonim';
   const [shareMsg, setShareMsg] = useState('');

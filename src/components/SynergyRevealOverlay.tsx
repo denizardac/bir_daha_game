@@ -4,6 +4,7 @@ import { getSynergyBenefitText } from '@/engine/squadInsights';
 import { useGameStore } from '@/store/gameStore';
 import { UiIcon } from '@/components/UiIcon';
 import { iconForSynergy } from '@/utils/gameIcons';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 const SPARKLES = Array.from({ length: 12 }, (_, i) => ({
   id: i,
@@ -14,6 +15,7 @@ const SPARKLES = Array.from({ length: 12 }, (_, i) => ({
 export function SynergyRevealOverlay() {
   const ids = useGameStore((s) => s.pendingSynergyReveal);
   const dismiss = useGameStore((s) => s.dismissSynergyReveal);
+  useBodyScrollLock(ids.length > 0);
 
   if (!ids.length) return null;
 
@@ -25,6 +27,7 @@ export function SynergyRevealOverlay() {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         role="dialog"
+        aria-modal="true"
         aria-label="Yeni sinerji keşfedildi"
       >
         <div className="synergy-reveal-burst" aria-hidden>

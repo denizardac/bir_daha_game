@@ -23,6 +23,10 @@ const MenuBiteTipsWidget = lazy(() => import('@/components/MenuBiteTipsWidget')
 const MenuLeaderboardWidget = lazy(() => import('@/components/MenuLeaderboardWidget')
   .then((module) => ({ default: module.MenuLeaderboardWidget })));
 
+const preloadGameScreen = () => {
+  void import('@/components/GameScreen');
+};
+
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -289,7 +293,7 @@ export function MainMenu() {
                     </div>
 
                     <div className="menu-play-actions" aria-label="Oyun modunu seç">
-                      <button type="button" className="btn-primary menu-play-btn" data-mark="R" aria-label="Ranked Run başlat" onClick={() => handlePlayClick(true)}>
+                      <button type="button" className="btn-primary menu-play-btn" data-mark="R" aria-label="Ranked Run başlat" onPointerEnter={preloadGameScreen} onFocus={preloadGameScreen} onTouchStart={preloadGameScreen} onClick={() => handlePlayClick(true)}>
                         <span className="menu-ranked-tunnel" aria-hidden="true">
                           <i />
                           <i />
@@ -309,7 +313,7 @@ export function MainMenu() {
                           <span><strong>3 liste</strong><small>Gün · Hafta · Sezon</small></span>
                         </span>
                       </button>
-                      <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" data-mark="∞" aria-label="Serbest Run başlat" onClick={() => handlePlayClick(false)}>
+                      <button type="button" className="btn-secondary menu-play-btn menu-play-btn--free" data-mark="∞" aria-label="Serbest Run başlat" onPointerEnter={preloadGameScreen} onFocus={preloadGameScreen} onTouchStart={preloadGameScreen} onClick={() => handlePlayClick(false)}>
                         <span className="menu-mode-head">
                           <span className="menu-play-btn-kicker"><UiIcon name="dice" /> Serbest mod</span>
                           <span className="menu-mode-length">15 round</span>
