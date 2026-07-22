@@ -44,10 +44,7 @@ import {
 } from '@/engine/lineupPreview';
 import { simulateRosterDecision } from '@/engine/rosterDecision';
 import {
-  applyGerileyen,
-  applyInjuryRisk,
-  applyMentorGrowth,
-  applyPotentialGrowth,
+  applyPostMatchPlayerUpdates,
   getBrokenSynergies,
   getWeakestPlayer,
   passiveMoraleFromSquad,
@@ -396,7 +393,7 @@ function activateCrisisContract(
     && hasUnlockedContent(loadPersisted().unlocks, 'mechanic_kriz_kontrati');
   return activated
     ? {
-        rerollsRemaining: Math.min(REROLLS_PER_RUN + 2, rerollsRemaining + 1),
+        rerollsRemaining: rerollsRemaining + 1,
         crisisContractTriggered: true,
         crisisRecoveryPending: true,
       }
@@ -1382,7 +1379,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     }
     if (outcome.grantRerolls) {
-      rerollsRemaining = Math.min(REROLLS_PER_RUN + 2, rerollsRemaining + outcome.grantRerolls);
+      rerollsRemaining += outcome.grantRerolls;
     }
     const crisisContract = activateCrisisContract(state, squad.length, rerollsRemaining);
     rerollsRemaining = crisisContract.rerollsRemaining;
@@ -1487,15 +1484,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (state.phase !== 'match' || !match || !state.pendingSelected) return;
 
     const injuryRng = createRng(state.seed, 'injury', state.round);
-    let squad = applyPotentialGrowth(state.squad, state.round);
-    squad = applyMentorGrowth(squad);
-    squad = applyInjuryRisk(squad, injuryRng);
-    squad = applyGerileyen(squad, state.activeTactics);
-    squad = squad.map((p) => {
-      const { tempRatingMod, ...rest } = p;
-      void tempRatingMod;
-      return rest;
-    });
+    let squad = applyPostMatchPlayerUpdates(state.squad, state.round, state.activeTactics, injuryRng);
 
     const formationKey = getActiveFormationKey(state.activeTactics);
     let manualLineup = reconcileManualLineup(state.manualLineup, squad, formationKey);

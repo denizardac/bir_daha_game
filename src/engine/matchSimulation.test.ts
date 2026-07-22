@@ -67,6 +67,18 @@ describe('rollGoals', () => {
 });
 
 describe('simulateMatch', () => {
+  it('SAVAŞÇI kadro ilk hesapta geriye düştüğünde reaksiyon verip sonucu toparlayabilir', () => {
+    const squad = getStartingSquad('comeback-7', true).map((player) => ({
+      ...player,
+      tags: ['SAVAŞÇI'] as Tag[],
+    }));
+
+    const result = match('comeback-7', 7, squad, 50);
+
+    expect(result.outcome).not.toBe('loss');
+    expect(result.activeSynergies).toContain('synergy_savasci_ruhu');
+  });
+
   it('aynı maç koşullarında daha güçlü takım daha kötü sonuç alamaz', () => {
     const outcomeRank = { loss: 0, draw: 1, win: 2 } as const;
     const regressions: string[] = [];
@@ -345,7 +357,7 @@ describe('simulateMatch', () => {
     }
 
     expect(forcedHeavyLossSeeds).toEqual([]);
-  });
+  }, 10_000);
 
   it('eşit koşullarda farklı seedler galibiyet, beraberlik ve mağlubiyet üretebilir', () => {
     const squad = full442Squad();

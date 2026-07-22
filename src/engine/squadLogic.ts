@@ -89,6 +89,24 @@ export function applyGerileyen(squad: PlayerCard[], activeTactics: ActiveTactic[
   });
 }
 
+/** Maçtan sonraki kalıcı/geçici oyuncu state geçişinin tek kaynağı. */
+export function applyPostMatchPlayerUpdates(
+  squad: PlayerCard[],
+  round: number,
+  activeTactics: ActiveTactic[],
+  injuryRng: () => number,
+): PlayerCard[] {
+  let next = applyPotentialGrowth(squad, round);
+  next = applyMentorGrowth(next);
+  next = next.map((player) => {
+    const { tempRatingMod, ...rest } = player;
+    void tempRatingMod;
+    return rest;
+  });
+  next = applyInjuryRisk(next, injuryRng);
+  return applyGerileyen(next, activeTactics);
+}
+
 export function passiveMoraleFromSquad(squad: PlayerCard[]): number {
   let bonus = 0;
   if (squad.some((p) => p.tags.includes('LİDER'))) bonus += 10;

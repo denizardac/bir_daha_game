@@ -94,6 +94,7 @@ function teamStrength(
   synergies: ReturnType<typeof getActiveSynergies>,
   matchBonus: number,
   manualLineup: Record<number, string> = {},
+  behindInMatch = false,
 ): TeamStrength {
   const avg = squad.reduce((sum, p) => sum + effectivePlayerRating(p), 0) / Math.max(squad.length, 1);
   const fill = lineupFillFactor(squad.length, round);
@@ -114,7 +115,7 @@ function teamStrength(
   return {
     overall: avg,
     attack: common
-      * attackTagMultiplier(squad, false)
+      * attackTagMultiplier(squad, behindInMatch)
       * tacticAttackMultiplier(tactics, squad)
       * synergyAttackMultiplier(synergies),
     defense: common
@@ -234,22 +235,44 @@ export function simulateMatch({
 
   const starters = matchSquad(squad, activeTactics, manualLineup);
   const synergiesPreview = getActiveSynergies(starters, morale, { activeTactics, behindInMatch: false, manualLineup });
-  const ourStrength = teamStrength(starters, morale, round, activeTactics, synergiesPreview, matchBonus, manualLineup);
+  let ourStrength = teamStrength(starters, morale, round, activeTactics, synergiesPreview, matchBonus, manualLineup);
 
   const style = opponentStyleProfile(opponent.style);
   const opponentBase = opponent.rating * matchRiskMultiplier(matchRisk);
   const opponentAttack = opponentBase * style.attack;
   const opponentDefense = opponentBase * style.defense;
-  const ourComposite = Math.sqrt(Math.max(1, ourStrength.attack * ourStrength.defense));
   const opponentComposite = Math.sqrt(Math.max(1, opponentAttack * opponentDefense));
-  const advantage = Math.log(ourComposite / opponentComposite);
-  const probabilities = outcomeProbabilities(advantage);
   const rollWindow = outcomeRollWindow(round, lossesCount, isDailySeed);
   const rawOutcomeRoll = createRng(seed, 'match-outcome-v2', round)();
   const outcomeRoll = rollWindow.min + rawOutcomeRoll * (rollWindow.max - rollWindow.min);
+  const probabilitiesFor = (strength: TeamStrength) => {
+    const ourComposite = Math.sqrt(Math.max(1, strength.attack * strength.defense));
+    return outcomeProbabilities(Math.log(ourComposite / opponentComposite));
+  };
+  let probabilities = probabilitiesFor(ourStrength);
   let outcome = rollOutcome(outcomeRoll, probabilities);
 
   if (round === 1 && lossesCount === 0) outcome = 'win';
+  const warriorResponse = outcome === 'loss' && starters.some((player) => player.tags.includes('SAVAŞÇI'));
+  if (warriorResponse) {
+    const responseSynergies = getActiveSynergies(starters, morale, {
+      activeTactics,
+      behindInMatch: true,
+      manualLineup,
+    });
+    ourStrength = teamStrength(
+      starters,
+      morale,
+      round,
+      activeTactics,
+      responseSynergies,
+      matchBonus,
+      manualLineup,
+      true,
+    );
+    probabilities = probabilitiesFor(ourStrength);
+    outcome = rollOutcome(outcomeRoll, probabilities);
+  }
   const forecastProbabilities = round === 1 && lossesCount === 0
     ? { win: 1, draw: 0, loss: 0 }
     : projectProbabilitiesToWindow(probabilities, rollWindow);
@@ -272,8 +295,7 @@ export function simulateMatch({
     ({ goalsFor, goalsAgainst } = randomizeRoundOneWinScore(createRng(seed, 'match-round-one-score-v2', round)));
   }
 
-  const behind = outcome === 'loss';
-  const synergies = getActiveSynergies(starters, morale, { activeTactics, behindInMatch: behind, manualLineup });
+  const synergies = getActiveSynergies(starters, morale, { activeTactics, behindInMatch: warriorResponse, manualLineup });
 
   const cleanSheet = goalsAgainst === 0;
   const highlights: MatchHighlight[] = [];

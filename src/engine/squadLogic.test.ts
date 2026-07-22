@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SYNERGIES } from '@/data/synergies';
 import type { PlayerCard } from '@/types';
-import { applyGerileyen } from './squadLogic';
+import { applyGerileyen, applyPostMatchPlayerUpdates } from './squadLogic';
 
 function player(overrides: Partial<PlayerCard> & Pick<PlayerCard, 'id'>): PlayerCard {
   return {
@@ -41,6 +41,21 @@ describe('applyGerileyen', () => {
     const [after] = applyGerileyen([tired]);
     expect(after?.currentRating).toBe(68);
     expect(after?.matchesPlayed).toBe(3);
+  });
+});
+
+describe('applyPostMatchPlayerUpdates', () => {
+  it('önce önceki geçici cezayı temizler, sonra yeni sakatlığı sonraki maça taşır', () => {
+    const risky = player({
+      id: 'risk',
+      tags: ['SAKATLIK RİSKİ'],
+      currentRating: 80,
+      tempRatingMod: -5,
+    });
+
+    const [after] = applyPostMatchPlayerUpdates([risky], 5, [], () => 0);
+
+    expect(after?.tempRatingMod).toBe(-6);
   });
 });
 

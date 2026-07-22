@@ -51,4 +51,9 @@ describe('getStartingSquad traits', () => {
     expect(legends).toHaveLength(37);
     expect(legends.every((p) => p.signature && p.signatureQuote)).toBe(true);
   });
+
+  it('uses a unique display name for every player identity in the offer pool', () => {
+    const normalizedNames = PLAYER_POOL.map((player) => player.name.toLocaleLowerCase('tr-TR'));
+    expect(new Set(normalizedNames).size).toBe(normalizedNames.length);
+  });
 });

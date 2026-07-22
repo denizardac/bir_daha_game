@@ -9,8 +9,8 @@ import { applyPlayerToSquad } from '@/engine/lineupPreview';
 import { simulateRosterDecision } from '@/engine/rosterDecision';
 import { simulateMatch } from '@/engine/matchSimulation';
 import { calculateRoundPoints } from '@/engine/scoring';
-import { getWeakestPlayer, selectDepartingPlayer } from '@/engine/squadLogic';
-import { getRandomSeed } from '@/engine/seed';
+import { applyPostMatchPlayerUpdates, getWeakestPlayer, selectDepartingPlayer } from '@/engine/squadLogic';
+import { createRng, getRandomSeed } from '@/engine/seed';
 import { isPlayerCard, isTacticCard } from '@/types';
 import type { ActiveTactic, PlayerCard } from '@/types';
 
@@ -31,6 +31,8 @@ export type PlaytestRunResult = {
   roundsPlayed: number;
   finalMorale: number;
   finalSquadSize: number;
+  /** QA invariantleri için Run sonundaki gerçek oyuncu state'i. */
+  finalSquad: PlayerCard[];
   /** Sinerji id → bu run'da kaç maçta aktifti (denge telemetrisi) */
   synergyActivations: Record<string, number>;
   /** Run boyunca seçilen taktik id'leri */
@@ -240,6 +242,7 @@ export function simulateFullRun(seed: string, maxRounds = 15, strategy: PickStra
     score += points;
     nextMatchRisk = 0;
     nextMatchBonus = 0;
+    squad = applyPostMatchPlayerUpdates(squad, round, activeTactics, createRng(seed, 'injury', round));
 
     for (const id of match.activeSynergies) {
       synergyActivations[id] = (synergyActivations[id] ?? 0) + 1;
@@ -282,6 +285,7 @@ export function simulateFullRun(seed: string, maxRounds = 15, strategy: PickStra
     roundsPlayed: wins + draws + losses,
     finalMorale: morale,
     finalSquadSize: squad.length,
+    finalSquad: squad,
     synergyActivations,
     tacticsUsed: [...tacticsUsed],
     finaleReached,

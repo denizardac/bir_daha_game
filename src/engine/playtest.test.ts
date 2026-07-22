@@ -14,4 +14,13 @@ describe('playtest batch', () => {
     expect(run.finalSquadSize).toBeGreaterThanOrEqual(4);
     expect(run.finalSquadSize).toBeLessThanOrEqual(11);
   });
+
+  it('real post-match player growth is represented in QA runs', () => {
+    const run = simulateFullRun('qa-post-0');
+    const developed = run.finalSquad.filter((player) => (
+      player.tags.includes('POTANSİYEL') && player.currentRating > player.rating
+    ));
+
+    expect(developed.length).toBeGreaterThan(0);
+  });
 });

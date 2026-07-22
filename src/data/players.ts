@@ -317,7 +317,7 @@ const VARIANT_LAST = [
   'Kılıçarslan', 'Erdoğdular', 'Güneşoğulları', 'Aydoğanlar', 'Karabulutoğlu',
 ];
 
-function generateExtraPlayers(): PlayerCard[] {
+function generateExtraPlayers(reservedNames: readonly string[] = []): PlayerCard[] {
   const first = [
     'Emre', 'Can', 'Burak', 'Deniz', 'Kaan', 'Arda', 'Oğuz', 'Selim', 'Mert', 'Tolga',
     'Barış', 'Efe', 'Hakan', 'Volkan', 'Umut', 'Furkan', 'Gökhan', 'Sinan', 'Levent', 'Tuncay',
@@ -341,6 +341,7 @@ function generateExtraPlayers(): PlayerCard[] {
     'Mbappi', 'Haalund', 'Rodrigues', 'Bellinger', 'Sakaroğlu', 'Fodenli', 'Wirtsel', 'Musyala', 'Gündoğdu', 'Vinicius',
   ];
   const out: PlayerCard[] = [];
+  const usedNames = new Set(reservedNames.map((name) => name.toLocaleLowerCase('tr-TR')));
   const COUNT = 150;
   for (let i = 0; i < COUNT; i++) {
     const rating = ratingFromIndex(i);
@@ -359,6 +360,13 @@ function generateExtraPlayers(): PlayerCard[] {
     } else if (!useVariant && hashMix(i, 59) % 100 < 12) {
       name = `${name} ${String.fromCharCode(65 + (i % 26))}.`;
     }
+    const baseName = name;
+    let duplicateIndex = 2;
+    while (usedNames.has(name.toLocaleLowerCase('tr-TR'))) {
+      name = `${baseName} ${duplicateIndex}`;
+      duplicateIndex += 1;
+    }
+    usedNames.add(name.toLocaleLowerCase('tr-TR'));
     out.push(makePlayer({
       name,
       rating,
@@ -373,7 +381,11 @@ function generateExtraPlayers(): PlayerCard[] {
 export const PLAYER_POOL: PlayerCard[] = [
   ...POOL
     .flatMap((p, i) => (p.rarity === 'efsane' ? [] : [makePlayer(p, `player_${String(i + 1).padStart(3, '0')}`)])),
-  ...generateExtraPlayers().filter((p) => p.rarity !== 'efsane'),
+  ...generateExtraPlayers([
+    ...POOL.map((player) => player.name),
+    ...LEGENDARY_PROFILES.map((player) => player.name),
+    ...UNLOCKABLE_PLAYER_PROFILES.map((player) => player.name),
+  ]).filter((p) => p.rarity !== 'efsane'),
   ...LEGENDARY_PROFILES.map((p, i) => makePlayer(p, `legend_${String(i + 1).padStart(2, '0')}`)),
   ...UNLOCKABLE_PLAYER_PROFILES.map(({ id, ...profile }) => makePlayer(profile, id)),
 ];
