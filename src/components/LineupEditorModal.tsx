@@ -222,8 +222,9 @@ export function LineupEditorModal({
   const justDraggedRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   useBodyScrollLock(open);
-  useFocusTrap(modalRef, open, dismiss);
+  useFocusTrap(modalRef, open, dismiss, closeButtonRef);
 
   useEffect(() => {
     if (!open) {
@@ -756,7 +757,7 @@ export function LineupEditorModal({
             <span className="le-legend le-legend--ideal">ana mevki</span>
             <span className="le-legend le-legend--flex">yan mevki</span>
           </div>}
-          <button type="button" className="lineup-preview-close" onClick={dismiss} aria-label="İptal et — kart seçimine dön"><UiIcon name="x" /></button>
+          <button ref={closeButtonRef} type="button" className="lineup-preview-close" onClick={dismiss} aria-label="İptal et — kart seçimine dön"><UiIcon name="x" /></button>
         </div>
 
         <div className={`le-body ${choosingDeparture ? 'le-body--locked-preview' : ''}`}>

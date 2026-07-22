@@ -11,6 +11,7 @@ export function useFocusTrap(
   ref: RefObject<HTMLElement | null>,
   active: boolean,
   onClose?: () => void,
+  initialFocusRef?: RefObject<HTMLElement | null>,
 ) {
   useEffect(() => {
     if (!active) return;
@@ -25,7 +26,10 @@ export function useFocusTrap(
       );
 
     // İlk odaklanabilir öğeye odaklan (yoksa kapsayıcının kendisine)
-    const first = focusables()[0];
+    const requestedInitialFocus = initialFocusRef?.current;
+    const first = requestedInitialFocus && node.contains(requestedInitialFocus)
+      ? requestedInitialFocus
+      : focusables()[0];
     if (first) first.focus();
     else {
       node.setAttribute('tabindex', '-1');
@@ -60,5 +64,5 @@ export function useFocusTrap(
       node.removeEventListener('keydown', onKey);
       previouslyFocused?.focus?.();
     };
-  }, [ref, active, onClose]);
+  }, [ref, active, onClose, initialFocusRef]);
 }

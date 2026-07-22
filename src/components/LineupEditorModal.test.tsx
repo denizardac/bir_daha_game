@@ -107,6 +107,16 @@ function TabbedDepartureHarness() {
 }
 
 describe('LineupEditorModal critical flow', () => {
+  it('focuses the close action on open without activating a trait tooltip', () => {
+    const offsetParent = vi.spyOn(HTMLElement.prototype, 'offsetParent', 'get').mockReturnValue(document.body);
+
+    render(<BenchHarness />);
+
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'İptal et — kart seçimine dön' }));
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    offsetParent.mockRestore();
+  });
+
   it('switches between first-eleven and bench departure candidates without mixing the lists', async () => {
     const user = userEvent.setup();
     render(<TabbedDepartureHarness />);

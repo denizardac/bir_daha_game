@@ -2,6 +2,7 @@ import { getTacticEffect } from '@/data/tactics';
 import { FORMATION_SLOT_COUNTS } from '@/data/formations';
 import {
   countFastWidePlayers,
+  getTacticRequirementStatus,
   hasSingleFinisherForward,
   isGegenpressReady,
   isHighPressReady,
@@ -100,6 +101,61 @@ export function getFormationDots(tacticId: string): FormationDot[] | null {
 
 export function getFormationDotsByKey(key: string): FormationDot[] | null {
   return FORMATIONS[key] ?? null;
+}
+
+const FORMATION_REQUIREMENTS: Record<string, string> = {
+  tactic_442: '4 savunmacı · 4 orta saha/kanat · 2 santrafor',
+  tactic_433_kontr: '4 savunmacı · 3 merkez · 2 kanat · 1 santrafor',
+  tactic_352: '3 stoper · 5 orta saha/kanat · 2 santrafor',
+  tactic_532: '5 savunmacı · 3 merkez · 2 santrafor',
+  tactic_4231: '4 savunmacı · 2 merkez · 3 hücumcu orta saha · 1 santrafor',
+  tactic_343: '3 stoper · 4 orta saha/kanat · 3 hücumcu',
+  tactic_diamond: '4 savunmacı · elmas merkez · 2 santrafor',
+  tactic_4411: '4 savunmacı · 4 orta saha · 1 destek forvet · 1 santrafor',
+  tactic_3412: '3 stoper · 4 orta saha · 1 on numara · 2 santrafor',
+  tactic_451: '4 savunmacı · 5 orta saha/kanat · 1 santrafor',
+};
+
+export function getTacticRequirementSummary(card: TacticCard, squad: PlayerCard[]): {
+  label: 'Diziliş yapısı' | 'Çalışma şartı';
+  requirement: string;
+  current: string;
+  tone: 'ready' | 'missing' | 'neutral';
+} {
+  if (card.category === 'formasyon') {
+    return {
+      label: 'Diziliş yapısı',
+      requirement: FORMATION_REQUIREMENTS[card.id] ?? 'İlk 11 yeni rol dağılımına göre yerleşir',
+      current: 'Seçince mevcut rol dağılımının yerini alır.',
+      tone: 'neutral',
+    };
+  }
+
+  const conditional = getTacticRequirementStatus(card.id, squad);
+  if (conditional) {
+    return {
+      label: 'Çalışma şartı',
+      requirement: conditional.requirement,
+      current: conditional.current,
+      tone: conditional.met ? 'ready' : 'missing',
+    };
+  }
+
+  if (card.id === 'tactic_catenaccio' || card.id === 'tactic_park_bus') {
+    return {
+      label: 'Çalışma şartı',
+      requirement: 'Gol yemeden tamamlanan maç',
+      current: 'Kadro şartı yok; ödül maç sonucuna göre hesaplanır.',
+      tone: 'neutral',
+    };
+  }
+
+  return {
+    label: 'Çalışma şartı',
+    requirement: 'Kadro şartı yok',
+    current: 'Sistem seçildiği anda maç planına uygulanır.',
+    tone: 'neutral',
+  };
 }
 
 if (import.meta.env?.DEV) {

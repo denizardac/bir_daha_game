@@ -19,7 +19,7 @@ export function TacticSquadStrip({ card, squad, hideHint }: Props) {
   return (
     <div className={`tactic-squad-strip tactic-squad-strip--${scope}`}>
       <div className="tactic-squad-strip-head">
-        <p className="tactic-squad-strip-label">{scope === 'team' ? 'Etki kapsamı' : 'Kadrodan etkilenenler'}</p>
+        <p className="tactic-squad-strip-label">{scope === 'team' ? 'Kadro kontrolü' : 'Bonusu taşıyan oyuncular'}</p>
         {tag && (
           <div
             className="tactic-squad-tag-badge"
@@ -60,8 +60,8 @@ export function TacticSquadStrip({ card, squad, hideHint }: Props) {
           <span>{label}</span>
         </div>
       )}
-      <p className="tactic-squad-strip-reason">{reason}</p>
-      {!hideHint && <p className="tactic-squad-strip-hint">{label}</p>}
+      <p className="tactic-squad-strip-reason"><span>Aranan profil</span>{' '}{reason}</p>
+      {!hideHint && <p className="tactic-squad-strip-hint"><span>Durum</span>{' '}{label}</p>}
     </div>
   );
 }

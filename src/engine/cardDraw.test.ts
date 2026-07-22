@@ -192,4 +192,23 @@ describe('drawOffers', () => {
     expect(fresh).toHaveLength(2);
     expect(fresh.some((c) => current.includes(c.id))).toBe(false);
   });
+
+  it('does not offer the already-active default 4-4-2 on the first tactic day', () => {
+    for (let index = 0; index < 100; index++) {
+      const seed = `first-tactic-day-${index}`;
+      const initial = drawOffers(seed, 3, 0, [], [], false, 0, 'normal', 'tacticBonus');
+      const rerolled = drawTacticCategoryOffers(seed, 3, [], 'formasyon', 1);
+
+      expect(initial.some((card) => card.id === 'tactic_442')).toBe(false);
+      expect(rerolled.some((card) => card.id === 'tactic_442')).toBe(false);
+    }
+  });
+
+  it('keeps 4-4-2 available after the first tactic day', () => {
+    const laterOffers = Array.from({ length: 100 }, (_, index) =>
+      drawOffers(`later-tactic-day-${index}`, 6, 0, [], [], false, 0, 'normal', 'tacticBonus'),
+    ).flat();
+
+    expect(laterOffers.some((card) => card.id === 'tactic_442')).toBe(true);
+  });
 });

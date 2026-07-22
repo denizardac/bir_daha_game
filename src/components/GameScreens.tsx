@@ -701,7 +701,9 @@ export function CardSelectScreen() {
               <div className="game-detail-head">
                 <div>
                   <span>{detailDrawer === 'synergy' ? 'Sinerji ve tag özeti' : detailDrawer === 'system' ? 'Aktif oyun sistemi' : 'Maç planı'}</span>
-                  <strong>{detailDrawer === 'synergy' ? `${activeSynergies.length} aktif · ${nearSynergies.length} yakın` : detailDrawer === 'system' ? activeSystem?.name ?? 'Sistem seçilmedi' : 'Taktik slotları ve olay takvimi'}</strong>
+                  {detailDrawer !== 'system' && (
+                    <strong>{detailDrawer === 'synergy' ? `${activeSynergies.length} aktif · ${nearSynergies.length} yakın` : 'Taktik slotları ve olay takvimi'}</strong>
+                  )}
                 </div>
                 <button type="button" className="game-detail-close" onClick={() => setDetailDrawer(null)} aria-label="Kapat">
                   <UiIcon name="x" />

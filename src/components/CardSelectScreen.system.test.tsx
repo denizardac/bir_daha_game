@@ -44,7 +44,9 @@ describe('Kart seçimindeki aktif oyun sistemi', () => {
     const scrollArea = within(dialog).getByRole('region', { name: 'Oyun sistemi içeriği' });
     expect(scrollArea.getAttribute('tabindex')).toBe('0');
     expect(within(dialog).getAllByText('Topla Oynama').length).toBeGreaterThan(0);
-    expect(within(dialog).getByText('Seçince ne olur?')).toBeTruthy();
-    expect(within(dialog).getByText('Kadrona etkisi')).toBeTruthy();
+    expect(within(dialog).getByText('MAÇ DOKTRİNİ')).toBeTruthy();
+    expect(within(dialog).getByText('AKTİVASYON')).toBeTruthy();
+    expect(within(dialog).getByText('MAÇ ÖDÜLÜ')).toBeTruthy();
+    expect(within(dialog).queryByText('Planın artısı ve riski')).toBeNull();
   });
 });

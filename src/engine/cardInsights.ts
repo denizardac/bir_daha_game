@@ -237,8 +237,8 @@ export function getTacticCardInsight(card: TacticCard, squad: PlayerCard[], acti
 
   const pitch = card.description;
   const onSelect = card.category === 'formasyon'
-    ? 'Formasyon slotuna yerleşir — sonraki maçlarda aktif kalır'
-    : 'Oyun sistemi slotuna yerleşir — sonraki maçlarda aktif kalır';
+    ? 'Mevcut dizilişin yerini alır; İlk 11 bu rol yapısına göre yeniden yerleşir.'
+    : 'Formasyonu değiştirmez; maç planına koşullu bonus ve risk ekler.';
 
   const effects = preview.lines.slice(0, 3);
 
@@ -255,19 +255,17 @@ export function getTacticCardInsight(card: TacticCard, squad: PlayerCard[], acti
 export function getTacticEffectLines(card: TacticCard): string[] {
   const fx = getTacticEffect(card.id);
   const lines: string[] = [];
-  if (fx.attackMod && fx.attackMod > 0) lines.push('Gol bulma ihtimali artar');
-  if (fx.attackMod && fx.attackMod < 0) lines.push('Gol üretimi düşer');
-  if (fx.defenseMod && fx.defenseMod > 0) lines.push('Savunma direnci artar');
-  if (fx.defenseMod && fx.defenseMod < 0) lines.push('Savunma riski artar');
-  if (fx.fastBonus) lines.push('HIZLI oyuncular ekstra skor üretir');
-  if (fx.technicalBonus) lines.push('TEKNİK oyuncular ekstra skor üretir');
-  if (fx.perGoalBonus) lines.push('Goller ekstra puan getirir');
-  if (fx.perWinBonus) lines.push('Galibiyetler ekstra puan getirir');
-  if (fx.drawBonus) lines.push('Beraberlik bile değer kazanabilir');
-  if (fx.cleanSheetWinBonus || fx.cleanSheetDrawBonus) lines.push('Gol yememek ekstra puan getirir');
-  if (fx.firstGoalBonus) lines.push('İlk gol planı ödüllenir');
-  if (fx.squadSizeBonus) lines.push('Geniş kadro ödüllendirilir');
-  if (card.id === 'tactic_442') return ['Güvenli denge', 'Her hat eşit'];
-  if (card.id === 'tactic_rotasyon') return ['Yorgunluk koruması'];
+  if (fx.attackMod) lines.push(`Hücum gücü ${fx.attackMod > 0 ? '+' : ''}${fx.attackMod}`);
+  if (fx.defenseMod) lines.push(`Savunma gücü ${fx.defenseMod > 0 ? '+' : ''}${fx.defenseMod}`);
+  if (fx.fastBonus) lines.push(`+${fx.fastBonus} puan / HIZLI oyuncu`);
+  if (fx.technicalBonus) lines.push(`+${fx.technicalBonus} puan / TEKNİK oyuncu`);
+  if (fx.perGoalBonus) lines.push(`+${fx.perGoalBonus} puan / gol`);
+  if (fx.perWinBonus) lines.push(`+${fx.perWinBonus} puan / galibiyet`);
+  if (fx.drawBonus) lines.push(`+${fx.drawBonus} puan / beraberlik`);
+  if (fx.cleanSheetWinBonus) lines.push(`+${fx.cleanSheetWinBonus} puan / gol yemeden galibiyet`);
+  if (fx.cleanSheetDrawBonus) lines.push(`+${fx.cleanSheetDrawBonus} puan / 0-0 beraberlik`);
+  if (fx.firstGoalBonus) lines.push(`+${fx.firstGoalBonus} puan / gol atılan maç`);
+  if (fx.moralePerMatch) lines.push(`+${fx.moralePerMatch} moral / maç`);
+  if (fx.squadSizeBonus) lines.push(`+${fx.squadSizeBonus} puan / ${fx.squadSizeThreshold ?? 10}+ kişilik kadro`);
   return lines.length ? lines : [card.effectSummary];
 }

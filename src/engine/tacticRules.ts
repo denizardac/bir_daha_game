@@ -23,12 +23,62 @@ function countAnyTag(squad: PlayerCard[], tags: string[]): number {
   return squad.reduce((n, p) => n + (tags.some((tag) => p.tags.includes(tag as never)) ? 1 : 0), 0);
 }
 
+export type TacticRequirementStatus = {
+  requirement: string;
+  current: string;
+  met: boolean;
+};
+
+export function getTacticRequirementStatus(id: string, squad: PlayerCard[]): TacticRequirementStatus | null {
+  const fast = countTag(squad, 'HIZLI');
+  const technical = countTag(squad, 'TEKNİK');
+  const physicalPressers = countAnyTag(squad, ['SAVAŞÇI', 'GÜÇLÜ']);
+
+  if (id === 'tactic_yuksek_blok') {
+    const pressProfiles = countAnyTag(squad, ['HIZLI', 'SAVAŞÇI']);
+    return { requirement: 'En az 3 HIZLI/SAVAŞÇI', current: `Şu an: ${pressProfiles} baskı oyuncusu`, met: pressProfiles >= 3 };
+  }
+  if (id === 'tactic_topla_oyn') {
+    return { requirement: 'En az 4 TEKNİK', current: `Şu an: ${technical} TEKNİK`, met: technical >= 4 };
+  }
+  if (id === 'tactic_direkt') {
+    return { requirement: 'En az 3 HIZLI', current: `Şu an: ${fast} HIZLI`, met: fast >= 3 };
+  }
+  if (id === 'tactic_rotasyon') {
+    return { requirement: '10 kişilik geniş kadro', current: `Şu an: ${squad.length} oyuncu`, met: squad.length >= 10 };
+  }
+  if (id === 'tactic_tekli_forvet') {
+    const forwards = squad.filter((player) => player.position === 'SF');
+    const finisherForwards = forwards.filter((player) => player.tags.includes('FİNİŞÖR'));
+    return {
+      requirement: 'Tam 1 santrafor ve o oyuncuda FİNİŞÖR',
+      current: `Şu an: ${forwards.length} santrafor · ${finisherForwards.length} FİNİŞÖR`,
+      met: hasSingleFinisherForward(squad),
+    };
+  }
+  if (id === 'tactic_gegenpress') {
+    return {
+      requirement: 'En az 2 HIZLI + 2 SAVAŞÇI/GÜÇLÜ',
+      current: `Şu an: ${fast} HIZLI · ${physicalPressers} fiziksel presçi`,
+      met: fast >= 2 && physicalPressers >= 2,
+    };
+  }
+  if (id === 'tactic_tiki_taka') {
+    return { requirement: 'En az 5 TEKNİK', current: `Şu an: ${technical} TEKNİK`, met: technical >= 5 };
+  }
+  if (id === 'tactic_kanat_bindirme') {
+    const fastWide = countFastWidePlayers(squad);
+    return { requirement: 'En az 2 HIZLI bek/kanat', current: `Şu an: ${fastWide} HIZLI bek/kanat`, met: fastWide >= 2 };
+  }
+  return null;
+}
+
 export function isHighPressReady(squad: PlayerCard[]): boolean {
-  return countAnyTag(squad, ['HIZLI', 'SAVAŞÇI']) >= 3;
+  return getTacticRequirementStatus('tactic_yuksek_blok', squad)?.met ?? false;
 }
 
 export function isGegenpressReady(squad: PlayerCard[]): boolean {
-  return countTag(squad, 'HIZLI') >= 2 && countAnyTag(squad, ['SAVAŞÇI', 'GÜÇLÜ']) >= 2;
+  return getTacticRequirementStatus('tactic_gegenpress', squad)?.met ?? false;
 }
 
 export function hasSingleFinisherForward(squad: PlayerCard[]): boolean {

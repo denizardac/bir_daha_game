@@ -234,12 +234,13 @@ function drawTacticBonusOffers(
   rerollIndex = 0,
 ): GameCard[] {
   const rng = createRng(seed, 'tactic-bonus', round, rerollIndex);
+  const isAvailable = (card: TacticCard) => !(round === 3 && card.id === 'tactic_442');
 
   // Her kategoriden, halihazırda aktif olmayan kartlardan 2 teklif çek.
   // Yeterli yoksa aktif olanları da havuza dahil et (fallback).
   const pickFrom = (category: 'formasyon' | 'sistem', count: number): TacticCard[] => {
-    let pool = TACTIC_CARDS.filter((t) => t.category === category && !activeTacticIds.includes(t.id));
-    if (pool.length < count) pool = TACTIC_CARDS.filter((t) => t.category === category);
+    let pool = TACTIC_CARDS.filter((t) => t.category === category && isAvailable(t) && !activeTacticIds.includes(t.id));
+    if (pool.length < count) pool = TACTIC_CARDS.filter((t) => t.category === category && isAvailable(t));
 
     const picked: TacticCard[] = [];
     while (picked.length < count) {
@@ -267,9 +268,10 @@ export function drawTacticCategoryOffers(
 ): TacticCard[] {
   const rng = createRng(seed, 'tactic-cat-reroll', round, category, rerollIndex);
   const blocked = new Set([...activeTacticIds, ...excludeIds]);
-  let pool = TACTIC_CARDS.filter((t) => t.category === category && !blocked.has(t.id));
-  if (pool.length < 2) pool = TACTIC_CARDS.filter((t) => t.category === category && !excludeIds.includes(t.id));
-  if (pool.length < 2) pool = TACTIC_CARDS.filter((t) => t.category === category);
+  const isAvailable = (card: TacticCard) => !(round === 3 && card.id === 'tactic_442');
+  let pool = TACTIC_CARDS.filter((t) => t.category === category && isAvailable(t) && !blocked.has(t.id));
+  if (pool.length < 2) pool = TACTIC_CARDS.filter((t) => t.category === category && isAvailable(t) && !excludeIds.includes(t.id));
+  if (pool.length < 2) pool = TACTIC_CARDS.filter((t) => t.category === category && isAvailable(t));
   const picked: TacticCard[] = [];
   while (picked.length < 2) {
     const open = pool.filter((c) => !picked.some((p) => p.id === c.id));

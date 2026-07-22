@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { TacticBoardVisual } from '@/components/TacticBoardVisual';
 import { TacticSquadStrip } from '@/components/TacticSquadStrip';
 import { getTacticCardInsight, getTacticEffectLines } from '@/engine/cardInsights';
-import { getTacticBeneficiaryPlayers } from '@/engine/tacticVisual';
+import { getTacticBeneficiaryPlayers, getTacticRequirementSummary } from '@/engine/tacticVisual';
 import type { ActiveTactic, PlayerCard, TacticCard as TacticCardType } from '@/types';
 
 interface Props {
@@ -18,7 +18,9 @@ export function TacticCard({ card, squad, activeTactics = [], onSelect, selected
   const insight = getTacticCardInsight(card, squad, activeTactics);
   const baseEffects = getTacticEffectLines(card);
   const beneficiary = getTacticBeneficiaryPlayers(card, squad);
+  const requirement = getTacticRequirementSummary(card, squad);
   const passiveWarning = beneficiary.label.includes('pasif') ? beneficiary.label : null;
+  const isFormation = card.category === 'formasyon';
 
   const cardHead = (
     <div className="tactic-card-head">
@@ -33,14 +35,14 @@ export function TacticCard({ card, squad, activeTactics = [], onSelect, selected
 
   const selectInsight = (
     <div className="card-insight card-insight--tactic card-pick-core">
-      <p className="card-insight-title">Seçince ne olur?</p>
+      <p className="card-insight-title">Oyuna etkisi</p>
       <p className="card-insight-line card-insight-line--lead">{insight.onSelect}</p>
     </div>
   );
 
   const whyInsight = (
     <div className="card-insight card-insight--why">
-      <p className="card-insight-title">Neden seç?</p>
+      <p className="card-insight-title">Planın artısı ve riski</p>
       {insight.whyPick.map((line) => (
         <p key={line} className="card-insight-line card-insight-line--bullet">✓ {line}</p>
       ))}
@@ -50,9 +52,16 @@ export function TacticCard({ card, squad, activeTactics = [], onSelect, selected
   const effectsInsight = (
     <div className="card-insight card-insight--effects">
       <div className="card-insight-head-row">
-        <p className="card-insight-title">Kadrona etkisi</p>
+        <p className="card-insight-title">Bu kadroda</p>
         <span className={`tactic-fit tactic-fit--${insight.fit}`}>{insight.fitLabel}</span>
       </div>
+      {expanded && (
+        <div className={`tactic-requirement tactic-requirement--${requirement.tone}`}>
+          <span>{requirement.label}</span>
+          <strong>{requirement.requirement}</strong>
+          <small>{requirement.current}</small>
+        </div>
+      )}
       {insight.effects.map((line) => (
         <p key={line} className="card-insight-line">{line}</p>
       ))}
@@ -67,19 +76,72 @@ export function TacticCard({ card, squad, activeTactics = [], onSelect, selected
 
   if (expanded) {
     return (
-      <motion.div className="card-fut tactic-card tactic-card--expanded">
-        <div className="tactic-card-brief">
-          <div className="tactic-card-top">
-            <TacticBoardVisual card={card} />
+      <motion.div
+        className={`card-fut tactic-card tactic-card--expanded tactic-card--${isFormation ? 'formation' : 'system'}`}
+      >
+        <header className="tactic-detail-hero">
+          <div className="tactic-detail-visual" aria-hidden="true">
+            <TacticBoardVisual card={card} preview />
           </div>
-          {cardHead}
-        </div>
-        <div className="tactic-card-analysis">
-          {selectInsight}
-          {whyInsight}
-          {effectsInsight}
-          <TacticSquadStrip card={card} squad={squad} hideHint={Boolean(passiveWarning)} />
-        </div>
+          <div className="tactic-detail-heading">
+            <p className="tactic-detail-kicker">
+              {isFormation ? 'SAHA PLANI' : 'MAÇ DOKTRİNİ'}
+            </p>
+            <h3 className="tactic-detail-name">{card.name}</h3>
+            <p className="tactic-detail-summary">{insight.pitch}</p>
+            <span className={`tactic-fit tactic-fit--${insight.fit}`}>{insight.fitLabel}</span>
+          </div>
+        </header>
+
+        {isFormation ? (
+          <div className="tactic-detail-formation">
+            <section className="tactic-detail-panel tactic-detail-panel--structure">
+              <p className="tactic-detail-label">DİZİLİŞ</p>
+              <strong>{requirement.requirement}</strong>
+              <p>İlk 11 bu saha planına göre yeniden yerleşir.</p>
+            </section>
+            <section className="tactic-detail-panel tactic-detail-panel--impact">
+              <p className="tactic-detail-label">MAÇ ETKİSİ</p>
+              <div className="tactic-detail-effects">
+                {baseEffects.map((line) => (
+                  <span key={line} className="tactic-effect-chip">{line}</span>
+                ))}
+              </div>
+            </section>
+          </div>
+        ) : (
+          <div className="tactic-detail-system">
+            <section className={`tactic-detail-panel tactic-detail-panel--activation tactic-detail-panel--${requirement.tone}`}>
+              <div className="tactic-detail-panel-head">
+                <p className="tactic-detail-label">AKTİVASYON</p>
+                <span>{requirement.tone === 'ready' ? 'HAZIR' : requirement.tone === 'missing' ? 'EKSİK' : 'MAÇTA'}</span>
+              </div>
+              <strong>{requirement.requirement}</strong>
+              <p>{requirement.current}</p>
+            </section>
+            <section className="tactic-detail-panel tactic-detail-panel--reward">
+              <p className="tactic-detail-label">MAÇ ÖDÜLÜ</p>
+              <div className="tactic-detail-effects">
+                {baseEffects.map((line) => (
+                  <span key={line} className="tactic-effect-chip">{line}</span>
+                ))}
+              </div>
+            </section>
+            {beneficiary.players.length > 0 && (
+              <section className="tactic-detail-supporters">
+                <p className="tactic-detail-label">PLANI TAŞIYANLAR</p>
+                <div className="tactic-detail-player-list">
+                  {beneficiary.players.map((player) => (
+                    <span key={player.id} className="tactic-detail-player">
+                      <strong>{player.name}</strong>
+                      <small>{player.position}</small>
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
       </motion.div>
     );
   }

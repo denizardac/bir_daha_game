@@ -230,7 +230,7 @@ export function getTacticPreview(
       score -= 1;
     }
   }
-  if (fx.defenseMod && fx.defenseMod > 0) lines.push('Savunma güçlenir — zayıf kadrolarda ideal');
+  if (fx.defenseMod && fx.defenseMod > 0) lines.push(`Savunma gücü ${fx.defenseMod >= 8 ? 'belirgin' : 'hafif'} artar`);
   if (fx.defenseMod && fx.defenseMod < 0) lines.push('Savunma riski artar — geride boşluk verebilir');
   if (card.id === 'tactic_tekli_forvet') {
     if (hasSingleFinisherForward(getStartingEleven(squad, activeTactics))) {
@@ -272,7 +272,7 @@ export function getTacticPreview(
       score -= 1;
     }
   }
-  if (fx.attackMod && fx.attackMod > 0) lines.push('Hücum güçlenir — gol şansı artar');
+  if (fx.attackMod && fx.attackMod > 0) lines.push(`Hücum gücü ${fx.attackMod >= 8 ? 'belirgin' : 'hafif'} artar`);
   if (fx.attackMod && fx.attackMod < 0) lines.push('Gol ihtimali düşer — dikkatli seç');
   const isBalanced = card.id === 'tactic_442'
     || (!fx.attackMod && !fx.defenseMod && !fx.fastBonus && !fx.technicalBonus
