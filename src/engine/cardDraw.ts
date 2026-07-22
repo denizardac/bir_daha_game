@@ -93,6 +93,8 @@ function upgradeWeakestCard(cards: PlayerCard[], pool: PlayerCard[], rng: () => 
     (minI, c, i, arr) => (c.currentRating < arr[minI]!.currentRating ? i : minI),
     0,
   );
+  if (result[weakestIdx]!.currentRating >= minRating) return result;
+
   const takenNames = new Set(result.map((c) => nameKey(c.name)));
   const backup = pool.filter(
     (p) => p.currentRating >= minRating
@@ -100,7 +102,7 @@ function upgradeWeakestCard(cards: PlayerCard[], pool: PlayerCard[], rng: () => 
       && !takenNames.has(nameKey(p.name)),
   );
   if (backup.length) {
-    const upgraded = clonePlayer(backup[Math.floor(rng() * Math.min(backup.length, 6))]!);
+    const upgraded = clonePlayer(backup[Math.floor(rng() * backup.length)]!);
     if (markBoost) upgraded.offerBoosted = true;
     result[weakestIdx] = upgraded;
   }
@@ -109,7 +111,7 @@ function upgradeWeakestCard(cards: PlayerCard[], pool: PlayerCard[], rng: () => 
 
 function boostRerollPool(pool: PlayerCard[], round: number, rerollIndex: number): PlayerCard[] {
   if (rerollIndex <= 0) return pool;
-  const floor = Math.min(78, 64 + round + rerollIndex * 2);
+  const floor = Math.min(78, 67 + round + rerollIndex * 2);
   const filtered = pool.filter((p) => {
     if (p.currentRating < floor) return false;
     if (rerollIndex >= 2 && (p.tags.includes('GERİLEYEN') || p.tags.includes('SAKATLIK RİSKİ') || p.tags.includes('PERFORMANS DÜŞÜŞÜ'))) return false;
@@ -185,7 +187,7 @@ function drawPlayers(
   const cards: PlayerCard[] = [];
   const usedNames = new Set<string>();
 
-  if (round === 1) {
+  if (round === 1 && rerollIndex === 0) {
     const pool = filterDrawPool(rawPool, squad, usedNames);
     const safe = pool.filter((p) => p.rating >= 65 && p.rating <= 78 && !p.tags.includes('GERİLEYEN') && !p.tags.includes('SAKATLIK RİSKİ') && !p.tags.includes('PERFORMANS DÜŞÜŞÜ') && !p.tags.includes('TARTIŞMALI'));
     const usePool = safe.length >= 3 ? safe : pool;
@@ -196,8 +198,7 @@ function drawPlayers(
       usedNames.add(nameKey(p.name));
       cards.push(clonePlayer(p));
     }
-    const upgraded = silentCardUpgrade(cards, pool, round, rng);
-    if (rerollIndex > 0) return dedupeOfferNames(upgradeWeakestCard(upgraded, pool, rng, 68 + rerollIndex * 2));
+    const upgraded = silentCardUpgrade(cards, usePool, round, rng);
     return dedupeOfferNames(upgraded);
   }
 

@@ -30,6 +30,22 @@ describe('getStartingSquad traits', () => {
     expect(squadsWithTraitless).toBeGreaterThan(80);
   });
 
+  it('starts every run with seven different primary positions', () => {
+    for (let index = 0; index < 500; index++) {
+      const squad = getStartingSquad(`unique-start-positions-${index}`, index % 2 === 0);
+      expect(new Set(squad.map((player) => player.position)).size).toBe(squad.length);
+    }
+  });
+
+  it('never assigns late-game risk traits to the starting squad', () => {
+    const forbidden = new Set(['GERİLEYEN', 'SAKATLIK RİSKİ', 'PERFORMANS DÜŞÜŞÜ', 'TARTIŞMALI']);
+
+    for (let index = 0; index < 500; index++) {
+      const squad = getStartingSquad(`safe-start-traits-${index}`, index % 2 === 0);
+      expect(squad.some((player) => player.tags.some((tag) => forbidden.has(tag)))).toBe(false);
+    }
+  });
+
   it('keeps every legendary card curated with an imza quote', () => {
     const legends = PLAYER_POOL.filter((p) => p.rarity === 'efsane');
     expect(legends).toHaveLength(37);

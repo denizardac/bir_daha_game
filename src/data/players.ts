@@ -410,14 +410,20 @@ function cloneFreeStarter(template: PlayerCard, rng: () => number, id: string): 
 function drawSeededStartingSquad(seed: string, isDaily: boolean): PlayerCard[] {
   const rng = createRng(seed, isDaily ? 'daily-start-squad-v2' : 'start-squad');
   const usedNames = new Set<string>();
+  const usedPositions = new Set<Position>();
   const pool = PLAYER_POOL.filter((p) => p.rarity !== 'efsane' && !p.tags.some((t) => BAD_START_TAGS.includes(t)));
   const squad: PlayerCard[] = [];
 
   const pickFrom = (positions: Position[], id: string) => {
-    const available = pool.filter((p) => positions.includes(p.position) && !usedNames.has(p.name));
+    const available = pool.filter((p) =>
+      positions.includes(p.position)
+      && !usedNames.has(p.name)
+      && !usedPositions.has(p.position),
+    );
     if (!available.length) return;
     const pick = available[Math.floor(rng() * available.length)]!;
     usedNames.add(pick.name);
+    usedPositions.add(pick.position);
     squad.push(cloneFreeStarter(pick, rng, id));
   };
 
@@ -433,12 +439,14 @@ function drawSeededStartingSquad(seed: string, isDaily: boolean): PlayerCard[] {
     const hasGk = squad.some((p) => p.position === 'KL');
     const available = pool.filter((p) => {
       if (usedNames.has(p.name)) return false;
+      if (usedPositions.has(p.position)) return false;
       if (hasGk && p.position === 'KL') return false;
       return true;
     });
     if (!available.length) break;
     const pick = available[Math.floor(rng() * available.length)]!;
     usedNames.add(pick.name);
+    usedPositions.add(pick.position);
     squad.push(cloneFreeStarter(pick, rng, `start_${squad.length}`));
   }
 

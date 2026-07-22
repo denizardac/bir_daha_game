@@ -4,10 +4,10 @@ import { canAddTag, filterCompatibleTags, sanitizeTags } from '@/data/tagConflic
 /** Mevkiye uygun pozitif trait havuzları */
 export const POSITION_POSITIVE_TAGS: Record<Position, Tag[]> = {
   KL: ['DAYANIKLI', 'SOĞUKKANLI', 'PENALTI', 'UZUN', 'PİK DÖNEM', 'SERBEST VURUŞ'],
-  STP: ['GÜÇLÜ', 'DAYANIKLI', 'UZUN', 'KISA', 'YERLİ', 'SAVAŞÇI', 'GERİLEYEN', 'LİDER'],
+  STP: ['GÜÇLÜ', 'DAYANIKLI', 'UZUN', 'KISA', 'YERLİ', 'SAVAŞÇI', 'LİDER'],
   SLB: ['HIZLI', 'TEKNİK', 'GÜÇLÜ', 'YERLİ', 'DAYANIKLI', 'ASİSTÇİ'],
   SÖB: ['HIZLI', 'TEKNİK', 'ASİSTÇİ', 'GÜÇLÜ', 'YERLİ', 'DAYANIKLI'],
-  DOS: ['GÜÇLÜ', 'TEKNİK', 'SAVAŞÇI', 'DAYANIKLI', 'SOĞUKKANLI', 'YERLİ', 'GERİLEYEN'],
+  DOS: ['GÜÇLÜ', 'TEKNİK', 'SAVAŞÇI', 'DAYANIKLI', 'SOĞUKKANLI', 'YERLİ'],
   OS: ['TEKNİK', 'ASİSTÇİ', 'MENTOR', 'YERLİ', 'POTANSİYEL', 'LİDER', 'DAYANIKLI'],
   OOS: ['TEKNİK', 'HIZLI', 'ASİSTÇİ', 'FİNİŞÖR', 'YERLİ', 'POTANSİYEL'],
   SLK: ['HIZLI', 'FİNİŞÖR', 'ASİSTÇİ', 'YERLİ', 'YENİ SEZON', 'TEKNİK'],

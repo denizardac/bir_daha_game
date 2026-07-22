@@ -307,13 +307,6 @@ function CardSelectSubHeader({
   );
 }
 
-/** Seçim sonrası animasyonlu "sonuç rozeti" listesi — sayısal etkiyi vurgular */
-function decimalOdds(probability: number): string {
-  const safe = Math.max(8, Math.min(86, probability));
-  const odds = Math.max(1.08, Math.min(9.9, 92 / safe));
-  return odds.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
 function getEventResultBadges(o: EventOutcome): EventResultBadge[] {
   const badges: EventResultBadge[] = [];
   if (o.moraleDelta) badges.push({ icon: 'heart', text: `Moral ${o.moraleDelta > 0 ? '+' : ''}${o.moraleDelta}`, positive: o.moraleDelta > 0 });
@@ -1231,17 +1224,6 @@ export function MatchScreen() {
   const outcome = currentMatch.outcome === 'win' ? 'GALİBİYET' : currentMatch.outcome === 'draw' ? 'BERABERLİK' : 'MAĞLUBİYET';
   const outcomeColor = currentMatch.outcome === 'win' ? 'text-green-400' : currentMatch.outcome === 'draw' ? 'text-amber-400' : 'text-red-400';
   const moraleOutcomeDelta = currentMatch.outcome === 'win' ? 10 : currentMatch.outcome === 'draw' ? -5 : -16;
-  const matchEdge = squadAvg - currentMatch.opponent.rating;
-  const fallbackDrawPct = Math.max(8, Math.min(22, Math.round(18 - Math.abs(matchEdge) * 0.35)));
-  const fallbackHomeNoDrawPct = Math.max(10, Math.min(90, Math.round(50 + matchEdge * 2)));
-  const fallbackHomeWinPct = Math.round(((100 - fallbackDrawPct) * fallbackHomeNoDrawPct) / 100);
-  const homeWinPct = currentMatch.forecast
-    ? Math.round(currentMatch.forecast.winProbability * 100)
-    : fallbackHomeWinPct;
-  const drawPct = currentMatch.forecast
-    ? Math.round(currentMatch.forecast.drawProbability * 100)
-    : fallbackDrawPct;
-  const awayWinPct = Math.max(0, 100 - drawPct - homeWinPct);
   const moraleFx = getMoraleEffect(morale);
   const streakMult = streakMultiplier(streak);
 
@@ -1286,27 +1268,14 @@ export function MatchScreen() {
               />
             </div>
 
-            {(() => {
-              const cls = homeWinPct >= awayWinPct + 10 ? 'favorite' : awayWinPct >= homeWinPct + 10 ? 'underdog' : 'even';
-              return (
-                <div className="match-odds-row">
-                  <span className="match-morale-chip" title={moraleFx.detail}>
-                    <UiIcon name="heart" />
-                    <span>Moral</span>
-                    <strong>{morale}</strong>
-                    <small>{moraleFx.label} · {moraleFx.multiplier}</small>
-                  </span>
-                  <span className={`match-odds-badge match-odds-badge--${cls}`} title="Kadrona açılan oran">
-                    <span>Kadrona açılan oran</span>
-                    <strong>{decimalOdds(homeWinPct)}</strong>
-                  </span>
-                  <span className={`match-odds-badge match-odds-badge--${cls === 'favorite' ? 'underdog' : cls === 'underdog' ? 'favorite' : 'even'}`} title="Rakibe açılan oran">
-                    <span>Rakibe açılan oran</span>
-                    <strong>{decimalOdds(awayWinPct)}</strong>
-                  </span>
-                </div>
-              );
-            })()}
+            <div className="match-odds-row">
+              <span className="match-morale-chip" title={moraleFx.detail}>
+                <UiIcon name="heart" />
+                <span>Moral</span>
+                <strong>{morale}</strong>
+                <small>{moraleFx.label} · {moraleFx.multiplier}</small>
+              </span>
+            </div>
 
             <div className="relative">
               {anim.playing && !anim.showResult && (

@@ -6798,7 +6798,7 @@
 .card-select-screen--tactic .tactic-pick-stage-head {
   position: absolute !important;
   top: 1.18rem !important;
-  left: clamp(13.7rem, 15vw, 16.4rem) !important;
+  left: clamp(22.25rem, 19vw, 23.5rem) !important;
   z-index: 25 !important;
   width: clamp(22rem, 31vw, 34rem) !important;
   min-height: 0 !important;

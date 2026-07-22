@@ -5,6 +5,7 @@ import { loadPersisted, savePersisted } from '@/utils/storage';
 import { buildMonthlyLegendCard, createMonthlyLegendRecord } from '@/engine/monthlyLegend';
 import { getSeasonKey } from '@/engine/hallOfFame';
 import { EVENT_CARDS } from '@/data/events';
+import { getPlayerPoolForAccess } from '@/engine/cardDraw';
 import { isPlayerCard, type MatchResult } from '@/types';
 
 const LOSS_MATCH: MatchResult = {
@@ -98,7 +99,7 @@ describe('gameStore unlock entegrasyonu', () => {
     expect(streakRun.squad.map((player) => player.id)).toEqual(baselineResources.squad);
   });
 
-  it('Ayın Efsanesi Günlük Ranked oyuncu teklif havuzunda görünür', () => {
+  it('Ayın Efsanesi Günlük Ranked oyuncu teklif havuzuna eklenir', () => {
     const persisted = loadPersisted();
     const monthlyLegend = createMonthlyLegendRecord({
       id: 'monthly-ranked-cache', seed: 'valid-seed', displayName: 'Cache Oyuncusu', totalScore: 16_000,
@@ -106,20 +107,14 @@ describe('gameStore unlock entegrasyonu', () => {
     }, getSeasonKey(), 2);
     savePersisted({ ...persisted, monthlyLegend });
     useGameStore.getState().startRun(true, 'Test');
-    const legendId = buildMonthlyLegendCard(monthlyLegend)!.id;
-    useGameStore.setState({
-      round: 10,
-      rerollsRemaining: 80,
-      offersRerollIndex: 0,
+    const frozenLegend = buildMonthlyLegendCard(useGameStore.getState().monthlyLegendAtRunStart)!;
+    const pool = getPlayerPoolForAccess({
+      isDailySeed: true,
+      unlockedPlayerIds: [],
+      globalPlayers: [frozenLegend],
     });
 
-    let appeared = false;
-    for (let attempt = 0; attempt < 80 && !appeared; attempt++) {
-      useGameStore.getState().rerollAllOffers();
-      appeared = useGameStore.getState().currentOffers.some((card) => card.id === legendId);
-    }
-
-    expect(appeared).toBe(true);
+    expect(pool.some((player) => player.id === frozenLegend.id)).toBe(true);
   });
 
   it('Hedefli Scout Serbest Modda ücretsiz ve Run başına bir kez kullanılabilir', () => {

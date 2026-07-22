@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { drawOffers, drawTargetedScoutOffers, drawTacticCategoryOffers, getPlayerPoolForAccess, getScoutImprovementScore, rerollSinglePlayerOffer } from '@/engine/cardDraw';
-import { PLAYER_POOL, clonePlayer } from '@/data/players';
+import { PLAYER_POOL, clonePlayer, getStartingSquad } from '@/data/players';
 import { isPlayerCard } from '@/types';
 
 function nameLc(s: string) {
@@ -68,6 +68,15 @@ describe('drawOffers', () => {
     const offers = drawOffers('test-seed-1', 2, 0, [], [], false, 0);
     expect(offers).toHaveLength(3);
     expect(offers.every((c) => c.kind === 'player' || c.kind === 'tactic' || c.kind === 'training')).toBe(true);
+  });
+
+  it('keeps every opening player offer inside the safe 65-78 rating band', () => {
+    for (let index = 0; index < 500; index++) {
+      const seed = `opening-safe-band-${index}`;
+      const offers = drawOffers(seed, 1, 0, getStartingSquad(seed, true), [], false, 0).filter(isPlayerCard);
+      expect(offers).toHaveLength(3);
+      expect(offers.every((player) => player.currentRating >= 65 && player.currentRating <= 78)).toBe(true);
+    }
   });
 
   it('is deterministic for same seed and round', () => {
@@ -153,6 +162,28 @@ describe('drawOffers', () => {
       const replacement = rerollSinglePlayerOffer(seed, 7, 0, squad, offers.slice(1), 0, 2, false);
       expect(replacement.currentRating).toBeGreaterThanOrEqual(70);
     }
+  });
+
+  it.each([1, 12])('single reroll draws from a broad player pool in round %s', (round) => {
+    const sampleSize = 400;
+    const initialNames = new Set<string>();
+    const rerolledNames = new Set<string>();
+    let initialRatingTotal = 0;
+    let rerolledRatingTotal = 0;
+
+    for (let index = 0; index < sampleSize; index++) {
+      const seed = `reroll-variety-${round}-${index}`;
+      const offers = drawOffers(seed, round, 0, [], [], false, 0, 'normal', 'players').filter(isPlayerCard);
+      const current = offers[0]!;
+      const replacement = rerollSinglePlayerOffer(seed, round, 0, [], offers, 0, 1, false);
+      initialNames.add(nameLc(current.name));
+      rerolledNames.add(nameLc(replacement.name));
+      initialRatingTotal += current.currentRating;
+      rerolledRatingTotal += replacement.currentRating;
+    }
+
+    expect(rerolledNames.size).toBeGreaterThanOrEqual(Math.floor(initialNames.size * 0.6));
+    expect(rerolledRatingTotal / sampleSize).toBeGreaterThanOrEqual(initialRatingTotal / sampleSize);
   });
 
   it('tactic category reroll excludes cards already shown in that category', () => {
